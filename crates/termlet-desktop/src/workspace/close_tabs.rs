@@ -639,18 +639,27 @@ mod tests {
             .unwrap();
             cx.run_until_parked();
         };
-        // 标题栏的工具栏按量出的宽度收起按钮，可能晚一两帧才定下，Tab 栏的宽度随之变化：先多画几帧，等布局稳定
-        // （否则量到的“最右”是旧宽度下的，滚回来时按新宽度停在别处，测试偶尔失败）
-        for _ in 0..3 {
-            x(cx);
+        // 布局会晚一些才定下：标题栏的工具栏按量出的宽度收起按钮，本地 shell 在后台线程上设置窗口标题、改变 Tab 的宽度，
+        // Tab 栏能滚动的范围随之变化。先等最后一个 Tab 的位置连续几次不变再量（最多约 2 秒）
+        let mut stable = 0;
+        let mut last_x = x(cx);
+        for _ in 0..100 {
+            std::thread::sleep(std::time::Duration::from_millis(20));
             cx.run_until_parked();
+            let now = x(cx);
+            stable = if now == last_x { stable + 1 } else { 0 };
+            last_x = now;
+            if stable >= 5 {
+                break;
+            }
         }
-        // 最后打开的 Tab 已滚进视野（Tab 栏在最右）；滚轮向上往左滚，Tab 右移；向下滚回来
+        // 最后打开的 Tab 已滚进视野；滚轮向上往左滚，Tab 右移；向下滚同样的行数回到原处（滚进视野只让它露出来，
+        // 后面还有最后一个 Tab 后的空白，所以这里不在滚动范围的尽头，两次滚动都不会被截住）
         let end = x(cx);
         wheel(cx, 3.);
         let moved = x(cx);
         assert!(moved > end, "向上滚：{end:?} → {moved:?}");
         wheel(cx, -3.);
-        assert_eq!(x(cx), end, "向下滚回最右");
+        assert_eq!(x(cx), end, "向下滚回原处");
     }
 }
