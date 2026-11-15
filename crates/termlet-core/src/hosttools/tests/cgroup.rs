@@ -200,7 +200,11 @@ fn script_reads_the_owner_of_each_process() {
     let out = runner.run(&proc_script(), &borrow(&replace), &["", ""]);
     let (list, _, _) = parse_processes(&out, "").unwrap_or_else(|e| panic!("{e}\n{out}"));
     let of = |pid: u32| {
-        let p = list.processes.iter().find(|p| p.pid == pid).unwrap();
+        let p = list
+            .processes
+            .iter()
+            .find(|p| p.pid == pid)
+            .unwrap_or_else(|| panic!("输出中没有进程 {pid}：\n{out}"));
         (p.service.as_deref(), p.container.as_deref())
     };
     assert_eq!(of(300), (None, Some(ID)), "{out}");
