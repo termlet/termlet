@@ -1,0 +1,199 @@
+_version: 2
+app.name:
+  zh-CN: Termlet
+  en: Termlet
+  zh-TW: Termlet
+  ja: Termlet
+  ko: Termlet
+common.cancel:
+  zh-CN: 取消
+  en: Cancel
+  zh-TW: 取消
+  ja: キャンセル
+  ko: 취소
+common.save:
+  zh-CN: 保存
+  en: Save
+  zh-TW: 儲存
+  ja: 保存
+  ko: 저장
+common.delete:
+  zh-CN: 删除
+  en: Delete
+  zh-TW: 刪除
+  ja: 削除
+  ko: 삭제
+common.ok:
+  zh-CN: 确定
+  en: OK
+  zh-TW: 確定
+  ja: OK
+  ko: 확인
+common.close:
+  zh-CN: 关闭
+  en: Close
+  zh-TW: 關閉
+  ja: 閉じる
+  ko: 닫기
+common.move_up:
+  zh-CN: 上移
+  en: Move up
+  zh-TW: 上移
+  ja: 上へ移動
+  ko: 위로 이동
+common.move_down:
+  zh-CN: 下移
+  en: Move down
+  zh-TW: 下移
+  ja: 下へ移動
+  ko: 아래로 이동
+choice.name_with_detail:
+  zh-CN: "%{name}（%{detail}）"
+  en: "%{name} (%{detail})"
+  zh-TW: "%{name}（%{detail}）"
+  ja: "%{name}（%{detail}）"
+  ko: "%{name} (%{detail})"
+title_bar.new_local_terminal:
+  zh-CN: 打开本地终端
+  en: Open a local terminal
+  zh-TW: 開啟本機終端機
+  ja: ローカルターミナルを開く
+  ko: 로컬 터미널 열기
+title_bar.local_terminals:
+  zh-CN: 全部本地终端
+  en: All local terminals
+  zh-TW: 全部本機終端機
+  ja: すべてのローカルターミナル
+  ko: 모든 로컬 터미널
+title_bar.command_picker:
+  zh-CN: 快捷命令
+  en: Snippets
+  zh-TW: 快速指令
+  ja: スニペット
+  ko: 스니펫
+title_bar.highlight:
+  zh-CN: 关键词高亮
+  en: Keyword highlighting
+  zh-TW: 關鍵字醒目提示
+  ja: キーワードの強調表示
+  ko: 키워드 강조 표시
+title_bar.to_light:
+  zh-CN: 切换到浅色
+  en: Switch to light
+  zh-TW: 切換到淺色
+  ja: ライトに切り替え
+  ko: 라이트로 전환
+title_bar.to_dark:
+  zh-CN: 切换到深色
+  en: Switch to dark
+  zh-TW: 切換到深色
+  ja: ダークに切り替え
+  ko: 다크로 전환
+title_bar.hide_sidebar:
+  zh-CN: 隐藏侧边栏
+  en: Hide sidebar
+  zh-TW: 隱藏側邊欄
+  ja: サイドバーを隠す
+  ko: 사이드바 숨기기
+title_bar.show_sidebar:
+  zh-CN: 显示侧边栏
+  en: Show sidebar
+  zh-TW: 顯示側邊欄
+  ja: サイドバーを表示
+  ko: 사이드바 표시
+sidebar.page.hosts:
+  zh-CN: 主机
+  en: Hosts
+  zh-TW: 主機
+  ja: ホスト
+  ko: 호스트
+sidebar.page.profiles:
+  zh-CN: 凭据档案
+  en: Profiles
+  zh-TW: 認證資訊設定檔
+  ja: 認証プロファイル
+  ko: 자격 증명 프로필
+sidebar.resize:
+  zh-CN: 拖动调整侧边栏宽度（点一下后也可以用方向键微调），双击恢复默认
+  en: Drag to resize the sidebar (or click it and use the arrow keys); double-click to reset
+  zh-TW: 拖曳以調整側邊欄寬度（按一下後也可以用方向鍵微調），按兩下還原預設值
+  ja: ドラッグしてサイドバーの幅を調整（クリック後に矢印キーでも微調整できます）、ダブルクリックでデフォルトに戻す
+  ko: 드래그하여 사이드바 너비 조정(클릭한 후 화살표 키로도 미세 조정 가능), 더블클릭하면 기본값으로 복원
+start.empty_title:
+  zh-CN: 没有打开的终端
+  en: No open terminals
+  zh-TW: 沒有開啟的終端機
+  ja: 開いているターミナルはありません
+  ko: 열려 있는 터미널이 없습니다
+start.empty_hint:
+  zh-CN: 双击左侧的主机打开终端，或在搜索框中输入 用户@地址 快速连接。
+  en: Double-click a host on the left to open a terminal, or type user@host in the search box to quick connect.
+  zh-TW: 按兩下左側的主機開啟終端機，或在搜尋方塊中輸入 使用者@位址 快速連線。
+  ja: 左のホストをダブルクリックしてターミナルを開くか、検索ボックスに ユーザー@アドレス を入力してクイック接続します。
+  ko: 왼쪽의 호스트를 더블클릭하여 터미널을 열거나, 검색 상자에 사용자@주소를 입력하여 빠르게 연결하세요.
+start.show_sidebar:
+  zh-CN: 显示侧边栏
+  en: Show sidebar
+  zh-TW: 顯示側邊欄
+  ja: サイドバーを表示
+  ko: 사이드바 표시
+start.open_local_terminal:
+  zh-CN: 打开本地终端
+  en: Open local terminal
+  zh-TW: 開啟本機終端機
+  ja: ローカルターミナルを開く
+  ko: 로컬 터미널 열기
+startup.error.title:
+  zh-CN: Termlet 无法启动
+  en: Termlet couldn't start
+  zh-TW: Termlet 無法啟動
+  ja: Termlet を起動できません
+  ko: Termlet을 시작할 수 없습니다
+startup.error.database_too_new:
+  zh-CN: 数据来自更新版本的 Termlet。请安装最新版本后再打开。
+  en: The data was created by a newer version of Termlet. Install the latest version and open it again.
+  zh-TW: 資料來自較新版本的 Termlet。請安裝最新版本後再開啟。
+  ja: データは新しいバージョンの Termlet で作成されています。最新バージョンをインストールしてから開いてください。
+  ko: 데이터가 더 최신 버전의 Termlet에서 만들어졌습니다. 최신 버전을 설치한 후 다시 여세요.
+startup.error.data_dir:
+  zh-CN: 数据目录不可用：%{reason}
+  en: "The data folder is unavailable: %{reason}"
+  zh-TW: 資料目錄無法使用：%{reason}
+  ja: データフォルダーを使用できません：%{reason}
+  ko: "데이터 폴더를 사용할 수 없습니다: %{reason}"
+startup.error.portable_not_writable:
+  zh-CN: 便携版的数据保存在程序旁边的 data 文件夹，但无法写入 %{dir}（%{reason}）。请把 Termlet 文件夹放到可以写入的位置（例如桌面、文档或 U 盘）再打开；想让数据保存在系统的默认位置时，删除程序旁边的 portable.txt。
+  en: "The portable version keeps its data in the data folder next to the program, but %{dir} can't be written to (%{reason}). Move the Termlet folder to a location you can write to (such as the desktop, Documents or a USB drive) and open it again, or delete portable.txt next to the program to keep the data in the system's default location."
+  zh-TW: 可攜版的資料儲存在程式旁的 data 資料夾，但無法寫入 %{dir}（%{reason}）。請把 Termlet 資料夾放到可以寫入的位置（例如桌面、文件或隨身碟）再開啟；想讓資料儲存在系統的預設位置時，請刪除程式旁的 portable.txt。
+  ja: ポータブル版のデータはプログラムと同じ場所の data フォルダーに保存されますが、%{dir} に書き込めません（%{reason}）。Termlet フォルダーを書き込める場所（デスクトップ、ドキュメント、USB メモリなど）に移動してから開いてください。データをシステムのデフォルトの場所に保存したい場合は、プログラムと同じ場所にある portable.txt を削除してください。
+  ko: "포터블 버전은 데이터를 프로그램 옆의 data 폴더에 저장하지만 %{dir}에 쓸 수 없습니다(%{reason}). Termlet 폴더를 쓸 수 있는 위치(예: 바탕 화면, 문서, USB 드라이브)로 옮긴 후 다시 여세요. 데이터를 시스템의 기본 위치에 저장하려면 프로그램 옆의 portable.txt를 삭제하세요."
+startup.error.forward_failed:
+  zh-CN: Termlet 已经在运行，但没能把这次的启动参数（例如堡垒机调起的连接）交给它：%{reason}。请稍后再试，或退出正在运行的 Termlet 后重新打开。
+  en: "Termlet is already running, but this launch's arguments (such as a connection opened by a bastion host) couldn't be handed to it: %{reason}. Try again later, or quit the running Termlet and open it again."
+  zh-TW: Termlet 已經在執行，但無法把這次的啟動參數（例如由堡壘主機啟動的連線）交給它：%{reason}。請稍後再試，或結束正在執行的 Termlet 後重新開啟。
+  ja: Termlet はすでに実行中ですが、今回の起動引数（要塞ホストから起動された接続など）を渡せませんでした：%{reason}。しばらくしてからもう一度試すか、実行中の Termlet を終了してから開き直してください。
+  ko: "Termlet이 이미 실행 중이지만 이번 시작 인수(예: 배스천 호스트에서 시작한 연결)를 전달하지 못했습니다: %{reason}. 잠시 후 다시 시도하거나, 실행 중인 Termlet을 종료한 후 다시 여세요."
+startup.error.old_instance:
+  zh-CN: 正在运行的 Termlet %{version} 没有及时退出
+  en: The running Termlet %{version} didn't quit in time
+  zh-TW: 正在執行的 Termlet %{version} 沒有及時結束
+  ja: 実行中の Termlet %{version} が時間内に終了しませんでした
+  ko: 실행 중인 Termlet %{version}이(가) 제때 종료되지 않았습니다
+startup.error.unexpected_reply:
+  zh-CN: 正在运行的 Termlet 的回答不符合预期
+  en: The running Termlet gave an unexpected reply
+  zh-TW: 正在執行的 Termlet 回應不如預期
+  ja: 実行中の Termlet から予期しない応答がありました
+  ko: 실행 중인 Termlet에서 예기치 않은 응답이 왔습니다
+startup.error.other:
+  zh-CN: 打开数据时出错：%{error}
+  en: "Couldn't open the data: %{error}"
+  zh-TW: 開啟資料時發生錯誤：%{error}
+  ja: データを開くときにエラーが発生しました：%{error}
+  ko: "데이터를 여는 중 오류가 발생했습니다: %{error}"
+name_dialog.required:
+  zh-CN: 请填写名称。
+  en: Enter a name.
+  zh-TW: 請填寫名稱。
+  ja: 名前を入力してください。
+  ko: 이름을 입력하세요.

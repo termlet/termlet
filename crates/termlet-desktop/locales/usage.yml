@@ -1,0 +1,157 @@
+_version: 2
+usage.view.title:
+  zh-CN: "将发送的使用统计"
+  en: "Usage statistics to be sent"
+  zh-TW: "將傳送的使用統計"
+  ja: 送信される使用状況の統計
+  ko: 전송될 사용 통계
+usage.view.intro:
+  zh-CN: "每天最多发送一次。今天要发送的就是下面这段内容，与实际发出的逐字节相同："
+  en: "Sent at most once a day. This is exactly what will be sent today, byte for byte:"
+  zh-TW: "每天最多傳送一次。今天要傳送的就是下面這段內容，與實際送出的逐位元組相同："
+  ja: 送信は 1 日に 1 回までです。今日送信されるのは以下の内容で、実際に送られるものとバイト単位で同じです：
+  ko: "하루에 최대 한 번 전송합니다. 오늘 전송할 내용은 아래와 같으며, 실제로 전송되는 내용과 바이트 단위까지 같습니다:"
+usage.view.field.v:
+  zh-CN: "内容的格式版本"
+  en: "Format version of the message"
+  zh-TW: "內容的格式版本"
+  ja: 内容の形式のバージョン
+  ko: 내용 형식의 버전
+usage.view.field.app:
+  zh-CN: "Termlet 的版本"
+  en: "Termlet version"
+  zh-TW: "Termlet 的版本"
+  ja: Termlet のバージョン
+  ko: Termlet 버전
+usage.view.field.os:
+  zh-CN: "系统：windows、macos 或 linux"
+  en: "Operating system: windows, macos or linux"
+  zh-TW: "系統：windows、macos 或 linux"
+  ja: OS：windows、macos、linux のいずれか
+  ko: "운영 체제: windows, macos 또는 linux"
+usage.view.field.os_version:
+  zh-CN: "系统的大版本，如 11 25H2、15、ubuntu 24.04；不含构建号与补丁号"
+  en: "Major version of the operating system, such as 11 25H2, 15 or ubuntu 24.04; no build or patch numbers"
+  zh-TW: "系統的主要版本，如 11 25H2、15、ubuntu 24.04；不含組建編號與修補編號"
+  ja: OS のメジャーバージョン（11 25H2、15、ubuntu 24.04 など）。ビルド番号やパッチ番号は含みません
+  ko: "운영 체제의 주 버전(예: 11 25H2, 15, ubuntu 24.04). 빌드 번호와 패치 번호는 포함하지 않습니다"
+usage.view.field.arch:
+  zh-CN: "CPU 架构：x86_64 或 aarch64"
+  en: "CPU architecture: x86_64 or aarch64"
+  zh-TW: "CPU 架構：x86_64 或 aarch64"
+  ja: CPU アーキテクチャ：x86_64 または aarch64
+  ko: "CPU 아키텍처: x86_64 또는 aarch64"
+usage.view.field.lang:
+  zh-CN: "界面语言：zh-CN、zh-TW、en、ja 或 ko"
+  en: "Interface language: zh-CN, zh-TW, en, ja or ko"
+  zh-TW: "介面語言：zh-CN、zh-TW、en、ja 或 ko"
+  ja: 表示言語：zh-CN、zh-TW、en、ja、ko のいずれか
+  ko: "표시 언어: zh-CN, zh-TW, en, ja, ko 중 하나"
+usage.view.field.age:
+  zh-CN: "用了多久：new 第一天，w1 一周内，m1 一个月内，m6 半年内，old 更久"
+  en: "How long it has been in use: new on the first day, w1 within a week, m1 within a month, m6 within six months, old for longer"
+  zh-TW: "用了多久：new 第一天，w1 一週內，m1 一個月內，m6 半年內，old 更久"
+  ja: 使用期間：new は初日、w1 は 1 週間以内、m1 は 1 か月以内、m6 は半年以内、old はそれ以上
+  ko: "사용 기간: new는 첫날, w1은 1주 이내, m1은 1개월 이내, m6은 6개월 이내, old는 그 이상"
+usage.view.field.first_of_week:
+  zh-CN: "是不是本周（UTC，周一开始）第一次发送，用来算每周有多少台电脑在用"
+  en: "Whether this is the first message this week (UTC, starting on Monday); used to count computers per week"
+  zh-TW: "是不是本週（UTC，週一開始）第一次傳送，用來計算每週有多少台電腦在使用"
+  ja: 今週（UTC、月曜日始まり）最初の送信かどうか。週ごとに使われているコンピューターの台数を数えるために使います
+  ko: 이번 주(UTC, 월요일 시작)의 첫 전송인지 여부. 주마다 사용 중인 컴퓨터 수를 세는 데 씁니다
+usage.view.field.first_of_month:
+  zh-CN: "是不是本月（UTC）第一次发送，用来算每月有多少台电脑在用"
+  en: "Whether this is the first message this month (UTC); used to count computers per month"
+  zh-TW: "是不是本月（UTC）第一次傳送，用來計算每月有多少台電腦在使用"
+  ja: 今月（UTC）最初の送信かどうか。月ごとに使われているコンピューターの台数を数えるために使います
+  ko: 이번 달(UTC)의 첫 전송인지 여부. 달마다 사용 중인 컴퓨터 수를 세는 데 씁니다
+usage.view.country:
+  zh-CN: "接收端另外按网络地址推断国家或地区（两位代码，如 CN、US），不在上面的内容中；网络地址不保存。"
+  en: "The receiver also works out the country or region (a two-letter code such as CN or US) from the network address; it is not part of the message above, and the address is not stored."
+  zh-TW: "接收端另外依網路位址推斷國家或地區（兩個字母的代碼，如 CN、US），不在上面的內容中；網路位址不儲存。"
+  ja: 受信側はこれとは別に、ネットワークアドレスから国または地域（CN、US などの 2 文字のコード）を推定します。これは上の内容には含まれず、ネットワークアドレスは保存されません。
+  ko: 수신 측은 이와 별도로 네트워크 주소에서 국가 또는 지역(CN, US 같은 두 글자 코드)을 추정합니다. 이 정보는 위 내용에 포함되지 않으며, 네트워크 주소는 저장하지 않습니다.
+usage.view.rate_limit:
+  zh-CN: "为防滥用，Cloudflare 会按网络地址限制请求频率；被拦下的请求会在 Cloudflare 的安全日志中短期留下网络地址，Termlet 不读取、不保存。"
+  en: "To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses."
+  zh-TW: "為防止濫用，Cloudflare 會依網路位址限制要求的頻率；被阻擋的要求會在 Cloudflare 的安全性記錄中短期留下網路位址，Termlet 不讀取、不儲存。"
+  ja: 不正利用を防ぐため、Cloudflare はネットワークアドレスごとにリクエストの頻度を制限しています。ブロックされたリクエストは Cloudflare のセキュリティログに短期間ネットワークアドレスが残りますが、Termlet はそれを読み取ったり保存したりしません。
+  ko: 남용을 막기 위해 Cloudflare는 네트워크 주소별로 요청 빈도를 제한합니다. 차단된 요청은 Cloudflare 보안 로그에 네트워크 주소가 잠시 남을 수 있지만, Termlet은 이를 읽거나 저장하지 않습니다.
+usage.view.endpoint:
+  zh-CN: "接收地址：%{url}"
+  en: "Sent to: %{url}"
+  zh-TW: "接收位址：%{url}"
+  ja: 送信先：%{url}
+  ko: "전송 주소: %{url}"
+usage.view.last_sent:
+  zh-CN: "上次发送：%{date}（UTC）"
+  en: "Last sent: %{date} (UTC)"
+  zh-TW: "上次傳送：%{date}（UTC）"
+  ja: 前回の送信：%{date}（UTC）
+  ko: "마지막 전송: %{date}(UTC)"
+usage.view.never_sent:
+  zh-CN: "还没有发送过"
+  en: "Nothing has been sent yet"
+  zh-TW: "還沒有傳送過"
+  ja: まだ送信していません
+  ko: 아직 전송한 적이 없습니다
+usage.view.sent_today:
+  zh-CN: "今天（UTC）已发送"
+  en: "Already sent today (UTC)"
+  zh-TW: "今天（UTC）已傳送"
+  ja: 今日（UTC）は送信済み
+  ko: 오늘(UTC) 전송함
+usage.view.not_sent_today:
+  zh-CN: "今天（UTC）还没有发送"
+  en: "Not sent yet today (UTC)"
+  zh-TW: "今天（UTC）還沒有傳送"
+  ja: 今日（UTC）はまだ送信していません
+  ko: 오늘(UTC)은 아직 전송하지 않았습니다
+usage.view.disabled:
+  zh-CN: "已关闭，不会发送"
+  en: "Turned off; nothing is sent"
+  zh-TW: "已關閉，不會傳送"
+  ja: オフになっているため、送信されません
+  ko: 꺼져 있어 전송하지 않습니다
+usage.view.env_off:
+  zh-CN: "已由环境变量 %{name} 关闭，不会发送"
+  en: "Turned off by the environment variable %{name}; nothing is sent"
+  zh-TW: "已由環境變數 %{name} 關閉，不會傳送"
+  ja: 環境変数 %{name} でオフになっているため、送信されません
+  ko: 환경 변수 %{name}에 의해 꺼져 있어 전송하지 않습니다
+usage.view.debug:
+  zh-CN: "调试构建不发送使用统计"
+  en: "Debug builds do not send usage statistics"
+  zh-TW: "偵錯組建不傳送使用統計"
+  ja: デバッグビルドでは使用状況の統計を送信しません
+  ko: 디버그 빌드는 사용 통계를 전송하지 않습니다
+usage.view.paused:
+  zh-CN: "发布方已暂停接收使用统计，暂不发送"
+  en: "Sending is paused by the publisher"
+  zh-TW: "發布方已暫停接收使用統計，暫不傳送"
+  ja: 配布元が使用状況の統計の受信を一時停止しているため、現在は送信しません
+  ko: 배포자가 사용 통계 수신을 일시 중지하여 지금은 전송하지 않습니다
+usage.view.unsupported:
+  zh-CN: "这个系统不发送使用统计"
+  en: "Usage statistics are not sent on this system"
+  zh-TW: "這個系統不傳送使用統計"
+  ja: この OS では使用状況の統計を送信しません
+  ko: 이 운영 체제에서는 사용 통계를 전송하지 않습니다
+usage.view.log_hint:
+  zh-CN: "每次发送的内容也记在日志中（本机，保留 14 天）"
+  en: "Each message sent is also written to the log (on this computer, kept for 14 days)"
+  zh-TW: "每次傳送的內容也會寫入記錄檔（本機，保留 14 天）"
+  ja: 送信した内容は毎回ログにも記録されます（このコンピューターに 14 日間保存）
+  ko: 전송한 내용은 매번 로그에도 기록됩니다(이 컴퓨터에 14일 동안 보관)
+usage.view.copy:
+  zh-CN: "复制"
+  en: "Copy"
+  zh-TW: "複製"
+  ja: コピー
+  ko: 복사
+usage.view.copied:
+  zh-CN: "已复制"
+  en: "Copied"
+  zh-TW: "已複製"
+  ja: コピーしました
+  ko: 복사됨

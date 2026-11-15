@@ -1,0 +1,1267 @@
+_version: 2
+sftp.column.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+sftp.column.size:
+  zh-CN: 大小
+  en: Size
+  zh-TW: 大小
+  ja: サイズ
+  ko: 크기
+sftp.column.modified:
+  zh-CN: 修改时间
+  en: Modified
+  zh-TW: 修改時間
+  ja: 更新日時
+  ko: 수정한 날짜
+sftp.column.mode:
+  zh-CN: 权限
+  en: Permissions
+  zh-TW: 權限
+  ja: 権限
+  ko: 권한
+sftp.columns.menu:
+  zh-CN: 选择显示的列
+  en: Choose columns
+  zh-TW: 選擇顯示的欄位
+  ja: 表示する列を選択
+  ko: 표시할 열 선택
+sftp.columns.squeezed:
+  zh-CN: 这一栏太窄，暂时没有显示：%{columns}
+  en: "Too narrow to show: %{columns}"
+  zh-TW: 這一欄太窄，暫時沒有顯示：%{columns}
+  ja: 列の幅が足りないため、一時的に非表示：%{columns}
+  ko: "열이 너무 좁아 잠시 표시하지 않음: %{columns}"
+sftp.columns.list_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
+sftp.drag_many:
+  zh-CN: "%{count} 项"
+  en: "%{count} items"
+  zh-TW: "%{count} 項"
+  ja: "%{count} 項目"
+  ko: "%{count}개 항목"
+sftp.perm.title:
+  zh-CN: 修改权限
+  en: Change Permissions
+  zh-TW: 變更權限
+  ja: 権限の変更
+  ko: 권한 변경
+sftp.perm.many:
+  zh-CN: "%{count} 项"
+  en: "%{count} items"
+  zh-TW: "%{count} 項"
+  ja: "%{count} 項目"
+  ko: "%{count}개 항목"
+sftp.perm.read:
+  zh-CN: 读
+  en: Read
+  zh-TW: 讀取
+  ja: 読み取り
+  ko: 읽기
+sftp.perm.write:
+  zh-CN: 写
+  en: Write
+  zh-TW: 寫入
+  ja: 書き込み
+  ko: 쓰기
+sftp.perm.execute:
+  zh-CN: 执行
+  en: Execute
+  zh-TW: 執行
+  ja: 実行
+  ko: 실행
+sftp.perm.owner:
+  zh-CN: 所有者
+  en: Owner
+  zh-TW: 擁有者
+  ja: 所有者
+  ko: 소유자
+sftp.perm.group:
+  zh-CN: 组
+  en: Group
+  zh-TW: 群組
+  ja: グループ
+  ko: 그룹
+sftp.perm.other:
+  zh-CN: 其他人
+  en: Others
+  zh-TW: 其他人
+  ja: その他
+  ko: 기타 사용자
+sftp.perm.setuid:
+  zh-CN: SUID
+  en: SUID
+  zh-TW: SUID
+  ja: SUID
+  ko: SUID
+sftp.perm.setgid:
+  zh-CN: SGID
+  en: SGID
+  zh-TW: SGID
+  ja: SGID
+  ko: SGID
+sftp.perm.sticky:
+  zh-CN: 粘滞位
+  en: Sticky
+  zh-TW: 黏著位元
+  ja: スティッキービット
+  ko: 스티키 비트
+sftp.perm.octal:
+  zh-CN: 八进制
+  en: Octal
+  zh-TW: 八進位
+  ja: 8 進数
+  ko: 8진수
+sftp.perm.recursive:
+  zh-CN: 同时修改其中的文件与子目录
+  en: Also change the files and subfolders inside
+  zh-TW: 同時變更其中的檔案與子目錄
+  ja: 中のファイルとサブフォルダーも変更
+  ko: 안에 있는 파일과 하위 폴더도 변경
+sftp.perm.recursive_hint:
+  zh-CN: 目录在有读权限的位置加上执行权限，否则无法进入
+  en: Folders also get execute wherever they have read, so they can still be opened
+  zh-TW: 目錄在有讀取權限的位置加上執行權限，否則無法進入
+  ja: フォルダーには、読み取り権限のある箇所に実行権限も付けます（付けないと開けません）
+  ko: 폴더는 읽기 권한이 있는 곳에 실행 권한도 추가합니다(없으면 열 수 없음)
+sftp.perm.mixed_hint:
+  zh-CN: 横线表示所选项各不相同：不改动时各项保持原来的设置
+  en: A dash means the selected items differ. Leave it as is to keep each item's own setting.
+  zh-TW: 橫線表示所選項目各不相同：不改動時各項目保持原來的設定
+  ja: 横線は選択した項目ごとに設定が異なることを示します。変更しなければ、各項目は元の設定のままです
+  ko: 가로선은 선택한 항목마다 설정이 다르다는 뜻입니다. 변경하지 않으면 각 항목은 원래 설정을 유지합니다
+sftp.perm.mixed_recursive:
+  zh-CN: 同时修改其中的文件与子目录时，它们会统一设为这里的权限：请先把显示为横线的权限勾选或取消
+  en: Everything inside will get exactly these permissions. Check or clear the dashed ones first.
+  zh-TW: 同時變更其中的檔案與子目錄時，它們會統一設為這裡的權限：請先把顯示為橫線的權限勾選或取消勾選
+  ja: 中のファイルとサブフォルダーも変更する場合、すべてここでの権限に統一されます。先に横線で表示されている権限をオンまたはオフにしてください
+  ko: 안에 있는 파일과 하위 폴더도 변경하면 모두 여기의 권한으로 통일됩니다. 먼저 가로선으로 표시된 권한을 선택하거나 선택 해제하세요
+sftp.perm.mixed_link:
+  zh-CN: 所选项中有符号链接（修改的是它指向的文件，原来的权限无从得知）：请先把显示为横线的权限勾选或取消
+  en: The selection includes symbolic links (their targets are changed and their current permissions are unknown). Check or clear the dashed ones first.
+  zh-TW: 所選項目中有符號連結（變更的是它指向的檔案，原來的權限無從得知）：請先把顯示為橫線的權限勾選或取消勾選
+  ja: 選択した項目にシンボリックリンクが含まれています（変更されるのはリンク先のファイルで、元の権限はわかりません）。先に横線で表示されている権限をオンまたはオフにしてください
+  ko: 선택한 항목에 심볼릭 링크가 있습니다(링크가 가리키는 파일이 변경되며 원래 권한은 알 수 없음). 먼저 가로선으로 표시된 권한을 선택하거나 선택 해제하세요
+sftp.perm.partial:
+  zh-CN: 已修改 %{done} 项（共 %{total} 项）的权限，之后出错：%{error}。列表已刷新为现在的权限
+  en: "Changed %{done} of %{total} items, then failed: %{error}. The list now shows the current permissions."
+  zh-TW: 已變更 %{done} 項（共 %{total} 項）的權限，之後出錯：%{error}。清單已更新為目前的權限
+  ja: "%{total} 項目のうち %{done} 項目の権限を変更した後、エラーが発生しました：%{error}。一覧を現在の権限で更新しました"
+  ko: "%{total}개 항목 중 %{done}개의 권한을 변경한 뒤 오류가 발생했습니다: %{error}. 목록을 현재 권한으로 새로 고쳤습니다"
+sftp.error.not_found:
+  zh-CN: 服务器上不存在 %{path}
+  en: "%{path} doesn't exist on the server"
+  zh-TW: 伺服器上不存在 %{path}
+  ja: サーバー上に %{path} は存在しません
+  ko: 서버에 %{path}이(가) 없습니다
+sftp.error.local_not_found:
+  zh-CN: 本机不存在 %{path}
+  en: "%{path} doesn't exist on this computer"
+  zh-TW: 本機不存在 %{path}
+  ja: このコンピューターに %{path} は存在しません
+  ko: 이 컴퓨터에 %{path}이(가) 없습니다
+sftp.error.permission:
+  zh-CN: 没有权限访问服务器上的 %{path}
+  en: "No permission to access %{path} on the server"
+  zh-TW: 沒有權限存取伺服器上的 %{path}
+  ja: サーバー上の %{path} にアクセスする権限がありません
+  ko: 서버의 %{path}에 접근할 권한이 없습니다
+sftp.error.local_permission:
+  zh-CN: 没有权限访问本机的 %{path}
+  en: "No permission to access %{path} on this computer"
+  zh-TW: 沒有權限存取本機的 %{path}
+  ja: このコンピューターの %{path} にアクセスする権限がありません
+  ko: 이 컴퓨터의 %{path}에 접근할 권한이 없습니다
+sftp.error.exists:
+  zh-CN: 服务器上已有同名的文件或目录：%{path}
+  en: "A file or folder with that name already exists on the server: %{path}"
+  zh-TW: 伺服器上已有同名的檔案或目錄：%{path}
+  ja: サーバー上に同じ名前のファイルまたはディレクトリがあります：%{path}
+  ko: "서버에 같은 이름의 파일이나 디렉터리가 이미 있습니다: %{path}"
+sftp.error.local_exists:
+  zh-CN: 本机已有同名的文件或文件夹：%{path}
+  en: "A file or folder with that name already exists on this computer: %{path}"
+  zh-TW: 本機已有同名的檔案或資料夾：%{path}
+  ja: このコンピューターに同じ名前のファイルまたはフォルダーがあります：%{path}
+  ko: "이 컴퓨터에 같은 이름의 파일이나 폴더가 이미 있습니다: %{path}"
+sftp.error.no_space:
+  zh-CN: 服务器上的空间不足（%{path}）
+  en: "The server is out of space (%{path})"
+  zh-TW: 伺服器上的空間不足（%{path}）
+  ja: サーバーの空き容量が不足しています（%{path}）
+  ko: 서버의 공간이 부족합니다(%{path})
+sftp.error.local_no_space:
+  zh-CN: 本机的磁盘空间不足（%{path}）
+  en: "This computer is out of disk space (%{path})"
+  zh-TW: 本機的磁碟空間不足（%{path}）
+  ja: このコンピューターのディスクの空き容量が不足しています（%{path}）
+  ko: 이 컴퓨터의 디스크 공간이 부족합니다(%{path})
+sftp.error.busy:
+  zh-CN: "%{path} 正被其他程序使用"
+  en: "%{path} is in use by another program"
+  zh-TW: "%{path} 正被其他程式使用"
+  ja: "%{path} は他のプログラムで使用中です"
+  ko: "%{path}을(를) 다른 프로그램에서 사용 중입니다"
+sftp.error.disconnected:
+  zh-CN: SFTP 连接已断开
+  en: The SFTP connection was lost
+  zh-TW: SFTP 連線已中斷
+  ja: SFTP 接続が切断されました
+  ko: SFTP 연결이 끊어졌습니다
+sftp.error.unavailable:
+  zh-CN: 服务器上无法使用 SFTP：%{reason}
+  en: "SFTP isn't available on the server: %{reason}"
+  zh-TW: 伺服器上無法使用 SFTP：%{reason}
+  ja: サーバーで SFTP を使用できません：%{reason}
+  ko: "서버에서 SFTP를 사용할 수 없습니다: %{reason}"
+sftp.error.single_channel:
+  zh-CN: 这台主机只用一个通道（堡垒机），不能与终端共用连接打开文件管理
+  en: This host uses a single channel (bastion), so file management can't share the terminal's connection
+  zh-TW: 這台主機只用一個通道（堡壘主機），無法與終端機共用連線來開啟檔案管理
+  ja: このホストはチャネルを 1 つだけ使用する（要塞ホスト）ため、ターミナルと接続を共有してファイル管理を開くことはできません
+  ko: 이 호스트는 채널 하나만 사용하므로(배스천 호스트) 터미널과 연결을 공유해 파일 관리를 열 수 없습니다
+sftp.error.too_large:
+  zh-CN: 文件超过 5 MB，不能在线编辑
+  en: The file is larger than 5 MB and can't be edited online
+  zh-TW: 檔案超過 5 MB，無法線上編輯
+  ja: ファイルが 5 MB を超えているため、オンラインで編集できません
+  ko: 파일이 5 MB를 넘어 온라인으로 편집할 수 없습니다
+sftp.error.not_text:
+  zh-CN: 不是 UTF-8 文本文件，不能在线编辑
+  en: This isn't a UTF-8 text file and can't be edited online
+  zh-TW: 不是 UTF-8 文字檔，無法線上編輯
+  ja: UTF-8 のテキストファイルではないため、オンラインで編集できません
+  ko: UTF-8 텍스트 파일이 아니어서 온라인으로 편집할 수 없습니다
+sftp.error.changed:
+  zh-CN: 远程文件在打开后已被修改
+  en: The remote file was changed after it was opened
+  zh-TW: 遠端檔案在開啟後已被修改
+  ja: リモートのファイルは開いた後に変更されました
+  ko: 원격 파일이 연 뒤에 수정되었습니다
+sftp.error.deleted:
+  zh-CN: 远程文件在打开后已被删除
+  en: The remote file was deleted after it was opened
+  zh-TW: 遠端檔案在開啟後已被刪除
+  ja: リモートのファイルは開いた後に削除されました
+  ko: 원격 파일이 연 뒤에 삭제되었습니다
+sftp.error.replace_failed:
+  zh-CN: 替换 %{path} 失败，原文件已改名为 %{backup}，没能改回
+  en: "Replacing %{path} failed. The original was renamed to %{backup} and couldn't be restored."
+  zh-TW: 取代 %{path} 失敗，原檔案已重新命名為 %{backup}，未能改回
+  ja: "%{path} を置き換えられませんでした。元のファイルは %{backup} に名前が変更され、元に戻せませんでした"
+  ko: "%{path}을(를) 바꾸지 못했습니다. 원래 파일의 이름이 %{backup}(으)로 바뀌었으며 되돌리지 못했습니다"
+sftp.error.replace_failed_kept:
+  zh-CN: 替换 %{path} 失败，原文件已改名为 %{backup}，没能改回；新内容保存在 %{kept}
+  en: "Replacing %{path} failed. The original was renamed to %{backup} and couldn't be restored; the new content is in %{kept}."
+  zh-TW: 取代 %{path} 失敗，原檔案已重新命名為 %{backup}，未能改回；新內容儲存在 %{kept}
+  ja: "%{path} を置き換えられませんでした。元のファイルは %{backup} に名前が変更され、元に戻せませんでした。新しい内容は %{kept} に保存されています"
+  ko: "%{path}을(를) 바꾸지 못했습니다. 원래 파일의 이름이 %{backup}(으)로 바뀌었으며 되돌리지 못했습니다. 새 내용은 %{kept}에 저장되어 있습니다"
+sftp.error.failed:
+  zh-CN: 服务器上的 %{path}：%{message}
+  en: "%{path} on the server: %{message}"
+  zh-TW: 伺服器上的 %{path}：%{message}
+  ja: サーバー上の %{path}：%{message}
+  ko: "서버의 %{path}: %{message}"
+sftp.error.local_failed:
+  zh-CN: 本机的 %{path}：%{message}
+  en: "%{path} on this computer: %{message}"
+  zh-TW: 本機的 %{path}：%{message}
+  ja: このコンピューターの %{path}：%{message}
+  ko: "이 컴퓨터의 %{path}: %{message}"
+sftp.error.canceled:
+  zh-CN: 已取消
+  en: Canceled
+  zh-TW: 已取消
+  ja: キャンセルしました
+  ko: 취소됨
+sftp.error.session_closed:
+  zh-CN: SFTP 会话已关闭
+  en: The SFTP session is closed
+  zh-TW: SFTP 工作階段已關閉
+  ja: SFTP セッションは閉じられています
+  ko: SFTP 세션이 닫혔습니다
+sftp.error.transfer_not_found:
+  zh-CN: 这个传输任务已不存在
+  en: This transfer no longer exists
+  zh-TW: 這個傳輸工作已不存在
+  ja: この転送はもう存在しません
+  ko: 이 전송 작업은 더 이상 없습니다
+sftp.error.remove_root:
+  zh-CN: 不能删除根目录或初始目录
+  en: The root folder and the home folder can't be deleted
+  zh-TW: 無法刪除根目錄或初始目錄
+  ja: ルートディレクトリや初期ディレクトリは削除できません
+  ko: 루트 디렉터리나 초기 디렉터리는 삭제할 수 없습니다
+sftp.error.invalid_mode:
+  zh-CN: 权限必须在 0–7777 之间
+  en: Permissions must be between 0 and 7777
+  zh-TW: 權限必須在 0–7777 之間
+  ja: 権限は 0～7777 の範囲で指定してください
+  ko: 권한은 0~7777 사이여야 합니다
+sftp.error.no_paths:
+  zh-CN: 没有选择文件
+  en: No files selected
+  zh-TW: 沒有選取檔案
+  ja: ファイルが選択されていません
+  ko: 선택한 파일이 없습니다
+sftp.error.invalid_path:
+  zh-CN: 路径无效
+  en: Invalid path
+  zh-TW: 路徑無效
+  ja: パスが無効です
+  ko: 경로가 잘못되었습니다
+sftp.error.invalid_name:
+  zh-CN: 名称无效
+  en: Invalid name
+  zh-TW: 名稱無效
+  ja: 名前が無効です
+  ko: 이름이 잘못되었습니다
+sftp.error.not_regular_file:
+  zh-CN: 不是普通文件
+  en: Not a regular file
+  zh-TW: 不是一般檔案
+  ja: 通常のファイルではありません
+  ko: 일반 파일이 아닙니다
+sftp.error.not_directory:
+  zh-CN: 不是目录
+  en: Not a folder
+  zh-TW: 不是目錄
+  ja: ディレクトリではありません
+  ko: 디렉터리가 아닙니다
+sftp.error.not_resumable:
+  zh-CN: 只能继续失败的传输
+  en: Only failed transfers can be resumed
+  zh-TW: 只能繼續失敗的傳輸
+  ja: 再開できるのは失敗した転送だけです
+  ko: 실패한 전송만 이어서 할 수 있습니다
+sftp.error.other_host:
+  zh-CN: 只能在同一台主机的会话上继续
+  en: A transfer can only be resumed on a session to the same host
+  zh-TW: 只能在同一台主機的工作階段上繼續
+  ja: 再開できるのは同じホストのセッション上だけです
+  ko: 같은 호스트의 세션에서만 이어서 할 수 있습니다
+sftp.error.no_unique_name:
+  zh-CN: 找不到不重名的名称
+  en: Couldn't find a name that isn't taken
+  zh-TW: 找不到不重複的名稱
+  ja: 重複しない名前が見つかりませんでした
+  ko: 중복되지 않는 이름을 찾지 못했습니다
+sftp.error.unencodable:
+  zh-CN: 内容中有所选编码不能表示的字符
+  en: The content has characters the chosen encoding can't represent
+  zh-TW: 內容中有所選編碼無法表示的字元
+  ja: 選択したエンコードで表せない文字が内容に含まれています
+  ko: 선택한 인코딩으로 표현할 수 없는 문자가 내용에 있습니다
+sftp.error.unencodable_name:
+  zh-CN: 名称中有服务器的文件名编码（主机设置）不能表示的字符
+  en: The name has characters the server's file name encoding (in the host settings) can't represent
+  zh-TW: 名稱中有伺服器的檔名編碼（主機設定）無法表示的字元
+  ja: サーバーのファイル名のエンコード（ホストの設定）で表せない文字が名前に含まれています
+  ko: 서버의 파일 이름 인코딩(호스트 설정)으로 표현할 수 없는 문자가 이름에 있습니다
+sftp.error.trash_unsupported:
+  zh-CN: 这个系统不支持移到回收站
+  en: Moving to the Recycle Bin isn't supported on this system
+  zh-TW: 這個系統不支援移到資源回收筒
+  ja: このシステムではごみ箱への移動に対応していません
+  ko: 이 시스템에서는 휴지통으로 이동을 지원하지 않습니다
+sftp.name_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
+sftp.names_more:
+  zh-CN: 等 %{count} 项
+  en: and %{count} more
+  zh-TW: 等 %{count} 項
+  ja: ほか %{count} 項目
+  ko: 외 %{count}개 항목
+sftp.copied:
+  zh-CN: 已复制：%{text}
+  en: "Copied: %{text}"
+  zh-TW: 已複製：%{text}
+  ja: コピーしました：%{text}
+  ko: "복사함: %{text}"
+sftp.paths_copied:
+  zh-CN: 已复制 %{count} 个路径
+  en: Copied %{count} paths
+  zh-TW: 已複製 %{count} 個路徑
+  ja: "%{count} 個のパスをコピーしました"
+  ko: 경로 %{count}개를 복사했습니다
+sftp.new_folder:
+  zh-CN: 新建文件夹
+  en: New Folder
+  zh-TW: 新增資料夾
+  ja: 新しいフォルダー
+  ko: 새 폴더
+sftp.new_folder_menu:
+  zh-CN: 新建文件夹（F7）
+  en: New Folder (F7)
+  zh-TW: 新增資料夾（F7）
+  ja: 新しいフォルダー（F7）
+  ko: 새 폴더(F7)
+sftp.rename:
+  zh-CN: 重命名（F2）
+  en: Rename (F2)
+  zh-TW: 重新命名（F2）
+  ja: 名前の変更（F2）
+  ko: 이름 바꾸기(F2)
+sftp.refresh:
+  zh-CN: 刷新（F5）
+  en: Refresh (F5)
+  zh-TW: 重新整理（F5）
+  ja: 更新（F5）
+  ko: 새로 고침(F5)
+sftp.up:
+  zh-CN: 上级目录（Backspace）
+  en: Up One Level (Backspace)
+  zh-TW: 上一層目錄（Backspace）
+  ja: 1 つ上の階層へ（Backspace）
+  ko: 상위 폴더로(Backspace)
+sftp.hide_hidden:
+  zh-CN: 不显示隐藏的文件（%{key}）
+  en: Hide Hidden Files (%{key})
+  zh-TW: 不顯示隱藏的檔案（%{key}）
+  ja: 隠しファイルを表示しない（%{key}）
+  ko: 숨김 파일 표시 안 함(%{key})
+sftp.show_hidden:
+  zh-CN: 显示隐藏的文件（%{key}）
+  en: Show Hidden Files (%{key})
+  zh-TW: 顯示隱藏的檔案（%{key}）
+  ja: 隠しファイルを表示（%{key}）
+  ko: 숨김 파일 표시(%{key})
+sftp.copy_path:
+  zh-CN: 复制路径
+  en: Copy Path
+  zh-TW: 複製路徑
+  ja: パスをコピー
+  ko: 경로 복사
+sftp.show_in_folder:
+  zh-CN: 打开所在文件夹
+  en: Show in Folder
+  zh-TW: 開啟所在資料夾
+  ja: フォルダーを開いて表示
+  ko: 포함된 폴더 열기
+local.path:
+  zh-CN: 本机目录
+  en: Local folder
+  zh-TW: 本機目錄
+  ja: ローカルフォルダー
+  ko: 로컬 폴더
+local.places:
+  zh-CN: 常用位置与磁盘
+  en: Places and Drives
+  zh-TW: 常用位置與磁碟
+  ja: よく使う場所とドライブ
+  ko: 자주 쓰는 위치 및 드라이브
+local.place_desktop:
+  zh-CN: 桌面
+  en: Desktop
+  zh-TW: 桌面
+  ja: デスクトップ
+  ko: 바탕 화면
+local.place_downloads:
+  zh-CN: 下载
+  en: Downloads
+  zh-TW: 下載
+  ja: ダウンロード
+  ko: 다운로드
+local.place_documents:
+  zh-CN: 文档
+  en: Documents
+  zh-TW: 文件
+  ja: ドキュメント
+  ko: 문서
+local.place_home:
+  zh-CN: 主目录
+  en: Home
+  zh-TW: 主目錄
+  ja: ホーム
+  ko: 홈
+local.upload:
+  zh-CN: 上传到右侧远程目录
+  en: Upload to the Remote Folder on the Right
+  zh-TW: 上傳到右側的遠端目錄
+  ja: 右のリモートフォルダーにアップロード
+  ko: 오른쪽 원격 폴더에 업로드
+local.enter:
+  zh-CN: 打开文件夹
+  en: Open Folder
+  zh-TW: 開啟資料夾
+  ja: フォルダーを開く
+  ko: 폴더 열기
+local.open:
+  zh-CN: 用默认程序打开
+  en: Open with Default App
+  zh-TW: 用預設程式開啟
+  ja: デフォルトのアプリで開く
+  ko: 기본 앱으로 열기
+local.run_title:
+  zh-CN: 要运行这个程序吗？
+  en: Run this program?
+  zh-TW: 要執行這個程式嗎？
+  ja: このプログラムを実行しますか？
+  ko: 이 프로그램을 실행하시겠습니까?
+local.run_detail:
+  zh-CN: 打开“%{name}”会直接运行其中的程序。从服务器下载的文件可能不安全，请确认来源可信后再运行。
+  en: Opening “%{name}” runs the program in it. Files downloaded from a server may be unsafe; run it only if you trust where it came from.
+  zh-TW: 開啟「%{name}」會直接執行其中的程式。從伺服器下載的檔案可能不安全，請確認來源可信後再執行。
+  ja: 「%{name}」を開くと、その中のプログラムが直接実行されます。サーバーからダウンロードしたファイルは安全でない可能性があるため、入手元が信頼できることを確認してから実行してください。
+  ko: "'%{name}'을(를) 열면 그 안의 프로그램이 바로 실행됩니다. 서버에서 다운로드한 파일은 안전하지 않을 수 있으므로 출처를 신뢰할 수 있는지 확인한 다음 실행하세요."
+local.run:
+  zh-CN: 运行
+  en: Run
+  zh-TW: 執行
+  ja: 実行
+  ko: 실행
+local.network_title:
+  zh-CN: 要访问这个网络位置吗？
+  en: Access this network location?
+  zh-TW: 要存取這個網路位置嗎？
+  ja: このネットワークの場所にアクセスしますか？
+  ko: 이 네트워크 위치에 접근하시겠습니까?
+local.network_detail:
+  zh-CN: 访问网络共享时，Windows 会自动把当前账户的登录信息发给这台服务器验证身份。请只访问信任的服务器。
+  en: When you open a network share, Windows automatically sends your account's sign-in information to that server. Only open servers you trust.
+  zh-TW: 存取網路共用時，Windows 會自動把目前帳戶的登入資訊傳送給這台伺服器以驗證身分。請只存取信任的伺服器。
+  ja: ネットワーク共有にアクセスすると、Windows は現在のアカウントのサインイン情報をそのサーバーに自動で送信して本人確認を行います。信頼できるサーバーにのみアクセスしてください。
+  ko: 네트워크 공유에 접근하면 Windows가 현재 계정의 로그인 정보를 해당 서버로 자동으로 보내 신원을 확인합니다. 신뢰하는 서버에만 접근하세요.
+local.network_allow:
+  zh-CN: 访问
+  en: Open
+  zh-TW: 存取
+  ja: アクセス
+  ko: 접근
+local.error_network:
+  zh-CN: 没有允许访问这个网络位置
+  en: Access to this network location wasn't allowed
+  zh-TW: 沒有允許存取這個網路位置
+  ja: このネットワークの場所へのアクセスは許可されませんでした
+  ko: 이 네트워크 위치에 대한 접근을 허용하지 않았습니다
+local.trash:
+  zh-CN: 移到回收站
+  en: Move to Recycle Bin
+  zh-TW: 移到資源回收筒
+  ja: ごみ箱に移動
+  ko: 휴지통으로 이동
+local.confirm_trash:
+  zh-CN: 确定把 %{names} 移到回收站吗？
+  en: Move %{names} to the Recycle Bin?
+  zh-TW: 確定要把 %{names} 移到資源回收筒嗎？
+  ja: "%{names} をごみ箱に移動しますか？"
+  ko: "%{names}을(를) 휴지통으로 이동하시겠습니까?"
+local.empty:
+  zh-CN: 空文件夹
+  en: This folder is empty
+  zh-TW: 空資料夾
+  ja: 空のフォルダー
+  ko: 빈 폴더
+sftp.list_separator:
+  zh-CN: ，
+  en: ", "
+  zh-TW: ，
+  ja: 、
+  ko: ", "
+sftp.transfer.title:
+  zh-CN: 传输
+  en: Transfers
+  zh-TW: 傳輸
+  ja: 転送
+  ko: 전송
+sftp.transfer.auto_clear:
+  zh-CN: 完成后自动清除
+  en: Clear when done
+  zh-TW: 完成後自動清除
+  ja: 完了したら自動で消去
+  ko: 완료되면 자동으로 지우기
+sftp.transfer.auto_clear_hint:
+  zh-CN: 成功与已取消的传输 3 秒后从列表中移除，失败的保留以便继续（设置 → 终端 中也可修改）
+  en: Successful and canceled transfers leave the list after 3 seconds; failed ones stay so you can resume them (also in Settings → Terminal)
+  zh-TW: 成功與已取消的傳輸 3 秒後從清單中移除，失敗的保留以便繼續（設定 → 終端機 中也可修改）
+  ja: 成功した転送とキャンセルした転送は 3 秒後に一覧から消え、失敗した転送は再開できるよう残ります（設定 → ターミナル でも変更できます）
+  ko: 성공하거나 취소된 전송은 3초 뒤 목록에서 사라지고, 실패한 전송은 이어서 할 수 있도록 남습니다(설정 → 터미널에서도 변경 가능)
+sftp.transfer.resume_all:
+  zh-CN: 全部继续
+  en: Resume All
+  zh-TW: 全部繼續
+  ja: すべて再開
+  ko: 모두 이어서 하기
+sftp.transfer.clear_finished:
+  zh-CN: 清除已完成
+  en: Clear Finished
+  zh-TW: 清除已完成
+  ja: 完了した転送を消去
+  ko: 완료된 항목 지우기
+sftp.transfer.clear_finished_hint:
+  zh-CN: 清除这台主机成功与已取消的传输（失败的保留，可以继续）
+  en: Clear this host's successful and canceled transfers (failed ones stay so you can resume them)
+  zh-TW: 清除這台主機成功與已取消的傳輸（失敗的保留，可以繼續）
+  ja: このホストの成功した転送とキャンセルした転送を消去します（失敗した転送は残り、再開できます）
+  ko: 이 호스트의 성공하거나 취소된 전송을 지웁니다(실패한 전송은 남아 있어 이어서 할 수 있음)
+sftp.transfer.files:
+  zh-CN: "%{name}（%{done}/%{total}）"
+  en: "%{name} (%{done}/%{total})"
+  zh-TW: "%{name}（%{done}/%{total}）"
+  ja: "%{name}（%{done}/%{total}）"
+  ko: "%{name}(%{done}/%{total})"
+sftp.transfer.progress:
+  zh-CN: "%{done} / %{total} · %{speed}/s"
+  en: "%{done} / %{total} · %{speed}/s"
+  zh-TW: "%{done} / %{total} · %{speed}/s"
+  ja: "%{done} / %{total} · %{speed}/s"
+  ko: "%{done} / %{total} · %{speed}/s"
+sftp.transfer.queued:
+  zh-CN: 排队中
+  en: Queued
+  zh-TW: 排隊中
+  ja: 待機中
+  ko: 대기 중
+sftp.transfer.running:
+  zh-CN: 传输中
+  en: Transferring
+  zh-TW: 傳輸中
+  ja: 転送中
+  ko: 전송 중
+sftp.transfer.waiting_reconnect:
+  zh-CN: 等待重连后继续
+  en: Resumes after reconnecting
+  zh-TW: 等待重新連線後繼續
+  ja: 再接続後に再開
+  ko: 다시 연결되면 이어서 진행
+sftp.transfer.done:
+  zh-CN: 已完成
+  en: Done
+  zh-TW: 已完成
+  ja: 完了
+  ko: 완료
+sftp.transfer.failed:
+  zh-CN: 失败
+  en: Failed
+  zh-TW: 失敗
+  ja: 失敗
+  ko: 실패
+sftp.transfer.canceled:
+  zh-CN: 已取消
+  en: Canceled
+  zh-TW: 已取消
+  ja: キャンセル済み
+  ko: 취소됨
+sftp.transfer.resume:
+  zh-CN: 继续
+  en: Resume
+  zh-TW: 繼續
+  ja: 再開
+  ko: 이어서 하기
+sftp.transfer.retry:
+  zh-CN: 重试
+  en: Retry
+  zh-TW: 重試
+  ja: 再試行
+  ko: 다시 시도
+sftp.transfer.remove:
+  zh-CN: 移除
+  en: Remove
+  zh-TW: 移除
+  ja: 削除
+  ko: 제거
+sftp.transfer.remove_title:
+  zh-CN: 移除这条传输记录吗？
+  en: Remove this transfer?
+  zh-TW: 要移除這筆傳輸記錄嗎？
+  ja: この転送の記録を削除しますか？
+  ko: 이 전송 기록을 제거하시겠습니까?
+sftp.transfer.remove_resumable:
+  zh-CN: 已传输的部分（续传用的临时文件）会一并删除，之后只能从头重新传输。
+  en: The part already transferred (the temporary file used to resume) is deleted too, so it can only start over.
+  zh-TW: 已傳輸的部分（續傳用的暫存檔）會一併刪除，之後只能從頭重新傳輸。
+  ja: 転送済みの部分（再開用の一時ファイル）も削除されるため、以後は最初から転送し直すことになります。
+  ko: 이미 전송된 부분(이어받기용 임시 파일)도 함께 삭제되므로 이후에는 처음부터 다시 전송해야 합니다.
+sftp.transfer.overwrite_title:
+  zh-CN: 覆盖远程的同名项吗？
+  en: Overwrite the item with the same name on the server?
+  zh-TW: 要覆寫遠端的同名項目嗎？
+  ja: リモートにある同じ名前の項目を上書きしますか？
+  ko: 원격에 있는 같은 이름의 항목을 덮어쓰시겠습니까?
+sftp.transfer.overwrite_detail:
+  zh-CN: 远程已存在 %{name}。继续上传会覆盖它（目录则合并进去并覆盖其中的同名文件），无法恢复。
+  en: "%{name} already exists on the server. Continuing overwrites it (a folder is merged, overwriting files with the same names) and can't be undone."
+  zh-TW: 遠端已存在 %{name}。繼續上傳會覆寫它（若是目錄則合併進去，並覆寫其中的同名檔案），且無法復原。
+  ja: リモートには %{name} がすでに存在します。アップロードを続行すると上書きされ（ディレクトリの場合は統合され、中の同じ名前のファイルが上書きされます）、元に戻せません。
+  ko: 원격에 %{name}이(가) 이미 있습니다. 계속 업로드하면 덮어쓰며(디렉터리는 병합되고 안에 있는 같은 이름의 파일을 덮어씀) 되돌릴 수 없습니다.
+sftp.transfer.overwrite_confirm:
+  zh-CN: 覆盖并继续
+  en: Overwrite and Continue
+  zh-TW: 覆寫並繼續
+  ja: 上書きして続行
+  ko: 덮어쓰고 계속
+sftp.transfer.skipped_unreadable:
+  zh-CN: "%{count} 个没有读取权限的文件或文件夹已跳过"
+  en: "Skipped %{count} files or folders without read permission"
+  zh-TW: "已略過 %{count} 個沒有讀取權限的檔案或資料夾"
+  ja: 読み取り権限のないファイルまたはフォルダー %{count} 個をスキップしました
+  ko: 읽기 권한이 없는 파일 또는 폴더 %{count}개를 건너뛰었습니다
+sftp.transfer.skipped_special:
+  zh-CN: "%{count} 个符号链接或特殊文件已跳过（不支持传输这类文件）"
+  en: "Skipped %{count} symbolic links or special files (they can't be transferred)"
+  zh-TW: "已略過 %{count} 個符號連結或特殊檔案（不支援傳輸這類檔案）"
+  ja: シンボリックリンクまたは特殊ファイル %{count} 個をスキップしました（この種類のファイルの転送には対応していません）
+  ko: 심볼릭 링크 또는 특수 파일 %{count}개를 건너뛰었습니다(이런 파일은 전송할 수 없음)
+sftp.transfer.skipped_more:
+  zh-CN: ……另有 %{count} 项
+  en: …and %{count} more
+  zh-TW: ……另有 %{count} 項
+  ja: …ほか %{count} 項目
+  ko: …외 %{count}개 항목
+sftp.empty:
+  zh-CN: 空目录，可以把文件拖到这里上传
+  en: This folder is empty. Drag files here to upload them.
+  zh-TW: 空目錄，可以把檔案拖曳到這裡上傳
+  ja: 空のディレクトリです。ここにファイルをドラッグするとアップロードできます
+  ko: 빈 디렉터리입니다. 여기로 파일을 드래그하면 업로드할 수 있습니다
+sftp.only_hidden:
+  zh-CN: 这里只有隐藏的文件（%{count} 项），按 %{key} 或点上方的眼睛按钮显示
+  en: "Only hidden items here (%{count}). Press %{key} or click the eye button above to show them."
+  zh-TW: 這裡只有隱藏的檔案（%{count} 項），按 %{key} 或按一下上方的眼睛按鈕即可顯示
+  ja: ここには隠しファイルしかありません（%{count} 項目）。%{key} を押すか、上の目のボタンをクリックすると表示されます
+  ko: 여기에는 숨김 파일만 있습니다(%{count}개 항목). %{key} 키를 누르거나 위의 눈 모양 버튼을 클릭하면 표시됩니다
+sftp.reconnect:
+  zh-CN: 重新连接
+  en: Reconnect
+  zh-TW: 重新連線
+  ja: 再接続
+  ko: 다시 연결
+sftp.close_transfers:
+  zh-CN: "%{count} 个传输任务未完成，关闭后将中断。"
+  en: "%{count} transfers haven't finished and will be stopped."
+  zh-TW: "%{count} 個傳輸工作尚未完成，關閉後將中斷。"
+  ja: 完了していない転送が %{count} 件あります。閉じると中断されます。
+  ko: 완료되지 않은 전송 작업이 %{count}개 있습니다. 닫으면 중단됩니다.
+local.resize:
+  zh-CN: 调整本机与远程两栏的宽度（双击恢复）
+  en: Resize the local and remote panes (double-click to reset)
+  zh-TW: 調整本機與遠端兩欄的寬度（按兩下還原）
+  ja: ローカルとリモートの 2 つのペインの幅を調整（ダブルクリックで元に戻す）
+  ko: 로컬과 원격 두 창의 너비 조정(더블클릭하면 원래대로)
+sftp.download:
+  zh-CN: 下载
+  en: Download
+  zh-TW: 下載
+  ja: ダウンロード
+  ko: 다운로드
+sftp.download_here:
+  zh-CN: 下载到左侧本机目录
+  en: Download to the Local Folder on the Left
+  zh-TW: 下載到左側的本機目錄
+  ja: 左のローカルフォルダーにダウンロード
+  ko: 왼쪽 로컬 폴더에 다운로드
+sftp.download_to:
+  zh-CN: 下载到
+  en: Download to
+  zh-TW: 下載到
+  ja: ダウンロード先
+  ko: 다운로드 위치
+sftp.confirm_delete:
+  zh-CN: 确定删除 %{names} 吗？
+  en: Delete %{names}?
+  zh-TW: 確定要刪除 %{names} 嗎？
+  ja: "%{names} を削除しますか？"
+  ko: "%{names}을(를) 삭제하시겠습니까?"
+sftp.confirm_delete_detail:
+  zh-CN: 目录会连同其中的内容一起删除，无法恢复。
+  en: Folders are deleted with everything in them. This can't be undone.
+  zh-TW: 目錄會連同其中的內容一起刪除，且無法復原。
+  ja: ディレクトリは中身ごと削除され、元に戻せません。
+  ko: 디렉터리는 안의 내용과 함께 삭제되며 되돌릴 수 없습니다.
+sftp.confirm_overwrite_title:
+  zh-CN: 远程目录中已有同名的项
+  en: Items with the same names already exist on the server
+  zh-TW: 遠端目錄中已有同名的項目
+  ja: リモートのディレクトリに同じ名前の項目があります
+  ko: 원격 디렉터리에 같은 이름의 항목이 이미 있습니다
+sftp.confirm_overwrite:
+  zh-CN: 远程目录中已存在：%{names}。覆盖它们，还是跳过这些、其余照常上传？
+  en: "Already on the server: %{names}. Overwrite them, or skip them and upload the rest?"
+  zh-TW: 遠端目錄中已存在：%{names}。要覆寫它們，還是略過這些、其餘照常上傳？
+  ja: リモートのディレクトリにすでに存在します：%{names}。上書きしますか？ それともこれらをスキップして残りをアップロードしますか？
+  ko: "원격 디렉터리에 이미 있습니다: %{names}. 덮어쓰시겠습니까, 아니면 이 항목은 건너뛰고 나머지만 업로드하시겠습니까?"
+sftp.overwrite:
+  zh-CN: 覆盖
+  en: Overwrite
+  zh-TW: 覆寫
+  ja: 上書き
+  ko: 덮어쓰기
+sftp.skip_existing:
+  zh-CN: 跳过
+  en: Skip
+  zh-TW: 略過
+  ja: スキップ
+  ko: 건너뛰기
+sftp.permissions:
+  zh-CN: 权限…
+  en: Permissions…
+  zh-TW: 權限…
+  ja: 権限…
+  ko: 권한…
+sftp.delete:
+  zh-CN: 删除（Delete）
+  en: Delete (Delete)
+  zh-TW: 刪除（Delete）
+  ja: 削除（Delete）
+  ko: 삭제(Delete)
+sftp.upload_files:
+  zh-CN: 上传文件
+  en: Upload Files
+  zh-TW: 上傳檔案
+  ja: ファイルをアップロード
+  ko: 파일 업로드
+sftp.upload_folder:
+  zh-CN: 上传文件夹
+  en: Upload Folder
+  zh-TW: 上傳資料夾
+  ja: フォルダーをアップロード
+  ko: 폴더 업로드
+sftp.show_local:
+  zh-CN: 显示本机文件（双栏）
+  en: Show Local Files (Two Panes)
+  zh-TW: 顯示本機檔案（雙欄）
+  ja: ローカルのファイルを表示（2 ペイン）
+  ko: 로컬 파일 표시(두 창)
+sftp.hide_local:
+  zh-CN: 隐藏本机文件
+  en: Hide Local Files
+  zh-TW: 隱藏本機檔案
+  ja: ローカルのファイルを非表示
+  ko: 로컬 파일 숨기기
+sftp.home:
+  zh-CN: 初始目录
+  en: Home Folder
+  zh-TW: 初始目錄
+  ja: 初期ディレクトリ
+  ko: 초기 디렉터리
+sftp.follow:
+  zh-CN: 跟随终端目录
+  en: Follow the Terminal's Folder
+  zh-TW: 跟隨終端機目錄
+  ja: ターミナルのディレクトリに追従
+  ko: 터미널 디렉터리 따라가기
+sftp.follow_unknown:
+  zh-CN: 正在跟随终端目录（暂时无法得知终端所在的目录）
+  en: Following the terminal's folder (its current folder isn't known yet)
+  zh-TW: 正在跟隨終端機目錄（暫時無法得知終端機所在的目錄）
+  ja: ターミナルのディレクトリに追従中（ターミナルの現在のディレクトリはまだわかりません）
+  ko: 터미널 디렉터리를 따라가는 중(터미널의 현재 디렉터리를 아직 알 수 없음)
+sftp.following:
+  zh-CN: 正在跟随终端目录，点击停止
+  en: Following the terminal's folder. Click to stop.
+  zh-TW: 正在跟隨終端機目錄，按一下即可停止
+  ja: ターミナルのディレクトリに追従中。クリックすると停止します
+  ko: 터미널 디렉터리를 따라가는 중입니다. 클릭하면 중지합니다
+sftp.open_failed:
+  zh-CN: 连接失败：%{error}
+  en: "Couldn't connect: %{error}"
+  zh-TW: 連線失敗：%{error}
+  ja: 接続できませんでした：%{error}
+  ko: "연결하지 못했습니다: %{error}"
+sftp.reconnecting:
+  zh-CN: SFTP 连接已断开，正在自动重连…（中断的传输会自动继续）
+  en: The SFTP connection was lost. Reconnecting… (interrupted transfers will resume)
+  zh-TW: SFTP 連線已中斷，正在自動重新連線…（中斷的傳輸會自動繼續）
+  ja: SFTP 接続が切断されました。自動で再接続しています…（中断した転送は自動で再開されます）
+  ko: SFTP 연결이 끊어졌습니다. 자동으로 다시 연결하는 중…(중단된 전송은 자동으로 이어서 진행됨)
+sftp.lost:
+  zh-CN: SFTP 连接已断开
+  en: The SFTP connection was lost
+  zh-TW: SFTP 連線已中斷
+  ja: SFTP 接続が切断されました
+  ko: SFTP 연결이 끊어졌습니다
+editor.edit:
+  zh-CN: 编辑
+  en: Edit
+  zh-TW: 編輯
+  ja: 編集
+  ko: 편집
+editor.edit_hint:
+  zh-CN: 在编辑器中打开（双击文件）
+  en: Open in the Editor (double-click a file)
+  zh-TW: 在編輯器中開啟（按兩下檔案）
+  ja: エディターで開く（ファイルをダブルクリック）
+  ko: 편집기에서 열기(파일 더블클릭)
+editor.too_large:
+  zh-CN: “%{name}”超过 5 MB，不能在线编辑。要下载到本地吗？
+  en: “%{name}” is larger than 5 MB and can't be edited online. Download it instead?
+  zh-TW: 「%{name}」超過 5 MB，無法線上編輯。要下載到本機嗎？
+  ja: 「%{name}」は 5 MB を超えているため、オンラインで編集できません。ローカルにダウンロードしますか？
+  ko: "'%{name}'은(는) 5 MB를 넘어 온라인으로 편집할 수 없습니다. 로컬로 다운로드하시겠습니까?"
+editor.binary:
+  zh-CN: “%{name}”不是 UTF-8 文本文件，不能在线编辑。要下载到本地吗？
+  en: “%{name}” isn't a UTF-8 text file and can't be edited online. Download it instead?
+  zh-TW: 「%{name}」不是 UTF-8 文字檔，無法線上編輯。要下載到本機嗎？
+  ja: 「%{name}」は UTF-8 のテキストファイルではないため、オンラインで編集できません。ローカルにダウンロードしますか？
+  ko: "'%{name}'은(는) UTF-8 텍스트 파일이 아니어서 온라인으로 편집할 수 없습니다. 로컬로 다운로드하시겠습니까?"
+sftp.open:
+  zh-CN: 打开 SFTP
+  en: Open SFTP
+  zh-TW: 開啟 SFTP
+  ja: SFTP を開く
+  ko: SFTP 열기
+sftp.open_for_tab:
+  zh-CN: 为当前主机打开 SFTP 文件管理
+  en: Open SFTP File Manager for This Host
+  zh-TW: 為目前的主機開啟 SFTP 檔案管理
+  ja: 現在のホストの SFTP ファイル管理を開く
+  ko: 현재 호스트의 SFTP 파일 관리 열기
+sftp.open_beside:
+  zh-CN: 在右侧打开 SFTP（跟随终端目录）
+  en: Open SFTP on the Right (Follow the Terminal's Folder)
+  zh-TW: 在右側開啟 SFTP（跟隨終端機目錄）
+  ja: 右側に SFTP を開く（ターミナルのディレクトリに追従）
+  ko: 오른쪽에 SFTP 열기(터미널 디렉터리 따라가기)
+sftp.open_folder:
+  zh-CN: 打开文件夹
+  en: Open Folder
+  zh-TW: 開啟資料夾
+  ja: フォルダーを開く
+  ko: 폴더 열기
+sftp.batch.uploaded_to:
+  zh-CN: 已上传 %{count} 项到 %{dir}
+  en: Uploaded %{count} items to %{dir}
+  zh-TW: 已上傳 %{count} 項到 %{dir}
+  ja: "%{count} 項目を %{dir} にアップロードしました"
+  ko: "%{count}개 항목을 %{dir}에 업로드했습니다"
+sftp.batch.uploaded:
+  zh-CN: 已上传 %{count} 项
+  en: Uploaded %{count} items
+  zh-TW: 已上傳 %{count} 項
+  ja: "%{count} 項目をアップロードしました"
+  ko: "%{count}개 항목을 업로드했습니다"
+sftp.batch.downloaded_to:
+  zh-CN: 已下载 %{count} 项到 %{dir}
+  en: Downloaded %{count} items to %{dir}
+  zh-TW: 已下載 %{count} 項到 %{dir}
+  ja: "%{count} 項目を %{dir} にダウンロードしました"
+  ko: "%{count}개 항목을 %{dir}에 다운로드했습니다"
+sftp.batch.downloaded:
+  zh-CN: 已下载 %{count} 项
+  en: Downloaded %{count} items
+  zh-TW: 已下載 %{count} 項
+  ja: "%{count} 項目をダウンロードしました"
+  ko: "%{count}개 항목을 다운로드했습니다"
+sftp.batch.total:
+  zh-CN: "%{text}（共 %{size}）"
+  en: "%{text} (%{size} in total)"
+  zh-TW: "%{text}（共 %{size}）"
+  ja: "%{text}（合計 %{size}）"
+  ko: "%{text}(총 %{size})"
+sftp.batch.failed:
+  zh-CN: "%{count} 项失败，可在传输列表中继续"
+  en: "%{count} failed; you can resume them in the transfer list"
+  zh-TW: "%{count} 項失敗，可在傳輸清單中繼續"
+  ja: "%{count} 項目が失敗しました。転送一覧から再開できます"
+  ko: "%{count}개 항목이 실패했습니다. 전송 목록에서 이어서 할 수 있습니다"
+sftp.batch.all_failed:
+  zh-CN: "%{count} 项传输失败，可在传输列表中继续"
+  en: "%{count} transfers failed; you can resume them in the transfer list"
+  zh-TW: "%{count} 項傳輸失敗，可在傳輸清單中繼續"
+  ja: "%{count} 項目の転送に失敗しました。転送一覧から再開できます"
+  ko: "%{count}개 항목의 전송에 실패했습니다. 전송 목록에서 이어서 할 수 있습니다"
+sftp.batch.skipped:
+  zh-CN: "%{count} 项因没有权限跳过"
+  en: "%{count} skipped for lack of permission"
+  zh-TW: "%{count} 項因沒有權限而略過"
+  ja: "%{count} 項目を権限がないためスキップしました"
+  ko: "%{count}개 항목을 권한이 없어 건너뛰었습니다"
+sftp.batch.skipped_special:
+  zh-CN: "%{count} 项因文件类型不支持（符号链接等）跳过"
+  en: "%{count} skipped because the file type isn't supported (symbolic links and such)"
+  zh-TW: "%{count} 項因不支援的檔案類型（符號連結等）而略過"
+  ja: "%{count} 項目をファイルの種類に対応していないため（シンボリックリンクなど）スキップしました"
+  ko: "%{count}개 항목을 지원하지 않는 파일 유형(심볼릭 링크 등)이어서 건너뛰었습니다"
+sftp.batch.canceled:
+  zh-CN: "%{count} 项已取消"
+  en: "%{count} canceled"
+  zh-TW: "%{count} 項已取消"
+  ja: "%{count} 項目をキャンセルしました"
+  ko: "%{count}개 항목을 취소했습니다"
+sftp.batch.notify_done:
+  zh-CN: 传输已完成：%{host}
+  en: "Transfers finished: %{host}"
+  zh-TW: 傳輸已完成：%{host}
+  ja: 転送が完了しました：%{host}
+  ko: "전송 완료: %{host}"
+sftp.batch.notify_failed:
+  zh-CN: 传输失败：%{host}
+  en: "Transfers failed: %{host}"
+  zh-TW: 傳輸失敗：%{host}
+  ja: 転送に失敗しました：%{host}
+  ko: "전송 실패: %{host}"
+sftp.open_root:
+  zh-CN: 以 root 身份打开 SFTP
+  en: Open SFTP as root
+  zh-TW: 以 root 身分開啟 SFTP
+  ja: root として SFTP を開く
+  ko: root로 SFTP 열기
+sftp.root_badge:
+  zh-CN: root
+  en: root
+  zh-TW: root
+  ja: root
+  ko: root
+sftp.root_hint:
+  zh-CN: 以 root 身份打开：可以读写整个系统的文件
+  en: Opened as root, so it can read and change any file on the system
+  zh-TW: 以 root 身分開啟：可以讀寫整個系統的檔案
+  ja: root として開いています。システム全体のファイルを読み書きできます
+  ko: root로 열었습니다. 시스템 전체의 파일을 읽고 쓸 수 있습니다
+sftp.sudo.title:
+  zh-CN: 以 root 身份打开 SFTP
+  en: Open SFTP as root
+  zh-TW: 以 root 身分開啟 SFTP
+  ja: root として SFTP を開く
+  ko: root로 SFTP 열기
+sftp.sudo.description:
+  zh-CN: "%{host} 上的 sudo 需要 %{user} 的密码。"
+  en: "sudo on %{host} needs the password for %{user}."
+  zh-TW: "%{host} 上的 sudo 需要 %{user} 的密碼。"
+  ja: "%{host} の sudo には %{user} のパスワードが必要です。"
+  ko: "%{host}의 sudo에는 %{user}의 비밀번호가 필요합니다."
+sftp.sudo.retry:
+  zh-CN: 密码不对，再输入一次。
+  en: That password didn't work. Try again.
+  zh-TW: 密碼不正確，請再輸入一次。
+  ja: パスワードが違います。もう一度入力してください。
+  ko: 비밀번호가 틀렸습니다. 다시 입력하세요.
+sftp.sudo.use_saved:
+  zh-CN: 使用保存的密码
+  en: Use Saved Password
+  zh-TW: 使用已儲存的密碼
+  ja: 保存したパスワードを使用
+  ko: 저장된 비밀번호 사용
+sftp.sudo.open:
+  zh-CN: 打开
+  en: Open
+  zh-TW: 開啟
+  ja: 開く
+  ko: 열기
+sftp.sudo.error.not_installed:
+  zh-CN: 服务器上没有 sudo，不能以 root 身份打开 SFTP
+  en: The server doesn't have sudo, so SFTP can't open as root
+  zh-TW: 伺服器上沒有 sudo，無法以 root 身分開啟 SFTP
+  ja: サーバーに sudo がないため、root として SFTP を開けません
+  ko: 서버에 sudo가 없어 root로 SFTP를 열 수 없습니다
+sftp.sudo.error.server_missing:
+  zh-CN: 服务器上找不到 sftp-server（只有内置的 internal-sftp，或装在不常见的位置）
+  en: Couldn't find sftp-server on the server (it may only have the built-in internal-sftp, or it's installed somewhere unusual)
+  zh-TW: 伺服器上找不到 sftp-server（只有內建的 internal-sftp，或安裝在不常見的位置）
+  ja: サーバーに sftp-server が見つかりません（組み込みの internal-sftp しかないか、一般的でない場所にインストールされています）
+  ko: 서버에서 sftp-server를 찾을 수 없습니다(기본 제공 internal-sftp만 있거나 일반적이지 않은 위치에 설치됨)
+sftp.sudo.error.password_required:
+  zh-CN: sudo 需要密码，重新连接后输入
+  en: sudo needs a password. Reconnect to enter it
+  zh-TW: sudo 需要密碼，請在重新連線後輸入
+  ja: sudo にはパスワードが必要です。再接続してから入力してください
+  ko: sudo에 비밀번호가 필요합니다. 다시 연결한 다음 입력하세요
+sftp.sudo.error.wrong_password:
+  zh-CN: sudo 的密码不对
+  en: The sudo password is incorrect
+  zh-TW: sudo 的密碼不正確
+  ja: sudo のパスワードが違います
+  ko: sudo 비밀번호가 틀렸습니다
+sftp.sudo.error.not_allowed:
+  zh-CN: 这个用户没有 sudo 权限，或不允许以 root 运行 sftp-server
+  en: This user can't use sudo, or isn't allowed to run sftp-server as root
+  zh-TW: 這個使用者沒有 sudo 權限，或不允許以 root 執行 sftp-server
+  ja: このユーザーには sudo の権限がないか、root として sftp-server を実行することが許可されていません
+  ko: 이 사용자에게 sudo 권한이 없거나 root로 sftp-server를 실행할 수 없습니다
+sftp.sudo.error.requires_tty:
+  zh-CN: 服务器的 sudo 要求在终端中运行（requiretty），不能用于 SFTP
+  en: The server's sudo only runs in a terminal (requiretty), so it can't be used for SFTP
+  zh-TW: 伺服器的 sudo 要求在終端機中執行（requiretty），無法用於 SFTP
+  ja: サーバーの sudo はターミナルでの実行を必須としている（requiretty）ため、SFTP には使えません
+  ko: 서버의 sudo가 터미널에서만 실행되도록 되어 있어(requiretty) SFTP에 사용할 수 없습니다
+sftp.sudo.error.exec_refused:
+  zh-CN: 服务器不允许执行命令，不能经 sudo 启动 sftp-server
+  en: The server doesn't allow running commands, so sftp-server can't be started with sudo
+  zh-TW: 伺服器不允許執行指令，無法經由 sudo 啟動 sftp-server
+  ja: サーバーがコマンドの実行を許可していないため、sudo で sftp-server を起動できません
+  ko: 서버에서 명령 실행을 허용하지 않아 sudo로 sftp-server를 시작할 수 없습니다
+sftp.sudo.error.single_channel:
+  zh-CN: 这台主机只用一个通道（堡垒机），不能以 root 身份打开 SFTP
+  en: This host uses a single channel (bastion), so SFTP can't open as root
+  zh-TW: 這台主機只用一個通道（堡壘主機），無法以 root 身分開啟 SFTP
+  ja: このホストはチャネルを 1 つだけ使用する（要塞ホスト）ため、root として SFTP を開けません
+  ko: 이 호스트는 채널 하나만 사용하므로(배스천 호스트) root로 SFTP를 열 수 없습니다
+sftp.sudo.error.failed:
+  zh-CN: "sudo 失败：%{message}"
+  en: "sudo failed: %{message}"
+  zh-TW: "sudo 失敗：%{message}"
+  ja: sudo に失敗しました：%{message}
+  ko: "sudo 실패: %{message}"
+sftp.error.no_sftp_no_scp:
+  zh-CN: 服务器没有开启 SFTP，也没有 scp 命令，不能打开文件管理。请在服务器的 sshd 中开启 SFTP 子系统（Subsystem sftp），或者安装 scp。
+  en: The server has no SFTP and no scp command, so file management can't open. Enable the SFTP subsystem in sshd on the server (Subsystem sftp) or install scp.
+  zh-TW: 伺服器沒有開啟 SFTP，也沒有 scp 指令，無法開啟檔案管理。請在伺服器的 sshd 中開啟 SFTP 子系統（Subsystem sftp），或者安裝 scp。
+  ja: サーバーで SFTP が有効になっておらず、scp コマンドもないため、ファイル管理を開けません。サーバーの sshd で SFTP サブシステム（Subsystem sftp）を有効にするか、scp をインストールしてください。
+  ko: 서버에서 SFTP가 켜져 있지 않고 scp 명령도 없어 파일 관리를 열 수 없습니다. 서버의 sshd에서 SFTP 서브시스템(Subsystem sftp)을 켜거나 scp를 설치하세요.
+sftp.error.no_sftp_exec_refused:
+  zh-CN: 服务器没有开启 SFTP，也不允许另开通道执行命令（堡垒机或 ForceCommand 的限制），不能改用 SCP。
+  en: The server has no SFTP and doesn't allow running commands on another channel (a bastion host or ForceCommand), so SCP can't be used instead.
+  zh-TW: 伺服器沒有開啟 SFTP，也不允許另開通道執行指令（堡壘主機或 ForceCommand 的限制），無法改用 SCP。
+  ja: サーバーで SFTP が有効になっておらず、別のチャネルでのコマンド実行も許可されていない（要塞ホストまたは ForceCommand による制限）ため、SCP に切り替えられません。
+  ko: 서버에서 SFTP가 켜져 있지 않고 다른 채널에서 명령을 실행하는 것도 허용하지 않아(배스천 호스트 또는 ForceCommand의 제한) SCP로 전환할 수 없습니다.
+sftp.error.no_sftp_no_shell:
+  zh-CN: 服务器没有开启 SFTP，也没有可用的 sh 与 ls，不能改用 SCP。
+  en: The server has no SFTP and no usable sh and ls, so SCP can't be used instead.
+  zh-TW: 伺服器沒有開啟 SFTP，也沒有可用的 sh 與 ls，無法改用 SCP。
+  ja: サーバーで SFTP が有効になっておらず、使える sh と ls もないため、SCP に切り替えられません。
+  ko: 서버에서 SFTP가 켜져 있지 않고 사용할 수 있는 sh와 ls도 없어 SCP로 전환할 수 없습니다.
+sftp.error.no_sftp_single_channel:
+  zh-CN: 服务器没有开启 SFTP。这台主机设置了“只用一个通道”，不能改用 SCP（SCP 模式的每个操作都要另开通道）。
+  en: The server has no SFTP. This host is set to use a single channel, so SCP can't be used instead (each SCP operation needs its own channel).
+  zh-TW: 伺服器沒有開啟 SFTP。這台主機設定了「只用一個通道」，無法改用 SCP（SCP 模式的每個操作都要另開通道）。
+  ja: サーバーで SFTP が有効になっていません。このホストは「チャネルを 1 つだけ使用」に設定されているため、SCP に切り替えられません（SCP モードでは操作ごとに別のチャネルが必要です）。
+  ko: 서버에서 SFTP가 켜져 있지 않습니다. 이 호스트는 '채널 하나만 사용'으로 설정되어 있어 SCP로 전환할 수 없습니다(SCP 모드에서는 작업마다 별도의 채널이 필요함).
+sftp.error.scp_unsupported:
+  zh-CN: SCP 模式（服务器没有开启 SFTP）不支持这个操作。
+  en: SCP mode (the server has no SFTP) doesn't support this.
+  zh-TW: SCP 模式（伺服器沒有開啟 SFTP）不支援這個操作。
+  ja: SCP モード（サーバーで SFTP が有効になっていない場合）ではこの操作はできません。
+  ko: SCP 모드(서버에서 SFTP가 꺼져 있음)에서는 이 작업을 지원하지 않습니다.
+sftp.scp_badge:
+  zh-CN: SCP
+  en: SCP
+  zh-TW: SCP
+  ja: SCP
+  ko: SCP
+sftp.scp_hint:
+  zh-CN: 服务器没有开启 SFTP，改用 SCP：传输中断后只能从头重传，不能修改权限
+  en: "The server has no SFTP, so SCP is used: interrupted transfers start over, and permissions can't be changed"
+  zh-TW: 伺服器沒有開啟 SFTP，改用 SCP：傳輸中斷後只能從頭重傳，無法變更權限
+  ja: サーバーで SFTP が有効になっていないため、SCP を使用しています。転送が中断すると最初からやり直しになり、権限は変更できません
+  ko: 서버에서 SFTP가 켜져 있지 않아 SCP를 사용합니다. 전송이 중단되면 처음부터 다시 전송해야 하며 권한은 변경할 수 없습니다
+sftp.scp_notice:
+  zh-CN: SCP 模式：服务器没有开启 SFTP，浏览用 ls、传输用 scp。传输中断后只能从头重传，不能修改权限。
+  en: "SCP mode: the server has no SFTP, so browsing uses ls and transfers use scp. Interrupted transfers start over, and permissions can't be changed."
+  zh-TW: SCP 模式：伺服器沒有開啟 SFTP，瀏覽使用 ls、傳輸使用 scp。傳輸中斷後只能從頭重傳，無法變更權限。
+  ja: SCP モード：サーバーで SFTP が有効になっていないため、閲覧には ls、転送には scp を使用します。転送が中断すると最初からやり直しになり、権限は変更できません。
+  ko: "SCP 모드: 서버에서 SFTP가 켜져 있지 않아 탐색에는 ls, 전송에는 scp를 사용합니다. 전송이 중단되면 처음부터 다시 전송해야 하며 권한은 변경할 수 없습니다."
+sftp.permissions_scp:
+  zh-CN: 权限…（SCP 模式不支持）
+  en: Permissions… (unavailable in SCP mode)
+  zh-TW: 權限…（SCP 模式不支援）
+  ja: 権限…（SCP モードでは使用不可）
+  ko: 권한…(SCP 모드에서는 사용할 수 없음)
+sftp.editor.open:
+  zh-CN: "在 %{editor} 中打开"
+  en: "Open in %{editor}"
+  zh-TW: "在 %{editor} 中開啟"
+  ja: "%{editor} で開く"
+  ko: "%{editor}에서 열기"
+sftp.editor.unsupported:
+  zh-CN: 这个连接不能在编辑器中打开。
+  en: This connection can't be opened in an editor.
+  zh-TW: 這個連線無法在編輯器中開啟。
+  ja: この接続はエディターで開けません。
+  ko: 이 연결은 편집기에서 열 수 없습니다.
+sftp.editor.confirm_title:
+  zh-CN: "在 %{editor} 中打开远程目录"
+  en: "Open remote folder in %{editor}"
+  zh-TW: "在 %{editor} 中開啟遠端目錄"
+  ja: "%{editor} でリモートディレクトリを開く"
+  ko: "%{editor}에서 원격 디렉터리 열기"
+sftp.editor.no_alias:
+  zh-CN: "~/.ssh/config 中没有这台主机。%{editor} 用它自己的 ssh 连接，将直接连到 %{host}。"
+  en: "This host isn't in ~/.ssh/config. %{editor} connects with its own ssh and will connect to %{host} directly."
+  zh-TW: "~/.ssh/config 中沒有這台主機。%{editor} 用它自己的 ssh 連線，將直接連到 %{host}。"
+  ja: "~/.ssh/config にこのホストがありません。%{editor} は独自の ssh で接続するため、%{host} に直接接続します。"
+  ko: "~/.ssh/config에 이 호스트가 없습니다. %{editor}은(는) 자체 ssh로 연결하므로 %{host}에 직접 연결합니다."
+sftp.editor.obstacles:
+  zh-CN: 直接连接可能不成功：
+  en: "Connecting directly may fail:"
+  zh-TW: 直接連線可能不會成功：
+  ja: 直接接続すると失敗する可能性があります：
+  ko: "직접 연결하면 실패할 수 있습니다:"
+sftp.editor.obstacle.jump:
+  zh-CN: "要经跳板机 %{hosts} 才能连到这台主机。下面的条目用 ProxyJump 经过它，跳板机的登录方式也要能被编辑器的 ssh 使用。"
+  en: "This host is reached through the jump host %{hosts}. The entry below goes through it with ProxyJump; the editor's ssh must also be able to log in to the jump host."
+  zh-TW: "要經跳板機 %{hosts} 才能連到這台主機。下面的項目用 ProxyJump 經過它，跳板機的登入方式也要能被編輯器的 ssh 使用。"
+  ja: "このホストには踏み台ホスト %{hosts} を経由して接続します。下のエントリは ProxyJump で経由します。踏み台ホストにもエディターの ssh でログインできる必要があります。"
+  ko: "이 호스트는 점프 호스트 %{hosts}을(를) 거쳐 연결합니다. 아래 항목은 ProxyJump로 이를 거치며, 편집기의 ssh로 점프 호스트에도 로그인할 수 있어야 합니다."
+sftp.editor.obstacle.proxy:
+  zh-CN: 要经代理连接：OpenSSH 没有对应的设置，编辑器会直接连接服务器，可能连不上。
+  en: This host is reached through a proxy. OpenSSH has no matching setting, so the editor connects to the server directly and may fail.
+  zh-TW: 要經代理連線：OpenSSH 沒有對應的設定，編輯器會直接連線伺服器，可能連不上。
+  ja: プロキシ経由で接続します。OpenSSH には対応する設定がないため、エディターはサーバーに直接接続し、接続できない可能性があります。
+  ko: 프록시를 거쳐 연결합니다. OpenSSH에는 해당하는 설정이 없어 편집기가 서버에 직접 연결하므로 연결하지 못할 수 있습니다.
+sftp.editor.obstacle.proxy_command:
+  zh-CN: 要经代理命令连接：命令中可能有令牌，Termlet 不把它写入配置，需要时请自己在条目中加上 ProxyCommand。
+  en: This host is reached through a proxy command. The command may contain tokens, so Termlet doesn't write it to the config; add ProxyCommand to the entry yourself if needed.
+  zh-TW: 要經代理命令連線：命令中可能有權杖，Termlet 不把它寫入設定，需要時請自己在項目中加上 ProxyCommand。
+  ja: プロキシコマンド経由で接続します。コマンドにトークンが含まれている可能性があるため、Termlet は設定に書き込みません。必要に応じてエントリに ProxyCommand を追加してください。
+  ko: 프록시 명령을 거쳐 연결합니다. 명령에 토큰이 포함되어 있을 수 있어 Termlet은 설정에 쓰지 않습니다. 필요하면 항목에 ProxyCommand를 직접 추가하세요.
+sftp.editor.obstacle.stored_key:
+  zh-CN: 私钥保存在 Termlet 中，编辑器的 ssh 用不了它：可以把私钥加入 ssh-agent，或者导出为文件后在条目中加上 IdentityFile。
+  en: The private key is stored in Termlet, which the editor's ssh can't use. Add the key to ssh-agent, or export it to a file and add IdentityFile to the entry.
+  zh-TW: 私密金鑰儲存在 Termlet 中，編輯器的 ssh 無法使用：可以把私密金鑰加入 ssh-agent，或者匯出為檔案後在項目中加上 IdentityFile。
+  ja: 秘密鍵は Termlet に保存されているため、エディターの ssh では使えません。秘密鍵を ssh-agent に追加するか、ファイルにエクスポートしてエントリに IdentityFile を追加してください。
+  ko: 개인 키가 Termlet에 저장되어 있어 편집기의 ssh에서 사용할 수 없습니다. 개인 키를 ssh-agent에 추가하거나 파일로 내보낸 뒤 항목에 IdentityFile을 추가하세요.
+sftp.editor.obstacle.key_file:
+  zh-CN: "登录用的私钥文件 %{path} 不在 ssh 默认查找的位置，直接连接时不会用它。下面的条目中带有 IdentityFile。"
+  en: "The private key file %{path} isn't where ssh looks by default, so a direct connection won't use it. The entry below includes IdentityFile."
+  zh-TW: "登入用的私密金鑰檔案 %{path} 不在 ssh 預設尋找的位置，直接連線時不會使用。下面的項目中帶有 IdentityFile。"
+  ja: "ログインに使う秘密鍵ファイル %{path} は ssh がデフォルトで探す場所にないため、直接接続では使われません。下のエントリには IdentityFile が含まれます。"
+  ko: "로그인에 쓰는 개인 키 파일 %{path}은(는) ssh가 기본으로 찾는 위치에 없어 직접 연결할 때 사용되지 않습니다. 아래 항목에는 IdentityFile이 포함됩니다."
+sftp.editor.obstacle.port:
+  zh-CN: "端口是 %{port}：%{editor} 的文档只说明了在 ~/.ssh/config 中设置端口，直接连接时可能连到 22 端口。"
+  en: "The port is %{port}. %{editor}'s documentation only covers setting the port in ~/.ssh/config, so a direct connection may use port 22."
+  zh-TW: "連接埠是 %{port}：%{editor} 的文件只說明了在 ~/.ssh/config 中設定連接埠，直接連線時可能連到 22 連接埠。"
+  ja: "ポートは %{port} です。%{editor} のドキュメントには ~/.ssh/config でポートを設定する方法しか記載されていないため、直接接続するとポート 22 に接続する可能性があります。"
+  ko: "포트가 %{port}입니다. %{editor} 문서에는 ~/.ssh/config에서 포트를 설정하는 방법만 나와 있어 직접 연결하면 22번 포트로 연결될 수 있습니다."
+sftp.editor.entry:
+  zh-CN: "可以把下面的条目追加到 %{path}，之后编辑器按其中的设置连接："
+  en: "You can append the entry below to %{path}; the editor then connects with its settings:"
+  zh-TW: "可以把下面的項目附加到 %{path}，之後編輯器依其中的設定連線："
+  ja: "次のエントリを %{path} に追加できます。以後、エディターはその設定で接続します："
+  ko: "아래 항목을 %{path}에 추가할 수 있으며, 이후 편집기는 그 설정으로 연결합니다:"
+sftp.editor.entry_hint:
+  zh-CN: 只追加到文件末尾，写之前备份原文件；不写入密码与保存在 Termlet 中的私钥。
+  en: It's only appended to the end of the file, after the original file is backed up. Passwords and private keys stored in Termlet aren't written.
+  zh-TW: 只附加到檔案結尾，寫入前備份原檔案；不寫入密碼與儲存在 Termlet 中的私密金鑰。
+  ja: ファイルの末尾に追加するだけで、書き込む前に元のファイルをバックアップします。パスワードと Termlet に保存された秘密鍵は書き込みません。
+  ko: 파일 끝에만 추가하며, 쓰기 전에 원래 파일을 백업합니다. 비밀번호와 Termlet에 저장된 개인 키는 쓰지 않습니다.
+sftp.editor.open_direct:
+  zh-CN: 直接打开
+  en: Open directly
+  zh-TW: 直接開啟
+  ja: 直接開く
+  ko: 직접 열기
+sftp.editor.write_and_open:
+  zh-CN: 写入配置并打开
+  en: Add to config and open
+  zh-TW: 寫入設定並開啟
+  ja: 設定に追加して開く
+  ko: 설정에 추가하고 열기
+sftp.editor.written:
+  zh-CN: "已把 %{alias} 追加到 %{path}，原文件备份为 %{backup}。"
+  en: "Added %{alias} to %{path}. The original file was backed up as %{backup}."
+  zh-TW: "已把 %{alias} 附加到 %{path}，原檔案備份為 %{backup}。"
+  ja: "%{alias} を %{path} に追加しました。元のファイルは %{backup} としてバックアップしました。"
+  ko: "%{alias}을(를) %{path}에 추가했습니다. 원래 파일은 %{backup}(으)로 백업했습니다."
+sftp.editor.created:
+  zh-CN: "已新建 %{path} 并写入 %{alias}。"
+  en: "Created %{path} with %{alias}."
+  zh-TW: "已新增 %{path} 並寫入 %{alias}。"
+  ja: "%{path} を作成し、%{alias} を書き込みました。"
+  ko: "%{path}을(를) 만들고 %{alias}을(를) 썼습니다."
+sftp.editor.write_failed:
+  zh-CN: "写入 %{path} 失败：%{error}"
+  en: "Couldn't write %{path}: %{error}"
+  zh-TW: "寫入 %{path} 失敗：%{error}"
+  ja: "%{path} に書き込めませんでした：%{error}"
+  ko: "%{path}에 쓰지 못했습니다: %{error}"

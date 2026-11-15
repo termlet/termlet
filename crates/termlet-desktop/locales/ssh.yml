@@ -1,0 +1,367 @@
+_version: 2
+ssh.error.dns:
+  zh-CN: 无法解析地址 %{host}，请检查地址是否写对、网络或 DNS 是否正常。
+  en: Couldn't resolve %{host}. Check the address and your network or DNS.
+  zh-TW: 無法解析位址 %{host}，請檢查位址是否正確、網路或 DNS 是否正常。
+  ja: アドレス %{host} を解決できません。アドレスが正しいか、ネットワークや DNS が正常か確認してください。
+  ko: "%{host} 주소를 확인할 수 없습니다. 주소가 올바른지, 네트워크나 DNS가 정상인지 확인하세요."
+ssh.error.refused:
+  zh-CN: "%{host}:%{port} 拒绝连接：端口上没有 SSH 服务，或被防火墙拦截。"
+  en: "%{host}:%{port} refused the connection. Nothing is listening on that port, or a firewall blocked it."
+  zh-TW: "%{host}:%{port} 拒絕連線：連接埠上沒有 SSH 服務，或被防火牆阻擋。"
+  ja: "%{host}:%{port} が接続を拒否しました。ポートで SSH サービスが動いていないか、ファイアウォールでブロックされています。"
+  ko: "%{host}:%{port}에서 연결을 거부했습니다. 해당 포트에서 SSH 서비스가 실행되고 있지 않거나 방화벽에서 차단되었습니다."
+ssh.error.timeout:
+  zh-CN: 连接 %{host}:%{port} 超时，请检查网络、地址与端口。
+  en: Connecting to %{host}:%{port} timed out. Check the network, address and port.
+  zh-TW: 連線到 %{host}:%{port} 逾時，請檢查網路、位址與連接埠。
+  ja: "%{host}:%{port} への接続がタイムアウトしました。ネットワーク、アドレス、ポートを確認してください。"
+  ko: "%{host}:%{port} 연결 시간이 초과되었습니다. 네트워크, 주소, 포트를 확인하세요."
+ssh.error.network:
+  zh-CN: 无法连接 %{host}:%{port}：%{reason}
+  en: "Couldn't connect to %{host}:%{port}: %{reason}"
+  zh-TW: 無法連線到 %{host}:%{port}：%{reason}
+  ja: "%{host}:%{port} に接続できません：%{reason}"
+  ko: "%{host}:%{port}에 연결할 수 없습니다: %{reason}"
+ssh.error.proxy:
+  zh-CN: 代理失败：%{reason}
+  en: "The proxy failed: %{reason}"
+  zh-TW: 代理失敗：%{reason}
+  ja: プロキシでエラーが発生しました：%{reason}
+  ko: "프록시 오류: %{reason}"
+ssh.error.proxy_command:
+  zh-CN: 代理命令失败：%{reason}
+  en: "The proxy command failed: %{reason}"
+  zh-TW: 代理指令失敗：%{reason}
+  ja: プロキシコマンドでエラーが発生しました：%{reason}
+  ko: "프록시 명령 오류: %{reason}"
+ssh.error.proxy_command_empty:
+  zh-CN: 代理命令为空。
+  en: The proxy command is empty.
+  zh-TW: 代理指令為空。
+  ja: プロキシコマンドが空です。
+  ko: 프록시 명령이 비어 있습니다.
+ssh.error.proxy_command_trailing_percent:
+  zh-CN: 代理命令以单独的 % 结尾，百分号本身要写成 %%。
+  en: The proxy command ends with a lone %. Write %% for a percent sign.
+  zh-TW: 代理指令以單獨的 % 結尾，百分比符號本身要寫成 %%。
+  ja: プロキシコマンドが単独の % で終わっています。% そのものは %% と書いてください。
+  ko: 프록시 명령이 단독 %로 끝납니다. 퍼센트 기호 자체는 %%로 쓰세요.
+ssh.error.proxy_command_unknown_token:
+  zh-CN: 代理命令中有不认识的占位符 %{token}（可用 %h、%p、%r、%n，百分号本身写成 %%）。
+  en: The proxy command has an unknown placeholder %{token}. Use %h, %p, %r or %n, and write %% for a percent sign.
+  zh-TW: 代理指令中有無法辨識的佔位符 %{token}（可用 %h、%p、%r、%n，百分比符號本身要寫成 %%）。
+  ja: プロキシコマンドに不明なプレースホルダー %{token} があります（使えるのは %h、%p、%r、%n、% そのものは %% と書きます）。
+  ko: 프록시 명령에 알 수 없는 자리 표시자 %{token}이(가) 있습니다(%h, %p, %r, %n을 사용할 수 있으며 퍼센트 기호 자체는 %%로 씁니다).
+ssh.error.proxy_command_unsafe_value:
+  zh-CN: "%{token} 要代入的内容（主机的地址、用户名或名称）含有空格、引号或 shell 的特殊字符，不能用在代理命令中。"
+  en: The value for %{token} (the host's address, user name or name) contains spaces, quotes or shell special characters, so it can't be used in a proxy command.
+  zh-TW: "%{token} 要代入的內容（主機的位址、使用者名稱或名稱）含有空格、引號或 shell 的特殊字元，不能用在代理指令中。"
+  ja: "%{token} に入る値（ホストのアドレス、ユーザー名、名前）にスペース、引用符、シェルの特殊文字が含まれているため、プロキシコマンドでは使えません。"
+  ko: "%{token}에 들어갈 값(호스트의 주소, 사용자 이름 또는 이름)에 공백, 따옴표 또는 셸 특수 문자가 있어 프록시 명령에 사용할 수 없습니다."
+ssh.error.proxy_command_exit_code:
+  zh-CN: 退出码 %{code}
+  en: exit code %{code}
+  zh-TW: 結束代碼 %{code}
+  ja: 終了コード %{code}
+  ko: 종료 코드 %{code}
+ssh.error.proxy_command_signaled:
+  zh-CN: 被信号结束
+  en: ended by a signal
+  zh-TW: 被訊號結束
+  ja: シグナルで終了
+  ko: 신호로 종료됨
+ssh.error.proxy_command_exited:
+  zh-CN: 代理命令在连接建立前退出了（%{exit}）。
+  en: The proxy command exited before the connection was established (%{exit}).
+  zh-TW: 代理指令在連線建立前就結束了（%{exit}）。
+  ja: 接続が確立する前にプロキシコマンドが終了しました（%{exit}）。
+  ko: 연결이 설정되기 전에 프록시 명령이 종료되었습니다(%{exit}).
+ssh.error.proxy_command_exited_with_output:
+  zh-CN: "代理命令在连接建立前退出了（%{exit}），它的错误输出：\n%{output}"
+  en: "The proxy command exited before the connection was established (%{exit}). Its error output:\n%{output}"
+  zh-TW: "代理指令在連線建立前就結束了（%{exit}），它的錯誤輸出：\n%{output}"
+  ja: "接続が確立する前にプロキシコマンドが終了しました（%{exit}）。エラー出力：\n%{output}"
+  ko: "연결이 설정되기 전에 프록시 명령이 종료되었습니다(%{exit}). 오류 출력:\n%{output}"
+ssh.error.proxy_command_unconfirmed:
+  zh-CN: 没有允许在这台电脑上执行代理命令，已取消连接。
+  en: Running the proxy command on this computer wasn't allowed, so the connection was canceled.
+  zh-TW: 沒有允許在這台電腦上執行代理指令，已取消連線。
+  ja: このコンピューターでのプロキシコマンドの実行が許可されなかったため、接続をキャンセルしました。
+  ko: 이 컴퓨터에서 프록시 명령 실행을 허용하지 않아 연결을 취소했습니다.
+ssh.error.host_key_rejected:
+  zh-CN: 没有接受这台主机的指纹，已取消连接。
+  en: The host fingerprint wasn't accepted, so the connection was canceled.
+  zh-TW: 沒有接受這台主機的指紋，已取消連線。
+  ja: ホストキーが承認されなかったため、接続をキャンセルしました。
+  ko: 이 호스트의 지문을 수락하지 않아 연결을 취소했습니다.
+ssh.error.host_key_changed:
+  zh-CN: "%{host} 的主机指纹与记录的不符，可能有人在冒充这台服务器（中间人攻击），也可能是服务器重装过。请先向管理员核对，确认没问题后再删除旧记录并重新连接。\n本次（%{algorithm}）：%{fingerprint}\n记录中：%{known}"
+  en: "The host fingerprint of %{host} doesn't match the one on record. Someone may be impersonating the server (a man-in-the-middle attack), or the server was reinstalled. Check with the administrator before you remove the old record and reconnect.\nThis time (%{algorithm}): %{fingerprint}\nOn record: %{known}"
+  zh-TW: "%{host} 的主機指紋與記錄的不符，可能有人在冒充這台伺服器（中間人攻擊），也可能是伺服器重新安裝過。請先向管理員核對，確認沒問題後再刪除舊記錄並重新連線。\n本次（%{algorithm}）：%{fingerprint}\n記錄中：%{known}"
+  ja: "%{host} のホストキーが記録と一致しません。誰かがこのサーバーになりすましている（中間者攻撃）可能性があります。サーバーが再インストールされた可能性もあります。まず管理者に確認し、問題がないとわかってから古い記録を削除して再接続してください。\n今回（%{algorithm}）：%{fingerprint}\n記録：%{known}"
+  ko: "%{host}의 호스트 키 지문이 기록과 다릅니다. 누군가 이 서버로 위장하고 있을 수 있으며(중간자 공격), 서버를 다시 설치했을 수도 있습니다. 먼저 관리자에게 확인하고, 문제가 없으면 이전 기록을 삭제한 다음 다시 연결하세요.\n이번(%{algorithm}): %{fingerprint}\n기록: %{known}"
+ssh.error.no_common_algorithm:
+  zh-CN: 没有双方都支持的算法。老的设备只支持旧算法时，在主机的“连接”页开启“兼容旧设备”。（%{detail}）
+  en: "No algorithm is supported by both sides. If this is an old device that only supports legacy algorithms, turn on \"Legacy device compatibility\" on the host's Connection page. (%{detail})"
+  zh-TW: 沒有雙方都支援的演算法。舊裝置只支援舊演算法時，請在主機的「連線」頁開啟「相容舊裝置」。（%{detail}）
+  ja: 双方がサポートするアルゴリズムがありません。古いアルゴリズムにしか対応していない旧型デバイスの場合は、ホストの「接続」ページで「旧型デバイスとの互換性」をオンにしてください。（%{detail}）
+  ko: 양쪽이 모두 지원하는 알고리즘이 없습니다. 이전 알고리즘만 지원하는 구형 장치라면 호스트의 '연결' 페이지에서 '구형 장치 호환'을 켜세요. (%{detail})
+ssh.error.auth_failed:
+  zh-CN: 认证失败：用户名、密码或密钥不正确（服务器支持：%{methods}）。
+  en: "Authentication failed. The username, password or key is wrong (the server accepts: %{methods})."
+  zh-TW: 驗證失敗：使用者名稱、密碼或金鑰不正確（伺服器支援：%{methods}）。
+  ja: 認証に失敗しました。ユーザー名、パスワード、または鍵が正しくありません（サーバーが受け付ける方式：%{methods}）。
+  ko: "인증에 실패했습니다. 사용자 이름, 비밀번호 또는 키가 올바르지 않습니다(서버에서 지원: %{methods})."
+ssh.error.auth_cancelled:
+  zh-CN: 已取消认证。
+  en: Authentication was canceled.
+  zh-TW: 已取消驗證。
+  ja: 認証をキャンセルしました。
+  ko: 인증을 취소했습니다.
+ssh.error.interaction_required:
+  zh-CN: 需要输入密码或验证码，但这里无法询问。
+  en: A password or verification code is needed, but it can't be asked for here.
+  zh-TW: 需要輸入密碼或驗證碼，但這裡無法詢問。
+  ja: パスワードまたは確認コードの入力が必要ですが、ここでは入力を求められません。
+  ko: 비밀번호나 인증 코드를 입력해야 하지만 여기서는 입력을 요청할 수 없습니다.
+ssh.error.cert_expired:
+  zh-CN: 证书已于 %{time} 过期，请重新签发。
+  en: The certificate expired at %{time}. Get a new one issued.
+  zh-TW: 憑證已於 %{time} 過期，請重新簽發。
+  ja: 証明書は %{time} に期限切れになりました。新しい証明書を発行してください。
+  ko: 인증서가 %{time}에 만료되었습니다. 인증서를 다시 발급받으세요.
+ssh.error.cert_not_yet_valid:
+  zh-CN: 证书 %{time} 才生效。如果证书刚签发，请检查本机与服务器的时间是否准确。
+  en: The certificate isn't valid until %{time}. If it was just issued, check that the clocks on this computer and the server are correct.
+  zh-TW: 憑證要到 %{time} 才生效。如果憑證剛簽發，請檢查本機與伺服器的時間是否正確。
+  ja: 証明書は %{time} まで有効になりません。発行したばかりの場合は、このコンピューターとサーバーの時刻が正しいか確認してください。
+  ko: 인증서는 %{time}부터 유효합니다. 방금 발급받았다면 이 컴퓨터와 서버의 시간이 정확한지 확인하세요.
+ssh.error.cert_principal:
+  zh-CN: 证书不允许以 %{user} 登录（允许的用户名：%{principals}）。请改用允许的用户名，或重新签发包含 %{user} 的证书。
+  en: "The certificate doesn't allow logging in as %{user} (allowed usernames: %{principals}). Use an allowed username, or get a certificate issued that includes %{user}."
+  zh-TW: 憑證不允許以 %{user} 登入（允許的使用者名稱：%{principals}）。請改用允許的使用者名稱，或重新簽發包含 %{user} 的憑證。
+  ja: 証明書では %{user} としてログインできません（許可されたユーザー名：%{principals}）。許可されたユーザー名を使うか、%{user} を含む証明書を発行してください。
+  ko: "인증서로는 '%{user}' 사용자로 로그인할 수 없습니다(허용된 사용자 이름: %{principals}). 허용된 사용자 이름을 사용하거나 '%{user}' 사용자를 포함한 인증서를 다시 발급받으세요."
+ssh.error.cert_rejected:
+  zh-CN: 服务器没有接受证书：可能不信任签发它的 CA（%{ca}），或证书已被吊销。请联系管理员。
+  en: The server didn't accept the certificate. It may not trust the CA that issued it (%{ca}), or the certificate may have been revoked. Contact your administrator.
+  zh-TW: 伺服器沒有接受憑證：可能不信任簽發它的 CA（%{ca}），或憑證已被撤銷。請聯絡管理員。
+  ja: サーバーが証明書を受け付けませんでした。発行元の CA（%{ca}）を信頼していないか、証明書が失効している可能性があります。管理者に問い合わせてください。
+  ko: 서버가 인증서를 받아들이지 않았습니다. 인증서를 발급한 CA(%{ca})를 신뢰하지 않거나 인증서가 폐기되었을 수 있습니다. 관리자에게 문의하세요.
+ssh.error.cert_key_mismatch:
+  zh-CN: 证书 %{file} 与私钥对不上，没有出示；私钥本身也没能登录。
+  en: The certificate %{file} doesn't match the private key, so it wasn't presented. The private key alone couldn't log in either.
+  zh-TW: 憑證 %{file} 與私密金鑰不相符，沒有出示；私密金鑰本身也無法登入。
+  ja: 証明書 %{file} が秘密鍵と一致しないため、提示しませんでした。秘密鍵だけでもログインできませんでした。
+  ko: 인증서 %{file}이(가) 개인 키와 일치하지 않아 제시하지 않았습니다. 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.cert_key_mismatch_library:
+  zh-CN: 密钥库中附带的证书与私钥对不上，没有出示；私钥本身也没能登录。
+  en: The certificate attached in the key library doesn't match the private key, so it wasn't presented. The private key alone couldn't log in either.
+  zh-TW: 金鑰庫中附帶的憑證與私密金鑰不相符，沒有出示；私密金鑰本身也無法登入。
+  ja: 鍵ライブラリで添付された証明書が秘密鍵と一致しないため、提示しませんでした。秘密鍵だけでもログインできませんでした。
+  ko: 키 라이브러리에 첨부된 인증서가 개인 키와 일치하지 않아 제시하지 않았습니다. 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.cert_host:
+  zh-CN: "%{file} 是主机证书，不能用来登录；私钥本身也没能登录。"
+  en: "%{file} is a host certificate and can't be used to log in. The private key alone couldn't log in either."
+  zh-TW: "%{file} 是主機憑證，不能用來登入；私密金鑰本身也無法登入。"
+  ja: "%{file} はホスト証明書のため、ログインには使用できません。秘密鍵だけでもログインできませんでした。"
+  ko: "%{file}은(는) 호스트 인증서라서 로그인에 사용할 수 없습니다. 개인 키만으로도 로그인하지 못했습니다."
+ssh.error.cert_host_library:
+  zh-CN: 密钥库中附带的是主机证书，不能用来登录；私钥本身也没能登录。
+  en: The certificate attached in the key library is a host certificate and can't be used to log in. The private key alone couldn't log in either.
+  zh-TW: 金鑰庫中附帶的是主機憑證，不能用來登入；私密金鑰本身也無法登入。
+  ja: 鍵ライブラリで添付された証明書はホスト証明書のため、ログインには使用できません。秘密鍵だけでもログインできませんでした。
+  ko: 키 라이브러리에 첨부된 인증서는 호스트 인증서라서 로그인에 사용할 수 없습니다. 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.cert_missing:
+  zh-CN: 证书文件 %{file} 不存在；私钥本身也没能登录。
+  en: The certificate file %{file} doesn't exist. The private key alone couldn't log in either.
+  zh-TW: 憑證檔案 %{file} 不存在；私密金鑰本身也無法登入。
+  ja: 証明書ファイル %{file} が見つかりません。秘密鍵だけでもログインできませんでした。
+  ko: 인증서 파일 %{file}이(가) 없습니다. 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.cert_unreadable:
+  zh-CN: 证书 %{file} 不能使用（%{reason}）；私钥本身也没能登录。
+  en: The certificate %{file} can't be used (%{reason}). The private key alone couldn't log in either.
+  zh-TW: 憑證 %{file} 無法使用（%{reason}）；私密金鑰本身也無法登入。
+  ja: 証明書 %{file} を使用できません（%{reason}）。秘密鍵だけでもログインできませんでした。
+  ko: 인증서 %{file}을(를) 사용할 수 없습니다(%{reason}). 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.cert_unreadable_library:
+  zh-CN: 密钥库中附带的证书不能使用（%{reason}）；私钥本身也没能登录。
+  en: The certificate attached in the key library can't be used (%{reason}). The private key alone couldn't log in either.
+  zh-TW: 金鑰庫中附帶的憑證無法使用（%{reason}）；私密金鑰本身也無法登入。
+  ja: 鍵ライブラリで添付された証明書を使用できません（%{reason}）。秘密鍵だけでもログインできませんでした。
+  ko: 키 라이브러리에 첨부된 인증서를 사용할 수 없습니다(%{reason}). 개인 키만으로도 로그인하지 못했습니다.
+ssh.error.key:
+  zh-CN: 私钥不可用：%{reason}
+  en: "The private key can't be used: %{reason}"
+  zh-TW: 私密金鑰無法使用：%{reason}
+  ja: 秘密鍵を使用できません：%{reason}
+  ko: "개인 키를 사용할 수 없습니다: %{reason}"
+ssh.error.jump:
+  zh-CN: 经跳板机 %{jump} 连接失败：%{reason}
+  en: "Connecting through the jump host %{jump} failed: %{reason}"
+  zh-TW: 經由跳板機 %{jump} 連線失敗：%{reason}
+  ja: 踏み台ホスト %{jump} 経由の接続に失敗しました：%{reason}
+  ko: "점프 호스트 %{jump}을(를) 거친 연결에 실패했습니다: %{reason}"
+ssh.error.jump_target:
+  zh-CN: 跳板机无法连到 %{host}:%{port}：%{reason}
+  en: "The jump host couldn't reach %{host}:%{port}: %{reason}"
+  zh-TW: 跳板機無法連到 %{host}:%{port}：%{reason}
+  ja: 踏み台ホストから %{host}:%{port} に接続できません：%{reason}
+  ko: "점프 호스트에서 %{host}:%{port}에 연결할 수 없습니다: %{reason}"
+ssh.error.channel:
+  zh-CN: 打开终端失败：%{reason}
+  en: "Couldn't open the terminal: %{reason}"
+  zh-TW: 開啟終端機失敗：%{reason}
+  ja: ターミナルを開けませんでした：%{reason}
+  ko: "터미널을 열지 못했습니다: %{reason}"
+ssh.error.disconnected:
+  zh-CN: 连接已断开。
+  en: The connection was closed.
+  zh-TW: 連線已中斷。
+  ja: 接続が切断されました。
+  ko: 연결이 끊어졌습니다.
+ssh.error.vault:
+  zh-CN: 读取保存的凭据失败：%{reason}
+  en: "Couldn't read the saved credentials: %{reason}"
+  zh-TW: 讀取已儲存的認證資訊失敗：%{reason}
+  ja: 保存された認証情報を読み込めませんでした：%{reason}
+  ko: "저장된 자격 증명을 읽지 못했습니다: %{reason}"
+ssh.error.config:
+  zh-CN: 主机配置有误：%{reason}
+  en: "The host settings are invalid: %{reason}"
+  zh-TW: 主機設定有誤：%{reason}
+  ja: ホストの設定に誤りがあります：%{reason}
+  ko: "호스트 설정이 잘못되었습니다: %{reason}"
+ssh.error.protocol:
+  zh-CN: SSH 错误：%{reason}
+  en: "SSH error: %{reason}"
+  zh-TW: SSH 錯誤：%{reason}
+  ja: SSH エラー：%{reason}
+  ko: "SSH 오류: %{reason}"
+prompt.host_key.title:
+  zh-CN: 首次连接 %{host}
+  en: First connection to %{host}
+  zh-TW: 首次連線到 %{host}
+  ja: "%{host} への初回接続"
+  ko: "%{host}에 처음 연결"
+prompt.host_key.description:
+  zh-CN: 这是第一次连接这台主机，请向管理员核对下面的指纹，一致后再继续。接受后会记住它，以后指纹变化时 Termlet 会拒绝连接。
+  en: This is the first connection to this host. Check the fingerprint below with the administrator before you continue. Once accepted, it's remembered, and Termlet refuses to connect if it ever changes.
+  zh-TW: 這是第一次連線到這台主機，請向管理員核對下方的指紋，一致後再繼續。接受後會記住它，日後指紋有變時 Termlet 會拒絕連線。
+  ja: このホストへの初めての接続です。続行する前に、下のフィンガープリントを管理者に確認してください。承認すると記録され、今後変わった場合 Termlet は接続を拒否します。
+  ko: 이 호스트에 처음 연결합니다. 계속하기 전에 아래 지문을 관리자에게 확인하세요. 수락하면 기억해 두며, 이후 지문이 바뀌면 Termlet이 연결을 거부합니다.
+prompt.host_key.accept:
+  zh-CN: 接受并连接
+  en: Accept and connect
+  zh-TW: 接受並連線
+  ja: 承認して接続
+  ko: 수락하고 연결
+prompt.host_key.other_type_title:
+  zh-CN: "%{host} 提供了另一种类型的主机密钥"
+  en: "%{host} offered a different type of host key"
+  zh-TW: "%{host} 提供了另一種類型的主機金鑰"
+  ja: "%{host} が別の種類のホストキーを提示しました"
+  ko: "%{host}에서 다른 유형의 호스트 키를 제시했습니다"
+prompt.host_key.other_type_description:
+  zh-CN: 已记录这台主机的 %{known} 密钥，但这次服务器没有提供它，只提供了下面这把 %{algorithm} 密钥。可能是服务器更换了密钥，也可能有人冒充这台主机。请向管理员核对指纹，确认无误再继续。
+  en: A %{known} key is on record for this host, but the server didn't offer it this time; it only offered the %{algorithm} key below. The server may have replaced its keys, or someone may be impersonating it. Check the fingerprint with the administrator before you continue.
+  zh-TW: 已記錄這台主機的 %{known} 金鑰，但這次伺服器沒有提供它，只提供了下方這把 %{algorithm} 金鑰。可能是伺服器更換了金鑰，也可能有人冒充這台主機。請向管理員核對指紋，確認無誤再繼續。
+  ja: このホストについては %{known} 鍵が記録されていますが、今回サーバーはそれを提示せず、下の %{algorithm} 鍵だけを提示しました。サーバーが鍵を入れ替えた可能性も、誰かがこのホストになりすましている可能性もあります。フィンガープリントを管理者に確認し、問題がないことを確かめてから続行してください。
+  ko: 이 호스트의 %{known} 키가 기록되어 있지만 이번에는 서버가 그 키를 제시하지 않고 아래의 %{algorithm} 키만 제시했습니다. 서버가 키를 바꿨을 수도 있고, 누군가 이 호스트로 위장하고 있을 수도 있습니다. 관리자에게 지문을 확인하고 문제가 없을 때만 계속하세요.
+prompt.host_key.accept_other_type:
+  zh-CN: 仍然接受并连接
+  en: Accept anyway and connect
+  zh-TW: 仍要接受並連線
+  ja: このまま承認して接続
+  ko: 그래도 수락하고 연결
+prompt.password.title:
+  zh-CN: "%{user}@%{host} 的密码"
+  en: "Password for %{user}@%{host}"
+  zh-TW: "%{user}@%{host} 的密碼"
+  ja: "%{user}@%{host} のパスワード"
+  ko: "%{user}@%{host}의 비밀번호"
+prompt.password.description:
+  zh-CN: 输入登录密码。
+  en: Enter the login password.
+  zh-TW: 輸入登入密碼。
+  ja: ログインパスワードを入力してください。
+  ko: 로그인 비밀번호를 입력하세요.
+prompt.password.retry:
+  zh-CN: 密码不正确，请重新输入。
+  en: That password is wrong. Try again.
+  zh-TW: 密碼不正確，請重新輸入。
+  ja: パスワードが正しくありません。もう一度入力してください。
+  ko: 비밀번호가 올바르지 않습니다. 다시 입력하세요.
+prompt.passphrase.title:
+  zh-CN: 私钥密码
+  en: Private key passphrase
+  zh-TW: 私密金鑰密碼
+  ja: 秘密鍵のパスフレーズ
+  ko: 개인 키 암호 문구
+prompt.passphrase.description:
+  zh-CN: 私钥 %{key} 已加密，输入它的密码。
+  en: The private key %{key} is encrypted. Enter its passphrase.
+  zh-TW: 私密金鑰 %{key} 已加密，請輸入它的密碼。
+  ja: 秘密鍵 %{key} は暗号化されています。パスフレーズを入力してください。
+  ko: 개인 키 %{key}이(가) 암호화되어 있습니다. 암호 문구를 입력하세요.
+prompt.passphrase.description_unnamed:
+  zh-CN: 私钥已加密，输入它的密码。
+  en: The private key is encrypted. Enter its passphrase.
+  zh-TW: 私密金鑰已加密，請輸入它的密碼。
+  ja: 秘密鍵は暗号化されています。パスフレーズを入力してください。
+  ko: 개인 키가 암호화되어 있습니다. 암호 문구를 입력하세요.
+prompt.passphrase.retry:
+  zh-CN: 私钥密码不正确，请重新输入。
+  en: That passphrase is wrong. Try again.
+  zh-TW: 私密金鑰密碼不正確，請重新輸入。
+  ja: パスフレーズが正しくありません。もう一度入力してください。
+  ko: 암호 문구가 올바르지 않습니다. 다시 입력하세요.
+prompt.interactive.title:
+  zh-CN: "%{host} 需要验证"
+  en: "%{host} needs verification"
+  zh-TW: "%{host} 需要驗證"
+  ja: "%{host} で認証が必要です"
+  ko: "%{host}에서 인증이 필요합니다"
+prompt.interactive.description:
+  zh-CN: 服务器要求回答以下问题。
+  en: The server is asking the following.
+  zh-TW: 伺服器要求回答以下問題。
+  ja: サーバーから次の質問への回答を求められています。
+  ko: 서버에서 다음 질문에 대한 답변을 요청합니다.
+prompt.connect:
+  zh-CN: 连接
+  en: Connect
+  zh-TW: 連線
+  ja: 接続
+  ko: 연결
+prompt.continue:
+  zh-CN: 继续
+  en: Continue
+  zh-TW: 繼續
+  ja: 続行
+  ko: 계속
+prompt.proxy_command.title:
+  zh-CN: 在这台电脑上执行“%{host}”的代理命令？
+  en: Run the proxy command for "%{host}" on this computer?
+  zh-TW: 要在這台電腦上執行「%{host}」的代理指令嗎？
+  ja: このコンピューターで「%{host}」のプロキシコマンドを実行しますか？
+  ko: 이 컴퓨터에서 '%{host}'의 프록시 명령을 실행하시겠습니까?
+prompt.proxy_command.description:
+  zh-CN: 连接这台主机要在本机运行下面的命令。主机设置可能来自云同步或导入的文件，请确认这条命令可信再允许。允许后这条命令在这台电脑上不再询问，命令改了会重新询问。
+  en: Connecting to this host runs the command below on this computer. Host settings may come from cloud sync or an imported file, so allow it only if you trust the command. Once allowed, you won't be asked about this command again on this computer; if it changes, you'll be asked again.
+  zh-TW: 連線這台主機要在本機執行下面的指令。主機設定可能來自雲端同步或匯入的檔案，請確認這條指令可信再允許。允許後這條指令在這台電腦上不再詢問，指令變更後會重新詢問。
+  ja: このホストに接続すると、このコンピューターで下のコマンドが実行されます。ホストの設定はクラウド同期やインポートしたファイルから来ている場合があるため、信頼できるコマンドであることを確認してから許可してください。許可すると、このコンピューターではこのコマンドについて再び確認しません。コマンドが変わった場合は再度確認します。
+  ko: 이 호스트에 연결하면 이 컴퓨터에서 아래 명령이 실행됩니다. 호스트 설정은 클라우드 동기화나 가져온 파일에서 왔을 수 있으므로 믿을 수 있는 명령인지 확인한 다음 허용하세요. 허용하면 이 컴퓨터에서는 이 명령에 대해 다시 묻지 않으며, 명령이 바뀌면 다시 묻습니다.
+prompt.proxy_command.from_group:
+  zh-CN: 命令来自分组“%{group}”的设置。
+  en: The command comes from the settings of group "%{group}".
+  zh-TW: 指令來自群組「%{group}」的設定。
+  ja: このコマンドはグループ「%{group}」の設定から来ています。
+  ko: 이 명령은 '%{group}' 그룹의 설정에서 왔습니다.
+prompt.proxy_command.allow:
+  zh-CN: 允许并连接
+  en: Allow and connect
+  zh-TW: 允許並連線
+  ja: 許可して接続
+  ko: 허용하고 연결

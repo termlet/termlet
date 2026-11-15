@@ -1,0 +1,5 @@
+# gpui-pre 使用了较新的 std API，固定一个已验证的稳定版。
+# rustup 首次使用时自动安装，不改变本机默认工具链。
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]

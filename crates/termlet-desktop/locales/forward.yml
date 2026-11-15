@@ -1,0 +1,505 @@
+_version: 2
+sidebar.page.forwards:
+  zh-CN: 转发
+  en: Tunnels
+  zh-TW: 轉送
+  ja: ポート転送
+  ko: 포트 포워딩
+forward.hint:
+  zh-CN: 本地端口经 SSH 转发到远程
+  en: Forward ports over SSH
+  zh-TW: 本機連接埠經 SSH 轉送到遠端
+  ja: ローカルポートを SSH 経由でリモートに転送
+  ko: 로컬 포트를 SSH를 통해 원격으로 포워딩
+forward.new:
+  zh-CN: 新建端口转发
+  en: New Port Forward
+  zh-TW: 新增連接埠轉送
+  ja: 新しいポート転送
+  ko: 새 포트 포워딩
+forward.edit:
+  zh-CN: 编辑端口转发
+  en: Edit Port Forward
+  zh-TW: 編輯連接埠轉送
+  ja: ポート転送の編集
+  ko: 포트 포워딩 편집
+forward.empty:
+  zh-CN: 还没有端口转发。本地转发让访问本机端口的连接经 SSH 到达服务器能访问的地址（等同 ssh -L）；动态转发在本机开一个 SOCKS5 代理（等同 ssh -D）。
+  en: No port forwards yet. A local forward sends connections to a local port through SSH to an address the server can reach (like ssh -L); a dynamic forward opens a SOCKS5 proxy on this computer (like ssh -D).
+  zh-TW: 還沒有連接埠轉送。本機轉送讓連到本機連接埠的連線經 SSH 到達伺服器能存取的位址（等同 ssh -L）；動態轉送在本機開啟一個 SOCKS5 代理伺服器（等同 ssh -D）。
+  ja: ポート転送はまだありません。ローカル転送は、ローカルポートへの接続を SSH 経由でサーバーからアクセスできるアドレスに届けます（ssh -L と同等）。ダイナミック転送は、このコンピューターで SOCKS5 プロキシを開きます（ssh -D と同等）。
+  ko: 아직 포트 포워딩이 없습니다. 로컬 포워딩은 로컬 포트로 들어오는 연결을 SSH를 통해 서버에서 접근할 수 있는 주소로 보냅니다(ssh -L과 같음). 동적 포워딩은 이 컴퓨터에 SOCKS5 프록시를 엽니다(ssh -D와 같음).
+forward.dialog_hint:
+  zh-CN: 访问本机的本地端口时，连接经所选主机的 SSH 转发到目标地址与端口。目标地址由服务器解析，127.0.0.1 表示服务器本机。
+  en: Connections to the local port are forwarded over SSH through the selected host to the target address and port. The target is resolved by the server; 127.0.0.1 means the server itself.
+  zh-TW: 連到本機連接埠時，連線會經所選主機的 SSH 轉送到目標位址與連接埠。目標位址由伺服器解析，127.0.0.1 表示伺服器本身。
+  ja: このコンピューターのローカルポートへの接続は、選択したホストの SSH を経由して転送先のアドレスとポートに転送されます。転送先のアドレスはサーバー側で解決され、127.0.0.1 はサーバー自身を指します。
+  ko: 이 컴퓨터의 로컬 포트로 들어오는 연결은 선택한 호스트의 SSH를 거쳐 대상 주소와 포트로 포워딩됩니다. 대상 주소는 서버에서 확인하며, 127.0.0.1은 서버 자신을 뜻합니다.
+forward.dialog_hint_remote:
+  zh-CN: 服务器在所选地址与端口上监听，连到这个端口的连接经 SSH 回到本机，再转到目标地址与端口。目标地址由本机解析，127.0.0.1 表示本机。
+  en: The server listens on the chosen address and port; connections to it come back over SSH to this computer and on to the target. The target is resolved here, so 127.0.0.1 means this computer.
+  zh-TW: 伺服器在所選位址與連接埠上監聽，連到這個連接埠的連線會經 SSH 回到本機，再轉到目標位址與連接埠。目標位址由本機解析，127.0.0.1 表示本機。
+  ja: サーバーが選択したアドレスとポートで待ち受け、そのポートへの接続は SSH を経由してこのコンピューターに戻り、転送先のアドレスとポートに転送されます。転送先のアドレスはこのコンピューターで解決され、127.0.0.1 はこのコンピューターを指します。
+  ko: 서버가 선택한 주소와 포트에서 수신 대기하며, 이 포트로 들어오는 연결은 SSH를 거쳐 이 컴퓨터로 돌아온 다음 대상 주소와 포트로 전달됩니다. 대상 주소는 이 컴퓨터에서 확인하며, 127.0.0.1은 이 컴퓨터를 뜻합니다.
+forward.dialog_hint_dynamic:
+  zh-CN: 在本机开一个 SOCKS5 代理（无需认证）。把浏览器等程序的代理设为它后，连接都经所选主机的 SSH 转出，域名由服务器解析，可以访问服务器所在的内网。
+  en: Opens a SOCKS5 proxy (no authentication) on this computer. Point a browser or another program at it and its connections go out through SSH on the selected host; names are resolved by the server, so hosts on its internal network are reachable.
+  zh-TW: 在本機開啟一個 SOCKS5 代理伺服器（不需驗證）。把瀏覽器等程式的代理伺服器設為它之後，連線都會經所選主機的 SSH 轉出，網域名稱由伺服器解析，可以存取伺服器所在的內部網路。
+  ja: このコンピューターで SOCKS5 プロキシ（認証なし）を開きます。ブラウザーなどのプロキシにこれを設定すると、接続はすべて選択したホストの SSH を経由して外に出ます。ドメイン名はサーバー側で解決されるため、サーバーのある内部ネットワークにアクセスできます。
+  ko: 이 컴퓨터에 SOCKS5 프록시(인증 없음)를 엽니다. 브라우저 등의 프로그램에서 이 프록시를 지정하면 연결이 모두 선택한 호스트의 SSH를 거쳐 나가며, 도메인 이름은 서버에서 확인하므로 서버가 있는 내부 네트워크에 접근할 수 있습니다.
+forward.kind_local:
+  zh-CN: 本地转发（-L）
+  en: Local (-L)
+  zh-TW: 本機轉送（-L）
+  ja: ローカル転送（-L）
+  ko: 로컬 포워딩(-L)
+forward.kind_remote:
+  zh-CN: 远程转发（-R）
+  en: Remote (-R)
+  zh-TW: 遠端轉送（-R）
+  ja: リモート転送（-R）
+  ko: 원격 포워딩(-R)
+forward.kind_dynamic:
+  zh-CN: 动态转发（-D，SOCKS5）
+  en: Dynamic (-D, SOCKS5)
+  zh-TW: 動態轉送（-D，SOCKS5）
+  ja: ダイナミック転送（-D、SOCKS5）
+  ko: 동적 포워딩(-D, SOCKS5)
+forward.host:
+  zh-CN: 经由主机
+  en: Via host
+  zh-TW: 經由主機
+  ja: 経由するホスト
+  ko: 경유 호스트
+forward.no_hosts:
+  zh-CN: 还没有主机，请先在“主机”中添加。
+  en: No hosts yet. Add one under “Hosts” first.
+  zh-TW: 還沒有主機，請先在「主機」中新增。
+  ja: ホストがまだありません。先に「ホスト」で追加してください。
+  ko: 아직 호스트가 없습니다. 먼저 '호스트'에서 추가하세요.
+forward.host_unavailable:
+  zh-CN: "%{name}（已不可用）"
+  en: "%{name} (unavailable)"
+  zh-TW: "%{name}（已無法使用）"
+  ja: "%{name}（使用不可）"
+  ko: "%{name}(사용할 수 없음)"
+forward.host_unavailable_hint:
+  zh-CN: 原来经由的主机已删除或不再是 SSH 主机，请换一台主机。
+  en: The original host was deleted or is no longer an SSH host. Choose another host.
+  zh-TW: 原本經由的主機已刪除或不再是 SSH 主機，請換一台主機。
+  ja: 経由していたホストが削除されたか、SSH ホストではなくなりました。別のホストを選択してください。
+  ko: 원래 경유하던 호스트가 삭제되었거나 더 이상 SSH 호스트가 아닙니다. 다른 호스트를 선택하세요.
+forward.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+forward.name_placeholder:
+  zh-CN: 可选，留空则显示端口
+  en: Optional; the ports are shown when empty
+  zh-TW: 選填，留空則顯示連接埠
+  ja: 省略可。空欄の場合はポートを表示
+  ko: 선택 사항. 비워 두면 포트를 표시
+forward.local:
+  zh-CN: 本地地址
+  en: Local address
+  zh-TW: 本機位址
+  ja: ローカルアドレス
+  ko: 로컬 주소
+forward.local_port:
+  zh-CN: 本地端口
+  en: Local port
+  zh-TW: 本機連接埠
+  ja: ローカルポート
+  ko: 로컬 포트
+forward.remote_bind:
+  zh-CN: 服务器上的监听地址
+  en: Listen address on the server
+  zh-TW: 伺服器上的監聽位址
+  ja: サーバーの待ち受けアドレス
+  ko: 서버의 수신 대기 주소
+forward.remote_port:
+  zh-CN: 服务器端口
+  en: Server port
+  zh-TW: 伺服器連接埠
+  ja: サーバーのポート
+  ko: 서버 포트
+forward.target:
+  zh-CN: 目标地址（从服务器访问）
+  en: Target (as seen from the server)
+  zh-TW: 目標位址（從伺服器存取）
+  ja: 転送先アドレス（サーバーから見たもの）
+  ko: 대상 주소(서버에서 접근)
+forward.remote_target:
+  zh-CN: 目标地址（从本机访问）
+  en: Target (as seen from this computer)
+  zh-TW: 目標位址（從本機存取）
+  ja: 転送先アドレス（このコンピューターから見たもの）
+  ko: 대상 주소(이 컴퓨터에서 접근)
+forward.target_port:
+  zh-CN: 目标端口
+  en: Target port
+  zh-TW: 目標連接埠
+  ja: 転送先ポート
+  ko: 대상 포트
+forward.target_placeholder:
+  zh-CN: 例如 127.0.0.1 或 db.internal
+  en: e.g. 127.0.0.1 or db.internal
+  zh-TW: 例如 127.0.0.1 或 db.internal
+  ja: 例：127.0.0.1 または db.internal
+  ko: "예: 127.0.0.1 또는 db.internal"
+forward.bind_loopback:
+  zh-CN: 127.0.0.1（仅本机）
+  en: 127.0.0.1 (this computer only)
+  zh-TW: 127.0.0.1（僅限本機）
+  ja: 127.0.0.1（このコンピューターのみ）
+  ko: 127.0.0.1(이 컴퓨터만)
+forward.bind_loopback6:
+  zh-CN: ::1（仅本机，IPv6）
+  en: ::1 (this computer only, IPv6)
+  zh-TW: "::1（僅限本機，IPv6）"
+  ja: ::1（このコンピューターのみ、IPv6）
+  ko: ::1(이 컴퓨터만, IPv6)
+forward.bind_any:
+  zh-CN: 0.0.0.0（局域网可访问）
+  en: 0.0.0.0 (reachable from the LAN)
+  zh-TW: 0.0.0.0（區域網路可存取）
+  ja: 0.0.0.0（LAN からアクセス可能）
+  ko: 0.0.0.0(LAN에서 접근 가능)
+forward.remote_bind_loopback:
+  zh-CN: 127.0.0.1（仅服务器本机）
+  en: 127.0.0.1 (the server only)
+  zh-TW: 127.0.0.1（僅限伺服器本身）
+  ja: 127.0.0.1（サーバー自身のみ）
+  ko: 127.0.0.1(서버 자신만)
+forward.remote_bind_any:
+  zh-CN: 0.0.0.0（服务器的所有网卡）
+  en: 0.0.0.0 (all server interfaces)
+  zh-TW: 0.0.0.0（伺服器的所有網路介面）
+  ja: 0.0.0.0（サーバーのすべてのネットワークインターフェイス）
+  ko: 0.0.0.0(서버의 모든 네트워크 인터페이스)
+forward.any_warning:
+  zh-CN: 监听 0.0.0.0 时，局域网内的其他设备也能经本机访问该目标，且无需任何认证。请只在可信网络中使用。
+  en: When listening on 0.0.0.0, other devices on your network can reach the target through this computer without any authentication. Use it only on trusted networks.
+  zh-TW: 監聽 0.0.0.0 時，區域網路內的其他裝置也能經本機存取該目標，且不需任何驗證。請只在受信任的網路中使用。
+  ja: 0.0.0.0 で待ち受けると、LAN 内の他のデバイスもこのコンピューターを経由して転送先に、認証なしでアクセスできます。信頼できるネットワークでのみ使用してください。
+  ko: 0.0.0.0에서 수신 대기하면 LAN의 다른 장치도 인증 없이 이 컴퓨터를 거쳐 대상에 접근할 수 있습니다. 신뢰할 수 있는 네트워크에서만 사용하세요.
+forward.remote_any_warning:
+  zh-CN: 监听服务器的所有网卡时，能访问服务器的设备都能经它连到本机的目标，且无需任何认证；服务器还需开启 GatewayPorts，否则仍只监听服务器本机。
+  en: When listening on all server interfaces, anything that can reach the server can reach the target on this computer without any authentication. The server must also enable GatewayPorts; otherwise it still listens on loopback only.
+  zh-TW: 監聽伺服器的所有網路介面時，能存取伺服器的裝置都能經由它連到本機的目標，且不需任何驗證；伺服器還需開啟 GatewayPorts，否則仍只監聽伺服器本身。
+  ja: サーバーのすべてのネットワークインターフェイスで待ち受けると、サーバーにアクセスできるデバイスはすべて、サーバーを経由してこのコンピューターの転送先に認証なしで接続できます。また、サーバーで GatewayPorts を有効にする必要があり、そうでない場合はサーバー自身でのみ待ち受けます。
+  ko: 서버의 모든 네트워크 인터페이스에서 수신 대기하면 서버에 접근할 수 있는 모든 장치가 인증 없이 서버를 거쳐 이 컴퓨터의 대상에 연결할 수 있습니다. 또한 서버에서 GatewayPorts를 켜야 하며, 그렇지 않으면 여전히 서버 자신에서만 수신 대기합니다.
+forward.any_badge:
+  zh-CN: 监听 0.0.0.0，局域网内的其他设备也能访问
+  en: Listening on 0.0.0.0; other devices on the LAN can reach it
+  zh-TW: 監聽 0.0.0.0，區域網路內的其他裝置也能存取
+  ja: 0.0.0.0 で待ち受け中。LAN 内の他のデバイスもアクセスできます
+  ko: 0.0.0.0에서 수신 대기 중. LAN의 다른 장치도 접근할 수 있음
+forward.remote_any_badge:
+  zh-CN: 监听服务器的所有网卡，能访问服务器的设备都能经它连到本机的目标
+  en: Listening on all server interfaces; anything that can reach the server can reach the target through it
+  zh-TW: 監聽伺服器的所有網路介面，能存取伺服器的裝置都能經由它連到本機的目標
+  ja: サーバーのすべてのネットワークインターフェイスで待ち受け中。サーバーにアクセスできるデバイスはすべて、サーバー経由でこのコンピューターの転送先に接続できます
+  ko: 서버의 모든 네트워크 인터페이스에서 수신 대기 중. 서버에 접근할 수 있는 모든 장치가 서버를 거쳐 이 컴퓨터의 대상에 연결할 수 있음
+forward.port_invalid:
+  zh-CN: 端口应在 1–65535 之间
+  en: Ports must be between 1 and 65535
+  zh-TW: 連接埠應介於 1–65535 之間
+  ja: ポートは 1～65535 の範囲で指定してください
+  ko: 포트는 1~65535 사이여야 합니다
+forward.incomplete:
+  zh-CN: 请选择主机，并填写监听端口与目标
+  en: Choose a host and fill in the listen port and the target
+  zh-TW: 請選擇主機，並填寫監聽連接埠與目標
+  ja: ホストを選択し、待ち受けポートと転送先を入力してください
+  ko: 호스트를 선택하고 수신 대기 포트와 대상을 입력하세요
+forward.conflict_local:
+  zh-CN: 本地地址 %{address} 已被转发规则“%{name}”使用
+  en: The local address %{address} is already used by the forward “%{name}”
+  zh-TW: 本機位址 %{address} 已被轉送規則「%{name}」使用
+  ja: ローカルアドレス %{address} はポート転送「%{name}」で使用されています
+  ko: 로컬 주소 %{address}은(는) 이미 '%{name}' 포트 포워딩에서 사용 중입니다
+forward.conflict_remote:
+  zh-CN: 服务器上的地址 %{address} 已被转发规则“%{name}”使用
+  en: The server address %{address} is already used by the forward “%{name}”
+  zh-TW: 伺服器上的位址 %{address} 已被轉送規則「%{name}」使用
+  ja: サーバーのアドレス %{address} はポート転送「%{name}」で使用されています
+  ko: 서버 주소 %{address}은(는) 이미 '%{name}' 포트 포워딩에서 사용 중입니다
+forward.auto_start:
+  zh-CN: Termlet 启动后自动启动
+  en: Start automatically when Termlet starts
+  zh-TW: Termlet 啟動後自動啟動
+  ja: Termlet の起動時に自動で開始
+  ko: Termlet이 시작되면 자동으로 시작
+forward.start_shared:
+  zh-CN: 保存后立即启动，共用已打开的终端连接（不再认证）
+  en: Start right after saving, sharing the open terminal connection (no new login)
+  zh-TW: 儲存後立即啟動，共用已開啟的終端機連線（不再驗證）
+  ja: 保存後すぐに開始し、開いているターミナルの接続を共有（再認証なし）
+  ko: 저장 후 바로 시작하고 열려 있는 터미널 연결을 공유(다시 인증하지 않음)
+forward.start:
+  zh-CN: 启动
+  en: Start
+  zh-TW: 啟動
+  ja: 開始
+  ko: 시작
+forward.stop:
+  zh-CN: 停止
+  en: Stop
+  zh-TW: 停止
+  ja: 停止
+  ko: 중지
+forward.state_stopped:
+  zh-CN: 已停止
+  en: Stopped
+  zh-TW: 已停止
+  ja: 停止
+  ko: 중지됨
+forward.state_starting:
+  zh-CN: 正在启动
+  en: Starting
+  zh-TW: 正在啟動
+  ja: 開始中
+  ko: 시작하는 중
+forward.state_running:
+  zh-CN: 运行中
+  en: Running
+  zh-TW: 執行中
+  ja: 実行中
+  ko: 실행 중
+forward.state_reconnecting:
+  zh-CN: 正在重连
+  en: Reconnecting
+  zh-TW: 正在重新連線
+  ja: 再接続中
+  ko: 다시 연결하는 중
+forward.state_error:
+  zh-CN: 出错
+  en: Error
+  zh-TW: 錯誤
+  ja: エラー
+  ko: 오류
+forward.stats:
+  zh-CN: "%{conns} 个连接 · ↓ %{bytes_in} ↑ %{bytes_out}"
+  en: "%{conns} conn. · ↓ %{bytes_in} ↑ %{bytes_out}"
+  zh-TW: "%{conns} 個連線 · ↓ %{bytes_in} ↑ %{bytes_out}"
+  ja: "%{conns} 個の接続 · ↓ %{bytes_in} ↑ %{bytes_out}"
+  ko: 연결 %{conns}개 · ↓ %{bytes_in} ↑ %{bytes_out}
+forward.reconnecting:
+  zh-CN: SSH 连接已断开，正在重连（第 %{attempt} 次）…
+  en: The SSH connection was lost. Reconnecting (attempt %{attempt})…
+  zh-TW: SSH 連線已中斷，正在重新連線（第 %{attempt} 次）…
+  ja: SSH 接続が切断されました。再接続しています（%{attempt} 回目）…
+  ko: SSH 연결이 끊어졌습니다. 다시 연결하는 중(%{attempt}번째)…
+forward.target_failed:
+  zh-CN: 最近一次连接目标失败：%{message}
+  en: "The last connection to the target failed: %{message}"
+  zh-TW: 最近一次連線到目標失敗：%{message}
+  ja: 直近の転送先への接続に失敗しました：%{message}
+  ko: "최근 대상 연결에 실패했습니다: %{message}"
+forward.confirm_delete:
+  zh-CN: 确定删除端口转发“%{name}”吗？
+  en: Delete the port forward “%{name}”?
+  zh-TW: 確定要刪除連接埠轉送「%{name}」嗎？
+  ja: ポート転送「%{name}」を削除しますか？
+  ko: "'%{name}' 포트 포워딩을 삭제하시겠습니까?"
+forward.label_remote:
+  zh-CN: 服务器 %{port} → %{target}
+  en: Server %{port} → %{target}
+  zh-TW: 伺服器 %{port} → %{target}
+  ja: サーバー %{port} → %{target}
+  ko: 서버 %{port} → %{target}
+forward.route_remote:
+  zh-CN: 服务器 %{bind} → 本机 %{target}
+  en: Server %{bind} → local %{target}
+  zh-TW: 伺服器 %{bind} → 本機 %{target}
+  ja: サーバー %{bind} → ローカル %{target}
+  ko: 서버 %{bind} → 로컬 %{target}
+forward.add_for_host:
+  zh-CN: 为此主机添加端口转发…
+  en: Add a Port Forward for This Host…
+  zh-TW: 為此主機新增連接埠轉送…
+  ja: このホストにポート転送を追加…
+  ko: 이 호스트에 포트 포워딩 추가…
+forward.title_bar:
+  zh-CN: "%{count} 个转发"
+  en: "%{count} tunnels"
+  zh-TW: "%{count} 個轉送"
+  ja: "%{count} 件のポート転送"
+  ko: 포트 포워딩 %{count}개
+forward.title_bar_hint:
+  zh-CN: 运行中的端口转发
+  en: Running port forwards
+  zh-TW: 執行中的連接埠轉送
+  ja: 実行中のポート転送
+  ko: 실행 중인 포트 포워딩
+forward.started:
+  zh-CN: 端口转发“%{name}”已启动
+  en: Port forward “%{name}” started
+  zh-TW: 連接埠轉送「%{name}」已啟動
+  ja: ポート転送「%{name}」を開始しました
+  ko: "'%{name}' 포트 포워딩을 시작했습니다"
+forward.browser_opened:
+  zh-CN: "已转发到本机 %{address}，正在浏览器中打开"
+  en: "Forwarded to %{address} on this computer; opening in the browser"
+  zh-TW: "已轉送到本機 %{address}，正在瀏覽器中開啟"
+  ja: "このコンピューターの %{address} に転送しました。ブラウザーで開いています"
+  ko: "이 컴퓨터의 %{address}(으)로 포워딩했습니다. 브라우저에서 여는 중입니다"
+forward.browser_no_port:
+  zh-CN: "本机没有空闲的端口可以转发"
+  en: "No free port on this computer to forward to"
+  zh-TW: "本機沒有空閒的連接埠可以轉送"
+  ja: "このコンピューターに転送先の空きポートがありません"
+  ko: "이 컴퓨터에 포워딩할 빈 포트가 없습니다"
+forward.detect_ports:
+  zh-CN: 检测服务器端口
+  en: Detect Server Ports
+  zh-TW: 偵測伺服器連接埠
+  ja: サーバーのポートを検出
+  ko: 서버 포트 검색
+forward.no_ports:
+  zh-CN: 没有检测到正在监听的端口
+  en: No listening ports found
+  zh-TW: 沒有偵測到正在監聽的連接埠
+  ja: 待ち受け中のポートは見つかりませんでした
+  ko: 수신 대기 중인 포트를 찾지 못했습니다
+forward.error.rule_not_found:
+  zh-CN: 这条转发规则已被删除
+  en: This forward rule has been deleted
+  zh-TW: 這條轉送規則已被刪除
+  ja: このポート転送ルールは削除されました
+  ko: 이 포워딩 규칙은 삭제되었습니다
+forward.error.host_not_found:
+  zh-CN: 转发经由的主机已被删除
+  en: The host this forward goes through has been deleted
+  zh-TW: 轉送經由的主機已被刪除
+  ja: ポート転送が経由するホストは削除されました
+  ko: 포워딩이 경유하는 호스트가 삭제되었습니다
+forward.error.not_ssh:
+  zh-CN: 转发经由的主机不是 SSH 主机
+  en: The host this forward goes through isn't an SSH host
+  zh-TW: 轉送經由的主機不是 SSH 主機
+  ja: ポート転送が経由するホストは SSH ホストではありません
+  ko: 포워딩이 경유하는 호스트가 SSH 호스트가 아닙니다
+forward.error.port_in_use:
+  zh-CN: 本地地址 %{address} 已被占用，请换一个端口
+  en: The local address %{address} is already in use. Choose another port.
+  zh-TW: 本機位址 %{address} 已被佔用，請換一個連接埠
+  ja: ローカルアドレス %{address} は使用中です。別のポートを選んでください
+  ko: 로컬 주소 %{address}은(는) 이미 사용 중입니다. 다른 포트를 선택하세요
+forward.error.listen_denied:
+  zh-CN: 无法监听 %{address}：端口被系统保留或没有权限，请换一个端口
+  en: Can't listen on %{address}. The port is reserved by the system or not permitted; choose another port.
+  zh-TW: 無法監聽 %{address}：連接埠被系統保留或沒有權限，請換一個連接埠
+  ja: "%{address} で待ち受けできません：ポートがシステムで予約されているか、権限がありません。別のポートを選んでください"
+  ko: "%{address}에서 수신 대기할 수 없습니다: 시스템에서 예약한 포트이거나 권한이 없습니다. 다른 포트를 선택하세요"
+forward.error.address_unavailable:
+  zh-CN: 本机没有地址 %{address}
+  en: This computer doesn't have the address %{address}
+  zh-TW: 本機沒有位址 %{address}
+  ja: このコンピューターにアドレス %{address} はありません
+  ko: 이 컴퓨터에 %{address} 주소가 없습니다
+forward.error.listen:
+  zh-CN: 无法监听 %{address}：%{reason}
+  en: "Can't listen on %{address}: %{reason}"
+  zh-TW: 無法監聽 %{address}：%{reason}
+  ja: "%{address} で待ち受けできません：%{reason}"
+  ko: "%{address}에서 수신 대기할 수 없습니다: %{reason}"
+forward.error.remote_listen_denied:
+  zh-CN: 服务器拒绝在 %{address} 监听：端口可能已被占用、低于 1024，或服务器不允许远程转发（AllowTcpForwarding）
+  en: The server refused to listen on %{address}. The port may be in use or below 1024, or the server doesn't allow remote forwarding (AllowTcpForwarding).
+  zh-TW: 伺服器拒絕在 %{address} 監聽：連接埠可能已被佔用、低於 1024，或伺服器不允許遠端轉送（AllowTcpForwarding）
+  ja: サーバーが %{address} での待ち受けを拒否しました。ポートが使用中か 1024 未満であるか、サーバーがリモート転送を許可していません（AllowTcpForwarding）
+  ko: 서버가 %{address}에서 수신 대기를 거부했습니다. 포트가 이미 사용 중이거나 1024 미만이거나, 서버에서 원격 포워딩을 허용하지 않습니다(AllowTcpForwarding)
+forward.error.single_channel:
+  zh-CN: 这台主机只用一个通道（堡垒机），不能共用终端的连接
+  en: This host uses a single channel (bastion), so the terminal's connection can't be shared
+  zh-TW: 這台主機只用一個通道（堡壘主機），無法共用終端機的連線
+  ja: このホストはチャネルを 1 つだけ使用する（要塞ホスト）ため、ターミナルの接続を共有できません
+  ko: 이 호스트는 채널 하나만 사용하므로(배스천 호스트) 터미널 연결을 공유할 수 없습니다
+forward.error.stopped:
+  zh-CN: 转发已被停止
+  en: The forward was stopped
+  zh-TW: 轉送已被停止
+  ja: ポート転送は停止されました
+  ko: 포워딩이 중지되었습니다
+forward.target.unreachable:
+  zh-CN: 服务器无法连接 %{target}（目标没有服务、不可达或域名解析失败）
+  en: The server couldn't connect to %{target} (nothing listening, unreachable, or the name didn't resolve)
+  zh-TW: 伺服器無法連線到 %{target}（目標沒有服務、無法到達或網域名稱解析失敗）
+  ja: サーバーから %{target} に接続できません（転送先でサービスが動いていない、到達できない、またはドメイン名を解決できません）
+  ko: 서버에서 %{target}에 연결할 수 없습니다(대상에 서비스가 없거나, 연결할 수 없거나, 도메인 이름을 확인하지 못함)
+forward.target.prohibited:
+  zh-CN: 服务器不允许转发到 %{target}
+  en: The server doesn't allow forwarding to %{target}
+  zh-TW: 伺服器不允許轉送到 %{target}
+  ja: サーバーが %{target} への転送を許可していません
+  ko: 서버에서 %{target}(으)로의 포워딩을 허용하지 않습니다
+forward.target.channel:
+  zh-CN: 经服务器连接 %{target} 失败：%{reason}
+  en: "Connecting to %{target} through the server failed: %{reason}"
+  zh-TW: 經伺服器連線到 %{target} 失敗：%{reason}
+  ja: サーバー経由での %{target} への接続に失敗しました：%{reason}
+  ko: "서버를 거쳐 %{target}에 연결하지 못했습니다: %{reason}"
+forward.target.local_refused:
+  zh-CN: 本机的 %{target} 拒绝连接
+  en: "%{target} on this computer refused the connection"
+  zh-TW: 本機的 %{target} 拒絕連線
+  ja: このコンピューターの %{target} が接続を拒否しました
+  ko: 이 컴퓨터의 %{target}에서 연결을 거부했습니다
+forward.target.local:
+  zh-CN: 连接本机的 %{target} 失败：%{reason}
+  en: "Connecting to %{target} on this computer failed: %{reason}"
+  zh-TW: 連線到本機的 %{target} 失敗：%{reason}
+  ja: このコンピューターの %{target} への接続に失敗しました：%{reason}
+  ko: "이 컴퓨터의 %{target}에 연결하지 못했습니다: %{reason}"
+forward.socks.read:
+  zh-CN: 读取 SOCKS 请求失败
+  en: Couldn't read the SOCKS request
+  zh-TW: 讀取 SOCKS 要求失敗
+  ja: SOCKS リクエストを読み取れませんでした
+  ko: SOCKS 요청을 읽지 못했습니다
+forward.socks.timeout:
+  zh-CN: SOCKS 握手超时
+  en: The SOCKS handshake timed out
+  zh-TW: SOCKS 交握逾時
+  ja: SOCKS ハンドシェイクがタイムアウトしました
+  ko: SOCKS 핸드셰이크 시간이 초과되었습니다
+forward.socks.not_socks:
+  zh-CN: 收到的不是 SOCKS 请求，请在客户端把代理类型设为 SOCKS5
+  en: That wasn't a SOCKS request. Set the proxy type to SOCKS5 in the client.
+  zh-TW: 收到的不是 SOCKS 要求，請在用戶端把代理伺服器類型設為 SOCKS5
+  ja: 受信したのは SOCKS リクエストではありません。クライアントでプロキシの種類を SOCKS5 に設定してください
+  ko: 받은 요청이 SOCKS 요청이 아닙니다. 클라이언트에서 프록시 유형을 SOCKS5로 설정하세요
+forward.socks.auth_required:
+  zh-CN: 客户端要求用户名密码认证；动态转发不需要认证，请在客户端去掉代理的用户名密码
+  en: The client asked for user name and password authentication. Dynamic forwards don't need it; remove the proxy credentials in the client.
+  zh-TW: 用戶端要求使用者名稱與密碼驗證；動態轉送不需要驗證，請在用戶端移除代理伺服器的使用者名稱與密碼
+  ja: クライアントがユーザー名とパスワードによる認証を要求しました。ダイナミック転送では認証は不要なので、クライアントでプロキシのユーザー名とパスワードを削除してください
+  ko: 클라이언트가 사용자 이름과 비밀번호 인증을 요청했습니다. 동적 포워딩은 인증이 필요 없으므로 클라이언트에서 프록시의 사용자 이름과 비밀번호를 제거하세요
+forward.socks.unsupported_command:
+  zh-CN: 不支持的 SOCKS 命令 %{command}，只支持 CONNECT
+  en: SOCKS command %{command} isn't supported; only CONNECT is
+  zh-TW: 不支援的 SOCKS 指令 %{command}，只支援 CONNECT
+  ja: SOCKS コマンド %{command} には対応していません。対応しているのは CONNECT のみです
+  ko: SOCKS 명령 %{command}은(는) 지원하지 않습니다. CONNECT만 지원합니다
+forward.socks.unsupported_address:
+  zh-CN: 不支持的 SOCKS 地址类型 %{kind}
+  en: SOCKS address type %{kind} isn't supported
+  zh-TW: 不支援的 SOCKS 位址類型 %{kind}
+  ja: SOCKS のアドレスの種類 %{kind} には対応していません
+  ko: SOCKS 주소 유형 %{kind}은(는) 지원하지 않습니다
+forward.socks.bad_domain:
+  zh-CN: SOCKS 请求中的域名格式不正确
+  en: The domain name in the SOCKS request is malformed
+  zh-TW: SOCKS 要求中的網域名稱格式不正確
+  ja: SOCKS リクエスト内のドメイン名の形式が正しくありません
+  ko: SOCKS 요청의 도메인 이름 형식이 올바르지 않습니다
+forward.socks.malformed:
+  zh-CN: SOCKS 请求格式错误
+  en: The SOCKS request is malformed
+  zh-TW: SOCKS 要求格式錯誤
+  ja: SOCKS リクエストの形式が正しくありません
+  ko: SOCKS 요청 형식이 올바르지 않습니다

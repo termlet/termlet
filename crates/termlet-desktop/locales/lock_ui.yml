@@ -1,0 +1,745 @@
+_version: 2
+lock_ui.nav.security:
+  zh-CN: "安全"
+  en: "Security"
+  zh-TW: "安全性"
+  ja: セキュリティ
+  ko: 보안
+lock_ui.lock_now_tooltip:
+  zh-CN: "立即锁定"
+  en: "Lock now"
+  zh-TW: "立即鎖定"
+  ja: 今すぐロック
+  ko: 지금 잠그기
+lock_ui.screen.title:
+  zh-CN: "Termlet 已锁定"
+  en: "Termlet is locked"
+  zh-TW: "Termlet 已鎖定"
+  ja: Termlet はロックされています
+  ko: Termlet이 잠겨 있습니다
+lock_ui.screen.hint:
+  zh-CN: "已打开的会话仍在后台运行"
+  en: "Open sessions are still running in the background"
+  zh-TW: "已開啟的工作階段仍在背景執行"
+  ja: 開いているセッションはバックグラウンドで実行中です
+  ko: 열려 있는 세션은 백그라운드에서 계속 실행 중입니다
+lock_ui.screen.password:
+  zh-CN: "锁定密码"
+  en: "Lock password"
+  zh-TW: "鎖定密碼"
+  ja: ロックパスワード
+  ko: 잠금 비밀번호
+lock_ui.screen.unlock:
+  zh-CN: "解锁"
+  en: "Unlock"
+  zh-TW: "解鎖"
+  ja: ロック解除
+  ko: 잠금 해제
+lock_ui.screen.windows_hello:
+  zh-CN: "使用 Windows Hello 解锁"
+  en: "Unlock with Windows Hello"
+  zh-TW: "使用 Windows Hello 解鎖"
+  ja: Windows Hello でロック解除
+  ko: Windows Hello로 잠금 해제
+lock_ui.screen.system_reason:
+  zh-CN: "解锁 Termlet"
+  en: "Unlock Termlet"
+  zh-TW: "解鎖 Termlet"
+  ja: Termlet のロックを解除
+  ko: Termlet 잠금 해제
+lock_ui.screen.wrong_password:
+  zh-CN: "锁定密码错误"
+  en: "Incorrect lock password"
+  zh-TW: "鎖定密碼錯誤"
+  ja: ロックパスワードが正しくありません
+  ko: 잠금 비밀번호가 올바르지 않습니다
+lock_ui.screen.system_failed:
+  zh-CN: "系统验证未通过"
+  en: "System verification failed"
+  zh-TW: "系統驗證未通過"
+  ja: システムの認証に失敗しました
+  ko: 시스템 인증에 실패했습니다
+lock_ui.screen.failed:
+  zh-CN: "解锁失败：%{error}"
+  en: "Couldn't unlock: %{error}"
+  zh-TW: "解鎖失敗：%{error}"
+  ja: ロックを解除できませんでした：%{error}
+  ko: "잠금을 해제하지 못했습니다: %{error}"
+lock_ui.screen.quit:
+  zh-CN: "退出 Termlet…"
+  en: "Quit Termlet…"
+  zh-TW: "結束 Termlet…"
+  ja: Termlet を終了…
+  ko: Termlet 종료…
+lock_ui.screen.quit_confirm:
+  zh-CN: "退出后，已打开的会话、传输与端口转发都会断开。"
+  en: "Quitting disconnects open sessions, transfers and port forwards."
+  zh-TW: "結束後，已開啟的工作階段、傳輸與連接埠轉送都會中斷。"
+  ja: 終了すると、開いているセッション、転送、ポート転送はすべて切断されます。
+  ko: 종료하면 열려 있는 세션, 전송, 포트 포워딩이 모두 끊어집니다.
+lock_ui.screen.quit_ok:
+  zh-CN: "退出"
+  en: "Quit"
+  zh-TW: "結束"
+  ja: 終了
+  ko: 종료
+lock_ui.security.description:
+  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。按 %{key} 立即锁定。"
+  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked. Press %{key} to lock now."
+  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。按 %{key} 立即鎖定。"
+  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。%{key} を押すとすぐにロックします。
+  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다. %{key}을(를) 누르면 바로 잠급니다.
+lock_ui.security.description_no_key:
+  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。"
+  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked."
+  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。"
+  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。
+  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다.
+lock_ui.security.lock_now:
+  zh-CN: "立即锁定"
+  en: "Lock now"
+  zh-TW: "立即鎖定"
+  ja: 今すぐロック
+  ko: 지금 잠그기
+lock_ui.security.idle:
+  zh-CN: "无操作自动锁定"
+  en: "Lock after inactivity"
+  zh-TW: "閒置時自動鎖定"
+  ja: 操作がないときに自動でロック
+  ko: 사용하지 않을 때 자동 잠금
+lock_ui.security.idle_hint:
+  zh-CN: "这台电脑没有键盘、鼠标输入达到这么久时锁定"
+  en: "Locks when this computer has had no keyboard or mouse input for this long"
+  zh-TW: "這台電腦沒有鍵盤、滑鼠輸入達到這段時間時鎖定"
+  ja: このコンピューターでキーボードやマウスの入力がこの時間続かなかったときにロックします
+  ko: 이 컴퓨터에 키보드나 마우스 입력이 이 시간 동안 없으면 잠급니다
+lock_ui.security.idle_never:
+  zh-CN: "从不"
+  en: "Never"
+  zh-TW: "永不"
+  ja: しない
+  ko: 안 함
+lock_ui.security.idle_minutes:
+  zh-CN: "%{count} 分钟"
+  en: "%{count} min"
+  zh-TW: "%{count} 分鐘"
+  ja: "%{count} 分"
+  ko: "%{count}분"
+lock_ui.security.on_startup:
+  zh-CN: "启动时锁定"
+  en: "Lock on startup"
+  zh-TW: "啟動時鎖定"
+  ja: 起動時にロック
+  ko: 시작할 때 잠금
+lock_ui.security.on_system_lock:
+  zh-CN: "系统锁屏时锁定"
+  en: "Lock when the system locks"
+  zh-TW: "系統鎖定畫面時鎖定"
+  ja: システムのロック時にロック
+  ko: 시스템이 잠길 때 잠금
+lock_ui.security.settings_hint:
+  zh-CN: "以上三项随“保存”生效；启用、修改与停用立即生效。"
+  en: "The options above take effect when you save. Enabling, changing and disabling take effect immediately."
+  zh-TW: "以上三項隨「儲存」生效；啟用、變更與停用會立即生效。"
+  ja: 上の 3 項目は「保存」で反映されます。有効化、変更、無効化はすぐに反映されます。
+  ko: 위의 세 항목은 '저장'하면 적용됩니다. 사용, 변경, 사용 안 함은 바로 적용됩니다.
+lock_ui.security.current_password:
+  zh-CN: "当前锁定密码"
+  en: "Current lock password"
+  zh-TW: "目前的鎖定密碼"
+  ja: 現在のロックパスワード
+  ko: 현재 잠금 비밀번호
+lock_ui.security.new_password:
+  zh-CN: "新的锁定密码（至少 %{min} 个字符）"
+  en: "New lock password (at least %{min} characters)"
+  zh-TW: "新的鎖定密碼（至少 %{min} 個字元）"
+  ja: 新しいロックパスワード（%{min} 文字以上）
+  ko: 새 잠금 비밀번호(%{min}자 이상)
+lock_ui.security.confirm_password:
+  zh-CN: "再次输入新的锁定密码"
+  en: "Re-enter the new lock password"
+  zh-TW: "再次輸入新的鎖定密碼"
+  ja: 新しいロックパスワードを再入力
+  ko: 새 잠금 비밀번호 다시 입력
+lock_ui.security.enable:
+  zh-CN: "启用应用锁…"
+  en: "Enable app lock…"
+  zh-TW: "啟用應用程式鎖定…"
+  ja: アプリロックを有効にする…
+  ko: 앱 잠금 사용…
+lock_ui.security.enable_submit:
+  zh-CN: "启用应用锁"
+  en: "Enable app lock"
+  zh-TW: "啟用應用程式鎖定"
+  ja: アプリロックを有効にする
+  ko: 앱 잠금 사용
+lock_ui.security.change:
+  zh-CN: "修改密码…"
+  en: "Change password…"
+  zh-TW: "變更密碼…"
+  ja: パスワードを変更…
+  ko: 비밀번호 변경…
+lock_ui.security.change_submit:
+  zh-CN: "修改密码"
+  en: "Change password"
+  zh-TW: "變更密碼"
+  ja: パスワードを変更
+  ko: 비밀번호 변경
+lock_ui.security.disable:
+  zh-CN: "停用…"
+  en: "Disable…"
+  zh-TW: "停用…"
+  ja: 無効にする…
+  ko: 사용 안 함…
+lock_ui.security.disable_submit:
+  zh-CN: "停用应用锁"
+  en: "Disable app lock"
+  zh-TW: "停用應用程式鎖定"
+  ja: アプリロックを無効にする
+  ko: 앱 잠금 사용 안 함
+lock_ui.security.enabled:
+  zh-CN: "应用锁已启用"
+  en: "App lock enabled"
+  zh-TW: "應用程式鎖定已啟用"
+  ja: アプリロックを有効にしました
+  ko: 앱 잠금을 사용하도록 설정했습니다
+lock_ui.security.changed:
+  zh-CN: "锁定密码已修改"
+  en: "Lock password changed"
+  zh-TW: "鎖定密碼已變更"
+  ja: ロックパスワードを変更しました
+  ko: 잠금 비밀번호를 변경했습니다
+lock_ui.security.disabled:
+  zh-CN: "应用锁已停用"
+  en: "App lock disabled"
+  zh-TW: "應用程式鎖定已停用"
+  ja: アプリロックを無効にしました
+  ko: 앱 잠금을 사용하지 않도록 설정했습니다
+lock_ui.security.mismatch:
+  zh-CN: "两次输入的新密码不一致"
+  en: "The new passwords don't match"
+  zh-TW: "兩次輸入的新密碼不一致"
+  ja: 2 回入力した新しいパスワードが一致しません
+  ko: 두 번 입력한 새 비밀번호가 일치하지 않습니다
+lock_ui.security.too_short:
+  zh-CN: "锁定密码至少 %{min} 个字符"
+  en: "The lock password must be at least %{min} characters"
+  zh-TW: "鎖定密碼至少要 %{min} 個字元"
+  ja: ロックパスワードは %{min} 文字以上にしてください
+  ko: 잠금 비밀번호는 %{min}자 이상이어야 합니다
+lock_ui.security.wrong_password:
+  zh-CN: "当前锁定密码错误"
+  en: "The current lock password is incorrect"
+  zh-TW: "目前的鎖定密碼錯誤"
+  ja: 現在のロックパスワードが正しくありません
+  ko: 현재 잠금 비밀번호가 올바르지 않습니다
+lock_ui.security.not_enabled:
+  zh-CN: "应用锁已经停用"
+  en: "App lock is already disabled"
+  zh-TW: "應用程式鎖定已經停用"
+  ja: アプリロックはすでに無効です
+  ko: 앱 잠금이 이미 사용 안 함 상태입니다
+lock_ui.security.failed:
+  zh-CN: "操作失败：%{error}"
+  en: "Couldn't complete the change: %{error}"
+  zh-TW: "操作失敗：%{error}"
+  ja: 変更できませんでした：%{error}
+  ko: "변경하지 못했습니다: %{error}"
+lock_ui.security.unavailable:
+  zh-CN: "应用锁不可用：读取锁定密码失败，详情见日志。"
+  en: "App lock is unavailable because the lock password couldn't be read. See the log for details."
+  zh-TW: "應用程式鎖定無法使用：讀取鎖定密碼失敗，詳細資訊請見記錄。"
+  ja: ロックパスワードを読み取れなかったため、アプリロックを使用できません。詳細はログを確認してください。
+  ko: 잠금 비밀번호를 읽지 못해 앱 잠금을 사용할 수 없습니다. 자세한 내용은 로그를 확인하세요.
+lock_ui.master.title:
+  zh-CN: "主密码"
+  en: "Master password"
+  zh-TW: "主密碼"
+  ja: マスターパスワード
+  ko: 마스터 비밀번호
+lock_ui.master.description:
+  zh-CN: "这台电脑没有可用的系统钥匙串，保存的密码、私钥等用主密码加密，每次启动时输入。修改后用新的主密码解锁，保存的内容不用重新加密。只影响这台电脑：云同步用的是同步密码，其他电脑有各自的钥匙串或主密码，不用跟着改。"
+  en: "No system keychain is available on this computer, so saved passwords, private keys and other secrets are encrypted with your master password, which you enter at each start. After a change you unlock with the new one; saved secrets don't need to be encrypted again. This affects only this computer: sync uses your sync password, and your other computers have their own keychain or master password, so nothing needs to change there."
+  zh-TW: "這台電腦沒有可用的系統鑰匙圈，儲存的密碼、私密金鑰等用主密碼加密，每次啟動時輸入。修改後用新的主密碼解鎖，儲存的內容不用重新加密。只影響這台電腦：雲端同步用的是同步密碼，其他電腦有各自的鑰匙圈或主密碼，不用跟著改。"
+  ja: このコンピューターには使用できるシステムのキーチェーンがないため、保存したパスワードや秘密鍵などはマスターパスワードで暗号化され、起動のたびに入力します。変更後は新しいマスターパスワードでロックを解除します。保存した内容を暗号化し直す必要はありません。影響するのはこのコンピューターだけです。クラウド同期では同期パスワードを使い、ほかのコンピューターにはそれぞれのキーチェーンまたはマスターパスワードがあるため、変更は不要です。
+  ko: 이 컴퓨터에는 사용할 수 있는 시스템 키체인이 없어 저장한 비밀번호, 개인 키 등을 마스터 비밀번호로 암호화하며, 시작할 때마다 입력해야 합니다. 변경한 뒤에는 새 마스터 비밀번호로 잠금을 해제하며, 저장한 내용을 다시 암호화할 필요는 없습니다. 이 컴퓨터에만 영향을 줍니다. 클라우드 동기화는 동기화 비밀번호를 쓰고, 다른 컴퓨터에는 각자의 키체인이나 마스터 비밀번호가 있으므로 함께 바꿀 필요가 없습니다.
+lock_ui.master.change:
+  zh-CN: "修改主密码…"
+  en: "Change Master Password…"
+  zh-TW: "修改主密碼…"
+  ja: マスターパスワードを変更…
+  ko: 마스터 비밀번호 변경…
+lock_ui.master.current:
+  zh-CN: "当前主密码"
+  en: "Current master password"
+  zh-TW: "目前的主密碼"
+  ja: 現在のマスターパスワード
+  ko: 현재 마스터 비밀번호
+lock_ui.master.new:
+  zh-CN: "新主密码（至少 %{min} 个字符）"
+  en: "New master password (at least %{min} characters)"
+  zh-TW: "新主密碼（至少 %{min} 個字元）"
+  ja: 新しいマスターパスワード（%{min} 文字以上）
+  ko: 새 마스터 비밀번호(%{min}자 이상)
+lock_ui.master.confirm:
+  zh-CN: "再次输入新主密码"
+  en: "Confirm new master password"
+  zh-TW: "再次輸入新主密碼"
+  ja: 新しいマスターパスワードを再入力
+  ko: 새 마스터 비밀번호 다시 입력
+lock_ui.master.submit:
+  zh-CN: "修改主密码"
+  en: "Change Master Password"
+  zh-TW: "修改主密碼"
+  ja: マスターパスワードを変更
+  ko: 마스터 비밀번호 변경
+lock_ui.master.changed:
+  zh-CN: "主密码已修改，下次启动时用新的主密码解锁"
+  en: "Master password changed. Use the new one to unlock next time."
+  zh-TW: "主密碼已修改，下次啟動時用新的主密碼解鎖"
+  ja: マスターパスワードを変更しました。次回の起動時から新しいマスターパスワードでロックを解除します
+  ko: 마스터 비밀번호를 변경했습니다. 다음에 시작할 때부터 새 마스터 비밀번호로 잠금을 해제하세요
+lock_ui.master.wrong_password:
+  zh-CN: "当前主密码不对"
+  en: "The current master password is incorrect"
+  zh-TW: "目前的主密碼不正確"
+  ja: 現在のマスターパスワードが正しくありません
+  ko: 현재 마스터 비밀번호가 올바르지 않습니다
+lock_ui.master.too_short:
+  zh-CN: "新主密码至少要 %{min} 个字符"
+  en: "The new master password must be at least %{min} characters"
+  zh-TW: "新主密碼至少要 %{min} 個字元"
+  ja: 新しいマスターパスワードは %{min} 文字以上にしてください
+  ko: 새 마스터 비밀번호는 %{min}자 이상이어야 합니다
+lock_ui.update.section:
+  zh-CN: "更新"
+  en: "Updates"
+  zh-TW: "更新"
+  ja: 更新
+  ko: 업데이트
+lock_ui.update.auto_check:
+  zh-CN: "自动检查更新"
+  en: "Check for updates automatically"
+  zh-TW: "自動檢查更新"
+  ja: 更新を自動的に確認
+  ko: 업데이트 자동 확인
+lock_ui.update.check:
+  zh-CN: "检查更新"
+  en: "Check for updates"
+  zh-TW: "檢查更新"
+  ja: 更新を確認
+  ko: 업데이트 확인
+lock_ui.update.checking:
+  zh-CN: "正在检查更新…"
+  en: "Checking for updates…"
+  zh-TW: "正在檢查更新…"
+  ja: 更新を確認しています…
+  ko: 업데이트를 확인하는 중…
+lock_ui.update.current:
+  zh-CN: "当前版本 %{version}"
+  en: "Version %{version}"
+  zh-TW: "目前版本 %{version}"
+  ja: 現在のバージョン %{version}
+  ko: 현재 버전 %{version}
+lock_ui.update.latest:
+  zh-CN: "当前版本 %{version} · 已是最新版本"
+  en: "Version %{version} · Up to date"
+  zh-TW: "目前版本 %{version} · 已是最新版本"
+  ja: 現在のバージョン %{version} · 最新です
+  ko: 현재 버전 %{version} · 최신 버전입니다
+lock_ui.update.available:
+  zh-CN: "发现新版本 %{version}"
+  en: "Version %{version} is available"
+  zh-TW: "發現新版本 %{version}"
+  ja: 新しいバージョン %{version} があります
+  ko: 새 버전 %{version}이(가) 있습니다
+lock_ui.update.download:
+  zh-CN: "前往下载"
+  en: "Download"
+  zh-TW: "前往下載"
+  ja: ダウンロードページへ
+  ko: 다운로드 페이지로 이동
+lock_ui.update.downloading:
+  zh-CN: "正在下载 %{version}（%{percent}%）"
+  en: "Downloading %{version} (%{percent}%)"
+  zh-TW: "正在下載 %{version}（%{percent}%）"
+  ja: "%{version} をダウンロードしています（%{percent}%）"
+  ko: "%{version} 다운로드 중(%{percent}%)"
+lock_ui.update.downloaded:
+  zh-CN: "新版本 %{version} 已下载"
+  en: "Version %{version} is ready"
+  zh-TW: "新版本 %{version} 已下載"
+  ja: 新しいバージョン %{version} をダウンロードしました
+  ko: 새 버전 %{version}을(를) 다운로드했습니다
+lock_ui.update.restart:
+  zh-CN: "重启并安装"
+  en: "Restart and install"
+  zh-TW: "重新啟動並安裝"
+  ja: 再起動してインストール
+  ko: 다시 시작하고 설치
+lock_ui.update.disabled:
+  zh-CN: "更新暂不可用"
+  en: "Updates are temporarily unavailable"
+  zh-TW: "更新暫時無法使用"
+  ja: 現在、更新は利用できません
+  ko: 지금은 업데이트를 사용할 수 없습니다
+lock_ui.update.banner:
+  zh-CN: "新版本 %{version} 已下载，点击重启安装"
+  en: "Version %{version} is ready. Click to restart and install"
+  zh-TW: "新版本 %{version} 已下載，按一下以重新啟動並安裝"
+  ja: 新しいバージョン %{version} をダウンロードしました。クリックすると再起動してインストールします
+  ko: 새 버전 %{version}을(를) 다운로드했습니다. 클릭하면 다시 시작하고 설치합니다
+lock_ui.update.badge_available:
+  zh-CN: "新版本 %{version} 可用"
+  en: "Version %{version} available"
+  zh-TW: "新版本 %{version} 可用"
+  ja: 新しいバージョン %{version} があります
+  ko: 새 버전 %{version} 사용 가능
+lock_ui.update.badge_available_hint:
+  zh-CN: "新版本 %{version} 可用，点击打开下载页"
+  en: "Version %{version} is available. Click to open the download page"
+  zh-TW: "新版本 %{version} 可用，按一下以開啟下載頁面"
+  ja: 新しいバージョン %{version} があります。クリックするとダウンロードページを開きます
+  ko: 새 버전 %{version}을(를) 사용할 수 있습니다. 클릭하면 다운로드 페이지를 엽니다
+lock_ui.update.downloading_detail:
+  zh-CN: "正在下载 %{version}，%{percent}%（%{progress}）"
+  en: "Downloading %{version}, %{percent}% (%{progress})"
+  zh-TW: "正在下載 %{version}，%{percent}%（%{progress}）"
+  ja: "%{version} をダウンロードしています：%{percent}%（%{progress}）"
+  ko: "%{version} 다운로드 중, %{percent}%(%{progress})"
+lock_ui.update.panel_title:
+  zh-CN: "正在下载 Termlet %{version}"
+  en: "Downloading Termlet %{version}"
+  zh-TW: "正在下載 Termlet %{version}"
+  ja: Termlet %{version} をダウンロードしています
+  ko: Termlet %{version} 다운로드 중
+lock_ui.update.speed:
+  zh-CN: "速度 %{speed}"
+  en: "Speed %{speed}"
+  zh-TW: "速度 %{speed}"
+  ja: 速度 %{speed}
+  ko: 속도 %{speed}
+lock_ui.update.panel_hint:
+  zh-CN: "下载完成后标题栏会提示重启安装，也可以在设置的“关于”中查看。"
+  en: "When the download finishes, the title bar offers to restart and install. You can also follow it under Settings → About."
+  zh-TW: "下載完成後標題列會提示重新啟動並安裝，也可以在設定的「關於」中查看。"
+  ja: ダウンロードが完了すると、タイトルバーに再起動してインストールするよう表示されます。「設定」の「バージョン情報」でも確認できます。
+  ko: 다운로드가 끝나면 제목 표시줄에 다시 시작하고 설치하라는 알림이 표시됩니다. '설정'의 '정보'에서도 확인할 수 있습니다.
+lock_ui.update.eta_seconds:
+  zh-CN: "剩余约 %{count} 秒"
+  en: "About %{count} s left"
+  zh-TW: "剩餘約 %{count} 秒"
+  ja: 残り約 %{count} 秒
+  ko: 약 %{count}초 남음
+lock_ui.update.eta_minutes:
+  zh-CN: "剩余约 %{count} 分钟"
+  en: "About %{count} min left"
+  zh-TW: "剩餘約 %{count} 分鐘"
+  ja: 残り約 %{count} 分
+  ko: 약 %{count}분 남음
+lock_ui.update.eta_hours:
+  zh-CN: "剩余约 %{hours} 小时 %{minutes} 分钟"
+  en: "About %{hours} h %{minutes} min left"
+  zh-TW: "剩餘約 %{hours} 小時 %{minutes} 分鐘"
+  ja: 残り約 %{hours} 時間 %{minutes} 分
+  ko: 약 %{hours}시간 %{minutes}분 남음
+lock_ui.update.unpublished:
+  zh-CN: "暂未获取到更新信息（尚未发布新版本）"
+  en: "No update information yet (no release has been published)"
+  zh-TW: "尚未取得更新資訊（還沒有發布新版本）"
+  ja: 更新情報はまだありません（新しいバージョンはまだ公開されていません）
+  ko: 아직 업데이트 정보가 없습니다(새 버전이 아직 게시되지 않았습니다)
+lock_ui.update.offline:
+  zh-CN: "无法连接更新服务器，请检查网络后重试"
+  en: "Couldn't reach the update server. Check your network and try again"
+  zh-TW: "無法連線到更新伺服器，請檢查網路後再試一次"
+  ja: 更新サーバーに接続できません。ネットワークを確認してから、もう一度お試しください
+  ko: 업데이트 서버에 연결할 수 없습니다. 네트워크를 확인한 후 다시 시도하세요
+lock_ui.update.bad_signature:
+  zh-CN: "更新文件的签名校验没有通过，已停止更新。请到发布页手动下载"
+  en: "The update failed signature verification and was stopped. Download it manually from the releases page"
+  zh-TW: "更新檔案的簽章驗證沒有通過，已停止更新。請到發布頁面手動下載"
+  ja: 更新ファイルの署名を検証できなかったため、更新を中止しました。リリースページから手動でダウンロードしてください
+  ko: 업데이트 파일의 서명 검증에 실패해 업데이트를 중단했습니다. 릴리스 페이지에서 직접 다운로드하세요
+lock_ui.update.failed:
+  zh-CN: "检查更新失败，详情见日志"
+  en: "Couldn't check for updates. See the log for details"
+  zh-TW: "檢查更新失敗，詳細資訊請見記錄"
+  ja: 更新を確認できませんでした。詳細はログを確認してください
+  ko: 업데이트를 확인하지 못했습니다. 자세한 내용은 로그를 확인하세요
+lock_ui.update.install_failed:
+  zh-CN: "无法启动安装程序，详情见日志"
+  en: "Couldn't start the installer. See the log for details"
+  zh-TW: "無法啟動安裝程式，詳細資訊請見記錄"
+  ja: インストーラーを起動できませんでした。詳細はログを確認してください
+  ko: 설치 프로그램을 시작하지 못했습니다. 자세한 내용은 로그를 확인하세요
+lock_ui.privacy.section:
+  zh-CN: "隐私"
+  en: "Privacy"
+  zh-TW: "隱私"
+  ja: プライバシー
+  ko: 개인 정보
+lock_ui.privacy.usage:
+  zh-CN: "发送匿名使用统计"
+  en: "Send anonymous usage statistics"
+  zh-TW: "傳送匿名使用統計"
+  ja: 匿名の使用状況の統計を送信
+  ko: 익명 사용 통계 보내기
+lock_ui.privacy.usage_hint:
+  zh-CN: "每天最多一次，内容是版本、系统、CPU 架构、界面语言等，不含主机、命令、文件，也不带任何能识别这台电脑的标识。服务器另外按网络地址推断国家或地区（地址不保存），只保存每天的计数。为防滥用，Cloudflare 会按网络地址限制请求频率；被拦下的请求会在 Cloudflare 的安全日志中短期留下网络地址，Termlet 不读取、不保存。"
+  en: "At most once a day: things like the version, operating system, CPU architecture and interface language. No hosts, commands or files, and nothing that identifies this computer. The server also works out the country or region from the network address (without storing it) and keeps only daily counts. To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses."
+  zh-TW: "每天最多一次，內容是版本、系統、CPU 架構、介面語言等，不含主機、指令、檔案，也不帶任何能識別這台電腦的識別碼。伺服器另外依網路位址推斷國家或地區（位址不儲存），只儲存每天的計數。為防止濫用，Cloudflare 會依網路位址限制要求的頻率；被阻擋的要求會在 Cloudflare 的安全性記錄中短期留下網路位址，Termlet 不讀取、不儲存。"
+  ja: 送信は 1 日に 1 回までで、内容はバージョン、OS、CPU アーキテクチャ、表示言語などです。ホスト、コマンド、ファイルは含まず、このコンピューターを識別できる情報も一切含みません。サーバー側ではネットワークアドレスから国または地域を推定しますが（アドレスは保存しません）、保存するのは 1 日ごとの件数だけです。不正利用を防ぐため、Cloudflare はネットワークアドレスごとにリクエストの頻度を制限しています。ブロックされたリクエストは、Cloudflare のセキュリティログにネットワークアドレスが短期間残ることがあります。Termlet はそれを読み取ることも保存することもありません。
+  ko: 하루에 한 번까지 보내며, 내용은 버전, 운영 체제, CPU 아키텍처, 표시 언어 등입니다. 호스트, 명령, 파일은 포함하지 않으며 이 컴퓨터를 식별할 수 있는 정보도 전혀 포함하지 않습니다. 서버는 네트워크 주소로 국가 또는 지역을 추정하지만(주소는 저장하지 않음) 날마다의 횟수만 저장합니다. 남용을 막기 위해 Cloudflare는 네트워크 주소별로 요청 빈도를 제한하며, 차단된 요청은 Cloudflare 보안 로그에 네트워크 주소가 잠시 남을 수 있습니다. Termlet은 이를 읽거나 저장하지 않습니다.
+lock_ui.privacy.usage_view:
+  zh-CN: "查看发送的内容…"
+  en: "View what is sent…"
+  zh-TW: "檢視傳送的內容…"
+  ja: 送信内容を表示…
+  ko: 보내는 내용 보기…
+lock_ui.privacy.usage_env_off:
+  zh-CN: "已由环境变量 %{name} 关闭"
+  en: "Turned off by the environment variable %{name}"
+  zh-TW: "已由環境變數 %{name} 關閉"
+  ja: 環境変数 %{name} によってオフになっています
+  ko: 환경 변수 %{name}에 의해 꺼져 있습니다
+lock_ui.privacy.usage_paused:
+  zh-CN: "发布方已暂停接收，暂不发送"
+  en: "Sending is paused by the publisher"
+  zh-TW: "發布方已暫停接收，暫不傳送"
+  ja: 配布元が受信を一時停止しているため、送信していません
+  ko: 배포자가 수신을 일시 중지해 지금은 보내지 않습니다
+lock_ui.privacy.policy:
+  zh-CN: "隐私说明"
+  en: "Privacy policy"
+  zh-TW: "隱私權聲明"
+  ja: プライバシーポリシー
+  ko: 개인정보 처리방침
+lock_ui.diag.section:
+  zh-CN: "诊断与崩溃报告"
+  en: "Diagnostics and crash reports"
+  zh-TW: "診斷與當機報告"
+  ja: 診断とクラッシュレポート
+  ko: 진단 및 충돌 보고서
+lock_ui.diag.copy:
+  zh-CN: "复制诊断信息"
+  en: "Copy diagnostics"
+  zh-TW: "複製診斷資訊"
+  ja: 診断情報をコピー
+  ko: 진단 정보 복사
+lock_ui.diag.export:
+  zh-CN: "导出诊断信息…"
+  en: "Export diagnostics…"
+  zh-TW: "匯出診斷資訊…"
+  ja: 診断情報をエクスポート…
+  ko: 진단 정보 내보내기…
+lock_ui.diag.open_logs:
+  zh-CN: "打开日志目录"
+  en: "Open log folder"
+  zh-TW: "開啟記錄檔目錄"
+  ja: ログフォルダーを開く
+  ko: 로그 폴더 열기
+lock_ui.diag.crash_records:
+  zh-CN: "崩溃记录…"
+  en: "Crash records…"
+  zh-TW: "當機記錄…"
+  ja: クラッシュ記録…
+  ko: 충돌 기록…
+lock_ui.diag.hint:
+  zh-CN: "包含版本、运行环境与日志，不含主机地址、凭据和命令内容"
+  en: "Includes versions, environment and logs, without host addresses, credentials or commands"
+  zh-TW: "包含版本、執行環境與記錄，不含主機位址、認證資訊和指令內容"
+  ja: バージョン、実行環境、ログを含みます。ホストのアドレス、認証情報、コマンドの内容は含みません
+  ko: 버전, 실행 환경, 로그가 포함되며 호스트 주소, 자격 증명, 명령 내용은 포함되지 않습니다
+lock_ui.diag.log_level.label:
+  zh-CN: 日志的详细程度
+  en: Log detail
+  zh-TW: 記錄的詳細程度
+  ja: ログの詳細レベル
+  ko: 로그 상세 수준
+lock_ui.diag.log_level.normal:
+  zh-CN: 普通
+  en: Normal
+  zh-TW: 一般
+  ja: 標準
+  ko: 보통
+lock_ui.diag.log_level.detailed:
+  zh-CN: 详细（排查问题时用）
+  en: Detailed (for troubleshooting)
+  zh-TW: 詳細（排解問題時使用）
+  ja: 詳細（トラブルシューティング用）
+  ko: 자세히(문제 해결용)
+lock_ui.diag.log_level.full:
+  zh-CN: 最详细（含 SSH、SFTP 协议细节）
+  en: Full (including SSH and SFTP protocol details)
+  zh-TW: 最詳細（含 SSH、SFTP 通訊協定細節）
+  ja: 最も詳細（SSH、SFTP プロトコルの詳細を含む）
+  ko: 가장 자세히(SSH, SFTP 프로토콜 세부 정보 포함)
+lock_ui.diag.log_level.hint:
+  zh-CN: 保存后立即生效。详细的日志可能很大，问题排查完请改回普通；日志中不记密码、私钥与命令内容。也可以用启动参数 --log-level detailed（或 --verbose）、--log-level full 指定。
+  en: Takes effect as soon as you save. Detailed logs can grow large, so switch back to Normal when you're done; passwords, private keys and commands are never logged. You can also start Termlet with --log-level detailed (or --verbose) or --log-level full.
+  zh-TW: 儲存後立即生效。詳細的記錄可能很大，問題排解完請改回一般；記錄中不會記下密碼、私密金鑰與指令內容。也可以用啟動參數 --log-level detailed（或 --verbose）、--log-level full 指定。
+  ja: 保存するとすぐに反映されます。詳細なログはサイズが大きくなることがあるため、問題の調査が終わったら「標準」に戻してください。パスワード、秘密鍵、コマンドの内容はログに記録されません。起動オプション --log-level detailed（または --verbose）、--log-level full でも指定できます。
+  ko: 저장하면 바로 적용됩니다. 자세한 로그는 크기가 커질 수 있으므로 문제 해결이 끝나면 '보통'으로 되돌리세요. 비밀번호, 개인 키, 명령 내용은 로그에 기록하지 않습니다. 시작 옵션 --log-level detailed(또는 --verbose), --log-level full로도 지정할 수 있습니다.
+lock_ui.diag.log_level.overridden:
+  zh-CN: 这次启动时已经用 %{source} 指定了详细程度，这里的选项要到下次正常启动时才起作用。
+  en: The detail level was set with %{source} when Termlet started, so this option takes effect the next time it starts normally.
+  zh-TW: 這次啟動時已經用 %{source} 指定了詳細程度，這裡的選項要到下次正常啟動時才會生效。
+  ja: 今回の起動時に %{source} で詳細レベルが指定されているため、ここでの設定は次に通常どおり起動したときに反映されます。
+  ko: 이번 시작 시 %{source}(으)로 상세 수준을 지정했으므로 여기의 설정은 다음에 정상적으로 시작할 때 적용됩니다.
+lock_ui.diag.copied:
+  zh-CN: "诊断信息已复制"
+  en: "Diagnostics copied"
+  zh-TW: "診斷資訊已複製"
+  ja: 診断情報をコピーしました
+  ko: 진단 정보를 복사했습니다
+lock_ui.diag.saved:
+  zh-CN: "已保存到 %{path}"
+  en: "Saved to %{path}"
+  zh-TW: "已儲存到 %{path}"
+  ja: "%{path} に保存しました"
+  ko: "%{path}에 저장했습니다"
+lock_ui.diag.export_failed:
+  zh-CN: "导出诊断信息失败：%{error}"
+  en: "Couldn't export diagnostics: %{error}"
+  zh-TW: "匯出診斷資訊失敗：%{error}"
+  ja: 診断情報をエクスポートできませんでした：%{error}
+  ko: "진단 정보를 내보내지 못했습니다: %{error}"
+lock_ui.diag.crash_report:
+  zh-CN: "自动发送崩溃报告"
+  en: "Send crash reports automatically"
+  zh-TW: "自動傳送當機報告"
+  ja: クラッシュレポートを自動的に送信
+  ko: 충돌 보고서 자동으로 보내기
+lock_ui.diag.crash_report_hint:
+  zh-CN: "只发送版本、系统和出错位置，发送前去除主机地址、用户名和命令内容；不发送内存转储。崩溃信息始终会写入本地日志"
+  en: "Only the version, system and where the error happened are sent, with host addresses, usernames and commands removed. Memory dumps are never sent. Crashes are always written to the local log"
+  zh-TW: "只傳送版本、系統和出錯位置，傳送前會去除主機位址、使用者名稱和指令內容；不傳送記憶體傾印。當機資訊一律會寫入本機記錄"
+  ja: 送信するのはバージョン、OS、エラーの発生箇所だけで、送信前にホストのアドレス、ユーザー名、コマンドの内容を取り除きます。メモリダンプは送信しません。クラッシュの情報は常にローカルのログに書き込まれます
+  ko: 버전, 운영 체제, 오류가 난 위치만 보내며, 보내기 전에 호스트 주소, 사용자 이름, 명령 내용을 제거합니다. 메모리 덤프는 보내지 않습니다. 충돌 정보는 항상 로컬 로그에 기록됩니다
+lock_ui.crash.notice_title:
+  zh-CN: "Termlet 上次运行时出错了"
+  en: "Termlet ran into a problem last time"
+  zh-TW: "Termlet 上次執行時發生錯誤"
+  ja: 前回の実行中に Termlet で問題が発生しました
+  ko: 지난번 실행 중 Termlet에 문제가 발생했습니다
+lock_ui.crash.notice_message:
+  zh-CN: "记录了 %{count} 次出错。可以查看出错的位置，反馈问题时附上。"
+  en: "Errors recorded: %{count}. View where they happened and include them when you report the problem."
+  zh-TW: "記錄了 %{count} 次錯誤。可以查看出錯的位置，回報問題時附上。"
+  ja: "%{count} 回のエラーが記録されています。発生箇所を確認し、問題を報告するときに添付してください。"
+  ko: 오류가 %{count}번 기록되었습니다. 오류가 난 위치를 확인하고 문제를 보고할 때 첨부하세요.
+lock_ui.crash.view:
+  zh-CN: "查看…"
+  en: "View…"
+  zh-TW: "檢視…"
+  ja: 表示…
+  ko: 보기…
+lock_ui.crash.title:
+  zh-CN: "崩溃记录"
+  en: "Crash records"
+  zh-TW: "當機記錄"
+  ja: クラッシュ記録
+  ko: 충돌 기록
+lock_ui.crash.loading:
+  zh-CN: "正在读取…"
+  en: "Loading…"
+  zh-TW: "正在讀取…"
+  ja: 読み込んでいます…
+  ko: 읽는 중…
+lock_ui.crash.empty:
+  zh-CN: "没有崩溃记录"
+  en: "No crash records"
+  zh-TW: "沒有當機記錄"
+  ja: クラッシュ記録はありません
+  ko: 충돌 기록이 없습니다
+lock_ui.crash.hint:
+  zh-CN: "记录保存在日志目录中，最多保留最近的 %{max} 份；内容已去掉用户目录、地址等信息。"
+  en: "Records are kept in the log folder, up to the latest %{max}. User folders, addresses and similar details have been removed."
+  zh-TW: "記錄儲存在記錄檔目錄中，最多保留最近的 %{max} 份；內容已去除使用者目錄、位址等資訊。"
+  ja: 記録はログフォルダーに保存され、最新の %{max} 件まで保持されます。ユーザーフォルダーやアドレスなどの情報は取り除かれています。
+  ko: 기록은 로그 폴더에 저장되며 최근 %{max}개까지 보관합니다. 사용자 폴더, 주소 등의 정보는 제거되어 있습니다.
+lock_ui.crash.version:
+  zh-CN: "版本 %{version}（%{platform} %{os} %{arch}）"
+  en: "Version %{version} (%{platform} %{os} %{arch})"
+  zh-TW: "版本 %{version}（%{platform} %{os} %{arch}）"
+  ja: バージョン %{version}（%{platform} %{os} %{arch}）
+  ko: 버전 %{version}(%{platform} %{os} %{arch})
+lock_ui.crash.thread:
+  zh-CN: "线程"
+  en: "Thread"
+  zh-TW: "執行緒"
+  ja: スレッド
+  ko: 스레드
+lock_ui.crash.location:
+  zh-CN: "位置"
+  en: "Location"
+  zh-TW: "位置"
+  ja: 場所
+  ko: 위치
+lock_ui.crash.message:
+  zh-CN: "说明"
+  en: "Message"
+  zh-TW: "說明"
+  ja: メッセージ
+  ko: 메시지
+lock_ui.crash.stack:
+  zh-CN: "调用栈"
+  en: "Stack trace"
+  zh-TW: "呼叫堆疊"
+  ja: スタックトレース
+  ko: 스택 추적
+lock_ui.crash.dump:
+  zh-CN: 内存转储
+  en: Memory dump
+  zh-TW: 記憶體傾印
+  ja: メモリダンプ
+  ko: 메모리 덤프
+lock_ui.crash.reveal_dump:
+  zh-CN: 在文件夹中显示
+  en: Show in Folder
+  zh-TW: 在資料夾中顯示
+  ja: フォルダーに表示
+  ko: 폴더에서 보기
+lock_ui.crash.dump_hint:
+  zh-CN: 内存转储只保存在本机，不会自动发送；其中可能有当时内存中的片段，发给别人前请自行判断。
+  en: The memory dump stays on this computer and is never sent automatically. It may contain fragments of what was in memory, so decide for yourself before sharing it.
+  zh-TW: 記憶體傾印只儲存在本機，不會自動傳送；其中可能有當時記憶體中的片段，傳給別人前請自行判斷。
+  ja: メモリダンプはこのコンピューターにのみ保存され、自動的に送信されることはありません。当時のメモリの断片が含まれている可能性があるため、ほかの人に送る前にご自身で判断してください。
+  ko: 메모리 덤프는 이 컴퓨터에만 저장되며 자동으로 보내지 않습니다. 당시 메모리의 일부가 들어 있을 수 있으므로 다른 사람에게 보내기 전에 직접 판단하세요.
+lock_ui.crash.sent:
+  zh-CN: "已发送"
+  en: "Sent"
+  zh-TW: "已傳送"
+  ja: 送信済み
+  ko: 보냄
+lock_ui.crash.rejected:
+  zh-CN: "发送被拒"
+  en: "Rejected by the server"
+  zh-TW: "傳送被拒"
+  ja: サーバーが拒否
+  ko: 서버가 거부함
+lock_ui.crash.copy:
+  zh-CN: "复制"
+  en: "Copy"
+  zh-TW: "複製"
+  ja: コピー
+  ko: 복사
+lock_ui.crash.copied:
+  zh-CN: "崩溃记录已复制"
+  en: "Crash record copied"
+  zh-TW: "當機記錄已複製"
+  ja: クラッシュ記録をコピーしました
+  ko: 충돌 기록을 복사했습니다
+lock_ui.crash.delete_all:
+  zh-CN: "全部删除"
+  en: "Delete all"
+  zh-TW: "全部刪除"
+  ja: すべて削除
+  ko: 모두 삭제
+lock_ui.crash.delete_failed:
+  zh-CN: "删除崩溃记录失败：%{error}"
+  en: "Couldn't delete the crash record: %{error}"
+  zh-TW: "刪除當機記錄失敗：%{error}"
+  ja: クラッシュ記録を削除できませんでした：%{error}
+  ko: "충돌 기록을 삭제하지 못했습니다: %{error}"

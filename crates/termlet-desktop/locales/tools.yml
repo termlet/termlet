@@ -1,0 +1,3643 @@
+_version: 2
+tools.title:
+  zh-CN: "工具 · %{name}"
+  en: "Tools · %{name}"
+  zh-TW: "工具 · %{name}"
+  ja: ツール · %{name}
+  ko: 도구 · %{name}
+tools.title_empty:
+  zh-CN: 主机工具
+  en: Host tools
+  zh-TW: 主機工具
+  ja: ホストツール
+  ko: 호스트 도구
+tools.close:
+  zh-CN: 收起主机工具
+  en: Hide host tools
+  zh-TW: 收合主機工具
+  ja: ホストツールを折りたたむ
+  ko: 호스트 도구 접기
+tools.resize:
+  zh-CN: 拖动调整主机工具的宽度，双击恢复默认
+  en: Drag to resize host tools; double-click to reset
+  zh-TW: 拖曳以調整主機工具的寬度，按兩下還原預設值
+  ja: ドラッグしてホストツールの幅を調整、ダブルクリックでデフォルトに戻す
+  ko: 드래그하여 호스트 도구 너비 조정, 더블클릭하면 기본값으로 복원
+tools.page.overview:
+  zh-CN: 概览
+  en: Overview
+  zh-TW: 概覽
+  ja: 概要
+  ko: 개요
+tools.page.processes:
+  zh-CN: 进程
+  en: Processes
+  zh-TW: 處理程序
+  ja: プロセス
+  ko: 프로세스
+tools.page.services:
+  zh-CN: 服务
+  en: Services
+  zh-TW: 服務
+  ja: サービス
+  ko: 서비스
+tools.page.docker:
+  zh-CN: Docker
+  en: Docker
+  zh-TW: Docker
+  ja: Docker
+  ko: Docker
+tools.page.network:
+  zh-CN: 网络
+  en: Network
+  zh-TW: 網路
+  ja: ネットワーク
+  ko: 네트워크
+tools.notice.no_terminal:
+  zh-CN: 打开一个 SSH 或 WSL 终端后，这里显示它所在主机的进程、服务、Docker 与网络连接。
+  en: Open an SSH or WSL terminal to see the processes, services, Docker and network connections of its host here.
+  zh-TW: 開啟一個 SSH 或 WSL 終端機後，這裡會顯示它所在主機的處理程序、服務、Docker 與網路連線。
+  ja: SSH または WSL のターミナルを開くと、そのホストのプロセス、サービス、Docker、ネットワーク接続がここに表示されます。
+  ko: SSH 또는 WSL 터미널을 열면 해당 호스트의 프로세스, 서비스, Docker, 네트워크 연결이 여기에 표시됩니다.
+tools.notice.not_supported_terminal:
+  zh-CN: 本地终端、Telnet、串口没有主机工具。
+  en: Host tools are not available for local terminals, Telnet or serial connections.
+  zh-TW: 本機終端機、Telnet、序列埠沒有主機工具。
+  ja: ローカルターミナル、Telnet、シリアルポートではホストツールを使用できません。
+  ko: 로컬 터미널, Telnet, 직렬 포트에서는 호스트 도구를 사용할 수 없습니다.
+tools.notice.connecting:
+  zh-CN: 终端连接后显示。
+  en: Available once the terminal is connected.
+  zh-TW: 終端機連線後顯示。
+  ja: ターミナルが接続されると表示されます。
+  ko: 터미널이 연결되면 표시됩니다.
+tools.empty.no_terminal:
+  zh-CN: 没有打开的终端
+  en: No open terminals
+  zh-TW: 沒有開啟的終端機
+  ja: 開いているターミナルはありません
+  ko: 열린 터미널이 없습니다
+tools.empty.quick_connect:
+  zh-CN: 快速连接…
+  en: Quick connect…
+  zh-TW: 快速連線…
+  ja: クイック接続…
+  ko: 빠른 연결…
+tools.empty.open_recent:
+  zh-CN: 打开这台最近用过的主机
+  en: Open this recently used host
+  zh-TW: 開啟這台最近使用過的主機
+  ja: 最近使ったこのホストを開く
+  ko: 최근에 사용한 이 호스트 열기
+tools.empty.unsupported:
+  zh-CN: 这个终端没有主机工具
+  en: Host tools aren't available here
+  zh-TW: 這個終端機沒有主機工具
+  ja: このターミナルではホストツールを使用できません
+  ko: 이 터미널에서는 호스트 도구를 사용할 수 없습니다
+tools.empty.connecting:
+  zh-CN: 正在连接 %{name}…
+  en: Connecting to %{name}…
+  zh-TW: 正在連線到 %{name}…
+  ja: "%{name} に接続しています…"
+  ko: "%{name}에 연결하는 중…"
+tools.empty.ended:
+  zh-CN: 终端已断开
+  en: Terminal disconnected
+  zh-TW: 終端機已中斷連線
+  ja: ターミナルが切断されました
+  ko: 터미널 연결이 끊어졌습니다
+tools.empty.ended_hint:
+  zh-CN: 重新连接后可以查看这台主机的进程、服务、Docker 与网络连接。
+  en: Reconnect to see this host's processes, services, Docker and network connections.
+  zh-TW: 重新連線後可以查看這台主機的處理程序、服務、Docker 與網路連線。
+  ja: 再接続すると、このホストのプロセス、サービス、Docker、ネットワーク接続を確認できます。
+  ko: 다시 연결하면 이 호스트의 프로세스, 서비스, Docker, 네트워크 연결을 볼 수 있습니다.
+tools.reconnecting:
+  zh-CN: 正在重连，先显示上次的结果。
+  en: Reconnecting; showing the last results.
+  zh-TW: 正在重新連線，先顯示上次的結果。
+  ja: 再接続しています。前回の結果を表示しています。
+  ko: 다시 연결하는 중입니다. 이전 결과를 표시합니다.
+tools.loading:
+  zh-CN: 正在读取…
+  en: Loading…
+  zh-TW: 正在讀取…
+  ja: 読み込み中…
+  ko: 읽는 중…
+tools.load_failed:
+  zh-CN: 读取失败
+  en: Failed to load
+  zh-TW: 讀取失敗
+  ja: 読み込めませんでした
+  ko: 읽지 못했습니다
+tools.refresh:
+  zh-CN: 刷新
+  en: Refresh
+  zh-TW: 重新整理
+  ja: 更新
+  ko: 새로 고침
+tools.updated_at:
+  zh-CN: "更新于 %{time}"
+  en: "Updated %{time}"
+  zh-TW: "更新於 %{time}"
+  ja: "%{time} に更新"
+  ko: "%{time}에 업데이트됨"
+tools.paused:
+  zh-CN: 已暂停刷新
+  en: Refresh paused
+  zh-TW: 已暫停重新整理
+  ja: 更新を一時停止中
+  ko: 새로 고침 일시 중지됨
+tools.privilege.sudo:
+  zh-CN: 经免密码 sudo 执行需要 root 的操作
+  en: Actions that need root run with passwordless sudo
+  zh-TW: 需要 root 的操作經由免密碼 sudo 執行
+  ja: root が必要な操作はパスワードなしの sudo で実行します
+  ko: root 권한이 필요한 작업은 비밀번호 없는 sudo로 실행합니다
+tools.privilege.sudo_network:
+  zh-CN: 经免密码 sudo 读取，看得到全部进程的进程名
+  en: Read with passwordless sudo, so every process name is shown
+  zh-TW: 經由免密碼 sudo 讀取，看得到所有處理程序的名稱
+  ja: パスワードなしの sudo で読み取るため、すべてのプロセス名が表示されます
+  ko: 비밀번호 없는 sudo로 읽으므로 모든 프로세스 이름이 표시됩니다
+tools.privilege.locked_processes:
+  zh-CN: "不是 root，也没有免密码 sudo：结束别的用户的进程时在终端中执行。点击查看详情。"
+  en: "Not root and no passwordless sudo: ending other users' processes runs in the terminal. Click for details."
+  zh-TW: "不是 root，也沒有免密碼 sudo：結束其他使用者的處理程序時在終端機中執行。按一下查看詳細資訊。"
+  ja: "root ではなく、パスワードなしの sudo もありません：ほかのユーザーのプロセスの終了はターミナルで実行します。クリックすると詳細を表示します。"
+  ko: "root가 아니며 비밀번호 없는 sudo도 없습니다: 다른 사용자의 프로세스 종료는 터미널에서 실행합니다. 클릭하면 자세히 볼 수 있습니다."
+tools.privilege.locked_services:
+  zh-CN: "不是 root，也没有免密码 sudo：启停服务在终端中执行。点击查看详情。"
+  en: "Not root and no passwordless sudo: starting and stopping services runs in the terminal. Click for details."
+  zh-TW: "不是 root，也沒有免密碼 sudo：啟動、停止服務在終端機中執行。按一下查看詳細資訊。"
+  ja: "root ではなく、パスワードなしの sudo もありません：サービスの起動や停止はターミナルで実行します。クリックすると詳細を表示します。"
+  ko: "root가 아니며 비밀번호 없는 sudo도 없습니다: 서비스 시작과 중지는 터미널에서 실행합니다. 클릭하면 자세히 볼 수 있습니다."
+tools.privilege.locked_network:
+  zh-CN: 不是 root，也没有免密码 sudo：只看得到自己的进程的进程名。点击查看详情。
+  en: "Not root and no passwordless sudo: process names are shown only for your own processes. Click for details."
+  zh-TW: 不是 root，也沒有免密碼 sudo：只看得到自己的處理程序的名稱。按一下查看詳細資訊。
+  ja: root ではなく、パスワードなしの sudo もありません：プロセス名は自分のプロセスのものしか表示されません。クリックすると詳細を表示します。
+  ko: "root가 아니며 비밀번호 없는 sudo도 없습니다: 자신의 프로세스 이름만 볼 수 있습니다. 클릭하면 자세히 볼 수 있습니다."
+tools.privilege.limited_processes:
+  zh-CN: "当前用户不是 root，也没有免密码 sudo：在后台只能结束自己的进程。结束别的用户的进程时，确认框的主按钮是“在终端中执行”（菜单与按钮上的终端图标标出这些操作），也可以仍然尝试在后台执行。"
+  en: "The current user is not root and has no passwordless sudo, so only your own processes can be ended in the background. For another user's process, the confirmation's main button is “Run in Terminal” (a terminal icon marks these actions in menus and buttons); you can also try it in the background anyway."
+  zh-TW: "目前的使用者不是 root，也沒有免密碼 sudo：在背景只能結束自己的處理程序。結束其他使用者的處理程序時，確認框的主按鈕是「在終端機中執行」（選單與按鈕上的終端機圖示標出這些操作），也可以仍然嘗試在背景執行。"
+  ja: "現在のユーザーは root ではなく、パスワードなしの sudo もないため、バックグラウンドでは自分のプロセスしか終了できません。ほかのユーザーのプロセスを終了するときは、確認ダイアログのメインボタンが「ターミナルで実行」になります（メニューやボタンのターミナルアイコンがこれらの操作を示します）。それでもバックグラウンドで試すこともできます。"
+  ko: "현재 사용자는 root가 아니며 비밀번호 없는 sudo도 없으므로 백그라운드에서는 자신의 프로세스만 종료할 수 있습니다. 다른 사용자의 프로세스를 종료할 때는 확인 대화 상자의 기본 버튼이 '터미널에서 실행'입니다(메뉴와 버튼의 터미널 아이콘이 이러한 작업을 나타냅니다). 그래도 백그라운드에서 시도할 수도 있습니다."
+tools.privilege.limited_services:
+  zh-CN: "当前用户不是 root，也没有免密码 sudo：启动、停止、重启服务与开机启用 / 禁用都需要 root。这些操作的确认框以“在终端中执行”为主按钮（菜单与按钮上的终端图标标出它们），也可以仍然尝试在后台执行（polkit 等可能允许）。"
+  en: "The current user is not root and has no passwordless sudo. Starting, stopping and restarting services, and enabling or disabling them at boot, need root: their confirmations have “Run in Terminal” as the main button (a terminal icon marks these actions in menus and buttons), and you can also try them in the background anyway (polkit or similar may allow it)."
+  zh-TW: "目前的使用者不是 root，也沒有免密碼 sudo：啟動、停止、重新啟動服務與開機啟用 / 停用都需要 root。這些操作的確認框以「在終端機中執行」為主按鈕（選單與按鈕上的終端機圖示標出它們），也可以仍然嘗試在背景執行（polkit 等可能允許）。"
+  ja: "現在のユーザーは root ではなく、パスワードなしの sudo もありません。サービスの起動、停止、再起動、および自動起動の有効化 / 無効化には root が必要です。これらの操作の確認ダイアログは「ターミナルで実行」がメインボタンになります（メニューやボタンのターミナルアイコンがこれらの操作を示します）。それでもバックグラウンドで試すこともできます（polkit などが許可する場合があります）。"
+  ko: "현재 사용자는 root가 아니며 비밀번호 없는 sudo도 없습니다. 서비스 시작, 중지, 다시 시작과 부팅 시 시작 사용 / 사용 안 함 설정에는 root가 필요합니다. 이러한 작업의 확인 대화 상자는 '터미널에서 실행'이 기본 버튼입니다(메뉴와 버튼의 터미널 아이콘이 이러한 작업을 나타냅니다). 그래도 백그라운드에서 시도할 수도 있습니다(polkit 등이 허용할 수 있습니다)."
+tools.privilege.limited_network:
+  zh-CN: 当前用户不是 root，也没有免密码 sudo：只看得到自己的进程的进程名，别的用户的进程（包括 root 运行的服务）的连接只显示用户。
+  en: The current user is not root and has no passwordless sudo, so process names are shown only for your own processes; connections of other users' processes (including services run by root) show only the user.
+  zh-TW: 目前的使用者不是 root，也沒有免密碼 sudo：只看得到自己的處理程序的名稱，其他使用者的處理程序（包括 root 執行的服務）的連線只顯示使用者。
+  ja: 現在のユーザーは root ではなく、パスワードなしの sudo もないため、プロセス名は自分のプロセスのものしか表示されません。ほかのユーザーのプロセス（root が実行するサービスを含む）の接続にはユーザーのみが表示されます。
+  ko: 현재 사용자는 root가 아니며 비밀번호 없는 sudo도 없으므로 자신의 프로세스 이름만 볼 수 있습니다. 다른 사용자의 프로세스(root가 실행하는 서비스 포함) 연결에는 사용자만 표시됩니다.
+tools.detail.more:
+  zh-CN: 更多操作
+  en: More actions
+  zh-TW: 更多操作
+  ja: その他の操作
+  ko: 추가 작업
+tools.op.busy_start:
+  zh-CN: 正在启动…
+  en: Starting…
+  zh-TW: 正在啟動…
+  ja: 起動しています…
+  ko: 시작하는 중…
+tools.op.busy_stop:
+  zh-CN: 正在停止…
+  en: Stopping…
+  zh-TW: 正在停止…
+  ja: 停止しています…
+  ko: 중지하는 중…
+tools.op.busy_restart:
+  zh-CN: 正在重启…
+  en: Restarting…
+  zh-TW: 正在重新啟動…
+  ja: 再起動しています…
+  ko: 다시 시작하는 중…
+tools.op.busy_reload:
+  zh-CN: 正在重新加载…
+  en: Reloading…
+  zh-TW: 正在重新載入…
+  ja: 再読み込みしています…
+  ko: 다시 로드하는 중…
+tools.op.busy_enable:
+  zh-CN: 正在启用…
+  en: Enabling…
+  zh-TW: 正在啟用…
+  ja: 有効にしています…
+  ko: 사용하도록 설정하는 중…
+tools.op.busy_disable:
+  zh-CN: 正在禁用…
+  en: Disabling…
+  zh-TW: 正在停用…
+  ja: 無効にしています…
+  ko: 사용 안 함으로 설정하는 중…
+tools.op.busy_term:
+  zh-CN: 正在结束…
+  en: Ending…
+  zh-TW: 正在結束…
+  ja: 終了しています…
+  ko: 종료하는 중…
+tools.op.busy_kill:
+  zh-CN: 正在强制结束…
+  en: Force killing…
+  zh-TW: 正在強制結束…
+  ja: 強制終了しています…
+  ko: 강제 종료하는 중…
+tools.op.busy_remove:
+  zh-CN: 正在删除…
+  en: Removing…
+  zh-TW: 正在刪除…
+  ja: 削除しています…
+  ko: 삭제하는 중…
+tools.op.done_start:
+  zh-CN: 已启动
+  en: Started
+  zh-TW: 已啟動
+  ja: 起動しました
+  ko: 시작됨
+tools.op.done_stop:
+  zh-CN: 已停止
+  en: Stopped
+  zh-TW: 已停止
+  ja: 停止しました
+  ko: 중지됨
+tools.op.done_restart:
+  zh-CN: 已重启
+  en: Restarted
+  zh-TW: 已重新啟動
+  ja: 再起動しました
+  ko: 다시 시작됨
+tools.op.done_reload:
+  zh-CN: 已重新加载
+  en: Reloaded
+  zh-TW: 已重新載入
+  ja: 再読み込みしました
+  ko: 다시 로드됨
+tools.op.done_enable:
+  zh-CN: 已启用开机启动
+  en: Enabled at boot
+  zh-TW: 已啟用開機啟動
+  ja: 自動起動を有効にしました
+  ko: 부팅 시 시작하도록 설정됨
+tools.op.done_disable:
+  zh-CN: 已禁用开机启动
+  en: Disabled at boot
+  zh-TW: 已停用開機啟動
+  ja: 自動起動を無効にしました
+  ko: 부팅 시 시작하지 않도록 설정됨
+tools.op.done_term:
+  zh-CN: 已发出结束信号
+  en: Signal sent
+  zh-TW: 已送出結束訊號
+  ja: 終了シグナルを送信しました
+  ko: 종료 신호를 보냄
+tools.op.done_kill:
+  zh-CN: 已强制结束
+  en: Killed
+  zh-TW: 已強制結束
+  ja: 強制終了しました
+  ko: 강제 종료됨
+tools.op.done_remove:
+  zh-CN: 已删除
+  en: Removed
+  zh-TW: 已刪除
+  ja: 削除しました
+  ko: 삭제됨
+tools.op.failed_start:
+  zh-CN: "启动失败"
+  en: "Start failed"
+  zh-TW: "啟動失敗"
+  ja: "起動に失敗"
+  ko: "시작 실패"
+tools.op.failed_stop:
+  zh-CN: "停止失败"
+  en: "Stop failed"
+  zh-TW: "停止失敗"
+  ja: "停止に失敗"
+  ko: "중지 실패"
+tools.op.failed_restart:
+  zh-CN: "重启失败"
+  en: "Restart failed"
+  zh-TW: "重新啟動失敗"
+  ja: "再起動に失敗"
+  ko: "다시 시작 실패"
+tools.op.failed_reload:
+  zh-CN: "重新加载失败"
+  en: "Reload failed"
+  zh-TW: "重新載入失敗"
+  ja: "再読み込みに失敗"
+  ko: "다시 로드 실패"
+tools.op.failed_enable:
+  zh-CN: "启用失败"
+  en: "Enable failed"
+  zh-TW: "啟用失敗"
+  ja: "有効化に失敗"
+  ko: "사용 설정 실패"
+tools.op.failed_disable:
+  zh-CN: "禁用失败"
+  en: "Disable failed"
+  zh-TW: "停用失敗"
+  ja: "無効化に失敗"
+  ko: "사용 안 함 설정 실패"
+tools.op.failed_term:
+  zh-CN: "结束失败"
+  en: "End failed"
+  zh-TW: "結束失敗"
+  ja: "終了に失敗"
+  ko: "종료 실패"
+tools.op.failed_kill:
+  zh-CN: "强制结束失败"
+  en: "Force end failed"
+  zh-TW: "強制結束失敗"
+  ja: "強制終了に失敗"
+  ko: "강제 종료 실패"
+tools.op.failed_remove:
+  zh-CN: "删除失败"
+  en: "Remove failed"
+  zh-TW: "刪除失敗"
+  ja: "削除に失敗"
+  ko: "삭제 실패"
+tools.op.in_terminal:
+  zh-CN: "%{action}（在终端中执行）"
+  en: "%{action} (runs in the terminal)"
+  zh-TW: "%{action}（在終端機中執行）"
+  ja: "%{action}（ターミナルで実行）"
+  ko: "%{action}(터미널에서 실행)"
+tools.op.terminal_hint:
+  zh-CN: "这条连接上没有免密码 sudo：在新的 Tab 中执行，sudo 的密码在终端里输入"
+  en: "No passwordless sudo on this connection: runs in a new tab, where you enter the sudo password"
+  zh-TW: "這個連線上沒有免密碼 sudo：在新的分頁中執行，sudo 的密碼在終端機裡輸入"
+  ja: "この接続ではパスワードなしの sudo が使えません：新しいタブで実行し、sudo のパスワードはターミナルで入力します"
+  ko: "이 연결에는 비밀번호 없는 sudo가 없습니다: 새 탭에서 실행하며 sudo 비밀번호는 터미널에서 입력합니다"
+tools.detail.resize:
+  zh-CN: 拖动调整详情的高度（点一下后也可以用 ↑ ↓ 微调），双击恢复按内容的高度
+  en: Drag to resize the details (or click it and use the arrow keys); double-click to fit the content
+  zh-TW: 拖曳以調整詳細資訊的高度（按一下後也可以用 ↑ ↓ 微調），按兩下恢復依內容的高度
+  ja: ドラッグして詳細の高さを調整（クリック後に ↑ ↓ でも微調整できます）、ダブルクリックで内容に合わせた高さに戻す
+  ko: 드래그하여 세부 정보 높이 조정(클릭한 후 ↑ ↓ 키로도 미세 조정 가능), 더블클릭하면 내용에 맞는 높이로 복원
+tools.copy_command:
+  zh-CN: 复制命令
+  en: Copy command
+  zh-TW: 複製指令
+  ja: コマンドをコピー
+  ko: 명령 복사
+tools.copied:
+  zh-CN: "已复制：%{text}"
+  en: "Copied: %{text}"
+  zh-TW: "已複製：%{text}"
+  ja: コピーしました：%{text}
+  ko: "복사됨: %{text}"
+tools.unavailable.unsupported:
+  zh-CN: 主机工具只支持 Linux
+  en: Host tools support Linux only
+  zh-TW: 主機工具只支援 Linux
+  ja: ホストツールは Linux のみに対応しています
+  ko: 호스트 도구는 Linux만 지원합니다
+tools.unavailable_hint.unsupported:
+  zh-CN: 这台主机不是 Linux（或读不到 /proc），进程、服务、网络页不可用。
+  en: This host is not Linux (or /proc is not readable), so processes, services and network are unavailable.
+  zh-TW: 這台主機不是 Linux（或讀不到 /proc），處理程序、服務、網路頁無法使用。
+  ja: このホストは Linux ではない（または /proc を読み取れない）ため、プロセス、サービス、ネットワークのページは使用できません。
+  ko: 이 호스트는 Linux가 아니거나 /proc를 읽을 수 없으므로 프로세스, 서비스, 네트워크 페이지를 사용할 수 없습니다.
+tools.unavailable.no_systemd:
+  zh-CN: 这台主机没有使用 systemd
+  en: This host does not use systemd
+  zh-TW: 這台主機沒有使用 systemd
+  ja: このホストは systemd を使用していません
+  ko: 이 호스트는 systemd를 사용하지 않습니다
+tools.unavailable_hint.no_systemd:
+  zh-CN: 暂不支持管理它的服务。容器里通常没有 systemd，可以在终端中用 service、rc-service 等管理。
+  en: Its services cannot be managed here. Containers usually have no systemd; use service, rc-service, etc. in the terminal.
+  zh-TW: 暫不支援管理它的服務。容器裡通常沒有 systemd，可以在終端機中用 service、rc-service 等管理。
+  ja: このホストのサービスの管理にはまだ対応していません。コンテナーには通常 systemd がないため、ターミナルで service や rc-service などを使って管理してください。
+  ko: 이 호스트의 서비스 관리는 아직 지원하지 않습니다. 컨테이너에는 보통 systemd가 없으므로 터미널에서 service, rc-service 등으로 관리하세요.
+tools.unavailable.no_docker:
+  zh-CN: 这台主机没有安装 Docker 或 Podman
+  en: Docker or Podman is not installed on this host
+  zh-TW: 這台主機沒有安裝 Docker 或 Podman
+  ja: このホストには Docker も Podman もインストールされていません
+  ko: 이 호스트에는 Docker나 Podman이 설치되어 있지 않습니다
+tools.unavailable_hint.no_docker:
+  zh-CN: 安装后点“刷新”。也可能是 docker 不在执行命令时的 PATH 中。
+  en: Click Refresh after installing it. docker may also be missing from the PATH used for commands.
+  zh-TW: 安裝後按「重新整理」。也可能是 docker 不在執行指令時的 PATH 中。
+  ja: インストール後に「更新」をクリックしてください。コマンド実行時の PATH に docker が含まれていない可能性もあります。
+  ko: 설치한 후 '새로 고침'을 클릭하세요. 명령을 실행할 때의 PATH에 docker가 없을 수도 있습니다.
+tools.unavailable.docker_down:
+  zh-CN: Docker 没有运行
+  en: Docker is not running
+  zh-TW: Docker 沒有在執行
+  ja: Docker が実行されていません
+  ko: Docker가 실행되고 있지 않습니다
+tools.docker_down_hint:
+  zh-CN: 已安装 Docker，但连不上它的守护进程。启动后点“刷新”：
+  en: "Docker is installed but its daemon is not reachable. Start it, then click Refresh:"
+  zh-TW: 已安裝 Docker，但連不上它的常駐程式。啟動後按「重新整理」：
+  ja: Docker はインストールされていますが、デーモンに接続できません。起動してから「更新」をクリックしてください：
+  ko: "Docker는 설치되어 있지만 데몬에 연결할 수 없습니다. 시작한 후 '새로 고침'을 클릭하세요:"
+tools.unavailable.need_root:
+  zh-CN: 需要 root 权限
+  en: Root privileges required
+  zh-TW: 需要 root 權限
+  ja: root 権限が必要です
+  ko: root 권한이 필요합니다
+tools.unavailable.need_root_docker:
+  zh-CN: 没有权限访问 Docker
+  en: No permission to access Docker
+  zh-TW: 沒有存取 Docker 的權限
+  ja: Docker にアクセスする権限がありません
+  ko: Docker에 액세스할 권한이 없습니다
+tools.unavailable.single_channel:
+  zh-CN: 这个连接只能使用一个通道
+  en: This connection can use only one channel
+  zh-TW: 這個連線只能使用一個通道
+  ja: この接続ではチャネルを 1 つしか使用できません
+  ko: 이 연결은 채널을 하나만 사용할 수 있습니다
+tools.unavailable_hint.single_channel:
+  zh-CN: 这个连接只能使用终端这一个通道（被堡垒机调起、主机设置了“只用一个通道”，或服务器拒绝另开通道）。主机工具需要另开通道执行命令，在这里不可用。
+  en: This connection can only use the terminal channel (launched by a bastion host, the host is set to “Use a single channel”, or the server refused another channel). Host tools need another channel to run commands and are unavailable here.
+  zh-TW: 這個連線只能使用終端機這一個通道（由堡壘主機啟動、主機設定了「只用一個通道」，或伺服器拒絕另開通道）。主機工具需要另開通道執行指令，在這裡無法使用。
+  ja: この接続ではターミナルのチャネル 1 つしか使用できません（要塞ホストから起動された、ホストで「チャネルを 1 つだけ使用」が設定されている、またはサーバーが別のチャネルを拒否した）。ホストツールはコマンドの実行に別のチャネルが必要なため、ここでは使用できません。
+  ko: 이 연결은 터미널 채널 하나만 사용할 수 있습니다(배스천 호스트에서 시작되었거나, 호스트에 '채널 하나만 사용'이 설정되어 있거나, 서버가 추가 채널을 거부했습니다). 호스트 도구는 명령을 실행하려면 별도의 채널이 필요하므로 여기서는 사용할 수 없습니다.
+tools.sudo.password:
+  zh-CN: 当前用户不是 root，sudo 需要密码（面板不会在后台传送密码）；也可能这个用户根本没有 sudo 权限（sudo 先要密码、之后才检查权限，事先无法区分）。
+  en: "The current user is not root and sudo needs a password (passwords are never sent in the background). The user may also have no sudo rights at all: sudo asks for the password before checking, so this can't be told apart in advance."
+  zh-TW: 目前的使用者不是 root，sudo 需要密碼（面板不會在背景傳送密碼）；也可能這個使用者根本沒有 sudo 權限（sudo 會先要求密碼、之後才檢查權限，無法事先區分）。
+  ja: 現在のユーザーは root ではなく、sudo にパスワードが必要です（パネルはバックグラウンドでパスワードを送信しません）。このユーザーにそもそも sudo 権限がない可能性もあります（sudo はパスワードを求めてから権限を確認するため、事前には区別できません）。
+  ko: 현재 사용자는 root가 아니며 sudo에 비밀번호가 필요합니다(패널은 백그라운드에서 비밀번호를 전송하지 않습니다). 이 사용자에게 sudo 권한이 아예 없을 수도 있습니다(sudo는 비밀번호를 먼저 묻고 나서 권한을 확인하므로 미리 구분할 수 없습니다).
+tools.sudo.denied:
+  zh-CN: 当前用户不能用 sudo 执行它。
+  en: The current user is not allowed to run it with sudo.
+  zh-TW: 目前的使用者不能用 sudo 執行它。
+  ja: 現在のユーザーはこれを sudo で実行できません。
+  ko: 현재 사용자는 이 작업을 sudo로 실행할 수 없습니다.
+tools.sudo.none:
+  zh-CN: 这台主机没有 sudo。
+  en: sudo is not installed on this host.
+  zh-TW: 這台主機沒有 sudo。
+  ja: このホストには sudo がありません。
+  ko: 이 호스트에는 sudo가 없습니다.
+tools.root.title:
+  zh-CN: 需要 root 权限
+  en: Root Privileges Required
+  zh-TW: 需要 root 權限
+  ja: root 権限が必要です
+  ko: root 권한 필요
+tools.root.will_run:
+  zh-CN: 在终端中执行：
+  en: "Runs in the terminal:"
+  zh-TW: 在終端機中執行：
+  ja: ターミナルで実行するコマンド：
+  ko: "터미널에서 실행할 명령:"
+tools.root.will_run_su:
+  zh-CN: 改用 su 时：
+  en: "With su:"
+  zh-TW: 改用 su 時：
+  ja: su を使う場合：
+  ko: "su를 사용하는 경우:"
+tools.root.description:
+  zh-CN: "“%{action}”需要 root 权限。"
+  en: "“%{action}” requires root privileges."
+  zh-TW: "「%{action}」需要 root 權限。"
+  ja: 「%{action}」には root 権限が必要です。
+  ko: "'%{action}' 작업에는 root 권한이 필요합니다."
+tools.root.terminal:
+  zh-CN: 在终端中执行：在新的 Tab 中执行同一条命令，sudo 的密码提示出现在终端里，可以自己输入，或用“填入密码”填入已保存的密码。
+  en: "Run in terminal: run the same command in a new tab. The sudo password prompt appears in the terminal; type it, or use “Fill password” to fill the saved one."
+  zh-TW: 在終端機中執行：在新的分頁中執行同一條指令，sudo 的密碼提示會出現在終端機裡，可以自己輸入，或用「填入密碼」填入已儲存的密碼。
+  ja: ターミナルで実行：新しいタブで同じコマンドを実行します。sudo のパスワード入力はターミナルに表示されるので、自分で入力するか、「パスワードを入力」で保存済みのパスワードを入力できます。
+  ko: "터미널에서 실행: 새 탭에서 같은 명령을 실행합니다. sudo 비밀번호 프롬프트가 터미널에 표시되며 직접 입력하거나 '비밀번호 입력'으로 저장된 비밀번호를 입력할 수 있습니다."
+tools.root.terminal_su:
+  zh-CN: 在终端中执行：在新的 Tab 中用 su 执行同一条命令，需要输入 root 的密码。
+  en: "Run in terminal: run the same command with su in a new tab; you will be asked for the root password."
+  zh-TW: 在終端機中執行：在新的分頁中用 su 執行同一條指令，需要輸入 root 的密碼。
+  ja: ターミナルで実行：新しいタブで su を使って同じコマンドを実行します。root のパスワードの入力が必要です。
+  ko: "터미널에서 실행: 새 탭에서 su로 같은 명령을 실행합니다. root 비밀번호를 입력해야 합니다."
+tools.root.terminal_su_alt:
+  zh-CN: 这个用户没有 sudo 权限时：改用 su 执行，在新的 Tab 中输入 root 的密码。
+  en: "If this user has no sudo rights: run it with su instead and enter the root password in the new tab."
+  zh-TW: 這個使用者沒有 sudo 權限時：改用 su 執行，在新的分頁中輸入 root 的密碼。
+  ja: このユーザーに sudo 権限がない場合：su で実行し、新しいタブで root のパスワードを入力します。
+  ko: "이 사용자에게 sudo 권한이 없는 경우: su로 실행하고 새 탭에서 root 비밀번호를 입력합니다."
+tools.root.docker_group:
+  zh-CN: 把这个用户加入 docker 组（重新登录后生效）：
+  en: "Add this user to the docker group (takes effect after logging in again):"
+  zh-TW: 把這個使用者加入 docker 群組（重新登入後生效）：
+  ja: このユーザーを docker グループに追加します（再ログイン後に有効になります）：
+  ko: "이 사용자를 docker 그룹에 추가합니다(다시 로그인한 후 적용됩니다):"
+tools.root.login:
+  zh-CN: 以 root 登录这台主机。
+  en: Log in to this host as root.
+  zh-TW: 以 root 登入這台主機。
+  ja: root でこのホストにログインします。
+  ko: 이 호스트에 root로 로그인합니다.
+tools.root.sudoers:
+  zh-CN: 为这个用户配置免密码的 sudo（用 visudo 加上 NOPASSWD），面板会自动使用。
+  en: Configure passwordless sudo for this user (add NOPASSWD with visudo); the panel uses it automatically.
+  zh-TW: 為這個使用者設定免密碼的 sudo（用 visudo 加上 NOPASSWD），面板會自動使用。
+  ja: このユーザーにパスワードなしの sudo を設定します（visudo で NOPASSWD を追加）。パネルが自動的に使用します。
+  ko: 이 사용자에게 비밀번호 없는 sudo를 설정합니다(visudo로 NOPASSWD 추가). 패널이 자동으로 사용합니다.
+tools.root.info_terminal:
+  zh-CN: "在终端中执行：需要 root 的操作在新的 Tab 中执行同一条命令，sudo 的密码提示出现在终端里，可以自己输入或用“填入密码”填入已保存的密码。"
+  en: "Run in terminal: actions that need root run the same command in a new tab, where the sudo password prompt appears; type it, or use “Fill password” to fill the saved one."
+  zh-TW: "在終端機中執行：需要 root 的操作在新的分頁中執行同一條指令，sudo 的密碼提示會出現在終端機裡，可以自己輸入，或用「填入密碼」填入已儲存的密碼。"
+  ja: "ターミナルで実行：root が必要な操作は、新しいタブで同じコマンドを実行します。sudo のパスワード入力はターミナルに表示されるので、自分で入力するか、「パスワードを入力」で保存済みのパスワードを入力できます。"
+  ko: "터미널에서 실행: root 권한이 필요한 작업은 새 탭에서 같은 명령을 실행합니다. sudo 비밀번호 프롬프트가 터미널에 표시되며 직접 입력하거나 '비밀번호 입력'으로 저장된 비밀번호를 입력할 수 있습니다."
+tools.root.run:
+  zh-CN: 在终端中执行
+  en: Run in Terminal
+  zh-TW: 在終端機中執行
+  ja: ターミナルで実行
+  ko: 터미널에서 실행
+tools.root.run_su:
+  zh-CN: 改用 su 执行
+  en: Use su Instead
+  zh-TW: 改用 su 執行
+  ja: su で実行
+  ko: su로 실행
+tools.source_gone:
+  zh-CN: 发起这个操作的终端已关闭（或不是 SSH、WSL 终端），没有执行
+  en: The terminal this was started from has been closed (or is not an SSH or WSL terminal); nothing was run
+  zh-TW: 發起這個操作的終端機已關閉（或不是 SSH、WSL 終端機），沒有執行
+  ja: この操作を開始したターミナルが閉じられている（または SSH、WSL のターミナルではない）ため、実行しませんでした
+  ko: 이 작업을 시작한 터미널이 닫혔거나 SSH, WSL 터미널이 아니므로 실행하지 않았습니다
+tools.tab_logs:
+  zh-CN: "日志 · %{name}"
+  en: "Logs · %{name}"
+  zh-TW: "記錄 · %{name}"
+  ja: ログ · %{name}
+  ko: 로그 · %{name}
+tools.tab_shell:
+  zh-CN: "容器 · %{name}"
+  en: "Container · %{name}"
+  zh-TW: "容器 · %{name}"
+  ja: コンテナー · %{name}
+  ko: 컨테이너 · %{name}
+tools.tab_run:
+  zh-CN: "执行 · %{action}"
+  en: "Run · %{action}"
+  zh-TW: "執行 · %{action}"
+  ja: 実行 · %{action}
+  ko: 실행 · %{action}
+tools.action_done:
+  zh-CN: "已完成：%{action}"
+  en: "Done: %{action}"
+  zh-TW: "已完成：%{action}"
+  ja: 完了：%{action}
+  ko: "완료: %{action}"
+tools.list_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
+tools.filter.clear:
+  zh-CN: 清除这个筛选条件
+  en: Clear this filter
+  zh-TW: 清除這個篩選條件
+  ja: このフィルター条件をクリア
+  ko: 이 필터 조건 지우기
+tools.jump.dismiss:
+  zh-CN: 关闭这条说明
+  en: Dismiss
+  zh-TW: 關閉這則說明
+  ja: この説明を閉じる
+  ko: 이 설명 닫기
+tools.jump.process_gone:
+  zh-CN: "进程 %{pid} 已不在列表中（可能已经结束）。"
+  en: "Process %{pid} is no longer in the list (it may have exited)."
+  zh-TW: "處理程序 %{pid} 已不在清單中（可能已經結束）。"
+  ja: プロセス %{pid} は一覧にありません（すでに終了した可能性があります）。
+  ko: 프로세스 %{pid}이(가) 더 이상 목록에 없습니다(이미 종료되었을 수 있습니다).
+tools.jump.service_missing:
+  zh-CN: "服务列表中没有 %{name}。"
+  en: "%{name} is not in the service list."
+  zh-TW: "服務清單中沒有 %{name}。"
+  ja: サービス一覧に %{name} はありません。
+  ko: 서비스 목록에 %{name}이(가) 없습니다.
+tools.jump.container_missing:
+  zh-CN: "容器列表中没有 %{id}（可能已被删除）。"
+  en: "Container %{id} is not in the list (it may have been removed)."
+  zh-TW: "容器清單中沒有 %{id}（可能已被刪除）。"
+  ja: コンテナー一覧に %{id} はありません（削除された可能性があります）。
+  ko: 컨테이너 목록에 %{id}이(가) 없습니다(삭제되었을 수 있습니다).
+tools.jump.port_missing:
+  zh-CN: "没有找到发布端口 %{port} 的容器。"
+  en: "No container publishes port %{port}."
+  zh-TW: "找不到發佈連接埠 %{port} 的容器。"
+  ja: ポート %{port} を公開しているコンテナーが見つかりません。
+  ko: 포트 %{port}을(를) 게시하는 컨테이너를 찾을 수 없습니다.
+tools.confirm.host:
+  zh-CN: "主机：%{name}"
+  en: "Host: %{name}"
+  zh-TW: "主機：%{name}"
+  ja: ホスト：%{name}
+  ko: "호스트: %{name}"
+tools.confirm.host_login:
+  zh-CN: "主机：%{name}（%{login}）"
+  en: "Host: %{name} (%{login})"
+  zh-TW: "主機：%{name}（%{login}）"
+  ja: ホスト：%{name}（%{login}）
+  ko: "호스트: %{name}(%{login})"
+tools.confirm.will_run:
+  zh-CN: 将执行：
+  en: "Will run:"
+  zh-TW: 將執行：
+  ja: 実行するコマンド：
+  ko: "실행할 명령:"
+tools.confirm.root_first_sudo:
+  zh-CN: "这条连接上没有免密码 sudo，将在新的 Tab 中执行，sudo 的密码在终端里输入（也可以用“填入密码”）。也可以仍然尝试在后台执行：polkit 等可能允许。"
+  en: "There is no passwordless sudo on this connection, so this runs in a new tab where you enter the sudo password (or use “Fill password”). You can also try running it in the background anyway: polkit or similar may allow it."
+  zh-TW: "這個連線上沒有免密碼 sudo，將在新的分頁中執行，sudo 的密碼在終端機裡輸入（也可以用「填入密碼」）。也可以仍然嘗試在背景執行：polkit 等可能允許。"
+  ja: "この接続ではパスワードなしの sudo が使えないため、新しいタブで実行し、sudo のパスワードはターミナルで入力します（「パスワードを入力」も使えます）。それでもバックグラウンドで試すこともできます。polkit などが許可する場合があります。"
+  ko: "이 연결에는 비밀번호 없는 sudo가 없으므로 새 탭에서 실행하며 sudo 비밀번호는 터미널에서 입력합니다('비밀번호 입력'도 사용할 수 있습니다). 그래도 백그라운드에서 시도할 수도 있습니다. polkit 등이 허용할 수 있습니다."
+tools.confirm.root_first_su:
+  zh-CN: "这个用户不能用 sudo 执行它，将在新的 Tab 中用 su 执行，需要输入 root 的密码。也可以仍然尝试在后台执行：polkit 等可能允许。"
+  en: "This user can't run it with sudo, so it runs with su in a new tab and asks for the root password. You can also try running it in the background anyway: polkit or similar may allow it."
+  zh-TW: "這個使用者不能用 sudo 執行它，將在新的分頁中用 su 執行，需要輸入 root 的密碼。也可以仍然嘗試在背景執行：polkit 等可能允許。"
+  ja: "このユーザーは sudo で実行できないため、新しいタブで su を使って実行し、root のパスワードの入力が必要です。それでもバックグラウンドで試すこともできます。polkit などが許可する場合があります。"
+  ko: "이 사용자는 sudo로 실행할 수 없으므로 새 탭에서 su로 실행하며 root 비밀번호를 입력해야 합니다. 그래도 백그라운드에서 시도할 수도 있습니다. polkit 등이 허용할 수 있습니다."
+tools.confirm.try_anyway:
+  zh-CN: "仍然尝试"
+  en: "Try Anyway"
+  zh-TW: "仍然嘗試"
+  ja: "それでも試す"
+  ko: "그래도 시도"
+tools.confirm.try_anyway_hint:
+  zh-CN: "不经 sudo 在后台执行：polkit 等允许时会成功，不允许时说明原因"
+  en: "Run in the background without sudo: succeeds if polkit or similar allows it, otherwise explains why"
+  zh-TW: "不經由 sudo 在背景執行：polkit 等允許時會成功，不允許時說明原因"
+  ja: "sudo を使わずにバックグラウンドで実行します。polkit などが許可すれば成功し、許可しなければ理由を表示します"
+  ko: "sudo 없이 백그라운드에서 실행합니다. polkit 등이 허용하면 성공하고, 허용하지 않으면 이유를 알려 줍니다"
+tools.action_failed:
+  zh-CN: "%{action}失败：%{output}"
+  en: "%{action} failed: %{output}"
+  zh-TW: "%{action}失敗：%{output}"
+  ja: "%{action}に失敗しました：%{output}"
+  ko: "%{action} 실패: %{output}"
+tools.failure.title:
+  zh-CN: "%{action}失败"
+  en: "%{action} failed"
+  zh-TW: "%{action}失敗"
+  ja: "%{action}に失敗しました"
+  ko: "%{action} 실패"
+tools.failure.expand:
+  zh-CN: "展开完整的输出"
+  en: "Show full output"
+  zh-TW: "展開完整的輸出"
+  ja: "出力をすべて表示"
+  ko: "전체 출력 펼치기"
+tools.failure.collapse:
+  zh-CN: "收起"
+  en: "Collapse"
+  zh-TW: "收合"
+  ja: "折りたたむ"
+  ko: "접기"
+tools.failure.copy:
+  zh-CN: "复制输出"
+  en: "Copy output"
+  zh-TW: "複製輸出"
+  ja: "出力をコピー"
+  ko: "출력 복사"
+tools.failure.copied:
+  zh-CN: "已复制输出"
+  en: "Output copied"
+  zh-TW: "已複製輸出"
+  ja: "出力をコピーしました"
+  ko: "출력을 복사했습니다"
+tools.failure.dismiss:
+  zh-CN: "关闭"
+  en: "Dismiss"
+  zh-TW: "關閉"
+  ja: "閉じる"
+  ko: "닫기"
+tools.exit_code:
+  zh-CN: "退出码 %{code}"
+  en: "exit code %{code}"
+  zh-TW: "結束代碼 %{code}"
+  ja: 終了コード %{code}
+  ko: 종료 코드 %{code}
+tools.error.unsupported:
+  zh-CN: 主机工具只支持 Linux
+  en: Host tools support Linux only
+  zh-TW: 主機工具只支援 Linux
+  ja: ホストツールは Linux のみに対応しています
+  ko: 호스트 도구는 Linux만 지원합니다
+tools.error.unreadable:
+  zh-CN: "无法读取：%{detail}"
+  en: "Couldn't read it: %{detail}"
+  zh-TW: "無法讀取：%{detail}"
+  ja: 読み取れません：%{detail}
+  ko: "읽을 수 없습니다: %{detail}"
+tools.error.unreadable_code:
+  zh-CN: "无法读取（退出码 %{code}）：%{detail}"
+  en: "Couldn't read it (exit code %{code}): %{detail}"
+  zh-TW: "無法讀取（結束代碼 %{code}）：%{detail}"
+  ja: 読み取れません（終了コード %{code}）：%{detail}
+  ko: "읽을 수 없습니다(종료 코드 %{code}): %{detail}"
+tools.error.docker_failed:
+  zh-CN: "读取容器失败：%{detail}"
+  en: "Failed to read containers: %{detail}"
+  zh-TW: "讀取容器失敗：%{detail}"
+  ja: コンテナーを読み取れませんでした：%{detail}
+  ko: "컨테이너를 읽지 못했습니다: %{detail}"
+tools.error.logs_failed:
+  zh-CN: "读取日志失败：%{detail}"
+  en: "Failed to read the logs: %{detail}"
+  zh-TW: "讀取記錄失敗：%{detail}"
+  ja: ログを読み取れませんでした：%{detail}
+  ko: "로그를 읽지 못했습니다: %{detail}"
+tools.error.no_process:
+  zh-CN: 进程已不存在
+  en: The process no longer exists
+  zh-TW: 處理程序已不存在
+  ja: プロセスはもう存在しません
+  ko: 프로세스가 더 이상 존재하지 않습니다
+tools.error.process_replaced:
+  zh-CN: 进程已结束或已被替换，没有执行
+  en: The process has exited or been replaced; nothing was done
+  zh-TW: 處理程序已結束或已被取代，沒有執行
+  ja: プロセスが終了したか別のプロセスに置き換わったため、実行しませんでした
+  ko: 프로세스가 종료되었거나 다른 프로세스로 바뀌었으므로 실행하지 않았습니다
+tools.error.invalid:
+  zh-CN: "请求无效：%{detail}"
+  en: "Invalid request: %{detail}"
+  zh-TW: "要求無效：%{detail}"
+  ja: 無効な要求です：%{detail}
+  ko: "잘못된 요청입니다: %{detail}"
+tools.error.disconnected:
+  zh-CN: 连接已断开，重新连接后再试
+  en: The connection is down. Try again after it reconnects.
+  zh-TW: 連線已中斷，請在重新連線後再試
+  ja: 接続が切断されました。再接続してからもう一度お試しください
+  ko: 연결이 끊어졌습니다. 다시 연결한 후 다시 시도하세요
+tools.error.timeout:
+  zh-CN: 执行超时，服务器没有及时响应
+  en: Timed out; the server didn't respond in time
+  zh-TW: 執行逾時，伺服器沒有及時回應
+  ja: タイムアウトしました。サーバーから時間内に応答がありませんでした
+  ko: 시간이 초과되었습니다. 서버가 제때 응답하지 않았습니다
+tools.error.action_timeout:
+  zh-CN: 执行超时，服务器没有及时响应；命令可能已在服务器上执行，请刷新查看结果
+  en: Timed out; the server didn't respond in time. The command may have run anyway; refresh to check.
+  zh-TW: 執行逾時，伺服器沒有及時回應；指令可能已在伺服器上執行，請重新整理查看結果
+  ja: タイムアウトしました。サーバーから時間内に応答がありませんでした。コマンドはサーバー上で実行された可能性があるため、更新して結果を確認してください
+  ko: 시간이 초과되었습니다. 서버가 제때 응답하지 않았습니다. 명령이 서버에서 이미 실행되었을 수 있으니 새로 고침하여 결과를 확인하세요
+tools.error.channel:
+  zh-CN: "打开通道失败：%{detail}"
+  en: "Couldn't open a channel: %{detail}"
+  zh-TW: "開啟通道失敗：%{detail}"
+  ja: チャネルを開けませんでした：%{detail}
+  ko: "채널을 열지 못했습니다: %{detail}"
+tools.logs.view:
+  zh-CN: 查看日志
+  en: View Logs
+  zh-TW: 檢視記錄
+  ja: ログを表示
+  ko: 로그 보기
+tools.logs.title:
+  zh-CN: "日志 · %{name}"
+  en: "Logs · %{name}"
+  zh-TW: "記錄 · %{name}"
+  ja: ログ · %{name}
+  ko: 로그 · %{name}
+tools.logs.empty:
+  zh-CN: （没有日志）
+  en: (no logs)
+  zh-TW: （沒有記錄）
+  ja: （ログはありません）
+  ko: (로그 없음)
+tools.logs.copied:
+  zh-CN: 已复制日志
+  en: Logs copied
+  zh-TW: 已複製記錄
+  ja: ログをコピーしました
+  ko: 로그를 복사했습니다
+tools.logs.truncated:
+  zh-CN: "日志超过 1 MB，只显示了最近的部分"
+  en: "The logs exceed 1 MB; only the most recent part is shown"
+  zh-TW: "記錄超過 1 MB，只顯示了最近的部分"
+  ja: ログが 1 MB を超えているため、最新の部分だけを表示しています
+  ko: 로그가 1 MB를 넘으므로 최근 부분만 표시합니다
+tools.logs.read_sudo:
+  zh-CN: "经免密码 sudo 读取，能看到全部日志"
+  en: "Read with passwordless sudo; all logs are visible"
+  zh-TW: "經由免密碼 sudo 讀取，能看到全部記錄"
+  ja: パスワードなしの sudo で読み取るため、すべてのログを表示できます
+  ko: 비밀번호 없는 sudo로 읽으므로 모든 로그를 볼 수 있습니다
+tools.logs.limited_none:
+  zh-CN: "可能因为权限看不到这个服务的日志：把当前用户加入 systemd-journal 组（sudo usermod -aG systemd-journal $USER，重新登录后生效），或在终端中用 sudo journalctl 查看。"
+  en: "You may not have permission to read this service's logs. Add the current user to the systemd-journal group (sudo usermod -aG systemd-journal $USER, then sign in again), or view them with sudo journalctl in a terminal."
+  zh-TW: "可能因為權限看不到這個服務的記錄：把目前使用者加入 systemd-journal 群組（sudo usermod -aG systemd-journal $USER，重新登入後生效），或在終端機中用 sudo journalctl 查看。"
+  ja: 権限がないため、このサービスのログを表示できない可能性があります。現在のユーザーを systemd-journal グループに追加する（sudo usermod -aG systemd-journal $USER、再ログイン後に有効）か、ターミナルで sudo journalctl を使って表示してください。
+  ko: 권한이 없어 이 서비스의 로그를 볼 수 없을 수 있습니다. 현재 사용자를 systemd-journal 그룹에 추가하거나(sudo usermod -aG systemd-journal $USER, 다시 로그인한 후 적용) 터미널에서 sudo journalctl로 확인하세요.
+tools.logs.limited_some:
+  zh-CN: "可能因为权限只看到一部分日志：把当前用户加入 systemd-journal 组（sudo usermod -aG systemd-journal $USER，重新登录后生效），或在终端中用 sudo journalctl 查看。"
+  en: "Permissions may be hiding some of these logs. Add the current user to the systemd-journal group (sudo usermod -aG systemd-journal $USER, then sign in again), or view them with sudo journalctl in a terminal."
+  zh-TW: "可能因為權限只看到一部分記錄：把目前使用者加入 systemd-journal 群組（sudo usermod -aG systemd-journal $USER，重新登入後生效），或在終端機中用 sudo journalctl 查看。"
+  ja: 権限がないため、ログの一部しか表示できていない可能性があります。現在のユーザーを systemd-journal グループに追加する（sudo usermod -aG systemd-journal $USER、再ログイン後に有効）か、ターミナルで sudo journalctl を使って表示してください。
+  ko: 권한 때문에 로그의 일부만 보일 수 있습니다. 현재 사용자를 systemd-journal 그룹에 추가하거나(sudo usermod -aG systemd-journal $USER, 다시 로그인한 후 적용) 터미널에서 sudo journalctl로 확인하세요.
+tools.logs.source_gone:
+  zh-CN: "打开这些日志的终端已关闭，不能再读取"
+  en: "The terminal these logs were opened from has closed; they can't be read anymore"
+  zh-TW: "開啟這些記錄的終端機已關閉，無法再讀取"
+  ja: これらのログを開いたターミナルが閉じられたため、これ以上読み取れません
+  ko: 이 로그를 연 터미널이 닫혀서 더 이상 읽을 수 없습니다
+tools.logs.no_match:
+  zh-CN: "没有匹配的行"
+  en: "No matching lines"
+  zh-TW: "沒有符合的行"
+  ja: 一致する行はありません
+  ko: 일치하는 줄이 없습니다
+tools.logs.filter:
+  zh-CN: "筛选（关键词）"
+  en: "Filter (keywords)"
+  zh-TW: "篩選（關鍵字）"
+  ja: フィルター（キーワード）
+  ko: 필터(키워드)
+tools.logs.lines_200:
+  zh-CN: "最近 200 行"
+  en: "Last 200 lines"
+  zh-TW: "最近 200 行"
+  ja: 直近 200 行
+  ko: 최근 200줄
+tools.logs.lines_1000:
+  zh-CN: "最近 1000 行"
+  en: "Last 1000 lines"
+  zh-TW: "最近 1000 行"
+  ja: 直近 1000 行
+  ko: 최근 1000줄
+tools.logs.lines_all:
+  zh-CN: "全部行"
+  en: "All lines"
+  zh-TW: "全部行"
+  ja: すべての行
+  ko: 모든 줄
+tools.logs.range_all:
+  zh-CN: "全部时间"
+  en: "Any time"
+  zh-TW: "全部時間"
+  ja: すべての期間
+  ko: 전체 기간
+tools.logs.range_15m:
+  zh-CN: "最近 15 分钟"
+  en: "Last 15 minutes"
+  zh-TW: "最近 15 分鐘"
+  ja: 直近 15 分
+  ko: 최근 15분
+tools.logs.range_1h:
+  zh-CN: "最近 1 小时"
+  en: "Last hour"
+  zh-TW: "最近 1 小時"
+  ja: 直近 1 時間
+  ko: 최근 1시간
+tools.logs.range_today:
+  zh-CN: "今天"
+  en: "Today"
+  zh-TW: "今天"
+  ja: 今日
+  ko: 오늘
+tools.logs.level_all:
+  zh-CN: "全部级别"
+  en: "All levels"
+  zh-TW: "全部等級"
+  ja: すべてのレベル
+  ko: 모든 수준
+tools.logs.level_warning:
+  zh-CN: "警告及以上"
+  en: "Warnings and above"
+  zh-TW: "警告及以上"
+  ja: 警告以上
+  ko: 경고 이상
+tools.logs.level_error:
+  zh-CN: "错误及以上"
+  en: "Errors and above"
+  zh-TW: "錯誤及以上"
+  ja: エラー以上
+  ko: 오류 이상
+tools.logs.show_time:
+  zh-CN: "显示时间"
+  en: "Show times"
+  zh-TW: "顯示時間"
+  ja: 時刻を表示
+  ko: 시간 표시
+tools.logs.hide_time:
+  zh-CN: "隐藏时间"
+  en: "Hide times"
+  zh-TW: "隱藏時間"
+  ja: 時刻を非表示
+  ko: 시간 숨기기
+tools.logs.wrap_on:
+  zh-CN: 自动换行
+  en: Wrap long lines
+  zh-TW: 自動換行
+  ja: 自動で折り返す
+  ko: 자동 줄 바꿈
+tools.logs.wrap_off:
+  zh-CN: 不自动换行（横向滚动）
+  en: Don't wrap (scroll sideways)
+  zh-TW: 不自動換行（水平捲動）
+  ja: 折り返さない（横スクロール）
+  ko: 줄 바꿈 안 함(가로 스크롤)
+tools.logs.follow:
+  zh-CN: "跟随"
+  en: "Follow"
+  zh-TW: "追蹤"
+  ja: 追従
+  ko: 따라가기
+tools.logs.follow_start:
+  zh-CN: "跟随：每 2 秒读取新的日志，新行到达时滚到底部"
+  en: "Follow: read new logs every 2 seconds and scroll to new lines"
+  zh-TW: "追蹤：每 2 秒讀取新的記錄，新行到達時捲到底部"
+  ja: 追従：2 秒ごとに新しいログを読み取り、新しい行が届くと一番下までスクロールします
+  ko: "따라가기: 2초마다 새 로그를 읽고 새 줄이 도착하면 맨 아래로 스크롤합니다"
+tools.logs.follow_stop:
+  zh-CN: "停止跟随"
+  en: "Stop following"
+  zh-TW: "停止追蹤"
+  ja: 追従を停止
+  ko: 따라가기 중지
+tools.logs.paused:
+  zh-CN: "已暂停自动滚动"
+  en: "Auto-scroll paused"
+  zh-TW: "已暫停自動捲動"
+  ja: 自動スクロールを一時停止しました
+  ko: 자동 스크롤 일시 중지됨
+tools.logs.to_bottom:
+  zh-CN: "回到底部"
+  en: "Jump to Bottom"
+  zh-TW: "回到底部"
+  ja: 一番下へ
+  ko: 맨 아래로
+tools.logs.count:
+  zh-CN: "%{total} 行"
+  en: "%{total} lines"
+  zh-TW: "%{total} 行"
+  ja: "%{total} 行"
+  ko: "%{total}줄"
+tools.logs.count_one:
+  zh-CN: "1 行"
+  en: "1 line"
+  zh-TW: "1 行"
+  ja: 1 行
+  ko: 1줄
+tools.logs.shown:
+  zh-CN: "%{shown} / %{total} 行"
+  en: "%{shown} of %{total} lines"
+  zh-TW: "%{shown} / %{total} 行"
+  ja: "%{shown} / %{total} 行"
+  ko: "%{shown} / %{total}줄"
+tools.logs.shown_of_one:
+  zh-CN: "%{shown} / 1 行"
+  en: "%{shown} of 1 line"
+  zh-TW: "%{shown} / 1 行"
+  ja: "%{shown} / 1 行"
+  ko: "%{shown} / 1줄"
+tools.logs.copy_all:
+  zh-CN: "复制全部"
+  en: "Copy All"
+  zh-TW: "複製全部"
+  ja: すべてコピー
+  ko: 모두 복사
+tools.follow_logs:
+  zh-CN: 在新 Tab 中跟随日志
+  en: Follow Logs in a New Tab
+  zh-TW: 在新分頁中追蹤記錄
+  ja: 新しいタブでログを追従
+  ko: 새 탭에서 로그 따라가기
+tools.process.search:
+  zh-CN: 搜索名称、PID、用户
+  en: Search name, PID, user
+  zh-TW: 搜尋名稱、PID、使用者
+  ja: 名前、PID、ユーザーで検索
+  ko: 이름, PID, 사용자 검색
+tools.process.count:
+  zh-CN: "%{count} 个进程"
+  en: "%{count} processes"
+  zh-TW: "%{count} 個處理程序"
+  ja: "%{count} 個のプロセス"
+  ko: 프로세스 %{count}개
+tools.process.count_one:
+  zh-CN: 1 个进程
+  en: 1 process
+  zh-TW: 1 個處理程序
+  ja: 1 個のプロセス
+  ko: 프로세스 1개
+tools.process.count_filtered:
+  zh-CN: "显示 %{shown} 个，共 %{total} 个进程"
+  en: "Showing %{shown} of %{total} processes"
+  zh-TW: "顯示 %{shown} 個，共 %{total} 個處理程序"
+  ja: "%{total} 個のプロセスのうち %{shown} 個を表示"
+  ko: 프로세스 %{total}개 중 %{shown}개 표시
+tools.process.count_filtered_of_one:
+  zh-CN: "显示 %{shown} 个，共 1 个进程"
+  en: "Showing %{shown} of 1 process"
+  zh-TW: "顯示 %{shown} 個，共 1 個處理程序"
+  ja: 1 個のプロセスのうち %{shown} 個を表示
+  ko: 프로세스 1개 중 %{shown}개 표시
+tools.process.truncated:
+  zh-CN: "共 %{total} 个进程，只列出前 %{shown} 个"
+  en: "%{total} processes; showing the first %{shown}"
+  zh-TW: "共 %{total} 個處理程序，只列出前 %{shown} 個"
+  ja: 全 %{total} 個のプロセスのうち、最初の %{shown} 個だけを表示しています
+  ko: 프로세스 %{total}개 중 처음 %{shown}개만 표시합니다
+tools.process.empty:
+  zh-CN: 没有符合条件的进程
+  en: No matching processes
+  zh-TW: 沒有符合條件的處理程序
+  ja: 条件に一致するプロセスはありません
+  ko: 조건에 맞는 프로세스가 없습니다
+tools.process.col_name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+tools.process.col_user:
+  zh-CN: 用户
+  en: User
+  zh-TW: 使用者
+  ja: ユーザー
+  ko: 사용자
+tools.process.col_mem:
+  zh-CN: 内存
+  en: Memory
+  zh-TW: 記憶體
+  ja: メモリ
+  ko: 메모리
+tools.process.col_state:
+  zh-CN: 状态
+  en: State
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+tools.process.col_command:
+  zh-CN: 命令行
+  en: Command
+  zh-TW: 命令列
+  ja: コマンドライン
+  ko: 명령줄
+tools.process.cpu_hint:
+  zh-CN: "CPU 使用率：一个核占满为 100%"
+  en: "CPU usage: one fully busy core is 100%"
+  zh-TW: "CPU 使用率：一個核心用滿為 100%"
+  ja: CPU 使用率：1 コアがフルに使われている状態が 100%
+  ko: "CPU 사용률: 코어 하나를 모두 사용하면 100%"
+tools.process.self_hint:
+  zh-CN: 在这个终端中运行的程序
+  en: A program running in this terminal
+  zh-TW: 在這個終端機中執行的程式
+  ja: このターミナルで実行中のプログラム
+  ko: 이 터미널에서 실행 중인 프로그램
+tools.process.self_shell_hint:
+  zh-CN: 这个终端自己的 shell，结束后终端会断开
+  en: This terminal's own shell; ending it disconnects the terminal
+  zh-TW: 這個終端機自己的 shell，結束後終端機會中斷連線
+  ja: このターミナル自体のシェル。終了するとターミナルが切断されます
+  ko: 이 터미널 자체의 셸입니다. 종료하면 터미널 연결이 끊어집니다
+tools.process.tag_container_hint:
+  zh-CN: "在容器 %{name} 中（%{id}）"
+  en: "In container %{name} (%{id})"
+  zh-TW: "在容器 %{name} 中（%{id}）"
+  ja: コンテナー %{name} 内（%{id}）
+  ko: 컨테이너 %{name} 내부(%{id})
+tools.process.tag_service_hint:
+  zh-CN: "属于 systemd 服务 %{unit}"
+  en: "Part of systemd service %{unit}"
+  zh-TW: "屬於 systemd 服務 %{unit}"
+  ja: systemd サービス %{unit} に属しています
+  ko: systemd 서비스 %{unit}에 속함
+tools.process.hide_containers:
+  zh-CN: 隐藏容器内的进程
+  en: Hide processes in containers
+  zh-TW: 隱藏容器內的處理程序
+  ja: コンテナー内のプロセスを隠す
+  ko: 컨테이너 내부 프로세스 숨기기
+tools.process.show_containers:
+  zh-CN: 显示容器内的进程
+  en: Show processes in containers
+  zh-TW: 顯示容器內的處理程序
+  ja: コンテナー内のプロセスを表示
+  ko: 컨테이너 내부 프로세스 표시
+tools.process.merge:
+  zh-CN: 合并同名进程
+  en: Group processes with the same name
+  zh-TW: 合併同名處理程序
+  ja: 同じ名前のプロセスをまとめる
+  ko: 같은 이름의 프로세스 묶기
+tools.process.unmerge:
+  zh-CN: 不合并同名进程
+  en: Ungroup processes with the same name
+  zh-TW: 不合併同名處理程序
+  ja: 同じ名前のプロセスをまとめない
+  ko: 같은 이름의 프로세스 묶지 않기
+tools.process.chip_hidden:
+  zh-CN: 已隐藏容器内的进程
+  en: Processes in containers hidden
+  zh-TW: 已隱藏容器內的處理程序
+  ja: コンテナー内のプロセスを非表示中
+  ko: 컨테이너 내부 프로세스 숨김
+tools.process.chip_container:
+  zh-CN: "容器 %{name} 内的进程"
+  en: "Processes in %{name}"
+  zh-TW: "容器 %{name} 內的處理程序"
+  ja: コンテナー %{name} 内のプロセス
+  ko: 컨테이너 %{name} 내부의 프로세스
+tools.process.term_menu:
+  zh-CN: 结束进程…
+  en: End Process…
+  zh-TW: 結束處理程序…
+  ja: プロセスを終了…
+  ko: 프로세스 종료…
+tools.process.kill_menu:
+  zh-CN: 强制结束进程…
+  en: Force Kill Process…
+  zh-TW: 強制結束處理程序…
+  ja: プロセスを強制終了…
+  ko: 프로세스 강제 종료…
+tools.process.term:
+  zh-CN: 结束
+  en: End
+  zh-TW: 結束
+  ja: 終了
+  ko: 종료
+tools.process.kill:
+  zh-CN: 强制结束
+  en: Force Kill
+  zh-TW: 強制結束
+  ja: 強制終了
+  ko: 강제 종료
+tools.process.term_title:
+  zh-CN: "结束进程 %{name}（PID %{pid}）？"
+  en: "End process %{name} (PID %{pid})?"
+  zh-TW: "結束處理程序 %{name}（PID %{pid}）？"
+  ja: プロセス %{name}（PID %{pid}）を終了しますか？
+  ko: 프로세스 %{name}(PID %{pid})을(를) 종료하시겠습니까?
+tools.process.kill_title:
+  zh-CN: "强制结束进程 %{name}（PID %{pid}）？"
+  en: "Force kill process %{name} (PID %{pid})?"
+  zh-TW: "強制結束處理程序 %{name}（PID %{pid}）？"
+  ja: プロセス %{name}（PID %{pid}）を強制終了しますか？
+  ko: 프로세스 %{name}(PID %{pid})을(를) 강제 종료하시겠습니까?
+tools.process.term_action:
+  zh-CN: "结束进程 %{name}（%{pid}）"
+  en: "End process %{name} (%{pid})"
+  zh-TW: "結束處理程序 %{name}（%{pid}）"
+  ja: プロセス %{name}（%{pid}）の終了
+  ko: 프로세스 %{name}(%{pid}) 종료
+tools.process.kill_action:
+  zh-CN: "强制结束进程 %{name}（%{pid}）"
+  en: "Force kill process %{name} (%{pid})"
+  zh-TW: "強制結束處理程序 %{name}（%{pid}）"
+  ja: プロセス %{name}（%{pid}）の強制終了
+  ko: 프로세스 %{name}(%{pid}) 강제 종료
+tools.process.kill_user:
+  zh-CN: "用户：%{user}。"
+  en: "User: %{user}."
+  zh-TW: "使用者：%{user}。"
+  ja: ユーザー：%{user}。
+  ko: "사용자: %{user}."
+tools.process.kill_children:
+  zh-CN: "它下面还有 %{count} 个进程（子进程及其子进程）。"
+  en: "%{count} processes run under it (its children and theirs)."
+  zh-TW: "它下面還有 %{count} 個處理程序（子處理程序及其子處理程序）。"
+  ja: この下でさらに %{count} 個のプロセス（子プロセスとその子プロセス）が実行されています。
+  ko: 이 프로세스 아래에서 프로세스 %{count}개(자식 프로세스와 그 자식 프로세스)가 실행 중입니다.
+tools.process.kill_child_one:
+  zh-CN: 它有 1 个子进程。
+  en: It has 1 child process.
+  zh-TW: 它有 1 個子處理程序。
+  ja: 子プロセスが 1 個あります。
+  ko: 자식 프로세스가 1개 있습니다.
+tools.process.term_effect:
+  zh-CN: 进程会收到结束信号（SIGTERM），可以先做完收尾再退出。
+  en: The process gets the termination signal (SIGTERM) and can clean up before it exits.
+  zh-TW: 處理程序會收到結束訊號（SIGTERM），可以先做完收尾再結束。
+  ja: プロセスに終了シグナル（SIGTERM）が送られ、後処理を済ませてから終了できます。
+  ko: 프로세스에 종료 신호(SIGTERM)가 전송되며, 프로세스는 정리 작업을 마친 후 종료할 수 있습니다.
+tools.process.kill_effect:
+  zh-CN: 进程会被立即终止（SIGKILL），来不及保存数据；只在“结束”不起作用时使用。
+  en: The process is stopped at once (SIGKILL) with no chance to save its data; use this only when End doesn't work.
+  zh-TW: 處理程序會被立即終止（SIGKILL），來不及儲存資料；只在「結束」沒有作用時使用。
+  ja: プロセスは直ちに停止され（SIGKILL）、データを保存する余裕がありません。「終了」で終わらない場合にのみ使用してください。
+  ko: 프로세스가 즉시 중지되며(SIGKILL) 데이터를 저장할 틈이 없습니다. '종료'가 작동하지 않을 때만 사용하세요.
+tools.process.risk_init:
+  zh-CN: 这是 PID 1（系统的第一个进程）。结束它通常会让系统或容器停止、重启。
+  en: This is PID 1 (the first process of the system). Ending it usually stops or reboots the system or container.
+  zh-TW: 這是 PID 1（系統的第一個處理程序）。結束它通常會讓系統或容器停止、重新啟動。
+  ja: これは PID 1（システムの最初のプロセス）です。終了すると通常、システムやコンテナーが停止または再起動します。
+  ko: PID 1(시스템의 첫 번째 프로세스)입니다. 종료하면 보통 시스템이나 컨테이너가 중지되거나 다시 시작됩니다.
+tools.process.risk_shell:
+  zh-CN: 这是这个终端自己的 shell，结束后这个终端会断开。
+  en: This is this terminal's own shell; ending it disconnects this terminal.
+  zh-TW: 這是這個終端機自己的 shell，結束後這個終端機會中斷連線。
+  ja: これはこのターミナル自体のシェルです。終了するとこのターミナルは切断されます。
+  ko: 이 터미널 자체의 셸입니다. 종료하면 이 터미널 연결이 끊어집니다.
+tools.process.risk_self:
+  zh-CN: 这是在这个终端中运行的程序。
+  en: This is a program running in this terminal.
+  zh-TW: 這是在這個終端機中執行的程式。
+  ja: これはこのターミナルで実行中のプログラムです。
+  ko: 이 터미널에서 실행 중인 프로그램입니다.
+tools.process.risk_sshd:
+  zh-CN: 这是 SSH 服务的进程，结束后可能断开 SSH 连接（包括这个终端），甚至无法再登录。
+  en: This is an SSH server process; ending it may disconnect SSH sessions (including this terminal) or even prevent logging in again.
+  zh-TW: 這是 SSH 服務的處理程序，結束後可能中斷 SSH 連線（包括這個終端機），甚至無法再登入。
+  ja: これは SSH サーバーのプロセスです。終了すると SSH 接続（このターミナルを含む）が切断され、再ログインできなくなる場合もあります。
+  ko: SSH 서버 프로세스입니다. 종료하면 SSH 연결(이 터미널 포함)이 끊어지고 다시 로그인하지 못할 수도 있습니다.
+tools.process.copy_pid:
+  zh-CN: 复制 PID
+  en: Copy PID
+  zh-TW: 複製 PID
+  ja: PID をコピー
+  ko: PID 복사
+tools.process.show_service:
+  zh-CN: "查看所属服务 %{name}"
+  en: "Show Service %{name}"
+  zh-TW: "檢視所屬服務 %{name}"
+  ja: 所属サービス %{name} を表示
+  ko: 소속 서비스 %{name} 보기
+tools.process.show_container:
+  zh-CN: "查看所在容器 %{name}"
+  en: "Show Container %{name}"
+  zh-TW: "檢視所在容器 %{name}"
+  ja: 所属コンテナー %{name} を表示
+  ko: 소속 컨테이너 %{name} 보기
+tools.process.show_connections:
+  zh-CN: 查看连接
+  en: Show Connections
+  zh-TW: 檢視連線
+  ja: 接続を表示
+  ko: 연결 보기
+tools.process.gone:
+  zh-CN: 进程已结束
+  en: The process has exited
+  zh-TW: 處理程序已結束
+  ja: プロセスは終了しました
+  ko: 프로세스가 종료되었습니다
+tools.process.parent:
+  zh-CN: 父进程
+  en: Parent
+  zh-TW: 父處理程序
+  ja: 親プロセス
+  ko: 부모 프로세스
+tools.process.children:
+  zh-CN: 子进程
+  en: Children
+  zh-TW: 子處理程序
+  ja: 子プロセス
+  ko: 자식 프로세스
+tools.process.service:
+  zh-CN: 所属服务
+  en: Service
+  zh-TW: 所屬服務
+  ja: 所属サービス
+  ko: 소속 서비스
+tools.process.container:
+  zh-CN: 所在容器
+  en: Container
+  zh-TW: 所在容器
+  ja: 所属コンテナー
+  ko: 소속 컨테이너
+tools.process.started:
+  zh-CN: 启动时间
+  en: Started
+  zh-TW: 啟動時間
+  ja: 起動時刻
+  ko: 시작 시간
+tools.process.cpu_time:
+  zh-CN: CPU 时间
+  en: CPU time
+  zh-TW: CPU 時間
+  ja: CPU 時間
+  ko: CPU 시간
+tools.process.seconds:
+  zh-CN: "%{n} 秒"
+  en: "%{n} s"
+  zh-TW: "%{n} 秒"
+  ja: "%{n} 秒"
+  ko: "%{n}초"
+tools.process.threads:
+  zh-CN: 线程数
+  en: Threads
+  zh-TW: 執行緒數
+  ja: スレッド数
+  ko: 스레드 수
+tools.process.memory:
+  zh-CN: 内存（常驻 / 虚拟）
+  en: Memory (resident / virtual)
+  zh-TW: 記憶體（常駐 / 虛擬）
+  ja: メモリ（常駐 / 仮想）
+  ko: 메모리(상주 / 가상)
+tools.process.nice:
+  zh-CN: Nice / 优先级
+  en: Nice / priority
+  zh-TW: Nice / 優先順序
+  ja: Nice / 優先度
+  ko: Nice / 우선순위
+tools.process.exe:
+  zh-CN: 可执行文件
+  en: Executable
+  zh-TW: 可執行檔
+  ja: 実行ファイル
+  ko: 실행 파일
+tools.process.cwd:
+  zh-CN: 当前目录
+  en: Working directory
+  zh-TW: 目前目錄
+  ja: 作業ディレクトリ
+  ko: 작업 디렉터리
+tools.process.command:
+  zh-CN: 命令行
+  en: Command line
+  zh-TW: 命令列
+  ja: コマンドライン
+  ko: 명령줄
+tools.process.state_running:
+  zh-CN: 运行
+  en: running
+  zh-TW: 執行
+  ja: 実行中
+  ko: 실행 중
+tools.process.state_sleeping:
+  zh-CN: 睡眠
+  en: sleeping
+  zh-TW: 睡眠
+  ja: スリープ
+  ko: 대기
+tools.process.state_uninterruptible:
+  zh-CN: 不可中断
+  en: uninterruptible
+  zh-TW: 不可中斷
+  ja: 割り込み不可
+  ko: 중단 불가
+tools.process.state_zombie:
+  zh-CN: 僵尸
+  en: zombie
+  zh-TW: 殭屍
+  ja: ゾンビ
+  ko: 좀비
+tools.process.state_stopped:
+  zh-CN: 已停止
+  en: stopped
+  zh-TW: 已停止
+  ja: 停止
+  ko: 중지됨
+tools.process.state_traced:
+  zh-CN: 跟踪中
+  en: traced
+  zh-TW: 追蹤中
+  ja: トレース中
+  ko: 추적 중
+tools.process.state_idle:
+  zh-CN: 空闲
+  en: idle
+  zh-TW: 閒置
+  ja: アイドル
+  ko: 유휴
+tools.process.state_dead:
+  zh-CN: 已退出
+  en: dead
+  zh-TW: 已結束
+  ja: 終了済み
+  ko: 종료됨
+tools.process.state_paging:
+  zh-CN: 换页
+  en: paging
+  zh-TW: 換頁
+  ja: ページング
+  ko: 페이징
+tools.service.search:
+  zh-CN: 搜索服务名、描述
+  en: Search service name, description
+  zh-TW: 搜尋服務名稱、描述
+  ja: サービス名、説明で検索
+  ko: 서비스 이름, 설명 검색
+tools.service.filter_all:
+  zh-CN: 全部
+  en: All
+  zh-TW: 全部
+  ja: すべて
+  ko: 전체
+tools.service.filter_running:
+  zh-CN: 运行中
+  en: Running
+  zh-TW: 執行中
+  ja: 実行中
+  ko: 실행 중
+tools.service.filter_stopped:
+  zh-CN: 已停止
+  en: Stopped
+  zh-TW: 已停止
+  ja: 停止中
+  ko: 중지됨
+tools.service.filter_failed:
+  zh-CN: 失败
+  en: Failed
+  zh-TW: 失敗
+  ja: 失敗
+  ko: 실패
+tools.service.system_state:
+  zh-CN: "系统状态 %{state}"
+  en: "system %{state}"
+  zh-TW: "系統狀態 %{state}"
+  ja: システム状態 %{state}
+  ko: 시스템 상태 %{state}
+tools.service.show_failed:
+  zh-CN: 查看失败的服务
+  en: Show failed services
+  zh-TW: 檢視失敗的服務
+  ja: 失敗したサービスを表示
+  ko: 실패한 서비스 보기
+tools.service.group_custom:
+  zh-CN: 自定义服务
+  en: Custom services
+  zh-TW: 自訂服務
+  ja: カスタムサービス
+  ko: 사용자 지정 서비스
+tools.service.group_system:
+  zh-CN: 系统服务
+  en: System services
+  zh-TW: 系統服務
+  ja: システムサービス
+  ko: 시스템 서비스
+tools.service.show_all:
+  zh-CN: 显示全部单元（含找不到单元文件的与已停止的静态单元）
+  en: Show all units (including not-found and stopped static ones)
+  zh-TW: 顯示全部單元（含找不到單元檔案的與已停止的靜態單元）
+  ja: すべてのユニットを表示（ユニットファイルが見つからないものと停止中の静的ユニットを含む）
+  ko: 모든 유닛 표시(유닛 파일이 없는 유닛과 중지된 정적 유닛 포함)
+tools.service.hide_rare:
+  zh-CN: 不显示找不到单元文件的与已停止的静态单元
+  en: Hide not-found and stopped static units
+  zh-TW: 不顯示找不到單元檔案的與已停止的靜態單元
+  ja: ユニットファイルが見つからないものと停止中の静的ユニットを表示しない
+  ko: 유닛 파일이 없는 유닛과 중지된 정적 유닛 숨기기
+tools.service.chip_hidden:
+  zh-CN: "已隐藏 %{count} 个找不到或静态的单元"
+  en: "%{count} not-found or static units hidden"
+  zh-TW: "已隱藏 %{count} 個找不到或靜態的單元"
+  ja: 見つからないユニットと静的ユニット %{count} 個を非表示中
+  ko: 찾을 수 없거나 정적인 유닛 %{count}개 숨김
+tools.service.chip_hidden_one:
+  zh-CN: 已隐藏 1 个找不到或静态的单元
+  en: 1 not-found or static unit hidden
+  zh-TW: 已隱藏 1 個找不到或靜態的單元
+  ja: 見つからないユニットまたは静的ユニット 1 個を非表示中
+  ko: 찾을 수 없거나 정적인 유닛 1개 숨김
+tools.service.empty:
+  zh-CN: 没有符合条件的服务
+  en: No matching services
+  zh-TW: 沒有符合條件的服務
+  ja: 条件に一致するサービスはありません
+  ko: 조건에 맞는 서비스가 없습니다
+tools.service.active_active:
+  zh-CN: 运行中
+  en: running
+  zh-TW: 執行中
+  ja: 実行中
+  ko: 실행 중
+tools.service.active_inactive:
+  zh-CN: 已停止
+  en: stopped
+  zh-TW: 已停止
+  ja: 停止中
+  ko: 중지됨
+tools.service.active_failed:
+  zh-CN: 失败
+  en: failed
+  zh-TW: 失敗
+  ja: 失敗
+  ko: 실패
+tools.service.active_activating:
+  zh-CN: 正在启动
+  en: starting
+  zh-TW: 正在啟動
+  ja: 起動中
+  ko: 시작하는 중
+tools.service.active_deactivating:
+  zh-CN: 正在停止
+  en: stopping
+  zh-TW: 正在停止
+  ja: 停止処理中
+  ko: 중지하는 중
+tools.service.active_reloading:
+  zh-CN: 正在重新加载
+  en: reloading
+  zh-TW: 正在重新載入
+  ja: 再読み込み中
+  ko: 다시 로드하는 중
+tools.service.boot:
+  zh-CN: 开机启动
+  en: Start at boot
+  zh-TW: 開機啟動
+  ja: 自動起動
+  ko: 부팅 시 시작
+tools.service.boot_enabled:
+  zh-CN: 开机启动
+  en: enabled
+  zh-TW: 開機啟動
+  ja: 自動起動
+  ko: 부팅 시 시작
+tools.service.boot_disabled:
+  zh-CN: 不开机启动
+  en: disabled
+  zh-TW: 不開機啟動
+  ja: 自動起動なし
+  ko: 부팅 시 시작 안 함
+tools.service.boot_static:
+  zh-CN: 静态
+  en: static
+  zh-TW: 靜態
+  ja: 静的
+  ko: 정적
+tools.service.boot_masked:
+  zh-CN: 已屏蔽
+  en: masked
+  zh-TW: 已遮蔽
+  ja: マスク済み
+  ko: 마스킹됨
+tools.service.boot_generated:
+  zh-CN: 自动生成
+  en: generated
+  zh-TW: 自動產生
+  ja: 自動生成
+  ko: 자동 생성
+tools.service.boot_indirect:
+  zh-CN: 间接
+  en: indirect
+  zh-TW: 間接
+  ja: 間接
+  ko: 간접
+tools.service.boot_alias:
+  zh-CN: 别名
+  en: alias
+  zh-TW: 別名
+  ja: エイリアス
+  ko: 별칭
+tools.service.boot_transient:
+  zh-CN: 动态创建
+  en: transient
+  zh-TW: 動態建立
+  ja: 動的に作成
+  ko: 동적 생성
+tools.service.boot_linked:
+  zh-CN: 链接
+  en: linked
+  zh-TW: 連結
+  ja: リンク
+  ko: 링크됨
+tools.service.boot_enabled_runtime:
+  zh-CN: 临时启用
+  en: "enabled (runtime)"
+  zh-TW: 暫時啟用
+  ja: 一時的に有効
+  ko: 임시 사용
+tools.service.boot_masked_runtime:
+  zh-CN: 临时屏蔽
+  en: "masked (runtime)"
+  zh-TW: 暫時遮蔽
+  ja: 一時的にマスク
+  ko: 임시 마스킹
+tools.service.boot_linked_runtime:
+  zh-CN: 临时链接
+  en: "linked (runtime)"
+  zh-TW: 暫時連結
+  ja: 一時的にリンク
+  ko: 임시 링크
+tools.service.boot_bad:
+  zh-CN: 单元文件有误
+  en: "bad unit file"
+  zh-TW: 單元檔案有誤
+  ja: ユニットファイルに誤りあり
+  ko: 유닛 파일 오류
+tools.service.boot_not_found:
+  zh-CN: 找不到单元文件
+  en: "unit file not found"
+  zh-TW: 找不到單元檔案
+  ja: ユニットファイルが見つかりません
+  ko: 유닛 파일 없음
+tools.service.description:
+  zh-CN: 描述
+  en: Description
+  zh-TW: 描述
+  ja: 説明
+  ko: 설명
+tools.service.state:
+  zh-CN: 状态
+  en: State
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+tools.service.state_sub:
+  zh-CN: "%{state}（%{sub}）"
+  en: "%{state} (%{sub})"
+  zh-TW: "%{state}（%{sub}）"
+  ja: "%{state}（%{sub}）"
+  ko: "%{state}(%{sub})"
+tools.service.main_pid:
+  zh-CN: 主进程
+  en: Main PID
+  zh-TW: 主處理程序
+  ja: メインプロセス
+  ko: 주 프로세스
+tools.service.show_main_process:
+  zh-CN: 查看主进程
+  en: Show Main Process
+  zh-TW: 檢視主要處理程序
+  ja: メインプロセスを表示
+  ko: 주 프로세스 보기
+tools.service.show_connections:
+  zh-CN: 查看连接
+  en: Show Connections
+  zh-TW: 檢視連線
+  ja: 接続を表示
+  ko: 연결 보기
+tools.service.usage:
+  zh-CN: 资源
+  en: Usage
+  zh-TW: 資源
+  ja: リソース
+  ko: 리소스
+tools.service.memory:
+  zh-CN: "内存 %{size}"
+  en: "Memory %{size}"
+  zh-TW: "記憶體 %{size}"
+  ja: メモリ %{size}
+  ko: 메모리 %{size}
+tools.service.cpu_seconds:
+  zh-CN: "CPU 时间 %{n} 秒"
+  en: "CPU time %{n} s"
+  zh-TW: "CPU 時間 %{n} 秒"
+  ja: CPU 時間 %{n} 秒
+  ko: CPU 시간 %{n}초
+tools.service.cpu_minutes:
+  zh-CN: "CPU 时间 %{m} 分 %{s} 秒"
+  en: "CPU time %{m} min %{s} s"
+  zh-TW: "CPU 時間 %{m} 分 %{s} 秒"
+  ja: CPU 時間 %{m} 分 %{s} 秒
+  ko: CPU 시간 %{m}분 %{s}초
+tools.service.cpu_hours:
+  zh-CN: "CPU 时间 %{h} 小时 %{m} 分"
+  en: "CPU time %{h} h %{m} min"
+  zh-TW: "CPU 時間 %{h} 小時 %{m} 分"
+  ja: CPU 時間 %{h} 時間 %{m} 分
+  ko: CPU 시간 %{h}시간 %{m}분
+tools.service.tasks:
+  zh-CN: "任务 %{n}"
+  en: "%{n} tasks"
+  zh-TW: "工作 %{n}"
+  ja: タスク %{n}
+  ko: 작업 %{n}개
+tools.service.tasks_one:
+  zh-CN: "任务 1"
+  en: "1 task"
+  zh-TW: "工作 1"
+  ja: タスク 1
+  ko: 작업 1개
+tools.service.restarts:
+  zh-CN: "重启 %{n} 次"
+  en: "Restarted %{n} times"
+  zh-TW: "重新啟動 %{n} 次"
+  ja: 再起動 %{n} 回
+  ko: "%{n}번 다시 시작됨"
+tools.service.restarts_one:
+  zh-CN: 重启 1 次
+  en: "Restarted once"
+  zh-TW: 重新啟動 1 次
+  ja: 再起動 1 回
+  ko: 1번 다시 시작됨
+tools.service.failed_result:
+  zh-CN: "失败：%{result}（%{time}）"
+  en: "Failed: %{result} (%{time})"
+  zh-TW: "失敗：%{result}（%{time}）"
+  ja: 失敗：%{result}（%{time}）
+  ko: "실패: %{result}(%{time})"
+tools.service.failed_result_no_time:
+  zh-CN: "失败：%{result}"
+  en: "Failed: %{result}"
+  zh-TW: "失敗：%{result}"
+  ja: 失敗：%{result}
+  ko: "실패: %{result}"
+tools.service.recent_logs:
+  zh-CN: "最近 %{n} 行日志"
+  en: "Last %{n} log lines"
+  zh-TW: "最近 %{n} 行記錄"
+  ja: 直近 %{n} 行のログ
+  ko: 최근 로그 %{n}줄
+tools.service.recent_logs_sudo:
+  zh-CN: "最近 %{n} 行日志（经免密码 sudo 读取）"
+  en: "Last %{n} log lines (read with passwordless sudo)"
+  zh-TW: "最近 %{n} 行記錄（經由免密碼 sudo 讀取）"
+  ja: 直近 %{n} 行のログ（パスワードなしの sudo で読み取り）
+  ko: 최근 로그 %{n}줄(비밀번호 없는 sudo로 읽음)
+tools.service.unit_file:
+  zh-CN: 单元文件
+  en: Unit file
+  zh-TW: 單元檔案
+  ja: ユニットファイル
+  ko: 유닛 파일
+tools.service.op_start:
+  zh-CN: 启动
+  en: Start
+  zh-TW: 啟動
+  ja: 起動
+  ko: 시작
+tools.service.op_stop:
+  zh-CN: 停止
+  en: Stop
+  zh-TW: 停止
+  ja: 停止
+  ko: 중지
+tools.service.op_restart:
+  zh-CN: 重启
+  en: Restart
+  zh-TW: 重新啟動
+  ja: 再起動
+  ko: 다시 시작
+tools.service.op_reload:
+  zh-CN: 重新加载
+  en: Reload
+  zh-TW: 重新載入
+  ja: 再読み込み
+  ko: 다시 로드
+tools.service.op_enable:
+  zh-CN: 启用开机启动
+  en: Enable at Boot
+  zh-TW: 啟用開機啟動
+  ja: 自動起動を有効にする
+  ko: 부팅 시 시작 사용
+tools.service.op_disable:
+  zh-CN: 禁用开机启动
+  en: Disable at Boot
+  zh-TW: 停用開機啟動
+  ja: 自動起動を無効にする
+  ko: 부팅 시 시작 사용 안 함
+tools.service.action_start:
+  zh-CN: "启动服务 %{name}"
+  en: "Start service %{name}"
+  zh-TW: "啟動服務 %{name}"
+  ja: サービス %{name} の起動
+  ko: 서비스 %{name} 시작
+tools.service.action_stop:
+  zh-CN: "停止服务 %{name}"
+  en: "Stop service %{name}"
+  zh-TW: "停止服務 %{name}"
+  ja: サービス %{name} の停止
+  ko: 서비스 %{name} 중지
+tools.service.action_restart:
+  zh-CN: "重启服务 %{name}"
+  en: "Restart service %{name}"
+  zh-TW: "重新啟動服務 %{name}"
+  ja: サービス %{name} の再起動
+  ko: 서비스 %{name} 다시 시작
+tools.service.action_reload:
+  zh-CN: "重新加载服务 %{name}"
+  en: "Reload service %{name}"
+  zh-TW: "重新載入服務 %{name}"
+  ja: サービス %{name} の再読み込み
+  ko: 서비스 %{name} 다시 로드
+tools.service.action_enable:
+  zh-CN: "启用 %{name} 的开机启动"
+  en: "Enable %{name} at boot"
+  zh-TW: "啟用 %{name} 的開機啟動"
+  ja: "%{name} の自動起動の有効化"
+  ko: "%{name} 부팅 시 시작 사용"
+tools.service.action_disable:
+  zh-CN: "禁用 %{name} 的开机启动"
+  en: "Disable %{name} at boot"
+  zh-TW: "停用 %{name} 的開機啟動"
+  ja: "%{name} の自動起動の無効化"
+  ko: "%{name} 부팅 시 시작 사용 안 함"
+tools.service.confirm_start:
+  zh-CN: "启动服务 %{name}？"
+  en: "Start service %{name}?"
+  zh-TW: "啟動服務 %{name}？"
+  ja: サービス %{name} を起動しますか？
+  ko: 서비스 %{name}을(를) 시작하시겠습니까?
+tools.service.confirm_stop:
+  zh-CN: "停止服务 %{name}？"
+  en: "Stop service %{name}?"
+  zh-TW: "停止服務 %{name}？"
+  ja: サービス %{name} を停止しますか？
+  ko: 서비스 %{name}을(를) 중지하시겠습니까?
+tools.service.confirm_restart:
+  zh-CN: "重启服务 %{name}？"
+  en: "Restart service %{name}?"
+  zh-TW: "重新啟動服務 %{name}？"
+  ja: サービス %{name} を再起動しますか？
+  ko: 서비스 %{name}을(를) 다시 시작하시겠습니까?
+tools.service.confirm_reload:
+  zh-CN: "重新加载服务 %{name}？"
+  en: "Reload service %{name}?"
+  zh-TW: "重新載入服務 %{name}？"
+  ja: サービス %{name} を再読み込みしますか？
+  ko: 서비스 %{name}을(를) 다시 로드하시겠습니까?
+tools.service.confirm_enable:
+  zh-CN: "启用 %{name} 的开机启动？"
+  en: "Start %{name} at boot?"
+  zh-TW: "啟用 %{name} 的開機啟動？"
+  ja: "%{name} の自動起動を有効にしますか？"
+  ko: "%{name}이(가) 부팅 시 시작되도록 설정하시겠습니까?"
+tools.service.confirm_disable:
+  zh-CN: "禁用 %{name} 的开机启动？"
+  en: "Stop starting %{name} at boot?"
+  zh-TW: "停用 %{name} 的開機啟動？"
+  ja: "%{name} の自動起動を無効にしますか？"
+  ko: "%{name}이(가) 부팅 시 시작되지 않도록 설정하시겠습니까?"
+tools.service.hint_start:
+  zh-CN: 将按单元文件启动它（以及它依赖的单元）。
+  en: It will be started as defined by its unit file (along with the units it depends on).
+  zh-TW: 將依照單元檔案啟動它（以及它相依的單元）。
+  ja: ユニットファイルの定義に従って起動します（依存しているユニットも起動します）。
+  ko: 유닛 파일에 정의된 대로 시작합니다(의존하는 유닛도 함께 시작합니다).
+tools.service.hint_stop:
+  zh-CN: 停止后依赖它的程序可能无法工作。
+  en: Programs that depend on it may stop working.
+  zh-TW: 停止後，相依於它的程式可能無法運作。
+  ja: 停止すると、このサービスに依存するプログラムが動作しなくなる可能性があります。
+  ko: 중지하면 이 서비스에 의존하는 프로그램이 작동하지 않을 수 있습니다.
+tools.service.hint_restart:
+  zh-CN: 重启期间服务会短暂中断。
+  en: The service is briefly interrupted while it restarts.
+  zh-TW: 重新啟動期間服務會短暫中斷。
+  ja: 再起動中はサービスが一時的に中断されます。
+  ko: 다시 시작하는 동안 서비스가 잠시 중단됩니다.
+tools.service.hint_reload:
+  zh-CN: 服务将重新读取配置；配置有误时服务可能出错。
+  en: The service re-reads its configuration; a broken configuration may make it fail.
+  zh-TW: 服務將重新讀取設定；設定有誤時服務可能出錯。
+  ja: サービスが設定を読み込み直します。設定に誤りがあるとサービスがエラーになる可能性があります。
+  ko: 서비스가 설정을 다시 읽습니다. 설정에 오류가 있으면 서비스가 실패할 수 있습니다.
+tools.service.hint_enable:
+  zh-CN: 下次开机后自动启动，现在的运行状态不变。
+  en: It will start automatically at boot; its current state is unchanged.
+  zh-TW: 下次開機後自動啟動，目前的執行狀態不變。
+  ja: 次回の起動時から自動的に開始されます。現在の実行状態は変わりません。
+  ko: 다음 부팅부터 자동으로 시작됩니다. 현재 실행 상태는 바뀌지 않습니다.
+tools.service.hint_disable:
+  zh-CN: 下次开机后不再自动启动，现在的运行状态不变。
+  en: It will no longer start at boot; its current state is unchanged.
+  zh-TW: 下次開機後不再自動啟動，目前的執行狀態不變。
+  ja: 次回の起動時から自動的に開始されなくなります。現在の実行状態は変わりません。
+  ko: 다음 부팅부터 자동으로 시작되지 않습니다. 현재 실행 상태는 바뀌지 않습니다.
+tools.service.connection_risk:
+  zh-CN: "%{name} 是 SSH、网络或防火墙类服务：这个操作可能导致连接断开（包括这个终端），甚至无法再登录（例如防火墙启动或重新加载后的规则不放行 SSH）。请确认有其他办法登录（例如控制台）后再继续。"
+  en: "%{name} is an SSH, network or firewall service: this may disconnect you (including this terminal) or even prevent logging in again (e.g. firewall rules that don't allow SSH after it starts or reloads). Make sure you have another way in (e.g. a console) before continuing."
+  zh-TW: "%{name} 是 SSH、網路或防火牆類服務：這個操作可能導致連線中斷（包括這個終端機），甚至無法再登入（例如防火牆啟動或重新載入後的規則不允許 SSH 通過）。請確認有其他方法登入（例如主控台）後再繼續。"
+  ja: "%{name} は SSH、ネットワーク、またはファイアウォール関連のサービスです。この操作により接続（このターミナルを含む）が切断されたり、再ログインできなくなったりする可能性があります（例：ファイアウォールの起動や再読み込み後のルールが SSH を許可しない場合）。ほかのログイン手段（コンソールなど）があることを確認してから続行してください。"
+  ko: "'%{name}' 서비스는 SSH, 네트워크 또는 방화벽 관련 서비스입니다. 이 작업으로 연결(이 터미널 포함)이 끊어지거나 다시 로그인하지 못하게 될 수 있습니다(예: 방화벽이 시작되거나 다시 로드된 후의 규칙이 SSH를 허용하지 않는 경우). 다른 로그인 방법(예: 콘솔)이 있는지 확인한 후 계속하세요."
+tools.service.power_risk:
+  zh-CN: "%{name} 是关机、重启或休眠类单元：执行后这台主机会立即关机、重启或休眠，所有连接（包括这个终端）都会断开，正在运行的程序会被结束。"
+  en: "%{name} is a power-off, reboot or sleep unit: this host will power off, reboot or go to sleep right away, every connection (including this terminal) will drop, and running programs will be stopped."
+  zh-TW: "%{name} 是關機、重新啟動或休眠類單元：執行後這台主機會立即關機、重新啟動或休眠，所有連線（包括這個終端機）都會中斷，正在執行的程式會被結束。"
+  ja: "%{name} は電源オフ、再起動、またはスリープ関連のユニットです。実行するとこのホストは直ちに電源オフ、再起動、またはスリープし、すべての接続（このターミナルを含む）が切断され、実行中のプログラムは終了します。"
+  ko: "'%{name}' 유닛은 전원 끄기, 다시 시작 또는 절전 관련 유닛입니다. 실행하면 이 호스트는 즉시 전원이 꺼지거나 다시 시작되거나 절전 모드로 전환되며, 모든 연결(이 터미널 포함)이 끊어지고 실행 중인 프로그램은 종료됩니다."
+tools.docker.search:
+  zh-CN: 搜索名称、镜像
+  en: Search name, image
+  zh-TW: 搜尋名稱、映像檔
+  ja: 名前、イメージで検索
+  ko: 이름, 이미지 검색
+tools.docker.containers:
+  zh-CN: 容器
+  en: Containers
+  zh-TW: 容器
+  ja: コンテナー
+  ko: 컨테이너
+tools.docker.images:
+  zh-CN: 镜像
+  en: Images
+  zh-TW: 映像檔
+  ja: イメージ
+  ko: 이미지
+tools.docker.volumes:
+  zh-CN: 卷
+  en: Volumes
+  zh-TW: 磁碟區
+  ja: ボリューム
+  ko: 볼륨
+tools.docker.networks:
+  zh-CN: 网络
+  en: Networks
+  zh-TW: 網路
+  ja: ネットワーク
+  ko: 네트워크
+tools.docker.sudo:
+  zh-CN: 经免密码 sudo 访问（这个用户不在 docker 组）
+  en: accessed with passwordless sudo (this user is not in the docker group)
+  zh-TW: 經由免密碼 sudo 存取（這個使用者不在 docker 群組）
+  ja: パスワードなしの sudo でアクセス（このユーザーは docker グループに属していません）
+  ko: 비밀번호 없는 sudo로 액세스(이 사용자는 docker 그룹에 없음)
+tools.docker.no_containers:
+  zh-CN: 没有容器
+  en: No containers
+  zh-TW: 沒有容器
+  ja: コンテナーはありません
+  ko: 컨테이너 없음
+tools.docker.problems:
+  zh-CN: "异常"
+  en: "Issues"
+  zh-TW: "異常"
+  ja: 異常
+  ko: 문제
+tools.docker.no_problems:
+  zh-CN: "没有异常的容器"
+  en: "No containers with issues"
+  zh-TW: "沒有異常的容器"
+  ja: 異常のあるコンテナーはありません
+  ko: 문제가 있는 컨테이너가 없습니다
+tools.docker.sort:
+  zh-CN: "排序"
+  en: "Sort"
+  zh-TW: "排序"
+  ja: 並べ替え
+  ko: 정렬
+tools.docker.sort_project:
+  zh-CN: "按项目"
+  en: "By Project"
+  zh-TW: "依專案"
+  ja: プロジェクト順
+  ko: 프로젝트별
+tools.docker.sort_cpu:
+  zh-CN: "按 CPU"
+  en: "By CPU"
+  zh-TW: "依 CPU"
+  ja: CPU 順
+  ko: CPU순
+tools.docker.sort_memory:
+  zh-CN: "按内存"
+  en: "By Memory"
+  zh-TW: "依記憶體"
+  ja: メモリ順
+  ko: 메모리순
+tools.docker.usage_cpu:
+  zh-CN: "CPU %{cpu}（按单核计）"
+  en: "CPU %{cpu} (of one core)"
+  zh-TW: "CPU %{cpu}（以單核計）"
+  ja: CPU %{cpu}（1 コア換算）
+  ko: CPU %{cpu}(코어 1개 기준)
+tools.docker.usage_memory:
+  zh-CN: "内存 %{memory}"
+  en: "Memory %{memory}"
+  zh-TW: "記憶體 %{memory}"
+  ja: メモリ %{memory}
+  ko: 메모리 %{memory}
+tools.docker.memory_of_limit:
+  zh-CN: "%{used} / %{limit}（%{percent}%）"
+  en: "%{used} / %{limit} (%{percent}%)"
+  zh-TW: "%{used} / %{limit}（%{percent}%）"
+  ja: "%{used} / %{limit}（%{percent}%）"
+  ko: "%{used} / %{limit}(%{percent}%)"
+tools.docker.stats_failed:
+  zh-CN: "读不到资源占用：%{detail}"
+  en: "Couldn't read resource usage: %{detail}"
+  zh-TW: "讀不到資源使用量：%{detail}"
+  ja: リソース使用量を読み取れません：%{detail}
+  ko: "리소스 사용량을 읽을 수 없습니다: %{detail}"
+tools.docker.problem_exited:
+  zh-CN: "非正常退出（退出码 %{code}）"
+  en: "Exited with an error (exit code %{code})"
+  zh-TW: "異常結束（結束代碼 %{code}）"
+  ja: 異常終了（終了コード %{code}）
+  ko: 비정상 종료(종료 코드 %{code})
+tools.docker.problem_unhealthy:
+  zh-CN: "健康检查失败"
+  en: "Health check failing"
+  zh-TW: "健康檢查失敗"
+  ja: ヘルスチェック失敗
+  ko: 상태 검사 실패
+tools.docker.problem_restarting:
+  zh-CN: "正在重启：可能启动后又退出，反复重启"
+  en: "Restarting: it may be exiting after each start"
+  zh-TW: "正在重新啟動：可能啟動後又結束，反覆重新啟動"
+  ja: 再起動中：起動しては終了し、再起動を繰り返している可能性があります
+  ko: "다시 시작하는 중: 시작 후 바로 종료되어 반복적으로 다시 시작하고 있을 수 있습니다"
+tools.docker.problem_dead:
+  zh-CN: "已失效（dead）"
+  en: "Dead"
+  zh-TW: "已失效（dead）"
+  ja: 無効（dead）
+  ko: 작동 불능(dead)
+tools.docker.detail_image:
+  zh-CN: "镜像"
+  en: "Image"
+  zh-TW: "映像檔"
+  ja: イメージ
+  ko: 이미지
+tools.docker.detail_state:
+  zh-CN: "状态"
+  en: "State"
+  zh-TW: "狀態"
+  ja: 状態
+  ko: 상태
+tools.docker.detail_usage:
+  zh-CN: "资源"
+  en: "Usage"
+  zh-TW: "資源"
+  ja: リソース
+  ko: 리소스
+tools.docker.detail_restart:
+  zh-CN: "重启"
+  en: "Restart"
+  zh-TW: "重新啟動"
+  ja: 再起動
+  ko: 다시 시작
+tools.docker.detail_health:
+  zh-CN: "健康检查"
+  en: "Health"
+  zh-TW: "健康檢查"
+  ja: ヘルスチェック
+  ko: 상태 검사
+tools.docker.detail_ports:
+  zh-CN: "端口"
+  en: "Ports"
+  zh-TW: "連接埠"
+  ja: ポート
+  ko: 포트
+tools.docker.show_processes:
+  zh-CN: 查看进程
+  en: Show Processes
+  zh-TW: 檢視處理程序
+  ja: プロセスを表示
+  ko: 프로세스 보기
+tools.docker.port_connections:
+  zh-CN: "查看本机端口 %{port} 上的连接"
+  en: "Show connections on port %{port}"
+  zh-TW: "檢視本機連接埠 %{port} 上的連線"
+  ja: ローカルポート %{port} の接続を表示
+  ko: 로컬 포트 %{port}의 연결 보기
+tools.docker.detail_mounts:
+  zh-CN: "挂载"
+  en: "Mounts"
+  zh-TW: "掛載"
+  ja: マウント
+  ko: 마운트
+tools.docker.detail_networks:
+  zh-CN: "网络"
+  en: "Networks"
+  zh-TW: "網路"
+  ja: ネットワーク
+  ko: 네트워크
+tools.docker.detail_failed:
+  zh-CN: "读不到详情：%{detail}"
+  en: "Couldn't read the details: %{detail}"
+  zh-TW: "讀不到詳細資料：%{detail}"
+  ja: 詳細を読み取れません：%{detail}
+  ko: "세부 정보를 읽을 수 없습니다: %{detail}"
+tools.docker.state_running_for:
+  zh-CN: "运行中 · %{duration}"
+  en: "Running · %{duration}"
+  zh-TW: "執行中 · %{duration}"
+  ja: 実行中 · %{duration}
+  ko: 실행 중 · %{duration}
+tools.docker.row_running:
+  zh-CN: 运行中
+  en: Running
+  zh-TW: 執行中
+  ja: 実行中
+  ko: 실행 중
+tools.docker.row_exited:
+  zh-CN: 已退出（%{code}）
+  en: Exited (%{code})
+  zh-TW: 已結束（%{code}）
+  ja: 終了（%{code}）
+  ko: 종료됨(%{code})
+tools.docker.row_exited_ago:
+  zh-CN: 已退出（%{code}）· %{ago}
+  en: Exited (%{code}) · %{ago}
+  zh-TW: 已結束（%{code}）· %{ago}
+  ja: 終了（%{code}）· %{ago}
+  ko: 종료됨(%{code}) · %{ago}
+tools.docker.row_exited_plain:
+  zh-CN: 已退出
+  en: Exited
+  zh-TW: 已結束
+  ja: 終了
+  ko: 종료됨
+tools.docker.row_created:
+  zh-CN: 已创建
+  en: Created
+  zh-TW: 已建立
+  ja: 作成済み
+  ko: 생성됨
+tools.docker.for_under_minute:
+  zh-CN: 不到 1 分钟
+  en: "<1 min"
+  zh-TW: 不到 1 分鐘
+  ja: 1 分未満
+  ko: 1분 미만
+tools.docker.for_minutes:
+  zh-CN: "%{n} 分钟"
+  en: "%{n} min"
+  zh-TW: "%{n} 分鐘"
+  ja: "%{n} 分"
+  ko: "%{n}분"
+tools.docker.for_hours:
+  zh-CN: "%{n} 小时"
+  en: "%{n} h"
+  zh-TW: "%{n} 小時"
+  ja: "%{n} 時間"
+  ko: "%{n}시간"
+tools.docker.for_days:
+  zh-CN: "%{n} 天"
+  en: "%{n} d"
+  zh-TW: "%{n} 天"
+  ja: "%{n} 日"
+  ko: "%{n}일"
+tools.docker.ago_now:
+  zh-CN: 刚刚
+  en: just now
+  zh-TW: 剛剛
+  ja: たった今
+  ko: 방금
+tools.docker.ago_minutes:
+  zh-CN: "%{n} 分钟前"
+  en: "%{n} min ago"
+  zh-TW: "%{n} 分鐘前"
+  ja: "%{n} 分前"
+  ko: "%{n}분 전"
+tools.docker.ago_hours:
+  zh-CN: "%{n} 小时前"
+  en: "%{n} h ago"
+  zh-TW: "%{n} 小時前"
+  ja: "%{n} 時間前"
+  ko: "%{n}시간 전"
+tools.docker.ago_days:
+  zh-CN: "%{n} 天前"
+  en: "%{n} d ago"
+  zh-TW: "%{n} 天前"
+  ja: "%{n} 日前"
+  ko: "%{n}일 전"
+tools.docker.badge_unhealthy:
+  zh-CN: 不健康
+  en: Unhealthy
+  zh-TW: 不健康
+  ja: 異常
+  ko: 비정상
+tools.docker.badge_starting:
+  zh-CN: 启动中
+  en: Starting
+  zh-TW: 啟動中
+  ja: 起動中
+  ko: 시작하는 중
+tools.docker.state_exited:
+  zh-CN: "已退出（退出码 %{code}）"
+  en: "Exited (exit code %{code})"
+  zh-TW: "已結束（結束代碼 %{code}）"
+  ja: 終了（終了コード %{code}）
+  ko: 종료됨(종료 코드 %{code})
+tools.docker.state_exited_at:
+  zh-CN: "已退出（退出码 %{code}），%{time}"
+  en: "Exited (exit code %{code}) at %{time}"
+  zh-TW: "已結束（結束代碼 %{code}），%{time}"
+  ja: 終了（終了コード %{code}）、%{time}
+  ko: 종료됨(종료 코드 %{code}), %{time}
+tools.docker.oom_killed:
+  zh-CN: "因内存不足被结束"
+  en: "killed for running out of memory"
+  zh-TW: "因記憶體不足被結束"
+  ja: メモリ不足により強制終了
+  ko: 메모리 부족으로 종료됨
+tools.docker.state_paused:
+  zh-CN: "已暂停"
+  en: "Paused"
+  zh-TW: "已暫停"
+  ja: 一時停止中
+  ko: 일시 중지됨
+tools.docker.state_restarting:
+  zh-CN: "重启中"
+  en: "Restarting"
+  zh-TW: "重新啟動中"
+  ja: 再起動中
+  ko: 다시 시작하는 중
+tools.docker.state_created:
+  zh-CN: "已创建，没有启动过"
+  en: "Created, never started"
+  zh-TW: "已建立，沒有啟動過"
+  ja: 作成済み、未起動
+  ko: 생성됨, 시작된 적 없음
+tools.docker.state_dead:
+  zh-CN: "已失效"
+  en: "Dead"
+  zh-TW: "已失效"
+  ja: 無効
+  ko: 작동 불능
+tools.docker.restart_no:
+  zh-CN: "不自动重启"
+  en: "Never restarts automatically"
+  zh-TW: "不自動重新啟動"
+  ja: 自動で再起動しない
+  ko: 자동으로 다시 시작 안 함
+tools.docker.restart_always:
+  zh-CN: "总是自动重启"
+  en: "Always restarts"
+  zh-TW: "總是自動重新啟動"
+  ja: 常に自動で再起動
+  ko: 항상 자동으로 다시 시작
+tools.docker.restart_unless_stopped:
+  zh-CN: "自动重启，手动停止的除外"
+  en: "Restarts unless stopped manually"
+  zh-TW: "自動重新啟動，手動停止的除外"
+  ja: 手動で停止した場合を除き自動で再起動
+  ko: 수동으로 중지한 경우를 제외하고 자동으로 다시 시작
+tools.docker.restart_on_failure:
+  zh-CN: "失败时自动重启"
+  en: "Restarts on failure"
+  zh-TW: "失敗時自動重新啟動"
+  ja: 失敗時に自動で再起動
+  ko: 실패 시 자동으로 다시 시작
+tools.docker.restart_on_failure_max:
+  zh-CN: "失败时自动重启（最多 %{n} 次）"
+  en: "Restarts on failure (up to %{n} times)"
+  zh-TW: "失敗時自動重新啟動（最多 %{n} 次）"
+  ja: 失敗時に自動で再起動（最大 %{n} 回）
+  ko: 실패 시 자동으로 다시 시작(최대 %{n}번)
+tools.docker.restart_on_failure_once:
+  zh-CN: "失败时自动重启（最多 1 次）"
+  en: "Restarts on failure (at most once)"
+  zh-TW: "失敗時自動重新啟動（最多 1 次）"
+  ja: 失敗時に自動で再起動（最大 1 回）
+  ko: 실패 시 자동으로 다시 시작(최대 1번)
+tools.docker.restart_count:
+  zh-CN: "已重启 %{n} 次"
+  en: "restarted %{n} times"
+  zh-TW: "已重新啟動 %{n} 次"
+  ja: 再起動 %{n} 回
+  ko: "%{n}번 다시 시작됨"
+tools.docker.restart_count_one:
+  zh-CN: "已重启 1 次"
+  en: "restarted once"
+  zh-TW: "已重新啟動 1 次"
+  ja: 再起動 1 回
+  ko: 1번 다시 시작됨
+tools.docker.health_healthy:
+  zh-CN: "健康"
+  en: "Healthy"
+  zh-TW: "健康"
+  ja: 正常
+  ko: 정상
+tools.docker.health_unhealthy:
+  zh-CN: "不健康（连续失败 %{n} 次）"
+  en: "Unhealthy (%{n} failures in a row)"
+  zh-TW: "不健康（連續失敗 %{n} 次）"
+  ja: 異常（%{n} 回連続で失敗）
+  ko: 비정상(%{n}번 연속 실패)
+tools.docker.health_unhealthy_one:
+  zh-CN: "不健康（检查失败 1 次）"
+  en: "Unhealthy (failed once)"
+  zh-TW: "不健康（檢查失敗 1 次）"
+  ja: 異常（チェックに 1 回失敗）
+  ko: 비정상(검사 1번 실패)
+tools.docker.health_starting:
+  zh-CN: "启动中，还在等第一次检查"
+  en: "Starting; waiting for the first check"
+  zh-TW: "啟動中，還在等第一次檢查"
+  ja: 起動中、最初のチェックを待っています
+  ko: 시작하는 중, 첫 번째 검사를 기다리는 중
+tools.docker.health_last:
+  zh-CN: "最近一次检查（%{time}）：退出码 %{code}"
+  en: "Last check (%{time}): exit code %{code}"
+  zh-TW: "最近一次檢查（%{time}）：結束代碼 %{code}"
+  ja: 前回のチェック（%{time}）：終了コード %{code}
+  ko: "마지막 검사(%{time}): 종료 코드 %{code}"
+tools.docker.port_internal:
+  zh-CN: "%{port}（没有发布到主机）"
+  en: "%{port} (not published)"
+  zh-TW: "%{port}（沒有發佈到主機）"
+  ja: "%{port}（ホストに公開されていません）"
+  ko: "%{port}(호스트에 게시되지 않음)"
+tools.docker.mount_volume:
+  zh-CN: "卷 %{name}"
+  en: "Volume %{name}"
+  zh-TW: "磁碟區 %{name}"
+  ja: ボリューム %{name}
+  ko: 볼륨 %{name}
+tools.docker.mount_read_only:
+  zh-CN: "只读"
+  en: "Read-only"
+  zh-TW: "唯讀"
+  ja: 読み取り専用
+  ko: 읽기 전용
+tools.docker.open_in_sftp:
+  zh-CN: "在 SFTP 中打开"
+  en: "Open in SFTP"
+  zh-TW: "在 SFTP 中開啟"
+  ja: SFTP で開く
+  ko: SFTP에서 열기
+tools.docker.recent_logs:
+  zh-CN: "最近 %{n} 行日志"
+  en: "Last %{n} log lines"
+  zh-TW: "最近 %{n} 行記錄"
+  ja: 直近 %{n} 行のログ
+  ko: 최근 로그 %{n}줄
+tools.docker.no_images:
+  zh-CN: 没有镜像
+  en: No images
+  zh-TW: 沒有映像檔
+  ja: イメージはありません
+  ko: 이미지 없음
+tools.docker.no_volumes:
+  zh-CN: 没有卷
+  en: No volumes
+  zh-TW: 沒有磁碟區
+  ja: ボリュームはありません
+  ko: 볼륨 없음
+tools.docker.no_networks:
+  zh-CN: 没有网络
+  en: No networks
+  zh-TW: 沒有網路
+  ja: ネットワークはありません
+  ko: 네트워크 없음
+tools.docker.standalone:
+  zh-CN: 单独的容器
+  en: Standalone containers
+  zh-TW: 單獨的容器
+  ja: 単独のコンテナー
+  ko: 독립 컨테이너
+tools.docker.project_start:
+  zh-CN: 启动项目中的全部容器
+  en: Start all containers of the project
+  zh-TW: 啟動專案中的全部容器
+  ja: プロジェクト内のすべてのコンテナーを起動
+  ko: 프로젝트의 모든 컨테이너 시작
+tools.docker.project_stop:
+  zh-CN: 停止项目中的全部容器
+  en: Stop all containers of the project
+  zh-TW: 停止專案中的全部容器
+  ja: プロジェクト内のすべてのコンテナーを停止
+  ko: 프로젝트의 모든 컨테이너 중지
+tools.docker.project_restart:
+  zh-CN: 重启项目中的全部容器
+  en: Restart all containers of the project
+  zh-TW: 重新啟動專案中的全部容器
+  ja: プロジェクト内のすべてのコンテナーを再起動
+  ko: 프로젝트의 모든 컨테이너 다시 시작
+tools.docker.project_start_action:
+  zh-CN: "启动项目 %{name}"
+  en: "Start project %{name}"
+  zh-TW: "啟動專案 %{name}"
+  ja: プロジェクト %{name} の起動
+  ko: 프로젝트 %{name} 시작
+tools.docker.project_stop_action:
+  zh-CN: "停止项目 %{name}"
+  en: "Stop project %{name}"
+  zh-TW: "停止專案 %{name}"
+  ja: プロジェクト %{name} の停止
+  ko: 프로젝트 %{name} 중지
+tools.docker.project_restart_action:
+  zh-CN: "重启项目 %{name}"
+  en: "Restart project %{name}"
+  zh-TW: "重新啟動專案 %{name}"
+  ja: プロジェクト %{name} の再起動
+  ko: 프로젝트 %{name} 다시 시작
+tools.docker.project_containers:
+  zh-CN: "涉及的容器：%{names}"
+  en: "Containers: %{names}"
+  zh-TW: "涉及的容器：%{names}"
+  ja: 対象のコンテナー：%{names}
+  ko: "대상 컨테이너: %{names}"
+tools.docker.confirm_project_stop:
+  zh-CN: "停止项目 %{name} 的 %{count} 个容器？"
+  en: "Stop the %{count} containers of project %{name}?"
+  zh-TW: "停止專案 %{name} 的 %{count} 個容器？"
+  ja: プロジェクト %{name} の %{count} 個のコンテナーを停止しますか？
+  ko: 프로젝트 %{name}의 컨테이너 %{count}개를 중지하시겠습니까?
+tools.docker.confirm_project_stop_one:
+  zh-CN: "停止项目 %{name} 的 1 个容器？"
+  en: "Stop the 1 container of project %{name}?"
+  zh-TW: "停止專案 %{name} 的 1 個容器？"
+  ja: プロジェクト %{name} の 1 個のコンテナーを停止しますか？
+  ko: 프로젝트 %{name}의 컨테이너 1개를 중지하시겠습니까?
+tools.docker.confirm_project_restart:
+  zh-CN: "重启项目 %{name} 的 %{count} 个容器？"
+  en: "Restart the %{count} containers of project %{name}?"
+  zh-TW: "重新啟動專案 %{name} 的 %{count} 個容器？"
+  ja: プロジェクト %{name} の %{count} 個のコンテナーを再起動しますか？
+  ko: 프로젝트 %{name}의 컨테이너 %{count}개를 다시 시작하시겠습니까?
+tools.docker.confirm_project_restart_one:
+  zh-CN: "重启项目 %{name} 的 1 个容器？"
+  en: "Restart the 1 container of project %{name}?"
+  zh-TW: "重新啟動專案 %{name} 的 1 個容器？"
+  ja: プロジェクト %{name} の 1 個のコンテナーを再起動しますか？
+  ko: 프로젝트 %{name}의 컨테이너 1개를 다시 시작하시겠습니까?
+tools.docker.op_start:
+  zh-CN: 启动
+  en: Start
+  zh-TW: 啟動
+  ja: 起動
+  ko: 시작
+tools.docker.op_stop:
+  zh-CN: 停止
+  en: Stop
+  zh-TW: 停止
+  ja: 停止
+  ko: 중지
+tools.docker.op_restart:
+  zh-CN: 重启
+  en: Restart
+  zh-TW: 重新啟動
+  ja: 再起動
+  ko: 다시 시작
+tools.docker.op_remove:
+  zh-CN: 删除
+  en: Remove
+  zh-TW: 刪除
+  ja: 削除
+  ko: 삭제
+tools.docker.container_start_action:
+  zh-CN: "启动容器 %{name}"
+  en: "Start container %{name}"
+  zh-TW: "啟動容器 %{name}"
+  ja: コンテナー %{name} の起動
+  ko: 컨테이너 %{name} 시작
+tools.docker.container_stop_action:
+  zh-CN: "停止容器 %{name}"
+  en: "Stop container %{name}"
+  zh-TW: "停止容器 %{name}"
+  ja: コンテナー %{name} の停止
+  ko: 컨테이너 %{name} 중지
+tools.docker.container_restart_action:
+  zh-CN: "重启容器 %{name}"
+  en: "Restart container %{name}"
+  zh-TW: "重新啟動容器 %{name}"
+  ja: コンテナー %{name} の再起動
+  ko: 컨테이너 %{name} 다시 시작
+tools.docker.container_remove_action:
+  zh-CN: "删除容器 %{name}"
+  en: "Remove container %{name}"
+  zh-TW: "刪除容器 %{name}"
+  ja: コンテナー %{name} の削除
+  ko: 컨테이너 %{name} 삭제
+tools.docker.confirm_container_stop:
+  zh-CN: "停止容器 %{name}？"
+  en: "Stop container %{name}?"
+  zh-TW: "停止容器 %{name}？"
+  ja: コンテナー %{name} を停止しますか？
+  ko: 컨테이너 %{name}을(를) 중지하시겠습니까?
+tools.docker.confirm_container_restart:
+  zh-CN: "重启容器 %{name}？"
+  en: "Restart container %{name}?"
+  zh-TW: "重新啟動容器 %{name}？"
+  ja: コンテナー %{name} を再起動しますか？
+  ko: 컨테이너 %{name}을(를) 다시 시작하시겠습니까?
+tools.docker.confirm_container_remove:
+  zh-CN: "删除容器 %{name}？"
+  en: "Remove container %{name}?"
+  zh-TW: "刪除容器 %{name}？"
+  ja: コンテナー %{name} を削除しますか？
+  ko: 컨테이너 %{name}을(를) 삭제하시겠습니까?
+tools.docker.shell:
+  zh-CN: 进入容器（新 Tab）
+  en: Open a Shell in the Container (New Tab)
+  zh-TW: 進入容器（新分頁）
+  ja: コンテナーに入る（新しいタブ）
+  ko: 컨테이너 셸 열기(새 탭)
+tools.docker.copy_id:
+  zh-CN: 复制 ID
+  en: Copy ID
+  zh-TW: 複製 ID
+  ja: ID をコピー
+  ko: ID 복사
+tools.docker.copy_name:
+  zh-CN: 复制名称
+  en: Copy Name
+  zh-TW: 複製名稱
+  ja: 名前をコピー
+  ko: 이름 복사
+tools.docker.col_name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+tools.docker.col_image:
+  zh-CN: 镜像
+  en: Image
+  zh-TW: 映像檔
+  ja: イメージ
+  ko: 이미지
+tools.docker.col_ports:
+  zh-CN: 端口
+  en: Ports
+  zh-TW: 連接埠
+  ja: ポート
+  ko: 포트
+tools.docker.col_memory:
+  zh-CN: 内存
+  en: Memory
+  zh-TW: 記憶體
+  ja: メモリ
+  ko: 메모리
+tools.docker.col_status:
+  zh-CN: 状态
+  en: Status
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+tools.docker.running_count:
+  zh-CN: "%{count} 个运行中"
+  en: "%{count} running"
+  zh-TW: "%{count} 個執行中"
+  ja: "%{count} 個が実行中"
+  ko: "%{count}개 실행 중"
+tools.docker.running_one:
+  zh-CN: 1 个运行中
+  en: 1 running
+  zh-TW: 1 個執行中
+  ja: 1 個が実行中
+  ko: 1개 실행 중
+tools.docker.remove:
+  zh-CN: 删除
+  en: Remove
+  zh-TW: 刪除
+  ja: 削除
+  ko: 삭제
+tools.docker.remove_irreversible:
+  zh-CN: 删除后不可恢复。
+  en: This cannot be undone.
+  zh-TW: 刪除後無法復原。
+  ja: 削除すると元に戻せません。
+  ko: 삭제하면 되돌릴 수 없습니다.
+tools.docker.stop_effect:
+  zh-CN: 停止后它提供的服务就不可用了，直到再次启动。
+  en: Whatever it serves is unavailable until it is started again.
+  zh-TW: 停止後它提供的服務就無法使用，直到再次啟動。
+  ja: 停止すると、再び起動するまでこのコンテナーが提供するサービスは利用できなくなります。
+  ko: 중지하면 다시 시작할 때까지 이 컨테이너가 제공하는 서비스를 사용할 수 없습니다.
+tools.docker.restart_effect:
+  zh-CN: 重启期间它提供的服务会短暂中断。
+  en: Whatever it serves is briefly interrupted while it restarts.
+  zh-TW: 重新啟動期間它提供的服務會短暫中斷。
+  ja: 再起動中はこのコンテナーが提供するサービスが一時的に中断されます。
+  ko: 다시 시작하는 동안 이 컨테이너가 제공하는 서비스가 잠시 중단됩니다.
+tools.docker.project_stop_effect:
+  zh-CN: 停止后这些容器提供的服务就不可用了，直到再次启动。
+  en: Whatever these containers serve is unavailable until they are started again.
+  zh-TW: 停止後這些容器提供的服務就無法使用，直到再次啟動。
+  ja: 停止すると、再び起動するまでこれらのコンテナーが提供するサービスは利用できなくなります。
+  ko: 중지하면 다시 시작할 때까지 이 컨테이너들이 제공하는 서비스를 사용할 수 없습니다.
+tools.docker.project_restart_effect:
+  zh-CN: 重启期间这些容器提供的服务会短暂中断。
+  en: Whatever these containers serve is briefly interrupted while they restart.
+  zh-TW: 重新啟動期間這些容器提供的服務會短暫中斷。
+  ja: 再起動中はこれらのコンテナーが提供するサービスが一時的に中断されます。
+  ko: 다시 시작하는 동안 이 컨테이너들이 제공하는 서비스가 잠시 중단됩니다.
+tools.docker.confirm_remove_image:
+  zh-CN: "删除镜像 %{name}？"
+  en: "Remove image %{name}?"
+  zh-TW: "刪除映像檔 %{name}？"
+  ja: イメージ %{name} を削除しますか？
+  ko: 이미지 %{name}을(를) 삭제하시겠습니까?
+tools.docker.confirm_remove_volume:
+  zh-CN: "删除卷 %{name}？卷中的数据会一并删除。"
+  en: "Remove volume %{name}? Its data is deleted too."
+  zh-TW: "刪除磁碟區 %{name}？磁碟區中的資料會一併刪除。"
+  ja: ボリューム %{name} を削除しますか？ボリューム内のデータも削除されます。
+  ko: 볼륨 %{name}을(를) 삭제하시겠습니까? 볼륨의 데이터도 함께 삭제됩니다.
+tools.docker.confirm_remove_network:
+  zh-CN: "删除网络 %{name}？"
+  en: "Remove network %{name}?"
+  zh-TW: "刪除網路 %{name}？"
+  ja: ネットワーク %{name} を削除しますか？
+  ko: 네트워크 %{name}을(를) 삭제하시겠습니까?
+tools.docker.remove_image_action:
+  zh-CN: "删除镜像 %{name}"
+  en: "Remove image %{name}"
+  zh-TW: "刪除映像檔 %{name}"
+  ja: イメージ %{name} の削除
+  ko: 이미지 %{name} 삭제
+tools.docker.remove_volume_action:
+  zh-CN: "删除卷 %{name}"
+  en: "Remove volume %{name}"
+  zh-TW: "刪除磁碟區 %{name}"
+  ja: ボリューム %{name} の削除
+  ko: 볼륨 %{name} 삭제
+tools.docker.remove_network_action:
+  zh-CN: "删除网络 %{name}"
+  en: "Remove network %{name}"
+  zh-TW: "刪除網路 %{name}"
+  ja: ネットワーク %{name} の削除
+  ko: 네트워크 %{name} 삭제
+tools.docker.in_use:
+  zh-CN: 使用中
+  en: in use
+  zh-TW: 使用中
+  ja: 使用中
+  ko: 사용 중
+tools.docker.in_use_by:
+  zh-CN: "%{count} 个容器在用"
+  en: "used by %{count} containers"
+  zh-TW: "%{count} 個容器使用中"
+  ja: "%{count} 個のコンテナーが使用中"
+  ko: 컨테이너 %{count}개에서 사용 중
+tools.docker.in_use_by_one:
+  zh-CN: 1 个容器在用
+  en: used by 1 container
+  zh-TW: 1 個容器使用中
+  ja: 1 個のコンテナーが使用中
+  ko: 컨테이너 1개에서 사용 중
+tools.docker.unused:
+  zh-CN: 未使用
+  en: unused
+  zh-TW: 未使用
+  ja: 未使用
+  ko: 사용 안 함
+tools.docker.builtin:
+  zh-CN: 内置
+  en: built-in
+  zh-TW: 內建
+  ja: 組み込み
+  ko: 기본 제공
+tools.docker.in_use_cannot_remove:
+  zh-CN: 有容器在用或是内置的，不能删除
+  en: In use or built-in; cannot be removed
+  zh-TW: 有容器在使用或是內建的，無法刪除
+  ja: コンテナーが使用中か組み込みのため、削除できません
+  ko: 컨테이너에서 사용 중이거나 기본 제공 항목이므로 삭제할 수 없습니다
+tools.network.search:
+  zh-CN: 搜索地址、端口、进程
+  en: Search address, port, process
+  zh-TW: 搜尋位址、連接埠、處理程序
+  ja: アドレス、ポート、プロセスで検索
+  ko: 주소, 포트, 프로세스 검색
+tools.network.filter_all:
+  zh-CN: 全部
+  en: All
+  zh-TW: 全部
+  ja: すべて
+  ko: 전체
+tools.network.filter_listen:
+  zh-CN: 监听
+  en: Listening
+  zh-TW: 監聽
+  ja: 待ち受け
+  ko: 수신 대기
+tools.network.filter_established:
+  zh-CN: 已连接
+  en: Established
+  zh-TW: 已連線
+  ja: 接続済み
+  ko: 연결됨
+tools.network.truncated:
+  zh-CN: "共 %{total} 个，只列出前 %{shown} 个"
+  en: "%{total} in total; showing the first %{shown}"
+  zh-TW: "共 %{total} 個，只列出前 %{shown} 個"
+  ja: 全 %{total} 個のうち、最初の %{shown} 個だけを表示しています
+  ko: 총 %{total}개 중 처음 %{shown}개만 표시합니다
+tools.network.time_wait:
+  zh-CN: TIME-WAIT %{count}
+  en: TIME-WAIT %{count}
+  zh-TW: TIME-WAIT %{count}
+  ja: TIME-WAIT %{count}
+  ko: TIME-WAIT %{count}
+tools.network.no_ss:
+  zh-CN: 这台主机没有 ss，读取 /proc/net：看不到进程。
+  en: ss is not available on this host; reading /proc/net, so processes are not shown.
+  zh-TW: 這台主機沒有 ss，改為讀取 /proc/net：看不到處理程序。
+  ja: このホストには ss がないため、/proc/net を読み取ります：プロセスは表示されません。
+  ko: 이 호스트에는 ss가 없어 /proc/net을 읽습니다. 프로세스는 표시되지 않습니다.
+tools.network.empty:
+  zh-CN: 没有符合条件的连接
+  en: No matching connections
+  zh-TW: 沒有符合條件的連線
+  ja: 条件に一致する接続はありません
+  ko: 조건에 맞는 연결이 없습니다
+tools.network.empty_pid_not_root:
+  zh-CN: 没有找到这个进程的连接。不是 root 时看不到其他用户的进程用着哪些连接。
+  en: "No connections found for this process. Without root, the connections of other users' processes can't be matched to them."
+  zh-TW: 找不到這個處理程序的連線。不是 root 時看不到其他使用者的處理程序用著哪些連線。
+  ja: このプロセスの接続が見つかりません。root でない場合、ほかのユーザーのプロセスがどの接続を使っているかは表示されません。
+  ko: 이 프로세스의 연결을 찾을 수 없습니다. root가 아니면 다른 사용자의 프로세스가 사용하는 연결을 볼 수 없습니다.
+tools.network.col_state:
+  zh-CN: 状态
+  en: State
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+tools.network.col_local:
+  zh-CN: 本地地址
+  en: Local address
+  zh-TW: 本機位址
+  ja: ローカルアドレス
+  ko: 로컬 주소
+tools.network.col_peer:
+  zh-CN: 对端地址
+  en: Peer address
+  zh-TW: 對端位址
+  ja: 相手側アドレス
+  ko: 상대 주소
+tools.network.col_owner:
+  zh-CN: 进程 / 容器
+  en: Process
+  zh-TW: 處理程序 / 容器
+  ja: プロセス / コンテナー
+  ko: 프로세스 / 컨테이너
+tools.network.col_port:
+  zh-CN: 端口
+  en: Port
+  zh-TW: 連接埠
+  ja: ポート
+  ko: 포트
+tools.network.col_scope:
+  zh-CN: 监听范围
+  en: Listening on
+  zh-TW: 監聽範圍
+  ja: 待ち受け範囲
+  ko: 수신 대기 범위
+tools.network.inbound:
+  zh-CN: "入站：对端连到本机的 %{port} 端口"
+  en: "Inbound: the peer connected to local port %{port}"
+  zh-TW: "傳入：對端連到本機的 %{port} 連接埠"
+  ja: 受信：相手側からこのホストのポート %{port} への接続
+  ko: "인바운드: 상대방이 이 호스트의 %{port} 포트에 연결"
+tools.network.outbound:
+  zh-CN: 出站：本机连到对端
+  en: "Outbound: this host connected to the peer"
+  zh-TW: 傳出：本機連到對端
+  ja: 送信：このホストから相手側への接続
+  ko: "아웃바운드: 이 호스트가 상대방에 연결"
+tools.network.scope_any:
+  zh-CN: 全部地址
+  en: All addresses
+  zh-TW: 所有位址
+  ja: すべてのアドレス
+  ko: 모든 주소
+tools.network.scope_any_v4:
+  zh-CN: 全部 IPv4 地址
+  en: All IPv4 addresses
+  zh-TW: 所有 IPv4 位址
+  ja: すべての IPv4 アドレス
+  ko: 모든 IPv4 주소
+tools.network.scope_any_v6:
+  zh-CN: 全部 IPv6 地址
+  en: All IPv6 addresses
+  zh-TW: 所有 IPv6 位址
+  ja: すべての IPv6 アドレス
+  ko: 모든 IPv6 주소
+tools.network.container:
+  zh-CN: 容器
+  en: Container
+  zh-TW: 容器
+  ja: コンテナー
+  ko: 컨테이너
+tools.network.container_hint:
+  zh-CN: "端口 %{port} 由容器 %{name} 发布，点击查看容器"
+  en: "Port %{port} is published by container %{name}. Click to show it."
+  zh-TW: "連接埠 %{port} 由容器 %{name} 發佈，按一下檢視容器"
+  ja: ポート %{port} はコンテナー %{name} が公開しています。クリックするとコンテナーを表示します
+  ko: 포트 %{port}은(는) 컨테이너 %{name}에서 게시합니다. 클릭하면 컨테이너를 표시합니다
+tools.network.container_unknown_hint:
+  zh-CN: "端口 %{port} 由容器发布，点击在 Docker 页中查看"
+  en: "Port %{port} is published by a container. Click to find it on the Docker page."
+  zh-TW: "連接埠 %{port} 由容器發佈，按一下在 Docker 頁中檢視"
+  ja: ポート %{port} はコンテナーが公開しています。クリックすると Docker ページで表示します
+  ko: 포트 %{port}은(는) 컨테이너에서 게시합니다. 클릭하면 Docker 페이지에서 표시합니다
+tools.network.chip_pid:
+  zh-CN: "进程 %{name}（%{pid}）的连接"
+  en: "Connections of %{name} (%{pid})"
+  zh-TW: "處理程序 %{name}（%{pid}）的連線"
+  ja: プロセス %{name}（%{pid}）の接続
+  ko: 프로세스 %{name}(%{pid})의 연결
+tools.network.chip_pid_only:
+  zh-CN: "进程 %{pid} 的连接"
+  en: "Connections of process %{pid}"
+  zh-TW: "處理程序 %{pid} 的連線"
+  ja: プロセス %{pid} の接続
+  ko: 프로세스 %{pid}의 연결
+tools.network.chip_port:
+  zh-CN: "本机端口 %{port}"
+  en: "Local port %{port}"
+  zh-TW: "本機連接埠 %{port}"
+  ja: ローカルポート %{port}
+  ko: 로컬 포트 %{port}
+tools.network.forward_local:
+  zh-CN: 转发到本机…
+  en: Forward to This Computer…
+  zh-TW: 轉送到本機…
+  ja: このコンピューターに転送…
+  ko: 이 컴퓨터로 포워딩…
+tools.network.open_browser:
+  zh-CN: "在浏览器中打开"
+  en: "Open in Browser"
+  zh-TW: "在瀏覽器中開啟"
+  ja: "ブラウザーで開く"
+  ko: "브라우저에서 열기"
+tools.network.open_browser_hint:
+  zh-CN: "在浏览器中打开（把端口 %{port} 转发到本机，随这条连接结束而停）"
+  en: "Open in browser (forwards port %{port} to this computer until this connection ends)"
+  zh-TW: "在瀏覽器中開啟（把連接埠 %{port} 轉送到本機，隨這個連線結束而停止）"
+  ja: "ブラウザーで開く（ポート %{port} をこのコンピューターに転送し、この接続が終わると停止します）"
+  ko: "브라우저에서 열기(포트 %{port}을(를) 이 컴퓨터로 포워딩하며 이 연결이 끝나면 중지됩니다)"
+tools.network.show_process:
+  zh-CN: "查看进程 %{name}（%{pid}）"
+  en: "Show Process %{name} (%{pid})"
+  zh-TW: "檢視處理程序 %{name}（%{pid}）"
+  ja: プロセス %{name}（%{pid}）を表示
+  ko: 프로세스 %{name}(%{pid}) 보기
+tools.network.show_container:
+  zh-CN: "查看容器 %{name}"
+  en: "Show Container %{name}"
+  zh-TW: "檢視容器 %{name}"
+  ja: コンテナー %{name} を表示
+  ko: 컨테이너 %{name} 보기
+tools.network.show_container_unknown:
+  zh-CN: 查看发布这个端口的容器
+  en: Show Container Publishing This Port
+  zh-TW: 檢視發佈這個連接埠的容器
+  ja: このポートを公開しているコンテナーを表示
+  ko: 이 포트를 게시하는 컨테이너 보기
+tools.network.copy_local:
+  zh-CN: 复制本地地址
+  en: Copy Local Address
+  zh-TW: 複製本機位址
+  ja: ローカルアドレスをコピー
+  ko: 로컬 주소 복사
+tools.network.copy_port:
+  zh-CN: 复制端口
+  en: Copy Port
+  zh-TW: 複製連接埠
+  ja: ポートをコピー
+  ko: 포트 복사
+tools.network.copy_peer:
+  zh-CN: 复制对端地址
+  en: Copy Peer Address
+  zh-TW: 複製對端位址
+  ja: 相手側アドレスをコピー
+  ko: 상대 주소 복사
+tools.overview.history_hint:
+  zh-CN: 曲线是最近 10 分钟，鼠标停在上面看那一刻的读数；终端不在前台、也没有弹出小窗时不采样，那段留空。
+  en: Charts cover the last 10 minutes; hover one to see the reading at that moment. Nothing is sampled while the terminal is out of sight and not popped out, so those stretches are blank.
+  zh-TW: 曲線是最近 10 分鐘，滑鼠停在上面看那一刻的讀數；終端機不在前景、也沒有彈出小視窗時不取樣，那段留白。
+  ja: グラフは直近 10 分間です。マウスを重ねるとその時点の値を表示します。ターミナルが前面になく、小さなウィンドウでも開いていないときはサンプリングしないため、その区間は空白になります。
+  ko: 그래프는 최근 10분입니다. 마우스를 올리면 그 시점의 값을 볼 수 있습니다. 터미널이 앞에 없고 작은 창으로도 열려 있지 않을 때는 샘플링하지 않으므로 그 구간은 비어 있습니다.
+tools.overview.cores_count:
+  zh-CN: "%{cores} 核"
+  en: "%{cores} cores"
+  zh-TW: "%{cores} 核心"
+  ja: "%{cores} コア"
+  ko: "%{cores}코어"
+tools.overview.cores_one:
+  zh-CN: "1 核"
+  en: "1 core"
+  zh-TW: "1 核心"
+  ja: 1 コア
+  ko: 1코어
+tools.overview.load:
+  zh-CN: 负载 %{a} %{b} %{c}
+  en: Load %{a} %{b} %{c}
+  zh-TW: 負載 %{a} %{b} %{c}
+  ja: 負荷 %{a} %{b} %{c}
+  ko: 부하 %{a} %{b} %{c}
+tools.overview.iowait:
+  zh-CN: iowait %{value}%
+  en: iowait %{value}%
+  zh-TW: iowait %{value}%
+  ja: iowait %{value}%
+  ko: iowait %{value}%
+tools.overview.steal:
+  zh-CN: steal %{value}%
+  en: steal %{value}%
+  zh-TW: steal %{value}%
+  ja: steal %{value}%
+  ko: steal %{value}%
+tools.overview.cores:
+  zh-CN: 每核使用率
+  en: Per-core usage
+  zh-TW: 每核心使用率
+  ja: コアごとの使用率
+  ko: 코어별 사용률
+tools.overview.download:
+  zh-CN: 下载
+  en: Download
+  zh-TW: 下載
+  ja: ダウンロード
+  ko: 다운로드
+tools.overview.upload:
+  zh-CN: 上传
+  en: Upload
+  zh-TW: 上傳
+  ja: アップロード
+  ko: 업로드
+tools.overview.ifaces_all:
+  zh-CN: 显示全部 %{count} 个网卡
+  en: Show all %{count} interfaces
+  zh-TW: 顯示全部 %{count} 個網路介面
+  ja: "%{count} 個のネットワークインターフェイスをすべて表示"
+  ko: 네트워크 인터페이스 %{count}개 모두 표시
+tools.overview.ifaces_all_one:
+  zh-CN: 显示全部 1 个网卡
+  en: Show the 1 interface
+  zh-TW: 顯示全部 1 個網路介面
+  ja: ネットワークインターフェイス（1 個）をすべて表示
+  ko: 네트워크 인터페이스 1개 모두 표시
+tools.overview.ifaces_physical:
+  zh-CN: 只显示有流量的物理网卡
+  en: Show only physical interfaces with traffic
+  zh-TW: 只顯示有流量的實體網路介面
+  ja: トラフィックのある物理インターフェイスのみ表示
+  ko: 트래픽이 있는 물리 인터페이스만 표시
+tools.overview.inodes:
+  zh-CN: inode 已用 %{percent}%
+  en: "%{percent}% of inodes used"
+  zh-TW: inode 已用 %{percent}%
+  ja: inode 使用率 %{percent}%
+  ko: inode %{percent}% 사용
+tools.overview.top:
+  zh-CN: CPU 占用最高的进程
+  en: Top processes by CPU
+  zh-TW: CPU 使用率最高的處理程序
+  ja: CPU 使用率の高いプロセス
+  ko: CPU 사용률이 높은 프로세스
+tools.overview.top_pending:
+  zh-CN: 正在计算 CPU 占用…
+  en: Measuring CPU usage…
+  zh-TW: 正在計算 CPU 使用率…
+  ja: CPU 使用率を計算しています…
+  ko: CPU 사용률을 계산하는 중…
+tools.overview.top_hint:
+  zh-CN: 点一个进程，在进程页中查看
+  en: Click a process to see it on the Processes page
+  zh-TW: 按一下處理程序，在處理程序頁中檢視
+  ja: プロセスをクリックするとプロセスページで表示します
+  ko: 프로세스를 클릭하면 프로세스 페이지에서 볼 수 있습니다
+tools.overview.unsupported:
+  zh-CN: 资源监控只支持 Linux
+  en: The resource monitor supports Linux only
+  zh-TW: 資源監控只支援 Linux
+  ja: リソース監視は Linux のみに対応しています
+  ko: 리소스 모니터링은 Linux만 지원합니다
+tools.overview.unsupported_hint:
+  zh-CN: 这台主机不是 Linux（或读不到 /proc），读不到资源的使用情况。
+  en: This host is not Linux (or /proc is not readable), so its resource usage can't be read.
+  zh-TW: 這台主機不是 Linux（或讀不到 /proc），讀不到資源的使用狀況。
+  ja: このホストは Linux ではない（または /proc を読み取れない）ため、リソースの使用状況を読み取れません。
+  ko: 이 호스트는 Linux가 아니거나 /proc를 읽을 수 없으므로 리소스 사용 현황을 읽을 수 없습니다.
+tools.overview.monitor_off:
+  zh-CN: 资源监控已关闭
+  en: The resource monitor is off
+  zh-TW: 資源監控已關閉
+  ja: リソース監視はオフです
+  ko: 리소스 모니터링이 꺼져 있습니다
+tools.overview.monitor_off_hint:
+  zh-CN: 打开后，这里显示 CPU、内存、网络与磁盘的使用情况和最近 10 分钟的曲线，终端底部也显示资源。
+  en: Turn it on to see CPU, memory, network and disk usage here with charts of the last 10 minutes, and resources at the bottom of the terminal.
+  zh-TW: 開啟後，這裡顯示 CPU、記憶體、網路與磁碟的使用狀況和最近 10 分鐘的曲線，終端機底部也顯示資源。
+  ja: オンにすると、CPU、メモリ、ネットワーク、ディスクの使用状況と直近 10 分間のグラフがここに表示され、ターミナルの下部にもリソースが表示されます。
+  ko: 켜면 CPU, 메모리, 네트워크, 디스크 사용 현황과 최근 10분 그래프가 여기에 표시되고, 터미널 아래쪽에도 리소스가 표시됩니다.
+tools.overview.monitor_on:
+  zh-CN: 打开资源监控
+  en: Turn on the resource monitor
+  zh-TW: 開啟資源監控
+  ja: リソース監視をオンにする
+  ko: 리소스 모니터링 켜기
+tools.popout.open:
+  zh-CN: 弹出为置顶小窗
+  en: Pop out into an always-on-top window
+  zh-TW: 彈出為置頂小視窗
+  ja: 常に手前に表示する小さなウィンドウで開く
+  ko: 항상 위에 표시되는 작은 창으로 열기
+tools.popout.title:
+  zh-CN: "%{name} · 概览"
+  en: "%{name} · Overview"
+  zh-TW: "%{name} · 概覽"
+  ja: "%{name} · 概要"
+  ko: "%{name} · 개요"
+tools.popout.pin:
+  zh-CN: 置顶（始终在其他窗口之上）
+  en: Keep on top of other windows
+  zh-TW: 置頂（一律在其他視窗之上）
+  ja: 常に手前に表示
+  ko: 항상 위에 표시
+tools.popout.unpin:
+  zh-CN: 取消置顶
+  en: Stop keeping on top
+  zh-TW: 取消置頂
+  ja: 常に手前に表示しない
+  ko: 항상 위에 표시 해제
+tools.popout.disconnected:
+  zh-CN: 已断开
+  en: Disconnected
+  zh-TW: 已中斷連線
+  ja: 切断されました
+  ko: 연결이 끊어졌습니다
+tools.popout.connecting_hint:
+  zh-CN: 连上后显示这台主机的资源。
+  en: This host's resources show once it's connected.
+  zh-TW: 連上後顯示這台主機的資源。
+  ja: 接続するとこのホストのリソースを表示します。
+  ko: 연결되면 이 호스트의 리소스를 표시합니다.
+tools.popout.reconnecting_hint:
+  zh-CN: 正在重新连接，连上后继续显示这台主机的资源。
+  en: Reconnecting; this host's resources show again once it's connected.
+  zh-TW: 正在重新連線，連上後繼續顯示這台主機的資源。
+  ja: 再接続しています。接続するとこのホストのリソースを再び表示します。
+  ko: 다시 연결하는 중입니다. 연결되면 이 호스트의 리소스를 다시 표시합니다.
+tools.popout.ended_hint:
+  zh-CN: 重新连接后，继续显示这台主机的资源。
+  en: Reconnect to see this host's resources again.
+  zh-TW: 重新連線後，繼續顯示這台主機的資源。
+  ja: 再接続すると、このホストのリソースを再び表示します。
+  ko: 다시 연결하면 이 호스트의 리소스를 다시 표시합니다.
+tools.popout.locked_hint:
+  zh-CN: 解锁后继续显示。
+  en: Unlock Termlet to see it again.
+  zh-TW: 解鎖後繼續顯示。
+  ja: ロックを解除すると再び表示します。
+  ko: 잠금을 해제하면 다시 표시합니다.
+tools.process.tree:
+  zh-CN: 按父子关系显示成树
+  en: Show as a tree
+  zh-TW: 依父子關係以樹狀顯示
+  ja: 親子関係でツリー表示
+  ko: 부모-자식 관계로 트리 표시
+tools.process.untree:
+  zh-CN: 不按树显示
+  en: Show as a list
+  zh-TW: 不以樹狀顯示
+  ja: ツリー表示しない
+  ko: 트리로 표시 안 함
+tools.process.filter_user:
+  zh-CN: 按用户筛选
+  en: Filter by user
+  zh-TW: 依使用者篩選
+  ja: ユーザーでフィルター
+  ko: 사용자별 필터
+tools.process.all_users:
+  zh-CN: 全部用户
+  en: All users
+  zh-TW: 所有使用者
+  ja: すべてのユーザー
+  ko: 모든 사용자
+tools.process.user_item:
+  zh-CN: "%{user}（%{count}）"
+  en: "%{user} (%{count})"
+  zh-TW: "%{user}（%{count}）"
+  ja: "%{user}（%{count}）"
+  ko: "%{user}(%{count})"
+tools.process.chip_user:
+  zh-CN: "用户 %{user} 的进程"
+  en: "Processes of %{user}"
+  zh-TW: "使用者 %{user} 的處理程序"
+  ja: ユーザー %{user} のプロセス
+  ko: 사용자 %{user}의 프로세스
+tools.process.only_user:
+  zh-CN: "只看 %{user} 的进程"
+  en: "Only processes of %{user}"
+  zh-TW: "只看 %{user} 的處理程序"
+  ja: "%{user} のプロセスのみ表示"
+  ko: "%{user}의 프로세스만 보기"
+tools.service.filter_timers:
+  zh-CN: 定时器
+  en: Timers
+  zh-TW: 計時器
+  ja: タイマー
+  ko: 타이머
+tools.service.timers:
+  zh-CN: 定时器
+  en: Timers
+  zh-TW: 計時器
+  ja: タイマー
+  ko: 타이머
+tools.jump.timer_missing:
+  zh-CN: "定时器列表中没有 %{name}。"
+  en: "%{name} is not in the timer list."
+  zh-TW: "計時器清單中沒有 %{name}。"
+  ja: タイマー一覧に %{name} はありません。
+  ko: 타이머 목록에 %{name}이(가) 없습니다.
+tools.timer.empty:
+  zh-CN: 没有符合条件的定时器
+  en: No matching timers
+  zh-TW: 沒有符合條件的計時器
+  ja: 条件に一致するタイマーはありません
+  ko: 조건에 맞는 타이머가 없습니다
+tools.timer.view_logs:
+  zh-CN: "查看 %{name} 的日志"
+  en: "View logs of %{name}"
+  zh-TW: "檢視 %{name} 的記錄"
+  ja: "%{name} のログを表示"
+  ko: "%{name}의 로그 보기"
+tools.timer.show_service:
+  zh-CN: "跳到服务 %{name}"
+  en: "Go to service %{name}"
+  zh-TW: "跳到服務 %{name}"
+  ja: サービス %{name} に移動
+  ko: 서비스 %{name}(으)로 이동
+tools.timer.service_failed:
+  zh-CN: 服务失败
+  en: Service failed
+  zh-TW: 服務失敗
+  ja: サービスが失敗
+  ko: 서비스 실패
+tools.timer.service_failed_result:
+  zh-CN: "上次运行失败：%{result}"
+  en: "Last run failed: %{result}"
+  zh-TW: "上次執行失敗：%{result}"
+  ja: 前回の実行に失敗：%{result}
+  ko: "마지막 실행 실패: %{result}"
+tools.timer.triggers:
+  zh-CN: 触发
+  en: Triggers
+  zh-TW: 觸發
+  ja: トリガー
+  ko: 트리거
+tools.timer.plan:
+  zh-CN: 计划
+  en: Schedule
+  zh-TW: 排程
+  ja: スケジュール
+  ko: 일정
+tools.timer.next:
+  zh-CN: 下次
+  en: Next
+  zh-TW: 下次
+  ja: 次回
+  ko: 다음
+tools.timer.last:
+  zh-CN: 上次
+  en: Last
+  zh-TW: 上次
+  ja: 前回
+  ko: 마지막
+tools.timer.time_rel:
+  zh-CN: "%{time}（%{rel}）"
+  en: "%{time} (%{rel})"
+  zh-TW: "%{time}（%{rel}）"
+  ja: "%{time}（%{rel}）"
+  ko: "%{time}(%{rel})"
+tools.timer.no_next:
+  zh-CN: 不会再触发
+  en: Not scheduled
+  zh-TW: 不會再觸發
+  ja: 今後トリガーされません
+  ko: 더 이상 트리거되지 않음
+tools.timer.never:
+  zh-CN: 没有触发过
+  en: Never triggered
+  zh-TW: 沒有觸發過
+  ja: まだトリガーされていません
+  ko: 트리거된 적 없음
+tools.timer.missed:
+  zh-CN: 错过时
+  en: If missed
+  zh-TW: 錯過時
+  ja: 実行を逃した場合
+  ko: 놓친 경우
+tools.timer.persistent:
+  zh-CN: 开机后补做（Persistent）
+  en: Runs after boot (Persistent)
+  zh-TW: 開機後補做（Persistent）
+  ja: 起動後に未実行分を実行（Persistent）
+  ko: 부팅 후 놓친 실행 보충(Persistent)
+tools.timer.random_delay:
+  zh-CN: 随机延迟
+  en: Random delay
+  zh-TW: 隨機延遲
+  ja: ランダム遅延
+  ko: 임의 지연
+tools.timer.up_to:
+  zh-CN: "最多 %{delay}"
+  en: "Up to %{delay}"
+  zh-TW: "最多 %{delay}"
+  ja: 最大 %{delay}
+  ko: 최대 %{delay}
+tools.timer.next_short:
+  zh-CN: "下次 %{time}"
+  en: "next %{time}"
+  zh-TW: "下次 %{time}"
+  ja: 次回 %{time}
+  ko: 다음 %{time}
+tools.timer.row_next:
+  zh-CN: "下次 %{time}（%{rel}）"
+  en: "Next %{time} (%{rel})"
+  zh-TW: "下次 %{time}（%{rel}）"
+  ja: 次回 %{time}（%{rel}）
+  ko: 다음 %{time}(%{rel})
+tools.timer.row_last:
+  zh-CN: "上次 %{rel}"
+  en: "last %{rel}"
+  zh-TW: "上次 %{rel}"
+  ja: 前回 %{rel}
+  ko: 마지막 %{rel}
+tools.timer.tip_next:
+  zh-CN: "下次触发：%{time}"
+  en: "Next: %{time}"
+  zh-TW: "下次觸發：%{time}"
+  ja: "次回：%{time}"
+  ko: "다음 트리거: %{time}"
+tools.timer.tip_last:
+  zh-CN: "上次触发：%{time}"
+  en: "Last: %{time}"
+  zh-TW: "上次觸發：%{time}"
+  ja: "前回：%{time}"
+  ko: "마지막 트리거: %{time}"
+tools.timer.with_local:
+  zh-CN: "%{time}（本机 %{local}）"
+  en: "%{time} (this computer: %{local})"
+  zh-TW: "%{time}（本機 %{local}）"
+  ja: "%{time}（このコンピューター：%{local}）"
+  ko: "%{time}(이 컴퓨터: %{local})"
+tools.timer.local_time:
+  zh-CN: "本机时间 %{time}"
+  en: "This computer: %{time}"
+  zh-TW: "本機時間 %{time}"
+  ja: "このコンピューターの時刻 %{time}"
+  ko: "이 컴퓨터 시간 %{time}"
+tools.timer.zone:
+  zh-CN: "服务器时区"
+  en: "Server time zone"
+  zh-TW: "伺服器時區"
+  ja: "サーバーのタイムゾーン"
+  ko: "서버 시간대"
+tools.timer.zone_value:
+  zh-CN: "%{name}（%{offset}）"
+  en: "%{name} (%{offset})"
+  zh-TW: "%{name}（%{offset}）"
+  ja: "%{name}（%{offset}）"
+  ko: "%{name}(%{offset})"
+tools.timer.zone_differs:
+  zh-CN: "与本机（%{local}）不同：这里的时间都是服务器的时间"
+  en: "Differs from this computer (%{local}): times here are server times"
+  zh-TW: "與本機（%{local}）不同：這裡的時間都是伺服器的時間"
+  ja: "このコンピューター（%{local}）とは異なります。ここの時刻はすべてサーバーの時刻です"
+  ko: "이 컴퓨터(%{local})와 다릅니다. 여기의 시간은 모두 서버 시간입니다"
+tools.timer.calendar_zone:
+  zh-CN: "日历表达式按服务器的时区解释：%{zone}"
+  en: "Calendar expressions use the server time zone: %{zone}"
+  zh-TW: "日曆運算式依伺服器的時區解讀：%{zone}"
+  ja: "カレンダー式はサーバーのタイムゾーンで解釈します：%{zone}"
+  ko: "캘린더 표현식은 서버 시간대 기준으로 해석됩니다: %{zone}"
+tools.timer.zone_info:
+  zh-CN: "服务器时区：%{zone}"
+  en: "Server time zone: %{zone}"
+  zh-TW: "伺服器時區：%{zone}"
+  ja: "サーバーのタイムゾーン：%{zone}"
+  ko: "서버 시간대: %{zone}"
+tools.timer.zone_info_differs:
+  zh-CN: "服务器时区：%{zone}（本机 %{local}）"
+  en: "Server time zone: %{zone} (this computer: %{local})"
+  zh-TW: "伺服器時區：%{zone}（本機 %{local}）"
+  ja: "サーバーのタイムゾーン：%{zone}（このコンピューター：%{local}）"
+  ko: "서버 시간대: %{zone}(이 컴퓨터: %{local})"
+tools.timer.in_now:
+  zh-CN: 马上
+  en: now
+  zh-TW: 馬上
+  ja: まもなく
+  ko: 곧
+tools.timer.in_seconds:
+  zh-CN: "%{n} 秒后"
+  en: "in %{n} s"
+  zh-TW: "%{n} 秒後"
+  ja: "%{n} 秒後"
+  ko: "%{n}초 후"
+tools.timer.in_minutes:
+  zh-CN: "%{n} 分钟后"
+  en: "in %{n} min"
+  zh-TW: "%{n} 分鐘後"
+  ja: "%{n} 分後"
+  ko: "%{n}분 후"
+tools.timer.in_hours:
+  zh-CN: "%{n} 小时后"
+  en: "in %{n} h"
+  zh-TW: "%{n} 小時後"
+  ja: "%{n} 時間後"
+  ko: "%{n}시간 후"
+tools.timer.in_days:
+  zh-CN: "%{n} 天后"
+  en: "in %{n} d"
+  zh-TW: "%{n} 天後"
+  ja: "%{n} 日後"
+  ko: "%{n}일 후"
+tools.timer.state_waiting:
+  zh-CN: 等待中
+  en: waiting
+  zh-TW: 等待中
+  ja: 待機中
+  ko: 대기 중
+tools.timer.state_running:
+  zh-CN: 触发中
+  en: triggered
+  zh-TW: 觸發中
+  ja: トリガー中
+  ko: 트리거 중
+tools.timer.state_elapsed:
+  zh-CN: 已触发
+  en: elapsed
+  zh-TW: 已觸發
+  ja: トリガー済み
+  ko: 트리거됨
+tools.timer.confirm_start:
+  zh-CN: "启动定时器 %{name}？"
+  en: "Start timer %{name}?"
+  zh-TW: "啟動計時器 %{name}？"
+  ja: タイマー %{name} を起動しますか？
+  ko: 타이머 %{name}을(를) 시작하시겠습니까?
+tools.timer.confirm_stop:
+  zh-CN: "停止定时器 %{name}？"
+  en: "Stop timer %{name}?"
+  zh-TW: "停止計時器 %{name}？"
+  ja: タイマー %{name} を停止しますか？
+  ko: 타이머 %{name}을(를) 중지하시겠습니까?
+tools.timer.confirm_enable:
+  zh-CN: "开机时启用定时器 %{name}？"
+  en: "Start timer %{name} at boot?"
+  zh-TW: "開機時啟用計時器 %{name}？"
+  ja: タイマー %{name} の自動起動を有効にしますか？
+  ko: 타이머 %{name}이(가) 부팅 시 시작되도록 설정하시겠습니까?
+tools.timer.confirm_disable:
+  zh-CN: "开机时不再启用定时器 %{name}？"
+  en: "Stop starting timer %{name} at boot?"
+  zh-TW: "開機時不再啟用計時器 %{name}？"
+  ja: タイマー %{name} の自動起動を無効にしますか？
+  ko: 타이머 %{name}이(가) 부팅 시 시작되지 않도록 설정하시겠습니까?
+tools.timer.hint_start:
+  zh-CN: 启动后按计划触发它的服务，不会马上运行一次。
+  en: Its service will run on schedule; it does not run right away.
+  zh-TW: 啟動後依排程觸發它的服務，不會馬上執行一次。
+  ja: 起動後はスケジュールに従ってサービスをトリガーします。すぐに 1 回実行することはありません。
+  ko: 시작하면 일정에 따라 서비스를 트리거합니다. 바로 한 번 실행하지는 않습니다.
+tools.timer.hint_stop:
+  zh-CN: 停止后到点不再触发它的服务，正在运行的服务不受影响；开机启用的定时器下次开机后照常启动。
+  en: Its service will no longer run on schedule; a run in progress is not affected. If enabled at boot, the timer starts again after the next boot.
+  zh-TW: 停止後到點不再觸發它的服務，正在執行的服務不受影響；開機啟用的計時器下次開機後照常啟動。
+  ja: 停止すると、時刻になってもサービスはトリガーされなくなります。実行中のサービスには影響しません。自動起動が有効なタイマーは、次回の起動時に通常どおり開始されます。
+  ko: 중지하면 정해진 시간이 되어도 서비스를 트리거하지 않으며, 실행 중인 서비스에는 영향이 없습니다. 부팅 시 시작하도록 설정된 타이머는 다음 부팅 후 평소처럼 시작됩니다.
+tools.timer.hint_enable:
+  zh-CN: 下次开机后自动启动这个定时器，现在的状态不变。
+  en: The timer will start automatically at boot; its current state is unchanged.
+  zh-TW: 下次開機後自動啟動這個計時器，目前的狀態不變。
+  ja: 次回の起動時からこのタイマーが自動的に開始されます。現在の状態は変わりません。
+  ko: 다음 부팅부터 이 타이머가 자동으로 시작됩니다. 현재 상태는 바뀌지 않습니다.
+tools.timer.hint_disable:
+  zh-CN: 下次开机后不再自动启动这个定时器，现在的状态不变。
+  en: The timer will no longer start at boot; its current state is unchanged.
+  zh-TW: 下次開機後不再自動啟動這個計時器，目前的狀態不變。
+  ja: 次回の起動時からこのタイマーは自動的に開始されなくなります。現在の状態は変わりません。
+  ko: 다음 부팅부터 이 타이머가 자동으로 시작되지 않습니다. 현재 상태는 바뀌지 않습니다.
+tools.timer.action_start:
+  zh-CN: "启动定时器 %{name}"
+  en: "Start timer %{name}"
+  zh-TW: "啟動計時器 %{name}"
+  ja: タイマー %{name} の起動
+  ko: 타이머 %{name} 시작
+tools.timer.action_stop:
+  zh-CN: "停止定时器 %{name}"
+  en: "Stop timer %{name}"
+  zh-TW: "停止計時器 %{name}"
+  ja: タイマー %{name} の停止
+  ko: 타이머 %{name} 중지
+tools.timer.action_enable:
+  zh-CN: "开机时启用定时器 %{name}"
+  en: "Enable timer %{name} at boot"
+  zh-TW: "開機時啟用計時器 %{name}"
+  ja: タイマー %{name} の自動起動の有効化
+  ko: 타이머 %{name} 부팅 시 시작 사용
+tools.timer.action_disable:
+  zh-CN: "开机时不再启用定时器 %{name}"
+  en: "Disable timer %{name} at boot"
+  zh-TW: "開機時不再啟用計時器 %{name}"
+  ja: タイマー %{name} の自動起動の無効化
+  ko: 타이머 %{name} 부팅 시 시작 사용 안 함
+tools.cleanup.title:
+  zh-CN: 清理 Docker
+  en: Clean Up Docker
+  zh-TW: 清理 Docker
+  ja: Docker のクリーンアップ
+  ko: Docker 정리
+tools.cleanup.open:
+  zh-CN: 清理…
+  en: Clean up…
+  zh-TW: 清理…
+  ja: クリーンアップ…
+  ko: 정리…
+tools.cleanup.intro:
+  zh-CN: 勾选要清理的内容。一并清理已停止的容器时，只被它们使用的网络、卷与镜像也会一起清理。
+  en: Select what to clean up. When stopped containers are removed too, networks, volumes and images used only by them are cleaned up as well.
+  zh-TW: 勾選要清理的內容。一併清理已停止的容器時，只被它們使用的網路、磁碟區與映像檔也會一起清理。
+  ja: クリーンアップする項目を選択してください。停止中のコンテナーも一緒に削除する場合、それらだけが使用しているネットワーク、ボリューム、イメージも一緒にクリーンアップされます。
+  ko: 정리할 항목을 선택하세요. 중지된 컨테이너도 함께 정리하면 그 컨테이너만 사용하는 네트워크, 볼륨, 이미지도 함께 정리됩니다.
+tools.cleanup.loading:
+  zh-CN: 正在读取可以清理的内容…
+  en: Finding what can be cleaned up…
+  zh-TW: 正在讀取可以清理的內容…
+  ja: クリーンアップできる項目を読み込んでいます…
+  ko: 정리할 수 있는 항목을 읽는 중…
+tools.cleanup.load_failed:
+  zh-CN: "读不到可以清理的内容：%{detail}"
+  en: "Could not find what can be cleaned up: %{detail}"
+  zh-TW: "讀不到可以清理的內容：%{detail}"
+  ja: クリーンアップできる項目を読み取れません：%{detail}
+  ko: "정리할 수 있는 항목을 읽을 수 없습니다: %{detail}"
+tools.cleanup.kind_containers:
+  zh-CN: 已停止的容器
+  en: Stopped containers
+  zh-TW: 已停止的容器
+  ja: 停止中のコンテナー
+  ko: 중지된 컨테이너
+tools.cleanup.kind_networks:
+  zh-CN: 未使用的网络
+  en: Unused networks
+  zh-TW: 未使用的網路
+  ja: 未使用のネットワーク
+  ko: 사용하지 않는 네트워크
+tools.cleanup.kind_volumes:
+  zh-CN: 未使用的卷
+  en: Unused volumes
+  zh-TW: 未使用的磁碟區
+  ja: 未使用のボリューム
+  ko: 사용하지 않는 볼륨
+tools.cleanup.kind_anonymous_volumes:
+  zh-CN: 未使用的匿名卷
+  en: Unused anonymous volumes
+  zh-TW: 未使用的匿名磁碟區
+  ja: 未使用の匿名ボリューム
+  ko: 사용하지 않는 익명 볼륨
+tools.cleanup.kind_images:
+  zh-CN: 悬空镜像
+  en: Dangling images
+  zh-TW: 懸置的映像檔
+  ja: dangling イメージ
+  ko: 댕글링 이미지
+tools.cleanup.kind_build_cache:
+  zh-CN: 构建缓存
+  en: Build cache
+  zh-TW: 建置快取
+  ja: ビルドキャッシュ
+  ko: 빌드 캐시
+tools.cleanup.none:
+  zh-CN: 没有
+  en: None
+  zh-TW: 沒有
+  ja: なし
+  ko: 없음
+tools.cleanup.items_one:
+  zh-CN: 1 个
+  en: 1 item
+  zh-TW: 1 個
+  ja: 1 個
+  ko: 1개
+tools.cleanup.items:
+  zh-CN: "%{count} 个"
+  en: "%{count} items"
+  zh-TW: "%{count} 個"
+  ja: "%{count} 個"
+  ko: "%{count}개"
+tools.cleanup.entries_one:
+  zh-CN: 1 条
+  en: 1 entry
+  zh-TW: 1 筆
+  ja: 1 件
+  ko: 1건
+tools.cleanup.entries:
+  zh-CN: "%{count} 条"
+  en: "%{count} entries"
+  zh-TW: "%{count} 筆"
+  ja: "%{count} 件"
+  ko: "%{count}건"
+tools.cleanup.about:
+  zh-CN: "约 %{size}"
+  en: "about %{size}"
+  zh-TW: "約 %{size}"
+  ja: 約 %{size}
+  ko: 약 %{size}
+tools.cleanup.show_items:
+  zh-CN: 列出名称
+  en: Show names
+  zh-TW: 列出名稱
+  ja: 名前を一覧表示
+  ko: 이름 표시
+tools.cleanup.hide_items:
+  zh-CN: 收起名称
+  en: Hide names
+  zh-TW: 收合名稱
+  ja: 名前を折りたたむ
+  ko: 이름 접기
+tools.cleanup.more:
+  zh-CN: "等 %{count} 个"
+  en: "and %{count} more"
+  zh-TW: "等 %{count} 個"
+  ja: ほか %{count} 個
+  ko: 외 %{count}개
+tools.cleanup.volume_warning:
+  zh-CN: 卷中的数据会永久删除，无法恢复；确认不再需要后再勾选。
+  en: Data in these volumes is deleted permanently and cannot be recovered. Select only if you no longer need it.
+  zh-TW: 磁碟區中的資料會永久刪除，無法復原；確認不再需要後再勾選。
+  ja: ボリューム内のデータは完全に削除され、復元できません。不要であることを確認してから選択してください。
+  ko: 볼륨의 데이터는 영구적으로 삭제되며 복원할 수 없습니다. 더 이상 필요하지 않은지 확인한 후 선택하세요.
+tools.cleanup.named_volumes_one:
+  zh-CN: 另有 1 个未使用的命名卷不在其中（Docker 23 起 volume prune 只清理匿名卷），需要时到“卷”页删除。
+  en: 1 unused named volume is not included (since Docker 23, volume prune removes anonymous volumes only); remove it on the Volumes tab if needed.
+  zh-TW: 另有 1 個未使用的具名磁碟區不在其中（Docker 23 起 volume prune 只清理匿名磁碟區），需要時到「磁碟區」頁刪除。
+  ja: ほかに未使用の名前付きボリュームが 1 個ありますが、対象には含まれません（Docker 23 以降、volume prune は匿名ボリュームのみを削除します）。必要に応じて「ボリューム」ページで削除してください。
+  ko: 사용하지 않는 이름 있는 볼륨 1개는 포함되지 않습니다(Docker 23부터 volume prune은 익명 볼륨만 정리합니다). 필요하면 '볼륨' 페이지에서 삭제하세요.
+tools.cleanup.named_volumes:
+  zh-CN: "另有 %{count} 个未使用的命名卷不在其中（Docker 23 起 volume prune 只清理匿名卷），需要时到“卷”页逐个删除。"
+  en: "%{count} unused named volumes are not included (since Docker 23, volume prune removes anonymous volumes only); remove them on the Volumes tab if needed."
+  zh-TW: "另有 %{count} 個未使用的具名磁碟區不在其中（Docker 23 起 volume prune 只清理匿名磁碟區），需要時到「磁碟區」頁逐一刪除。"
+  ja: ほかに未使用の名前付きボリュームが %{count} 個ありますが、対象には含まれません（Docker 23 以降、volume prune は匿名ボリュームのみを削除します）。必要に応じて「ボリューム」ページで個別に削除してください。
+  ko: 사용하지 않는 이름 있는 볼륨 %{count}개는 포함되지 않습니다(Docker 23부터 volume prune은 익명 볼륨만 정리합니다). 필요하면 '볼륨' 페이지에서 하나씩 삭제하세요.
+tools.cleanup.step_waiting:
+  zh-CN: 等待
+  en: Waiting
+  zh-TW: 等待
+  ja: 待機中
+  ko: 대기 중
+tools.cleanup.running:
+  zh-CN: 正在清理…
+  en: Cleaning up…
+  zh-TW: 正在清理…
+  ja: クリーンアップしています…
+  ko: 정리하는 중…
+tools.cleanup.step_done:
+  zh-CN: 完成
+  en: Done
+  zh-TW: 完成
+  ja: 完了
+  ko: 완료
+tools.cleanup.removed_one:
+  zh-CN: 已删除 1 个
+  en: Removed 1
+  zh-TW: 已刪除 1 個
+  ja: 1 個を削除
+  ko: 1개 삭제됨
+tools.cleanup.removed:
+  zh-CN: "已删除 %{count} 个"
+  en: "Removed %{count}"
+  zh-TW: "已刪除 %{count} 個"
+  ja: "%{count} 個を削除"
+  ko: "%{count}개 삭제됨"
+tools.cleanup.freed:
+  zh-CN: "释放 %{size}"
+  en: "Freed %{size}"
+  zh-TW: "釋放 %{size}"
+  ja: "%{size} を解放"
+  ko: "%{size} 확보"
+tools.cleanup.total_estimate:
+  zh-CN: "共可释放约 %{size}"
+  en: "About %{size} can be freed"
+  zh-TW: "共可釋放約 %{size}"
+  ja: 合計で約 %{size} を解放できます
+  ko: 총 약 %{size} 확보 가능
+tools.cleanup.total_unknown:
+  zh-CN: 读不到可释放的空间
+  en: Reclaimable space unknown
+  zh-TW: 讀不到可釋放的空間
+  ja: 解放できる容量を読み取れません
+  ko: 확보할 수 있는 공간을 알 수 없습니다
+tools.cleanup.nothing_selected:
+  zh-CN: 没有要清理的内容
+  en: Nothing to clean up
+  zh-TW: 沒有要清理的內容
+  ja: クリーンアップする項目がありません
+  ko: 정리할 항목이 없습니다
+tools.cleanup.total_freed:
+  zh-CN: "共释放 %{size}"
+  en: "Freed %{size} in total"
+  zh-TW: "共釋放 %{size}"
+  ja: 合計 %{size} を解放
+  ko: 총 %{size} 확보
+tools.cleanup.done:
+  zh-CN: 清理完成
+  en: Cleanup finished
+  zh-TW: 清理完成
+  ja: クリーンアップが完了しました
+  ko: 정리 완료
+tools.cleanup.failed_one:
+  zh-CN: 1 项失败
+  en: 1 failed
+  zh-TW: 1 項失敗
+  ja: 1 件失敗
+  ko: 1개 실패
+tools.cleanup.failed:
+  zh-CN: "%{count} 项失败"
+  en: "%{count} failed"
+  zh-TW: "%{count} 項失敗"
+  ja: "%{count} 件失敗"
+  ko: "%{count}개 실패"
+tools.cleanup.run:
+  zh-CN: 清理
+  en: Clean Up
+  zh-TW: 清理
+  ja: クリーンアップ
+  ko: 정리
+tools.cleanup.done_note:
+  zh-CN: "Docker 清理完成：%{result}"
+  en: "Docker cleanup finished: %{result}"
+  zh-TW: "Docker 清理完成：%{result}"
+  ja: Docker のクリーンアップが完了しました：%{result}
+  ko: "Docker 정리 완료: %{result}"
+tools.cleanup.audit_label:
+  zh-CN: Docker 清理
+  en: Docker cleanup
+  zh-TW: Docker 清理
+  ja: Docker のクリーンアップ
+  ko: Docker 정리

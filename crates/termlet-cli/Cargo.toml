@@ -1,0 +1,41 @@
+[package]
+name = "termlet-cli"
+description = "termlet 命令行工具"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "termlet"
+path = "src/main.rs"
+
+# 只依赖协议与几个轻量的 crate：不链接核心（SQLite、SSH、加密），体积小、启动快
+[dependencies]
+termlet-proto.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# 跟随系统界面语言（Windows 的首选界面语言）
+sys-locale.workspace = true
+# 主机列表按显示宽度对齐（中文占两列）
+unicode-width.workspace = true
+
+# 调用方进程（审计）、Termlet 进程是否还在运行
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_Threading",
+] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+# 端到端测试：起一个测试用的命令行服务（内存中的存储），以子进程运行 termlet
+[dev-dependencies]
+termlet-core.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

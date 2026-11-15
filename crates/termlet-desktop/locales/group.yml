@@ -1,0 +1,103 @@
+_version: 2
+group.new.title:
+  zh-CN: 新建分组
+  en: New group
+  zh-TW: 新增群組
+  ja: 新しいグループ
+  ko: 새 그룹
+group.new.create:
+  zh-CN: 新建
+  en: Create
+  zh-TW: 新增
+  ja: 作成
+  ko: 만들기
+group.edit.title:
+  zh-CN: 编辑分组
+  en: Edit group
+  zh-TW: 編輯群組
+  ja: グループの編集
+  ko: 그룹 편집
+group.edit.hint:
+  zh-CN: 分组及其子分组中没有设置这些项的主机沿用这里的值；留空则沿用上级分组的。
+  en: Hosts in this group and its subgroups use these values when they don't set their own. Leave a field empty to use the parent group's value.
+  zh-TW: 群組及其子群組中沒有設定這些項目的主機會沿用這裡的值；留空則沿用上層群組的。
+  ja: このグループとサブグループ内のホストで、これらの項目を設定していないものはここの値を使います。空欄にすると親グループの値を使います。
+  ko: 이 그룹과 하위 그룹의 호스트 중 이 항목을 직접 설정하지 않은 호스트는 여기의 값을 사용합니다. 비워 두면 상위 그룹의 값을 사용합니다.
+group.field.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+group.field.name_placeholder:
+  zh-CN: 分组名称
+  en: Group name
+  zh-TW: 群組名稱
+  ja: グループ名
+  ko: 그룹 이름
+group.field.not_set:
+  zh-CN: 不设置
+  en: Not set
+  zh-TW: 不設定
+  ja: 設定しない
+  ko: 설정 안 함
+group.field.username:
+  zh-CN: 默认用户名
+  en: Default user name
+  zh-TW: 預設使用者名稱
+  ja: デフォルトのユーザー名
+  ko: 기본 사용자 이름
+group.field.profile:
+  zh-CN: 默认凭据档案
+  en: Default credential profile
+  zh-TW: 預設認證資訊設定檔
+  ja: デフォルトの認証プロファイル
+  ko: 기본 자격 증명 프로필
+group.field.profile_hint:
+  zh-CN: 认证方式选“沿用分组”的主机使用它。
+  en: Used by hosts whose authentication is set to use the group's.
+  zh-TW: 驗證方式選「沿用群組」的主機會使用它。
+  ja: 認証方法が「グループの設定を使用」のホストで使われます。
+  ko: 인증 방법이 '그룹 설정 사용'인 호스트에서 사용합니다.
+group.field.jump:
+  zh-CN: 默认跳板机
+  en: Default jump host
+  zh-TW: 預設跳板機
+  ja: デフォルトの踏み台ホスト
+  ko: 기본 점프 호스트
+group.field.proxy_command:
+  zh-CN: 代理命令
+  en: Proxy command
+  zh-TW: 代理指令
+  ja: プロキシコマンド
+  ko: 프록시 명령
+group.field.proxy_command_hint:
+  zh-CN: 分组中没有自己的代理、也没有选“不使用代理”的主机沿用，经跳板机连接的主机不用。写法与主机的代理命令相同（%h、%p、%r、%n），每台电脑第一次执行前都会先请你确认。
+  en: Used by hosts in the group that have no proxy of their own and don't have "No proxy" selected. Hosts reached through a jump host don't use it. Written like a host's proxy command (%h, %p, %r, %n). You're asked to confirm before it first runs on each computer.
+  zh-TW: 群組中沒有自己的代理伺服器、也沒有選「不使用代理伺服器」的主機會沿用，經由跳板機連線的主機不使用。寫法與主機的代理指令相同（%h、%p、%r、%n），每台電腦第一次執行前都會先請你確認。
+  ja: グループ内で独自のプロキシがなく、「プロキシを使用しない」も選んでいないホストが使います。踏み台ホスト経由で接続するホストでは使いません。書き方はホストのプロキシコマンドと同じです（%h、%p、%r、%n）。コンピューターごとに、初めて実行する前に確認を求めます。
+  ko: 그룹에서 자체 프록시가 없고 '프록시 사용 안 함'도 선택하지 않은 호스트가 사용합니다. 점프 호스트를 거쳐 연결하는 호스트는 사용하지 않습니다. 작성 방법은 호스트의 프록시 명령과 같습니다(%h, %p, %r, %n). 컴퓨터마다 처음 실행하기 전에 확인을 요청합니다.
+group.field.scheme:
+  zh-CN: 终端配色
+  en: Terminal color scheme
+  zh-TW: 終端機配色
+  ja: ターミナルの配色
+  ko: 터미널 색 구성표
+group.field.scheme_global:
+  zh-CN: 跟随全局设置
+  en: Use the global setting
+  zh-TW: 跟隨全域設定
+  ja: 全体の設定に合わせる
+  ko: 전체 설정 따르기
+group.delete.title:
+  zh-CN: 删除分组“%{name}”？
+  en: Delete group "%{name}"?
+  zh-TW: 刪除群組「%{name}」？
+  ja: グループ「%{name}」を削除しますか？
+  ko: "'%{name}' 그룹을 삭제하시겠습니까?"
+group.delete.description:
+  zh-CN: 子分组一并删除；其中的主机移到最外层，不会被删除。
+  en: Its subgroups are deleted too. The hosts in them move to the top level and aren't deleted.
+  zh-TW: 子群組一併刪除；其中的主機會移到最上層，不會被刪除。
+  ja: サブグループもまとめて削除されます。その中のホストは最上位に移動し、削除されません。
+  ko: 하위 그룹도 함께 삭제됩니다. 그 안의 호스트는 최상위로 이동하며 삭제되지 않습니다.

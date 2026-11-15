@@ -1,0 +1,60 @@
+# Windows 的全量 clippy 与测试：由 ci.yml 在推送到默认分支与合并请求时调用，由 release.yml 在打包之前调用（测试不过
+# 就不出包），也可以手动运行。冷缓存时一次约 30 分钟（实测 clippy 8.5 分钟、编译加测试 20 分钟）。连 sshd 的集成测试
+# 不在这里跑（Windows 运行器上的 Docker 只能运行 Windows 容器），由 sshd.yml 在 Linux 上跑。
+#
+# 测试用 cargo-nextest（配置见 .config/nextest.toml）：Windows 上每个测试一个进程比 cargo test 慢（本机 2 个并行时
+# 135 秒对 97 秒），换来卡住的测试 3 分钟后就结束、失败的输出集中列出，与 Linux 一致。文档测试由 ci.yml 跑。
+#
+# 缓存只在默认分支上保存（推送与手动运行）：合并请求与标签上存的缓存只有它们自己能用，它们读默认分支的那份。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: Windows
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# 同一分支 / 标签同时只跑一次，后来的排队（组名不用 github.workflow：被调用时它是调用方的名字，会与 release.yml 的组相同）
+concurrency:
+  group: windows-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Windows clippy、测试
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      CARGO_TERM_COLOR: always
+      # 与 ci.yml 相同：不生成调试信息、不增量编译
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+    # 用 Git Bash 运行：PATH 中有 Git 的 usr\bin（主机工具的测试用其中的 sh、sed、awk），与本机在 Git Bash 中跑测试相同
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          # 被 ci.yml、release.yml 调用与手动运行时用同一份缓存
+          shared-key: windows-test
+          save-if: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与 ci.yml 的版本相同
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: 测试
+        run: cargo nextest run --workspace --locked --profile ci

@@ -1,0 +1,247 @@
+_version: 2
+transfer.ask_download:
+  zh-CN: 服务器要发送文件（%{protocol}）
+  en: The server wants to send files (%{protocol})
+  zh-TW: 伺服器要傳送檔案（%{protocol}）
+  ja: サーバーがファイルを送信しようとしています（%{protocol}）
+  ko: 서버가 파일을 보내려고 합니다(%{protocol})
+transfer.ask_upload:
+  zh-CN: 服务器在等待接收文件（%{protocol}）
+  en: The server is waiting to receive files (%{protocol})
+  zh-TW: 伺服器正在等待接收檔案（%{protocol}）
+  ja: サーバーがファイルの受信を待っています（%{protocol}）
+  ko: 서버가 파일 받기를 기다리고 있습니다(%{protocol})
+transfer.drop_hint:
+  zh-CN: 也可以把文件拖到终端上
+  en: You can also drop files onto the terminal
+  zh-TW: 也可以把檔案拖放到終端機上
+  ja: ファイルをターミナルにドロップすることもできます
+  ko: 파일을 터미널에 끌어다 놓을 수도 있습니다
+transfer.save_to:
+  zh-CN: 保存到“%{dir}”
+  en: Save to “%{dir}”
+  zh-TW: 儲存到「%{dir}」
+  ja: 「%{dir}」に保存
+  ko: "'%{dir}'에 저장"
+transfer.pick_dir:
+  zh-CN: 选择位置…
+  en: Choose Location…
+  zh-TW: 選擇位置…
+  ja: 場所を選択…
+  ko: 위치 선택…
+transfer.pick_files:
+  zh-CN: 选择文件…
+  en: Choose Files…
+  zh-TW: 選擇檔案…
+  ja: ファイルを選択…
+  ko: 파일 선택…
+transfer.pick_dirs:
+  zh-CN: 选择目录…
+  en: Choose Folders…
+  zh-TW: 選擇目錄…
+  ja: フォルダーを選択…
+  ko: 폴더 선택…
+transfer.downloading:
+  zh-CN: 正在下载 %{file}
+  en: Downloading %{file}
+  zh-TW: 正在下載 %{file}
+  ja: "%{file} をダウンロードしています"
+  ko: "%{file} 다운로드 중"
+transfer.uploading:
+  zh-CN: 正在上传 %{file}
+  en: Uploading %{file}
+  zh-TW: 正在上傳 %{file}
+  ja: "%{file} をアップロードしています"
+  ko: "%{file} 업로드 중"
+transfer.file_count:
+  zh-CN: 第 %{index} / %{total} 个
+  en: file %{index} of %{total}
+  zh-TW: 第 %{index} / %{total} 個
+  ja: "%{index} / %{total} 個目"
+  ko: "%{total}개 중 %{index}번째"
+transfer.saved:
+  zh-CN: 已保存 %{count} 项到 %{dir}
+  en: Saved %{count} items to %{dir}
+  zh-TW: 已儲存 %{count} 項到 %{dir}
+  ja: "%{count} 項目を %{dir} に保存しました"
+  ko: "%{count}개 항목을 %{dir}에 저장했습니다"
+transfer.uploaded:
+  zh-CN: 已上传 %{count} 项
+  en: Uploaded %{count} items
+  zh-TW: 已上傳 %{count} 項
+  ja: "%{count} 項目をアップロードしました"
+  ko: "%{count}개 항목을 업로드했습니다"
+transfer.skipped:
+  zh-CN: ，%{count} 个被跳过
+  en: ", %{count} skipped"
+  zh-TW: ，%{count} 個已略過
+  ja: （%{count} 個はスキップ）
+  ko: (%{count}개 건너뜀)
+transfer.skipped_rz:
+  zh-CN: ，%{count} 个被跳过（服务器上已有同名文件，可用 rz -y 覆盖）
+  en: ", %{count} skipped (files with the same names exist on the server; use rz -y to overwrite)"
+  zh-TW: ，%{count} 個已略過（伺服器上已有同名檔案，可用 rz -y 覆寫）
+  ja: （%{count} 個はスキップ：サーバーに同じ名前のファイルがあります。rz -y で上書きできます）
+  ko: "(%{count}개 건너뜀: 서버에 같은 이름의 파일이 있습니다. rz -y로 덮어쓸 수 있습니다)"
+transfer.failed:
+  zh-CN: 传输失败：%{message}
+  en: "Transfer failed: %{message}"
+  zh-TW: 傳輸失敗：%{message}
+  ja: 転送に失敗しました：%{message}
+  ko: "전송하지 못했습니다: %{message}"
+transfer.cancelled:
+  zh-CN: 已取消传输
+  en: Transfer canceled
+  zh-TW: 已取消傳輸
+  ja: 転送をキャンセルしました
+  ko: 전송을 취소했습니다
+transfer.error.zmodem_conpty:
+  zh-CN: 本地终端与 WSL 中不支持 ZModem（Windows 的伪终端会改写二进制数据），请改用 SFTP 或 trzsz
+  en: ZModem doesn't work in local terminals or WSL (the Windows pseudo console alters binary data). Use SFTP or trzsz instead.
+  zh-TW: 本機終端機與 WSL 中不支援 ZModem（Windows 的虛擬終端機會改寫二進位資料），請改用 SFTP 或 trzsz
+  ja: ローカルターミナルと WSL では ZModem を使えません（Windows の疑似端末がバイナリデータを書き換えるため）。代わりに SFTP または trzsz を使ってください
+  ko: 로컬 터미널과 WSL에서는 ZModem을 사용할 수 없습니다(Windows 의사 터미널이 바이너리 데이터를 바꾸기 때문). 대신 SFTP 또는 trzsz를 사용하세요
+transfer.error.zmodem_tmux:
+  zh-CN: tmux 中不支持 ZModem（tmux 不转发它的数据），请改用 trzsz（trz / tsz）或 SFTP
+  en: ZModem doesn't work inside tmux (tmux doesn't pass its data through). Use trzsz (trz / tsz) or SFTP instead.
+  zh-TW: tmux 中不支援 ZModem（tmux 不會轉送它的資料），請改用 trzsz（trz / tsz）或 SFTP
+  ja: tmux の中では ZModem を使えません（tmux がそのデータを中継しないため）。代わりに trzsz（trz / tsz）または SFTP を使ってください
+  ko: tmux 안에서는 ZModem을 사용할 수 없습니다(tmux가 해당 데이터를 전달하지 않기 때문). 대신 trzsz(trz / tsz) 또는 SFTP를 사용하세요
+transfer.error.zmodem_directory:
+  zh-CN: ZModem 不能上传目录，请改用 trzsz 的 trz -d 或 SFTP：%{path}
+  en: "ZModem can't upload folders; use trzsz's trz -d or SFTP instead: %{path}"
+  zh-TW: ZModem 無法上傳目錄，請改用 trzsz 的 trz -d 或 SFTP：%{path}
+  ja: ZModem ではフォルダーをアップロードできません。trzsz の trz -d または SFTP を使ってください：%{path}
+  ko: "ZModem으로는 폴더를 업로드할 수 없습니다. trzsz의 trz -d 또는 SFTP를 사용하세요: %{path}"
+transfer.error.trz_needs_directory:
+  zh-CN: 要上传目录请在服务器上运行 trz -d：%{path}
+  en: "To upload a folder, run trz -d on the server: %{path}"
+  zh-TW: 要上傳目錄，請在伺服器上執行 trz -d：%{path}
+  ja: フォルダーをアップロードするには、サーバーで trz -d を実行してください：%{path}
+  ko: "폴더를 업로드하려면 서버에서 trz -d를 실행하세요: %{path}"
+transfer.error.bad_save_dir:
+  zh-CN: 保存位置不是可用的目录：%{path}
+  en: "The save location isn't a usable folder: %{path}"
+  zh-TW: 儲存位置不是可用的目錄：%{path}
+  ja: 保存先が使用できるフォルダーではありません：%{path}
+  ko: "저장 위치가 사용할 수 있는 폴더가 아닙니다: %{path}"
+transfer.error.not_regular:
+  zh-CN: 不是普通文件：%{path}
+  en: "Not a regular file: %{path}"
+  zh-TW: 不是一般檔案：%{path}
+  ja: 通常のファイルではありません：%{path}
+  ko: "일반 파일이 아닙니다: %{path}"
+transfer.error.local_not_found:
+  zh-CN: 本机找不到 %{path}
+  en: "%{path} wasn't found on this computer"
+  zh-TW: 本機找不到 %{path}
+  ja: このコンピューターに %{path} が見つかりません
+  ko: 이 컴퓨터에서 %{path}을(를) 찾을 수 없습니다
+transfer.error.local_permission:
+  zh-CN: 没有权限读写本机的 %{path}
+  en: "No permission to read or write %{path} on this computer"
+  zh-TW: 沒有權限讀寫本機的 %{path}
+  ja: このコンピューターの %{path} を読み書きする権限がありません
+  ko: 이 컴퓨터의 %{path}을(를) 읽거나 쓸 권한이 없습니다
+transfer.error.local_no_space:
+  zh-CN: 本机的磁盘空间不足（%{path}）
+  en: "This computer is out of disk space (%{path})"
+  zh-TW: 本機的磁碟空間不足（%{path}）
+  ja: このコンピューターのディスク容量が不足しています（%{path}）
+  ko: 이 컴퓨터의 디스크 공간이 부족합니다(%{path})
+transfer.error.local_busy:
+  zh-CN: "%{path} 正被其他程序使用"
+  en: "%{path} is in use by another program"
+  zh-TW: "%{path} 正被其他程式使用"
+  ja: "%{path} はほかのプログラムが使用中です"
+  ko: "%{path}을(를) 다른 프로그램이 사용 중입니다"
+transfer.error.local_other:
+  zh-CN: 读写本机的 %{path} 失败：%{message}
+  en: "Reading or writing %{path} on this computer failed: %{message}"
+  zh-TW: 讀寫本機的 %{path} 失敗：%{message}
+  ja: このコンピューターの %{path} を読み書きできませんでした：%{message}
+  ko: "이 컴퓨터의 %{path}을(를) 읽거나 쓰지 못했습니다: %{message}"
+transfer.error.no_unique_name:
+  zh-CN: 找不到不重名的文件名：%{name}
+  en: "Couldn't find an unused file name for %{name}"
+  zh-TW: 找不到不重複的檔名：%{name}
+  ja: 重複しないファイル名が見つかりません：%{name}
+  ko: "겹치지 않는 파일 이름을 찾을 수 없습니다: %{name}"
+transfer.error.duplicate_name:
+  zh-CN: 所选的文件中有重名的：%{name}
+  en: "The chosen files include duplicate names: %{name}"
+  zh-TW: 所選的檔案中有重複的名稱：%{name}
+  ja: 選択したファイルに同じ名前のものがあります：%{name}
+  ko: "선택한 파일 중에 이름이 같은 파일이 있습니다: %{name}"
+transfer.error.remote:
+  zh-CN: 服务器报告：%{message}
+  en: "The server reported: %{message}"
+  zh-TW: 伺服器回報：%{message}
+  ja: サーバーからの報告：%{message}
+  ko: "서버 보고: %{message}"
+transfer.error.remote_interrupted:
+  zh-CN: 已中断（服务器上按了 Ctrl+C）
+  en: Interrupted (Ctrl+C was pressed on the server)
+  zh-TW: 已中斷（伺服器上按了 Ctrl+C）
+  ja: 中断されました（サーバー側で Ctrl+C が押されました）
+  ko: 중단되었습니다(서버에서 Ctrl+C를 눌렀습니다)
+transfer.error.remote_aborted:
+  zh-CN: 服务器上的程序中止了传输
+  en: The program on the server aborted the transfer
+  zh-TW: 伺服器上的程式中止了傳輸
+  ja: サーバー上のプログラムが転送を中止しました
+  ko: 서버의 프로그램이 전송을 중단했습니다
+transfer.error.timeout:
+  zh-CN: 等待服务器的数据超时
+  en: Timed out waiting for data from the server
+  zh-TW: 等待伺服器的資料逾時
+  ja: サーバーからのデータ待ちがタイムアウトしました
+  ko: 서버의 데이터를 기다리다가 시간이 초과되었습니다
+transfer.error.disconnected:
+  zh-CN: 终端已断开
+  en: The terminal was disconnected
+  zh-TW: 終端機已中斷連線
+  ja: ターミナルが切断されました
+  ko: 터미널 연결이 끊어졌습니다
+transfer.error.checksum:
+  zh-CN: 校验失败，文件不完整
+  en: The checksum didn't match; the file is incomplete
+  zh-TW: 總和檢查碼不符，檔案不完整
+  ja: チェックサムが一致しません。ファイルが不完全です
+  ko: 체크섬이 일치하지 않습니다. 파일이 불완전합니다
+transfer.error.line_too_long:
+  zh-CN: trzsz 协议错误：一行过长（可在服务器上用 tsz -B 调小块大小，例如 tsz -B 10M）
+  en: "trzsz protocol error: a line is too long (use tsz -B on the server to lower the block size, e.g. tsz -B 10M)"
+  zh-TW: trzsz 通訊協定錯誤：一行過長（可在伺服器上用 tsz -B 調小區塊大小，例如 tsz -B 10M）
+  ja: trzsz プロトコルエラー：1 行が長すぎます（サーバーで tsz -B を使ってブロックサイズを小さくできます。例：tsz -B 10M）
+  ko: "trzsz 프로토콜 오류: 한 줄이 너무 깁니다(서버에서 tsz -B로 블록 크기를 줄일 수 있습니다. 예: tsz -B 10M)"
+transfer.error.block_too_large:
+  zh-CN: trzsz 数据块解压后过大（可在服务器上用 tsz -B 调小块大小，例如 tsz -B 10M）
+  en: A trzsz data block is too large after decompression (use tsz -B on the server to lower the block size, e.g. tsz -B 10M)
+  zh-TW: trzsz 資料區塊解壓縮後過大（可在伺服器上用 tsz -B 調小區塊大小，例如 tsz -B 10M）
+  ja: trzsz のデータブロックが展開後に大きすぎます（サーバーで tsz -B を使ってブロックサイズを小さくできます。例：tsz -B 10M）
+  ko: "trzsz 데이터 블록의 압축을 푼 크기가 너무 큽니다(서버에서 tsz -B로 블록 크기를 줄일 수 있습니다. 예: tsz -B 10M)"
+transfer.error.unsupported_trzsz:
+  zh-CN: 服务器要求的 trzsz 功能 Termlet 不支持：%{what}
+  en: "Termlet doesn't support this trzsz feature the server asked for: %{what}"
+  zh-TW: 伺服器要求的 trzsz 功能 Termlet 不支援：%{what}
+  ja: サーバーが要求した trzsz の機能に Termlet は対応していません：%{what}
+  ko: "서버가 요청한 trzsz 기능을 Termlet이 지원하지 않습니다: %{what}"
+transfer.error.protocol:
+  zh-CN: "%{protocol} 协议错误：%{detail}"
+  en: "%{protocol} protocol error: %{detail}"
+  zh-TW: "%{protocol} 通訊協定錯誤：%{detail}"
+  ja: "%{protocol} プロトコルエラー：%{detail}"
+  ko: "%{protocol} 프로토콜 오류: %{detail}"
+transfer.error.not_waiting:
+  zh-CN: 没有在等待回答的传输
+  en: No transfer is waiting for an answer
+  zh-TW: 沒有正在等待回應的傳輸
+  ja: 応答を待っている転送はありません
+  ko: 응답을 기다리는 전송이 없습니다
+transfer.error.wrong_answer:
+  zh-CN: 回答与传输的方向不符
+  en: The answer doesn't match the transfer's direction
+  zh-TW: 回應與傳輸的方向不符
+  ja: 応答が転送の方向と一致しません
+  ko: 응답이 전송 방향과 맞지 않습니다

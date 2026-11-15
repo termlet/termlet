@@ -1,0 +1,255 @@
+_version: 2
+# gpui-kit 自己的文案没有日文、韩文：在这里补上（键为 gpui_component. 加 gpui-kit 的键，见 i18n.rs 的
+# extend_gpui_kit）。gpui-kit 的差异视图（Diff.*）Termlet 没有用到，缺的退回英文。
+gpui_component.Attachment.Remove:
+  ja: 削除
+  ko: 제거
+gpui_component.Attachment.Retry:
+  ja: 再試行
+  ko: 다시 시도
+gpui_component.Calendar.week.0:
+  ja: 日
+  ko: 일
+gpui_component.Calendar.week.1:
+  ja: 月
+  ko: 월
+gpui_component.Calendar.week.2:
+  ja: 火
+  ko: 화
+gpui_component.Calendar.week.3:
+  ja: 水
+  ko: 수
+gpui_component.Calendar.week.4:
+  ja: 木
+  ko: 목
+gpui_component.Calendar.week.5:
+  ja: 金
+  ko: 금
+gpui_component.Calendar.week.6:
+  ja: 土
+  ko: 토
+gpui_component.Calendar.month.January:
+  ja: 1月
+  ko: 1월
+gpui_component.Calendar.month.February:
+  ja: 2月
+  ko: 2월
+gpui_component.Calendar.month.March:
+  ja: 3月
+  ko: 3월
+gpui_component.Calendar.month.April:
+  ja: 4月
+  ko: 4월
+gpui_component.Calendar.month.May:
+  ja: 5月
+  ko: 5월
+gpui_component.Calendar.month.June:
+  ja: 6月
+  ko: 6월
+gpui_component.Calendar.month.July:
+  ja: 7月
+  ko: 7월
+gpui_component.Calendar.month.August:
+  ja: 8月
+  ko: 8월
+gpui_component.Calendar.month.September:
+  ja: 9月
+  ko: 9월
+gpui_component.Calendar.month.October:
+  ja: 10月
+  ko: 10월
+gpui_component.Calendar.month.November:
+  ja: 11月
+  ko: 11월
+gpui_component.Calendar.month.December:
+  ja: 12月
+  ko: 12월
+gpui_component.DatePicker.placeholder:
+  ja: 日付を選択
+  ko: 날짜 선택
+gpui_component.DatePicker.time:
+  ja: 時刻
+  ko: 시간
+gpui_component.Select.placeholder:
+  ja: 選択してください
+  ko: 선택하세요
+gpui_component.ComboBox.placeholder:
+  ja: 選択してください
+  ko: 선택하세요
+gpui_component.ComboBox.search_placeholder:
+  ja: 検索…
+  ko: 검색…
+gpui_component.ComboBox.empty:
+  ja: 結果がありません
+  ko: 결과 없음
+gpui_component.DropdownButton.more_options:
+  ja: その他のオプション
+  ko: 추가 옵션
+gpui_component.Dock.Unnamed:
+  ja: 名前なし
+  ko: 이름 없음
+gpui_component.Dock.Close:
+  ja: 閉じる
+  ko: 닫기
+gpui_component.Dock.Zoom In:
+  ja: 拡大
+  ko: 확대
+gpui_component.Dock.Zoom Out:
+  ja: 縮小
+  ko: 축소
+gpui_component.Dock.Collapse:
+  ja: 折りたたむ
+  ko: 접기
+gpui_component.Dock.Expand:
+  ja: 展開
+  ko: 펼치기
+gpui_component.Dock.Unavailable Panel:
+  ja: このバージョンではこのパネルを表示できません。
+  ko: 이 버전에서는 이 패널을 표시할 수 없습니다.
+gpui_component.ColorPicker.Palette:
+  ja: パレット
+  ko: 팔레트
+gpui_component.ColorPicker.HSLA:
+  ja: HSLA
+  ko: HSLA
+gpui_component.ColorPicker.Hue:
+  ja: 色相
+  ko: 색조
+gpui_component.ColorPicker.Saturation:
+  ja: 彩度
+  ko: 채도
+gpui_component.ColorPicker.Lightness:
+  ja: 明度
+  ko: 밝기
+gpui_component.ColorPicker.Alpha:
+  ja: 不透明度
+  ko: 불투명도
+gpui_component.Dialog.ok:
+  ja: OK
+  ko: 확인
+gpui_component.Dialog.cancel:
+  ja: キャンセル
+  ko: 취소
+gpui_component.Command.placeholder:
+  ja: コマンドを入力または検索…
+  ko: 명령 입력 또는 검색…
+gpui_component.Command.empty:
+  ja: 結果が見つかりません。
+  ko: 결과가 없습니다.
+gpui_component.List.search_placeholder:
+  ja: 検索…
+  ko: 검색…
+gpui_component.Input.Decrement:
+  ja: 減らす
+  ko: 감소
+gpui_component.Input.Increment:
+  ja: 増やす
+  ko: 증가
+gpui_component.Input.Replace:
+  ja: 置換
+  ko: 바꾸기
+gpui_component.Input.Replace All:
+  ja: すべて置換
+  ko: 모두 바꾸기
+gpui_component.Input.Clear:
+  ja: クリア
+  ko: 지우기
+gpui_component.Input.Cut:
+  ja: 切り取り
+  ko: 잘라내기
+gpui_component.Input.Copy:
+  ja: コピー
+  ko: 복사
+gpui_component.Input.Paste:
+  ja: 貼り付け
+  ko: 붙여넣기
+gpui_component.Input.Select All:
+  ja: すべて選択
+  ko: 모두 선택
+gpui_component.Input.Go to Definition:
+  ja: 定義へ移動
+  ko: 정의로 이동
+gpui_component.Input.Show Code Actions:
+  ja: コードアクションを表示
+  ko: 코드 작업 표시
+gpui_component.Input.Show Password:
+  ja: パスワードを表示
+  ko: 비밀번호 표시
+gpui_component.Input.Hide Password:
+  ja: パスワードを隠す
+  ko: 비밀번호 숨기기
+gpui_component.Settings.search_placeholder:
+  ja: 検索…
+  ko: 검색…
+gpui_component.Settings.Reset All:
+  ja: すべてリセット
+  ko: 모두 초기화
+gpui_component.Pagination.previous:
+  ja: 前へ
+  ko: 이전
+gpui_component.Pagination.next:
+  ja: 次へ
+  ko: 다음
+gpui_component.Carousel.label:
+  ja: カルーセル
+  ko: 캐러셀
+gpui_component.Carousel.previous:
+  ja: 前のスライド
+  ko: 이전 슬라이드
+gpui_component.Carousel.next:
+  ja: 次のスライド
+  ko: 다음 슬라이드
+gpui_component.Carousel.slide:
+  ja: "%{total} 枚中 %{current} 枚目"
+  ko: "%{total}개 중 %{current}번째 슬라이드"
+gpui_component.Carousel.pagination:
+  ja: カルーセルのページ
+  ko: 캐러셀 페이지
+gpui_component.Carousel.go_to_slide:
+  ja: スライド %{current} へ移動
+  ko: "%{current}번째 슬라이드로 이동"
+gpui_component.Table.SortBy:
+  ja: "%{column} で並べ替え"
+  ko: "%{column} 기준 정렬"
+gpui_component.Chart.open:
+  ja: 始値
+  ko: 시가
+gpui_component.Chart.high:
+  ja: 高値
+  ko: 고가
+gpui_component.Chart.low:
+  ja: 安値
+  ko: 저가
+gpui_component.Chart.close:
+  ja: 終値
+  ko: 종가
+gpui_component.Questionnaire.progress:
+  ja: 全 %{total} 問中 %{current} 問目
+  ko: "%{total}개 중 %{current}번째 질문"
+gpui_component.Questionnaire.previous:
+  ja: 前の質問
+  ko: 이전 질문
+gpui_component.Questionnaire.next:
+  ja: 次の質問
+  ko: 다음 질문
+gpui_component.Questionnaire.skip:
+  ja: スキップ
+  ko: 건너뛰기
+gpui_component.Questionnaire.submit:
+  ja: 送信
+  ko: 제출
+gpui_component.Questionnaire.error.required:
+  ja: 続行するには回答を選択してください。
+  ko: 계속하려면 답을 선택하세요.
+gpui_component.Questionnaire.error.optional:
+  ja: 回答を選択するか、この質問をスキップしてください。
+  ko: 답을 선택하거나 이 질문을 건너뛰세요.
+gpui_component.Speech.Start:
+  ja: 音声入力
+  ko: 음성 입력
+gpui_component.Speech.Stop:
+  ja: 音声入力を停止
+  ko: 음성 입력 중지
+gpui_component.Speech.Unavailable:
+  ja: 音声入力は利用できません
+  ko: 음성 입력을 사용할 수 없음

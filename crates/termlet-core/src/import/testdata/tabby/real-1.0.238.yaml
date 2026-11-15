@@ -1,0 +1,99 @@
+# 由 Tabby 1.0.238 便携版的界面实际创建（2026-10-09，Termlet 的导入测试用）：分组、上级分组、分组的 SSH 默认值、
+# 跳板机、SOCKS / HTTP 代理、代理命令与几种认证方式。只保留了 profiles、groups 两节，其余与导入无关的设置已删去。
+# 主机地址都是虚构的。
+version: 8
+profiles:
+  - type: ssh
+    name: via-socks
+    icon: fas fa-desktop
+    options:
+      host: 192.168.9.9
+      user: ops2
+      algorithms: {}
+      input: {}
+      socksProxyHost: 127.0.0.1
+      socksProxyPort: 1080
+      privateKeys: []
+    weight: -1
+    id: ssh:custom:via-socks:e55cfef1-d82b-48ca-8469-62549396b8f3
+  - type: ssh
+    name: web-01
+    icon: fas fa-desktop
+    options:
+      host: 10.1.2.3
+      port: 2201
+      user: deploy
+      algorithms: {}
+      input: {}
+      auth: password
+    weight: -1
+    group: 2e5ae2af-0318-41bb-bbed-dbdedea375d7
+    id: ssh:custom:web-01:fd466d86-e85b-411f-a07d-2a254e6944d0
+  - type: ssh
+    name: via-cmd
+    icon: fas fa-desktop
+    options:
+      user: dev
+      algorithms: {}
+      input: {}
+      proxyCommand: ssh -W %h:%p bastion
+      privateKeys: []
+    weight: -1
+    group: c54fbd84-b68d-453c-89b4-57fa0da7e816
+    id: ssh:custom:via-cmd:00492248-dd17-4c56-8546-fa225465c54d
+  - type: ssh
+    name: via-http
+    icon: fas fa-desktop
+    options:
+      host: app.example.com
+      port: 2222
+      algorithms: {}
+      input: {}
+      httpProxyHost: 10.0.0.1
+      httpProxyPort: 3128
+      privateKeys: []
+    weight: -1
+    group: c54fbd84-b68d-453c-89b4-57fa0da7e816
+    id: ssh:custom:via-http:2b520b53-ee99-4e0e-84af-80998026a399
+  - type: ssh
+    name: db-01
+    icon: fas fa-desktop
+    options:
+      host: db.internal
+      algorithms: {}
+      input: {}
+      jumpHost: ssh:custom:web-01:fd466d86-e85b-411f-a07d-2a254e6944d0
+      auth: agent
+    weight: -1
+    group: 7088ba31-ad6c-453f-8ae2-f2037a77321d
+    id: ssh:custom:db-01:df522afd-9907-4983-b245-9b06b0a41eef
+  - type: ssh
+    name: key-auth
+    icon: fas fa-desktop
+    options:
+      host: key.example
+      user: admin
+      algorithms: {}
+      input: {}
+      auth: publicKey
+    weight: -1
+    id: ssh:custom:key-auth:a9b4e19c-f1ef-4a4e-88ad-b28155c623ed # gitleaks:allow（Tabby 的配置 ID，不是密钥）
+groups:
+  - id: 7088ba31-ad6c-453f-8ae2-f2037a77321d
+    name: 生产
+    icon: far fa-folder
+    defaults:
+      ssh:
+        type: ssh
+        options:
+          algorithms: {}
+          input: {}
+          user: ops
+          port: 2022
+  - id: 2e5ae2af-0318-41bb-bbed-dbdedea375d7
+    name: 华东
+    icon: far fa-folder
+    parentGroupId: 7088ba31-ad6c-453f-8ae2-f2037a77321d
+  - id: c54fbd84-b68d-453c-89b4-57fa0da7e816
+    name: 测试
+    icon: far fa-folder

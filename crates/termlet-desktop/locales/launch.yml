@@ -1,0 +1,49 @@
+_version: 2
+launch.confirm_title:
+  zh-CN: 外部程序请求打开连接
+  en: Another program wants to open a connection
+  zh-TW: 外部程式要求開啟連線
+  ja: 外部プログラムが接続を開くよう要求しています
+  ko: 외부 프로그램이 연결 열기를 요청했습니다
+launch.confirm_body:
+  zh-CN: 堡垒机等程序以 Xshell、PuTTY、WinSCP 等的启动参数请求打开 %{target} 的%{kind}。作为临时连接打开：不保存到主机列表，密码只在内存中。可在“设置 → 连接”中设为不再询问。
+  en: A bastion host or a similar program asked to open %{kind} for %{target} using Xshell, PuTTY, WinSCP or similar arguments. It opens as a temporary connection that isn't saved to the host list; the password stays in memory. You can stop asking under Settings → Connection.
+  zh-TW: 堡壘主機等程式以 Xshell、PuTTY、WinSCP 等的啟動參數，要求開啟 %{target} 的%{kind}。將作為臨時連線開啟：不儲存到主機清單，密碼只保留在記憶體中。可在「設定 → 連線」中設為不再詢問。
+  ja: 要塞ホストなどのプログラムが、Xshell、PuTTY、WinSCP などの起動引数で %{target} の%{kind}を開くよう要求しました。一時的な接続として開きます。ホスト一覧には保存せず、パスワードはメモリ内にのみ保持します。「設定 → 接続」で今後確認しないように設定できます。
+  ko: 배스천 호스트 등의 프로그램이 Xshell, PuTTY, WinSCP 등의 시작 인수로 %{target}의 %{kind} 열기를 요청했습니다. 임시 연결로 열리며 호스트 목록에 저장되지 않고, 비밀번호는 메모리에만 보관됩니다. '설정 → 연결'에서 다시 묻지 않도록 설정할 수 있습니다.
+launch.kind_terminal:
+  zh-CN: 终端
+  en: a terminal
+  zh-TW: 終端機
+  ja: ターミナル
+  ko: 터미널
+launch.kind_sftp:
+  zh-CN: 文件管理（SFTP）
+  en: file management (SFTP)
+  zh-TW: 檔案管理（SFTP）
+  ja: ファイル管理（SFTP）
+  ko: 파일 관리(SFTP)
+launch.open:
+  zh-CN: 打开
+  en: Open
+  zh-TW: 開啟
+  ja: 開く
+  ko: 열기
+launch.ignored:
+  zh-CN: 已忽略外部程序打开 %{target} 的请求，可在“设置 → 连接”中开启
+  en: Ignored a request from another program to open %{target}. You can allow it under Settings → Connection.
+  zh-TW: 已忽略外部程式開啟 %{target} 的要求，可在「設定 → 連線」中開啟
+  ja: 外部プログラムからの %{target} を開く要求を無視しました。「設定 → 接続」で許可できます
+  ko: 외부 프로그램의 %{target} 열기 요청을 무시했습니다. '설정 → 연결'에서 허용할 수 있습니다
+launch.no_duplicate:
+  zh-CN: 外部程序调起的临时连接只用一个通道，不能复制会话或分屏
+  en: Temporary connections opened by another program use a single channel and can't be duplicated or split
+  zh-TW: 由外部程式啟動的臨時連線只用一個通道，不能複製工作階段或分割畫面
+  ja: 外部プログラムから起動した一時的な接続はチャネルを 1 つしか使わないため、セッションの複製や画面分割はできません
+  ko: 외부 프로그램이 연 임시 연결은 채널을 하나만 사용하므로 세션을 복제하거나 화면을 분할할 수 없습니다
+launch.save_as_host:
+  zh-CN: 保存到主机列表…
+  en: Save to Host List…
+  zh-TW: 儲存到主機清單…
+  ja: ホスト一覧に保存…
+  ko: 호스트 목록에 저장…

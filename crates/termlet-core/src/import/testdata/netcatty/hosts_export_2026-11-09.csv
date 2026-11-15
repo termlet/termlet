@@ -1,0 +1,9 @@
+﻿Groups,Label,Tags,Notes,Hostname/IP,Protocol,Port,Username,Password,KeyPath,Passphrase,Proxy,ProxyJump,LocalShell,SshInputCompatibility
+Project/Prod,Web,"prod,web","two
+lines",web.example.com,ssh,2222,deploy,hunter2,,,socks5://u:p%40ss@127.0.0.1:1080,"alice@gw.example.com:2200,ops@bastion.example.com",,true
+Infra,Bastion,,,bastion.example.com,ssh,22,ops,,,,,,,true
+Lab,v6,,,[2001:db8::1],ssh,22,root,,~/.ssh/id_ed25519,open sesame,direct,,,true
+,Switch,,,sw.lab,telnet,2323,admin,sw-pass,,,,,,
+,'=calc,,,box.lab,ssh,22,'-dash,'=rawpw,,,command://cloudflared access ssh --hostname %h,,,true
+,locked,,,locked.lab,ssh,22,,enc:v1:djEwAAAA,,,http://proxy.lan,,,true
+,Local,,,localhost,local,,,,,,,,"{""shell"":""pwsh"",""shellArgs"":[]}",

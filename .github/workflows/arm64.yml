@@ -1,0 +1,77 @@
+# arm64 上的编译与核心测试（实验版：没有 arm64 的真机，靠这里与 release.yml 的打包确认能编译、能运行）：在 GitHub 的
+# arm64 运行器上编译并运行核心、命令行工具、协议与字节接口的测试（不含界面，与 ci.yml 的 core job 相同的范围）。
+# 由 ci.yml 在推送到默认分支与合并请求时调用，也可以手动运行；release.yml 的 arm64 打包 job 自己先跑同样的测试（失败
+# 只是不出那个架构的包，不挡 x64 与 macOS）。
+#
+# 运行器：windows-11-arm、ubuntu-24.04-arm（镜像由 Arm 维护）。缓存只在默认分支上保存（冷编译约 15–20 分钟），
+# 合并请求读默认分支的那份。
+#
+# 先核对 Rust 工具链是 arm64 原生的（rustup 装的是运行器上的主机架构），测试才是在 arm64 上跑的。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: arm64
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# 同一分支 / 标签同时只跑一次，后来的排队
+concurrency:
+  group: arm64-test-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  # 与 ci.yml 相同：不生成调试信息、不增量编译
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_INCREMENTAL: '0'
+
+jobs:
+  test:
+    name: ${{ matrix.name }} 核心测试
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows arm64
+            runner: windows-11-arm
+            host: aarch64-pc-windows-msvc
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+            host: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    # Windows 上用 Git Bash 运行（PATH 中有 Git 的 usr\bin，主机工具的测试用其中的 sh、sed、awk），与 windows.yml 相同
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - name: 核对工具链是 arm64 原生的
+        env:
+          EXPECTED_HOST: ${{ matrix.host }}
+        run: |
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          if [ "$host" != "$EXPECTED_HOST" ]; then
+            echo "::error::Rust 工具链的主机是 $host，应为 $EXPECTED_HOST"
+            exit 1
+          fi
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与 ci.yml 的版本相同
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 测试
+        run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io

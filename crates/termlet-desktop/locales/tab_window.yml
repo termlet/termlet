@@ -1,0 +1,61 @@
+_version: 2
+tab_window.move_to_new:
+  zh-CN: 移到新窗口
+  en: Move to New Window
+  zh-TW: 移到新視窗
+  ja: 新しいウィンドウに移動
+  ko: 새 창으로 이동
+tab_window.move_to_window:
+  zh-CN: 移到窗口
+  en: Move to Window
+  zh-TW: 移到視窗
+  ja: ウィンドウに移動
+  ko: 창으로 이동
+tab_window.window_many:
+  zh-CN: "%{name} 等 %{count} 个 Tab"
+  en: "%{name} and others (%{count} tabs)"
+  zh-TW: "%{name} 等 %{count} 個分頁"
+  ja: "%{name} など %{count} 個のタブ"
+  ko: "%{name} 등 탭 %{count}개"
+tab_window.window_empty:
+  zh-CN: 空窗口
+  en: Empty window
+  zh-TW: 空白視窗
+  ja: 空のウィンドウ
+  ko: 빈 창
+tab_window.only_tab:
+  zh-CN: 窗口中只有这一个 Tab。
+  en: This is the only tab in the window.
+  zh-TW: 視窗中只有這一個分頁。
+  ja: このウィンドウのタブはこれだけです。
+  ko: 이 창에는 이 탭만 있습니다.
+tab_window.window_gone:
+  zh-CN: 那个窗口已经关闭。
+  en: That window has been closed.
+  zh-TW: 那個視窗已經關閉。
+  ja: そのウィンドウは閉じられています。
+  ko: 그 창은 이미 닫혔습니다.
+tab_window.blocked_connecting:
+  zh-CN: 正在连接，连上后再移到别的窗口。
+  en: Still connecting. Move the tab once it is connected.
+  zh-TW: 正在連線，連上後再移到別的視窗。
+  ja: 接続中です。接続してから別のウィンドウに移動してください。
+  ko: 연결 중입니다. 연결된 후에 다른 창으로 옮기세요.
+tab_window.drop_new:
+  zh-CN: 松开以移到新窗口
+  en: Release to move to a new window
+  zh-TW: 放開以移到新視窗
+  ja: 離すと新しいウィンドウに移動します
+  ko: 놓으면 새 창으로 이동합니다
+tab_window.drop_window:
+  zh-CN: 松开以移到窗口“%{name}”
+  en: Release to move to the window “%{name}”
+  zh-TW: 放開以移到視窗「%{name}」
+  ja: 離すとウィンドウ「%{name}」に移動します
+  ko: "놓으면 '%{name}' 창으로 이동합니다"
+tab_window.drop_sole:
+  zh-CN: 窗口中只有这一个 Tab：拖到另一个 Termlet 窗口上可以移过去。
+  en: This is the only tab in the window. Drop it on another Termlet window to move it there.
+  zh-TW: 視窗中只有這一個分頁：拖到另一個 Termlet 視窗上可以移過去。
+  ja: このウィンドウのタブはこれだけです。別の Termlet ウィンドウにドロップすると移動できます。
+  ko: 이 창에는 이 탭만 있습니다. 다른 Termlet 창에 놓으면 옮길 수 있습니다.

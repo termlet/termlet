@@ -1,0 +1,23 @@
+[Desktop Entry]
+Type=Application
+Name=Termlet
+GenericName=SSH Client
+GenericName[zh_CN]=SSH 客户端
+GenericName[zh_TW]=SSH 用戶端
+GenericName[ja]=SSH クライアント
+GenericName[ko]=SSH 클라이언트
+Comment=The lightweight SSH client your AI can safely use
+Comment[zh_CN]=轻巧的 SSH 终端，AI 也能安全上手
+Comment[zh_TW]=輕巧的 SSH 終端機，AI 也能安全上手
+Comment[ja]=AI も安全に使える、軽快な SSH ターミナル
+Comment[ko]=AI도 안전하게 쓰는 가벼운 SSH 터미널
+Exec=Termlet
+Icon=dev.termlet.Termlet
+Terminal=false
+Categories=Network;RemoteAccess;
+Keywords=ssh;sftp;telnet;serial;terminal;remote;
+Keywords[zh_CN]=ssh;sftp;telnet;终端;远程;串口;
+Keywords[zh_TW]=ssh;sftp;telnet;終端機;遠端;序列埠;
+Keywords[ja]=ssh;sftp;telnet;ターミナル;端末;リモート;シリアル;
+Keywords[ko]=ssh;sftp;telnet;터미널;원격;직렬;
+StartupWMClass=dev.termlet.Termlet

@@ -1,0 +1,123 @@
+name: 问题报告 / Bug report
+description: Termlet 用起来不对、报错或崩溃 / Something in Termlet doesn't work, shows an error or crashes
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！提交前请先搜索已有的 issue。使用上的疑问请到[讨论区](https://github.com/termlet/termlet/discussions)；安全漏洞请不要在这里提，按[安全策略](https://github.com/termlet/termlet/security/policy)私下报告。
+        **不要贴出密码、私钥、令牌、TOTP 密钥**；主机地址、用户名可以先遮掉（截图同样）。
+
+        Thanks for the report! Please search existing issues first. Questions go to [Discussions](https://github.com/termlet/termlet/discussions); security vulnerabilities must not be reported here, see the [security policy](https://github.com/termlet/termlet/security/policy).
+        **Never include passwords, private keys, tokens or TOTP secrets**; you may also hide host addresses and user names (in screenshots too).
+  - type: textarea
+    id: version
+    attributes:
+      label: 版本信息 / Version info
+      description: |
+        在设置的"关于"页点"复制版本信息"，粘贴到这里（包含 Termlet 的版本、是否便携版与系统）。Termlet 打不开时，写下版本号（或运行 `termlet version`）与系统的版本。
+        In Settings → About, click "Copy version info" and paste it here (it contains the Termlet version, whether it is the portable edition, and the operating system). If Termlet won't start, give the version (or run `termlet version`) and your OS version.
+      placeholder: |
+        Termlet 0.3.0
+        Windows 11 Pro 25H2 10.0.26200.6899 (windows, x86_64)
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: 系统补充（可选）/ More about the system (optional)
+      description: "Linux 写桌面环境以及用的是 X11 还是 Wayland；与显示有关的问题写显示器的缩放比例 / On Linux, give the desktop environment and whether you use X11 or Wayland; for display problems, give the display scaling"
+      placeholder: "GNOME 46, Wayland / 150%"
+  - type: dropdown
+    id: connection
+    attributes:
+      label: 连接类型 / Connection type
+      description: 可多选 / Select all that apply
+      multiple: true
+      options:
+        - SSH
+        - SSH（经跳板机或代理 / through a jump host or proxy）
+        - 快速连接 / Quick connect
+        - 被堡垒机调起 / Opened by a bastion host
+        - Telnet
+        - 串口 / Serial port
+        - 本地终端 / Local terminal
+        - WSL
+        - 命令行工具 termlet / termlet command-line tool
+        - 与连接无关 / Not related to a connection
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 功能 / Area
+      options:
+        - 连接与认证 / Connection and authentication
+        - 终端 / Terminal
+        - SFTP 与文件传输 / SFTP and file transfer
+        - 端口转发 / Port forwarding
+        - 密钥库 / Keys
+        - 主机工具 / Host tools
+        - 命令行工具与 AI / Command-line tool and AI
+        - 导入、导出与备份 / Import, export and backup
+        - 同步 / Sync
+        - 界面与设置 / Interface and settings
+        - 安装与更新 / Installation and updates
+        - 其他 / Other
+    validations:
+      required: true
+  - type: input
+    id: server
+    attributes:
+      label: 服务器（可选）/ Server (optional)
+      description: 服务器的系统与 SSH 服务端版本，网络设备写型号；不要写地址 / The server's OS and SSH server version, or the device model; no addresses
+      placeholder: "Ubuntu 24.04, OpenSSH 9.6p1"
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的结果 / Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际的结果 / Actual behavior
+      description: 错误提示的原文、截图（可以直接粘贴）/ The exact error message and screenshots (you can paste them)
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息 / Diagnostics
+      description: |
+        设置的"关于"→"诊断与崩溃报告"中点"复制诊断信息"，粘贴到这里；其中不含主机地址、凭据与命令内容，粘贴前也请看一眼。程序崩溃过的话，在同一处的"崩溃记录…"中复制相关的记录一并贴上。
+        In Settings → About → Diagnostics and crash reports, click "Copy diagnostics" and paste it here; it contains no host addresses, credentials or commands, but please look it over first. If Termlet crashed, also copy the relevant entry from "Crash records…" in the same place.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: 详细日志（可选）/ Detailed logs (optional)
+      description: |
+        问题不好说清时：在设置的"关于"中把"日志的详细程度"改为"详细"，保存后复现一次，再"复制诊断信息"（含日志末尾）贴在这里；排查完改回"普通"。直接从日志文件（"打开日志目录"）复制时，里面可能有主机地址与用户名，可以先替换掉。
+        If the problem is hard to pin down: in Settings → About, set "Log detail" to "Detailed", save, reproduce the problem, then paste "Copy diagnostics" (which includes the end of the log) here; switch back to "Normal" afterwards. Log files copied straight from "Open log folder" may contain host addresses and user names, so replace them first.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认 / Checklist
+      options:
+        - label: 我搜索过已有的 issue，没有重复 / I searched the existing issues and this is not a duplicate
+          required: true
+        - label: 我没有贴出密码、私钥、令牌、TOTP 密钥等秘密（截图也检查过）/ I have not included passwords, private keys, tokens, TOTP secrets or other secrets (screenshots checked too)
+          required: true

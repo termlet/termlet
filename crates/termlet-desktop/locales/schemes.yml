@@ -1,0 +1,817 @@
+_version: 2
+schemes.nav:
+  zh-CN: 终端配色
+  en: Color Schemes
+  zh-TW: 終端機配色
+  ja: ターミナルの配色
+  ko: 터미널 색 구성표
+schemes.terminal_field:
+  zh-CN: 配色
+  en: Color scheme
+  zh-TW: 配色
+  ja: 配色
+  ko: 색 구성표
+schemes.terminal_field_hint:
+  zh-CN: 在“终端配色”中设置浅色、深色界面各用哪套配色。
+  en: Choose the schemes for light and dark mode in Color Schemes.
+  zh-TW: 在「終端機配色」中設定淺色、深色介面各用哪套配色。
+  ja: ライトモードとダークモードでそれぞれ使う配色は「ターミナルの配色」で設定します。
+  ko: 라이트 모드와 다크 모드에서 각각 사용할 색 구성표는 '터미널 색 구성표'에서 설정합니다.
+schemes.slot_light:
+  zh-CN: 界面为浅色时
+  en: In light mode
+  zh-TW: 介面為淺色時
+  ja: ライトモードのとき
+  ko: 라이트 모드일 때
+schemes.slot_dark:
+  zh-CN: 界面为深色时
+  en: In dark mode
+  zh-TW: 介面為深色時
+  ja: ダークモードのとき
+  ko: 다크 모드일 때
+schemes.slots_hint:
+  zh-CN: 界面在浅色、深色之间切换时，终端跟着换成对应的配色。主机、分组可以另外指定固定的配色。
+  en: When the interface switches between light and dark, terminals switch to the matching scheme. Hosts and groups can set a fixed scheme of their own.
+  zh-TW: 介面在淺色、深色之間切換時，終端機隨之換成對應的配色。主機、群組可以另外指定固定的配色。
+  ja: 画面がライトとダークで切り替わると、ターミナルも対応する配色に切り替わります。ホストやグループには固定の配色を別に指定できます。
+  ko: 화면이 라이트와 다크 사이에서 전환되면 터미널도 해당 색 구성표로 바뀝니다. 호스트와 그룹에는 고정 색 구성표를 따로 지정할 수 있습니다.
+schemes.unknown:
+  zh-CN: 不认识的配色（%{id}），使用默认配色
+  en: Unknown scheme (%{id}), using the default
+  zh-TW: 無法辨識的配色（%{id}），使用預設配色
+  ja: 不明な配色（%{id}）のため、デフォルトの配色を使用します
+  ko: 알 수 없는 색 구성표(%{id})이므로 기본 색 구성표를 사용합니다
+schemes.min_contrast:
+  zh-CN: 保证文字可读
+  en: Keep text readable
+  zh-TW: 確保文字可讀
+  ja: 文字を読みやすく保つ
+  ko: 텍스트 가독성 유지
+schemes.min_contrast_hint:
+  zh-CN: 自动调亮或调暗与背景对比度不足的文字（至少 4.5:1）。导入的配色有看不清的颜色时打开。
+  en: Automatically lightens or darkens text that has too little contrast with the background (at least 4.5:1). Turn it on when an imported scheme has hard-to-read colors.
+  zh-TW: 自動調亮或調暗與背景對比度不足的文字（至少 4.5:1）。匯入的配色有看不清楚的顏色時開啟。
+  ja: 背景とのコントラストが足りない文字を自動的に明るく、または暗くします（4.5:1 以上）。インポートした配色に見えにくい色があるときにオンにします。
+  ko: 배경과의 대비가 부족한 텍스트를 자동으로 밝게 또는 어둡게 조정합니다(최소 4.5:1). 가져온 색 구성표에 잘 보이지 않는 색이 있을 때 켜세요.
+schemes.search:
+  zh-CN: 搜索配色
+  en: Search schemes
+  zh-TW: 搜尋配色
+  ja: 配色を検索
+  ko: 색 구성표 검색
+schemes.filter.all:
+  zh-CN: 全部
+  en: All
+  zh-TW: 全部
+  ja: すべて
+  ko: 전체
+schemes.filter.light:
+  zh-CN: 浅色
+  en: Light
+  zh-TW: 淺色
+  ja: ライト
+  ko: 라이트
+schemes.filter.dark:
+  zh-CN: 深色
+  en: Dark
+  zh-TW: 深色
+  ja: ダーク
+  ko: 다크
+schemes.import:
+  zh-CN: 导入…
+  en: Import…
+  zh-TW: 匯入…
+  ja: インポート…
+  ko: 가져오기…
+schemes.export:
+  zh-CN: 导出…
+  en: Export…
+  zh-TW: 匯出…
+  ja: エクスポート…
+  ko: 내보내기…
+schemes.full:
+  zh-CN: 自定义配色最多 %{count} 套
+  en: You can have up to %{count} custom schemes
+  zh-TW: 自訂配色最多 %{count} 套
+  ja: カスタム配色は %{count} 個までです
+  ko: 사용자 지정 색 구성표는 최대 %{count}개까지입니다
+schemes.no_match:
+  zh-CN: 没有匹配的配色
+  en: No matching schemes
+  zh-TW: 沒有符合的配色
+  ja: 一致する配色はありません
+  ko: 일치하는 색 구성표가 없습니다
+schemes.mode.light:
+  zh-CN: 浅色
+  en: Light
+  zh-TW: 淺色
+  ja: ライト
+  ko: 라이트
+schemes.mode.dark:
+  zh-CN: 深色
+  en: Dark
+  zh-TW: 深色
+  ja: ダーク
+  ko: 다크
+schemes.kind.builtin:
+  zh-CN: 内置
+  en: Built-in
+  zh-TW: 內建
+  ja: 組み込み
+  ko: 기본 제공
+schemes.kind.custom:
+  zh-CN: 自定义
+  en: Custom
+  zh-TW: 自訂
+  ja: カスタム
+  ko: 사용자 지정
+schemes.detail:
+  zh-CN: "%{mode} · %{kind}"
+  en: "%{mode} · %{kind}"
+  zh-TW: "%{mode} · %{kind}"
+  ja: "%{mode} · %{kind}"
+  ko: "%{mode} · %{kind}"
+schemes.source.custom:
+  zh-CN: 自定义配色
+  en: Custom scheme
+  zh-TW: 自訂配色
+  ja: カスタム配色
+  ko: 사용자 지정 색 구성표
+schemes.source.termlet:
+  zh-CN: Termlet 内置
+  en: Built into Termlet
+  zh-TW: Termlet 內建
+  ja: Termlet に組み込み
+  ko: Termlet 기본 제공
+schemes.source.project:
+  zh-CN: 来源：%{project} · %{license}
+  en: "Source: %{project} · %{license}"
+  zh-TW: 來源：%{project} · %{license}
+  ja: 出典：%{project} · %{license}
+  ko: "출처: %{project} · %{license}"
+schemes.used_light:
+  zh-CN: 浅色界面
+  en: Light mode
+  zh-TW: 淺色介面
+  ja: ライトモード
+  ko: 라이트 모드
+schemes.used_dark:
+  zh-CN: 深色界面
+  en: Dark mode
+  zh-TW: 深色介面
+  ja: ダークモード
+  ko: 다크 모드
+schemes.use_current:
+  zh-CN: 单击用于当前的界面（浅色或深色）
+  en: Click to use in the current mode (light or dark)
+  zh-TW: 按一下以用於目前的介面（淺色或深色）
+  ja: クリックすると現在のモード（ライトまたはダーク）で使用します
+  ko: 클릭하면 현재 모드(라이트 또는 다크)에서 사용합니다
+schemes.actions:
+  zh-CN: 更多操作
+  en: More actions
+  zh-TW: 更多動作
+  ja: その他の操作
+  ko: 기타 작업
+schemes.use_light:
+  zh-CN: 用于浅色界面
+  en: Use in light mode
+  zh-TW: 用於淺色介面
+  ja: ライトモードで使用
+  ko: 라이트 모드에서 사용
+schemes.use_dark:
+  zh-CN: 用于深色界面
+  en: Use in dark mode
+  zh-TW: 用於深色介面
+  ja: ダークモードで使用
+  ko: 다크 모드에서 사용
+schemes.copy:
+  zh-CN: 复制为自定义…
+  en: Copy as custom…
+  zh-TW: 複製為自訂…
+  ja: カスタムとして複製…
+  ko: 사용자 지정으로 복제…
+schemes.edit:
+  zh-CN: 编辑…
+  en: Edit…
+  zh-TW: 編輯…
+  ja: 編集…
+  ko: 편집…
+schemes.export_one:
+  zh-CN: 导出…
+  en: Export…
+  zh-TW: 匯出…
+  ja: エクスポート…
+  ko: 내보내기…
+schemes.delete_title:
+  zh-CN: 删除配色“%{name}”？
+  en: Delete the color scheme “%{name}”?
+  zh-TW: 刪除配色「%{name}」？
+  ja: 配色「%{name}」を削除しますか？
+  ko: "'%{name}' 색 구성표를 삭제하시겠습니까?"
+schemes.delete_in_use:
+  zh-CN: 有 %{hosts} 台主机、%{groups} 个分组使用这套配色，保存设置后它们改回跟随全局设置。
+  en: "%{hosts} host(s) and %{groups} group(s) use this scheme. After you save the settings, they follow the global setting again."
+  zh-TW: 有 %{hosts} 台主機、%{groups} 個群組使用這套配色，儲存設定後它們會改回跟隨全域設定。
+  ja: "%{hosts} 台のホストと %{groups} 個のグループがこの配色を使用しています。設定を保存すると、これらは全体の設定に従うように戻ります。"
+  ko: 호스트 %{hosts}대와 그룹 %{groups}개가 이 색 구성표를 사용하고 있습니다. 설정을 저장하면 이들은 다시 전역 설정을 따릅니다.
+schemes.delete_unsaved:
+  zh-CN: 保存设置后才会真正删除。
+  en: It's deleted when you save the settings.
+  zh-TW: 儲存設定後才會真正刪除。
+  ja: 設定を保存したときに削除されます。
+  ko: 설정을 저장해야 실제로 삭제됩니다.
+schemes.imported:
+  zh-CN: 已导入 %{count} 套配色，保存设置后生效
+  en: "Schemes imported: %{count}. They take effect when you save the settings."
+  zh-TW: 已匯入 %{count} 套配色，儲存設定後生效
+  ja: "%{count} 個の配色をインポートしました。設定を保存すると適用されます"
+  ko: 색 구성표 %{count}개를 가져왔습니다. 설정을 저장하면 적용됩니다
+schemes.unreadable_builtin:
+  zh-CN: "%{colors}在背景上看不清。可以打开“保证文字可读”，或复制为自定义配色后调整。"
+  en: "Hard to read on the background: %{colors}. Turn on “Keep text readable”, or copy the scheme as a custom one and adjust its colors."
+  zh-TW: "%{colors}在背景上看不清楚。可以開啟「確保文字可讀」，或複製為自訂配色後調整。"
+  ja: "%{colors}は背景上で見えにくくなっています。「文字を読みやすく保つ」をオンにするか、カスタム配色として複製して調整してください。"
+  ko: "%{colors} 색이 배경에서 잘 보이지 않습니다. '텍스트 가독성 유지'를 켜거나, 사용자 지정 색 구성표로 복제한 후 조정하세요."
+schemes.unreadable_custom:
+  zh-CN: "%{colors}在背景上看不清。可以打开“保证文字可读”，或编辑这套配色调整颜色。"
+  en: "Hard to read on the background: %{colors}. Turn on “Keep text readable”, or edit the scheme to adjust its colors."
+  zh-TW: "%{colors}在背景上看不清楚。可以開啟「確保文字可讀」，或編輯這套配色調整顏色。"
+  ja: "%{colors}は背景上で見えにくくなっています。「文字を読みやすく保つ」をオンにするか、この配色を編集して色を調整してください。"
+  ko: "%{colors} 색이 배경에서 잘 보이지 않습니다. '텍스트 가독성 유지'를 켜거나, 이 색 구성표를 편집해 색을 조정하세요."
+schemes.swatch:
+  zh-CN: "%{name} %{color}"
+  en: "%{name} %{color}"
+  zh-TW: "%{name} %{color}"
+  ja: "%{name} %{color}"
+  ko: "%{name} %{color}"
+schemes.swatch_unreadable:
+  zh-CN: "%{name} %{color} · 看不清"
+  en: "%{name} %{color} · hard to read"
+  zh-TW: "%{name} %{color} · 看不清楚"
+  ja: "%{name} %{color} · 見えにくい"
+  ko: "%{name} %{color} · 잘 보이지 않음"
+schemes.list_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
+schemes.color.foreground:
+  zh-CN: 前景
+  en: Foreground
+  zh-TW: 前景
+  ja: 前景
+  ko: 전경
+schemes.color.black:
+  zh-CN: 黑
+  en: Black
+  zh-TW: 黑
+  ja: 黒
+  ko: 검정
+schemes.color.red:
+  zh-CN: 红
+  en: Red
+  zh-TW: 紅
+  ja: 赤
+  ko: 빨강
+schemes.color.green:
+  zh-CN: 绿
+  en: Green
+  zh-TW: 綠
+  ja: 緑
+  ko: 초록
+schemes.color.yellow:
+  zh-CN: 黄
+  en: Yellow
+  zh-TW: 黃
+  ja: 黄
+  ko: 노랑
+schemes.color.blue:
+  zh-CN: 蓝
+  en: Blue
+  zh-TW: 藍
+  ja: 青
+  ko: 파랑
+schemes.color.magenta:
+  zh-CN: 品红
+  en: Magenta
+  zh-TW: 洋紅
+  ja: マゼンタ
+  ko: 마젠타
+schemes.color.cyan:
+  zh-CN: 青
+  en: Cyan
+  zh-TW: 青
+  ja: シアン
+  ko: 시안
+schemes.color.white:
+  zh-CN: 白
+  en: White
+  zh-TW: 白
+  ja: 白
+  ko: 흰색
+schemes.color.bright_black:
+  zh-CN: 亮黑
+  en: Bright black
+  zh-TW: 亮黑
+  ja: 明るい黒
+  ko: 밝은 검정
+schemes.color.bright_red:
+  zh-CN: 亮红
+  en: Bright red
+  zh-TW: 亮紅
+  ja: 明るい赤
+  ko: 밝은 빨강
+schemes.color.bright_green:
+  zh-CN: 亮绿
+  en: Bright green
+  zh-TW: 亮綠
+  ja: 明るい緑
+  ko: 밝은 초록
+schemes.color.bright_yellow:
+  zh-CN: 亮黄
+  en: Bright yellow
+  zh-TW: 亮黃
+  ja: 明るい黄
+  ko: 밝은 노랑
+schemes.color.bright_blue:
+  zh-CN: 亮蓝
+  en: Bright blue
+  zh-TW: 亮藍
+  ja: 明るい青
+  ko: 밝은 파랑
+schemes.color.bright_magenta:
+  zh-CN: 亮品红
+  en: Bright magenta
+  zh-TW: 亮洋紅
+  ja: 明るいマゼンタ
+  ko: 밝은 마젠타
+schemes.color.bright_cyan:
+  zh-CN: 亮青
+  en: Bright cyan
+  zh-TW: 亮青
+  ja: 明るいシアン
+  ko: 밝은 시안
+schemes.color.bright_white:
+  zh-CN: 亮白
+  en: Bright white
+  zh-TW: 亮白
+  ja: 明るい白
+  ko: 밝은 흰색
+schemes.field.foreground:
+  zh-CN: 前景
+  en: Foreground
+  zh-TW: 前景
+  ja: 前景
+  ko: 전경
+schemes.field.background:
+  zh-CN: 背景
+  en: Background
+  zh-TW: 背景
+  ja: 背景
+  ko: 배경
+schemes.field.cursor:
+  zh-CN: 光标
+  en: Cursor
+  zh-TW: 游標
+  ja: カーソル
+  ko: 커서
+schemes.field.cursor_accent:
+  zh-CN: 光标处的文字
+  en: Text under cursor
+  zh-TW: 游標處的文字
+  ja: カーソル位置の文字
+  ko: 커서 아래 텍스트
+schemes.field.selection_background:
+  zh-CN: 选区背景
+  en: Selection background
+  zh-TW: 選取範圍背景
+  ja: 選択範囲の背景
+  ko: 선택 영역 배경
+schemes.field.selection_foreground:
+  zh-CN: 选区文字
+  en: Selection text
+  zh-TW: 選取範圍文字
+  ja: 選択範囲の文字
+  ko: 선택 영역 텍스트
+schemes.editor.auto:
+  zh-CN: 自动
+  en: Auto
+  zh-TW: 自動
+  ja: 自動
+  ko: 자동
+schemes.editor.copy_title:
+  zh-CN: 复制为自定义配色
+  en: Copy as custom scheme
+  zh-TW: 複製為自訂配色
+  ja: カスタム配色として複製
+  ko: 사용자 지정 색 구성표로 복제
+schemes.editor.edit_title:
+  zh-CN: 编辑配色
+  en: Edit color scheme
+  zh-TW: 編輯配色
+  ja: 配色を編集
+  ko: 색 구성표 편집
+schemes.editor.hint:
+  zh-CN: "每种颜色可以用色块选择，或填写 #rrggbb。右侧的示例实时显示效果，并标出看不清的颜色。"
+  en: "Pick each color from its swatch or enter #rrggbb. The sample on the right updates as you edit and marks hard-to-read colors."
+  zh-TW: "每種顏色可以用色塊選擇，或填寫 #rrggbb。右側的範例即時顯示效果，並標出看不清楚的顏色。"
+  ja: 各色は色見本から選ぶか、#rrggbb で入力します。右側の例に結果がすぐに表示され、見えにくい色には印が付きます。
+  ko: "각 색은 색 견본에서 고르거나 #rrggbb로 입력합니다. 오른쪽 예시에 결과가 바로 표시되고, 잘 보이지 않는 색이 표시됩니다."
+schemes.editor.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+schemes.editor.name_taken:
+  zh-CN: 已有同名的配色，将保存为“%{name}”
+  en: A scheme with this name already exists. It will be saved as “%{name}”.
+  zh-TW: 已有同名的配色，將儲存為「%{name}」
+  ja: 同じ名前の配色がすでにあるため、「%{name}」として保存します
+  ko: 같은 이름의 색 구성표가 이미 있으므로 '%{name}'(으)로 저장합니다
+schemes.editor.name_required:
+  zh-CN: 请填写名称。
+  en: Enter a name.
+  zh-TW: 請填寫名稱。
+  ja: 名前を入力してください。
+  ko: 이름을 입력하세요.
+schemes.editor.invalid_colors:
+  zh-CN: "标红的颜色写法不对，可以写成 #rrggbb。"
+  en: "The colors marked in red aren't valid. Use #rrggbb."
+  zh-TW: "標為紅色的顏色寫法不正確，可以寫成 #rrggbb。"
+  ja: 赤で示した色の書き方が正しくありません。#rrggbb の形式で入力してください。
+  ko: "빨간색으로 표시된 색의 형식이 올바르지 않습니다. #rrggbb 형식으로 입력하세요."
+schemes.editor.unreadable:
+  zh-CN: "%{colors}在背景上看不清。可以调整这些颜色，或在设置中打开“保证文字可读”。"
+  en: "Hard to read on the background: %{colors}. Adjust these colors, or turn on “Keep text readable” in the settings."
+  zh-TW: "%{colors}在背景上看不清楚。可以調整這些顏色，或在設定中開啟「確保文字可讀」。"
+  ja: "%{colors}は背景上で見えにくくなっています。これらの色を調整するか、設定で「文字を読みやすく保つ」をオンにしてください。"
+  ko: "%{colors} 색이 배경에서 잘 보이지 않습니다. 이 색들을 조정하거나 설정에서 '텍스트 가독성 유지'를 켜세요."
+schemes.editor.preview:
+  zh-CN: 预览
+  en: Preview
+  zh-TW: 預覽
+  ja: プレビュー
+  ko: 미리 보기
+schemes.editor.done:
+  zh-CN: 确定
+  en: Done
+  zh-TW: 確定
+  ja: OK
+  ko: 확인
+schemes.import.title:
+  zh-CN: 导入终端配色
+  en: Import color schemes
+  zh-TW: 匯入終端機配色
+  ja: ターミナルの配色をインポート
+  ko: 터미널 색 구성표 가져오기
+schemes.import.hint:
+  zh-CN: 自动识别 Windows Terminal、iTerm2、Xshell、MobaXterm、base16 等格式。与已有配色同名的改名为“名称 (1)”。
+  en: Windows Terminal, iTerm2, Xshell, MobaXterm, base16 and other formats are detected automatically. Schemes whose names are taken are renamed to “Name (1)”.
+  zh-TW: 自動辨識 Windows Terminal、iTerm2、Xshell、MobaXterm、base16 等格式。與現有配色同名的會改名為「名稱 (1)」。
+  ja: Windows Terminal、iTerm2、Xshell、MobaXterm、base16 などの形式を自動的に認識します。既存の配色と同じ名前のものは「名前 (1)」に変更されます。
+  ko: Windows Terminal, iTerm2, Xshell, MobaXterm, base16 등의 형식을 자동으로 인식합니다. 기존 색 구성표와 이름이 같으면 '이름 (1)'로 바뀝니다.
+schemes.import.from_file:
+  zh-CN: 文件
+  en: File
+  zh-TW: 檔案
+  ja: ファイル
+  ko: 파일
+schemes.import.from_paste:
+  zh-CN: 粘贴文本
+  en: Paste text
+  zh-TW: 貼上文字
+  ja: テキストを貼り付け
+  ko: 텍스트 붙여넣기
+schemes.import.from_installed:
+  zh-CN: 本机已装的客户端
+  en: Installed clients
+  zh-TW: 本機已安裝的用戶端
+  ja: インストール済みのクライアント
+  ko: 설치된 클라이언트
+schemes.import.drop:
+  zh-CN: 把配色文件拖到这里，或单击选择文件（可以多选）
+  en: Drop color scheme files here, or click to choose files (you can select several)
+  zh-TW: 將配色檔案拖曳到這裡，或按一下選擇檔案（可以多選）
+  ja: 配色ファイルをここにドラッグするか、クリックしてファイルを選択します（複数選択できます）
+  ko: 색 구성표 파일을 여기로 드래그하거나 클릭해서 파일을 선택하세요(여러 개 선택 가능)
+schemes.import.formats:
+  zh-CN: .json、.itermcolors、.xcs、.mxtcolors、MobaXterm.ini、base16 YAML、Alacritty、Kitty、Ghostty、Xresources 等
+  en: .json, .itermcolors, .xcs, .mxtcolors, MobaXterm.ini, base16 YAML, Alacritty, Kitty, Ghostty, Xresources and more
+  zh-TW: .json、.itermcolors、.xcs、.mxtcolors、MobaXterm.ini、base16 YAML、Alacritty、Kitty、Ghostty、Xresources 等
+  ja: .json、.itermcolors、.xcs、.mxtcolors、MobaXterm.ini、base16 YAML、Alacritty、Kitty、Ghostty、Xresources など
+  ko: .json, .itermcolors, .xcs, .mxtcolors, MobaXterm.ini, base16 YAML, Alacritty, Kitty, Ghostty, Xresources 등
+schemes.import.paste_placeholder:
+  zh-CN: 粘贴配色的内容，例如 Windows Terminal settings.json 中 schemes 的一项
+  en: Paste a color scheme, such as an entry of “schemes” in Windows Terminal's settings.json
+  zh-TW: 貼上配色的內容，例如 Windows Terminal settings.json 中 schemes 的一項
+  ja: 配色の内容を貼り付けます（例：Windows Terminal の settings.json にある schemes の 1 項目）
+  ko: "색 구성표 내용을 붙여넣으세요(예: Windows Terminal settings.json의 schemes 항목 하나)"
+schemes.import.parse:
+  zh-CN: 识别
+  en: Detect
+  zh-TW: 辨識
+  ja: 認識
+  ko: 인식
+schemes.import.read_installed:
+  zh-CN: 读取本机的配色
+  en: Read schemes on this computer
+  zh-TW: 讀取本機的配色
+  ja: このコンピューターの配色を読み込む
+  ko: 이 컴퓨터의 색 구성표 읽기
+schemes.import.installed_hint:
+  zh-CN: 从本机已安装的 Windows Terminal、Xshell、MobaXterm、Tabby 中读取配色。
+  en: Reads color schemes from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer.
+  zh-TW: 從本機已安裝的 Windows Terminal、Xshell、MobaXterm、Tabby 中讀取配色。
+  ja: このコンピューターにインストールされている Windows Terminal、Xshell、MobaXterm、Tabby から配色を読み込みます。
+  ko: 이 컴퓨터에 설치된 Windows Terminal, Xshell, MobaXterm, Tabby에서 색 구성표를 읽어 옵니다.
+schemes.import.reading:
+  zh-CN: 正在读取…
+  en: Reading…
+  zh-TW: 正在讀取…
+  ja: 読み込んでいます…
+  ko: 읽는 중…
+schemes.import.pasted:
+  zh-CN: 粘贴的文本
+  en: Pasted text
+  zh-TW: 貼上的文字
+  ja: 貼り付けたテキスト
+  ko: 붙여넣은 텍스트
+schemes.import.detected:
+  zh-CN: "%{origin}：识别为 %{format}"
+  en: "%{origin}: detected as %{format}"
+  zh-TW: "%{origin}：辨識為 %{format}"
+  ja: "%{origin}：%{format} として認識"
+  ko: "%{origin}: %{format}(으)로 인식됨"
+schemes.import.unknown_format:
+  zh-CN: "%{origin}：无法识别的格式"
+  en: "%{origin}: unrecognized format"
+  zh-TW: "%{origin}：無法辨識的格式"
+  ja: "%{origin}：認識できない形式です"
+  ko: "%{origin}: 인식할 수 없는 형식입니다"
+schemes.import.selected:
+  zh-CN: 已选 %{count} / %{total} 套
+  en: "%{count} of %{total} selected"
+  zh-TW: 已選 %{count} / %{total} 套
+  ja: "%{count} / %{total} 個を選択"
+  ko: "%{total}개 중 %{count}개 선택됨"
+schemes.import.select_all:
+  zh-CN: 全选
+  en: All
+  zh-TW: 全選
+  ja: すべて選択
+  ko: 모두 선택
+schemes.import.select_none:
+  zh-CN: 全不选
+  en: None
+  zh-TW: 全不選
+  ja: 選択解除
+  ko: 모두 해제
+schemes.import.select_new:
+  zh-CN: 只选不重名的
+  en: Only new names
+  zh-TW: 只選名稱不重複的
+  ja: 新しい名前のみ
+  ko: 새 이름만
+schemes.import.select_invert:
+  zh-CN: 反选
+  en: Invert
+  zh-TW: 反向選取
+  ja: 選択を反転
+  ko: 선택 반전
+schemes.import.none:
+  zh-CN: 没有解析出配色
+  en: No color schemes found
+  zh-TW: 沒有剖析出任何配色
+  ja: 配色が見つかりませんでした
+  ko: 색 구성표를 찾지 못했습니다
+schemes.import.none_installed:
+  zh-CN: 没有在 Windows Terminal、Xshell、MobaXterm、Tabby 中找到配色
+  en: No color schemes found in Windows Terminal, Xshell, MobaXterm or Tabby
+  zh-TW: 沒有在 Windows Terminal、Xshell、MobaXterm、Tabby 中找到配色
+  ja: Windows Terminal、Xshell、MobaXterm、Tabby に配色が見つかりませんでした
+  ko: Windows Terminal, Xshell, MobaXterm, Tabby에서 색 구성표를 찾지 못했습니다
+schemes.import.rename:
+  zh-CN: 将改名为“%{name}”
+  en: Will be renamed to “%{name}”
+  zh-TW: 將改名為「%{name}」
+  ja: 「%{name}」に名前を変更します
+  ko: "'%{name}'(으)로 이름이 바뀝니다"
+schemes.import.over:
+  zh-CN: 最多还能导入 %{count} 套（自定义配色最多 %{max} 套）
+  en: You can import %{count} more (up to %{max} custom schemes)
+  zh-TW: 最多還能匯入 %{count} 套（自訂配色最多 %{max} 套）
+  ja: あと %{count} 個までインポートできます（カスタム配色は %{max} 個まで）
+  ko: 앞으로 %{count}개까지 가져올 수 있습니다(사용자 지정 색 구성표는 최대 %{max}개)
+schemes.import.apply:
+  zh-CN: 导入 %{count} 套
+  en: Import %{count}
+  zh-TW: 匯入 %{count} 套
+  ja: "%{count} 個をインポート"
+  ko: "%{count}개 가져오기"
+schemes.import.invalid:
+  zh-CN: 勾选的配色中有不合法的颜色
+  en: The selected schemes contain invalid colors
+  zh-TW: 勾選的配色中有無效的顏色
+  ja: チェックした配色に無効な色が含まれています
+  ko: 선택한 색 구성표에 올바르지 않은 색이 있습니다
+schemes.import.file_too_large:
+  zh-CN: "%{name}：文件太大，没有读取"
+  en: "%{name}: the file is too large and wasn't read"
+  zh-TW: "%{name}：檔案太大，沒有讀取"
+  ja: "%{name}：ファイルが大きすぎるため読み込みませんでした"
+  ko: "%{name}: 파일이 너무 커서 읽지 않았습니다"
+schemes.import.read_failed:
+  zh-CN: "%{name}：读取失败（%{error}）"
+  en: "%{name}: couldn't read the file (%{error})"
+  zh-TW: "%{name}：讀取失敗（%{error}）"
+  ja: "%{name}：読み込めませんでした（%{error}）"
+  ko: "%{name}: 읽지 못했습니다(%{error})"
+schemes.format.windows_terminal:
+  zh-CN: Windows Terminal JSON
+  en: Windows Terminal JSON
+  zh-TW: Windows Terminal JSON
+  ja: Windows Terminal JSON
+  ko: Windows Terminal JSON
+schemes.format.iterm2:
+  zh-CN: iTerm2（.itermcolors）
+  en: iTerm2 (.itermcolors)
+  zh-TW: iTerm2（.itermcolors）
+  ja: iTerm2（.itermcolors）
+  ko: iTerm2(.itermcolors)
+schemes.format.xshell:
+  zh-CN: Xshell（.xcs）
+  en: Xshell (.xcs)
+  zh-TW: Xshell（.xcs）
+  ja: Xshell（.xcs）
+  ko: Xshell(.xcs)
+schemes.warning.too_large:
+  zh-CN: 文本超过 %{size} MB，没有解析
+  en: The text is larger than %{size} MB and wasn't parsed
+  zh-TW: 文字超過 %{size} MB，沒有剖析
+  ja: テキストが %{size} MB を超えているため、解析しませんでした
+  ko: 텍스트가 %{size} MB를 넘어 분석하지 않았습니다
+schemes.warning.too_many:
+  zh-CN: 配色超过 %{max} 套，只读取了前 %{max} 套
+  en: There are more than %{max} schemes. Only the first %{max} were read.
+  zh-TW: 配色超過 %{max} 套，只讀取了前 %{max} 套
+  ja: 配色が %{max} 個を超えているため、最初の %{max} 個だけを読み込みました
+  ko: 색 구성표가 %{max}개를 넘어 처음 %{max}개만 읽었습니다
+schemes.warning.no_schemes:
+  zh-CN: 认出了格式，但其中没有配色
+  en: The format was recognized, but it contains no schemes
+  zh-TW: 已辨識出格式，但其中沒有配色
+  ja: 形式は認識できましたが、配色が含まれていません
+  ko: 형식은 인식했지만 색 구성표가 없습니다
+schemes.warning.skipped:
+  zh-CN: 有 %{count} 套颜色太少，没有读取
+  en: "Skipped because they have too few colors: %{count}"
+  zh-TW: 有 %{count} 套顏色太少，沒有讀取
+  ja: 色が少なすぎる配色 %{count} 個を読み込みませんでした
+  ko: 색이 너무 적은 색 구성표 %{count}개를 읽지 않았습니다
+schemes.warning.binary_plist:
+  zh-CN: 这是二进制格式的 plist，请改用文件导入，或先转换为 XML 格式
+  en: This is a binary plist. Import the file instead, or convert it to XML first.
+  zh-TW: 這是二進位格式的 plist，請改用檔案匯入，或先轉換為 XML 格式
+  ja: これはバイナリ形式の plist です。ファイルからインポートするか、先に XML 形式に変換してください
+  ko: 바이너리 형식의 plist입니다. 파일로 가져오거나 먼저 XML 형식으로 변환하세요
+schemes.warning.color_space:
+  zh-CN: “%{scheme}”的颜色空间是 %{space}，按 sRGB 近似
+  en: “%{scheme}” uses the %{space} color space. Its colors are approximated as sRGB.
+  zh-TW: 「%{scheme}」的色彩空間是 %{space}，以 sRGB 近似
+  ja: 「%{scheme}」の色空間は %{space} のため、sRGB で近似しました
+  ko: "'%{scheme}'의 색 공간이 %{space}이므로 sRGB로 근사했습니다"
+schemes.warning.invalid_color:
+  zh-CN: “%{scheme}”的%{field}写法认不出（%{value}），按缺失处理
+  en: "“%{scheme}”: %{field} isn't a color (%{value}) and was treated as missing"
+  zh-TW: 「%{scheme}」的%{field}寫法無法辨識（%{value}），視為缺少
+  ja: 「%{scheme}」の%{field}を色として認識できないため（%{value}）、未指定として扱いました
+  ko: "'%{scheme}'의 %{field} 값(%{value})을 색으로 인식할 수 없어 없는 것으로 처리했습니다"
+schemes.warning.missing_ansi:
+  zh-CN: “%{scheme}”缺少 %{count} 种普通色，用对应的亮色或默认色补上
+  en: “%{scheme}” is missing %{count} normal colors. They were filled in from the bright colors or the defaults.
+  zh-TW: 「%{scheme}」缺少 %{count} 種一般色，以對應的亮色或預設色補上
+  ja: 「%{scheme}」には通常色が %{count} 個足りないため、対応する明るい色またはデフォルトの色で補いました
+  ko: "'%{scheme}'에 일반 색 %{count}개가 없어 해당 밝은 색이나 기본 색으로 채웠습니다"
+schemes.warning.missing_bright:
+  zh-CN: “%{scheme}”缺少 %{count} 种亮色，用对应的普通色补上
+  en: “%{scheme}” is missing %{count} bright colors. They were filled in from the normal colors.
+  zh-TW: 「%{scheme}」缺少 %{count} 種亮色，以對應的一般色補上
+  ja: 「%{scheme}」には明るい色が %{count} 個足りないため、対応する通常色で補いました
+  ko: "'%{scheme}'에 밝은 색 %{count}개가 없어 해당 일반 색으로 채웠습니다"
+schemes.warning.missing_foreground:
+  zh-CN: “%{scheme}”缺少前景色，按背景选了一种
+  en: “%{scheme}” has no foreground color. One was picked to suit the background.
+  zh-TW: 「%{scheme}」缺少前景色，依背景選了一種
+  ja: 「%{scheme}」には前景色がないため、背景に合わせて選びました
+  ko: "'%{scheme}'에 전경색이 없어 배경에 맞는 색을 골랐습니다"
+schemes.warning.missing_background:
+  zh-CN: “%{scheme}”缺少背景色，按前景选了一种
+  en: “%{scheme}” has no background color. One was picked to suit the foreground.
+  zh-TW: 「%{scheme}」缺少背景色，依前景選了一種
+  ja: 「%{scheme}」には背景色がないため、前景に合わせて選びました
+  ko: "'%{scheme}'에 배경색이 없어 전경에 맞는 색을 골랐습니다"
+schemes.warning.missing_cursor:
+  zh-CN: “%{scheme}”缺少光标色，用前景色
+  en: “%{scheme}” has no cursor color. The foreground color is used.
+  zh-TW: 「%{scheme}」缺少游標色，使用前景色
+  ja: 「%{scheme}」にはカーソルの色がないため、前景色を使用します
+  ko: "'%{scheme}'에 커서 색이 없어 전경색을 사용합니다"
+schemes.warning.missing_selection:
+  zh-CN: “%{scheme}”缺少选区色，由前景与背景混合
+  en: “%{scheme}” has no selection color. A blend of the foreground and background is used.
+  zh-TW: 「%{scheme}」缺少選取範圍色，由前景與背景混合而成
+  ja: 「%{scheme}」には選択範囲の色がないため、前景と背景を混ぜた色を使用します
+  ko: "'%{scheme}'에 선택 영역 색이 없어 전경과 배경을 섞은 색을 사용합니다"
+schemes.export.title:
+  zh-CN: 导出终端配色
+  en: Export color schemes
+  zh-TW: 匯出終端機配色
+  ja: ターミナルの配色をエクスポート
+  ko: 터미널 색 구성표 내보내기
+schemes.export.hint_windows_terminal:
+  zh-CN: Windows Terminal 的 schemes 数组，可以一次导出多套；VS Code、Tabby 等也能导入。
+  en: A Windows Terminal “schemes” array that can hold several schemes. VS Code, Tabby and others can import it too.
+  zh-TW: Windows Terminal 的 schemes 陣列，可以一次匯出多套；VS Code、Tabby 等也能匯入。
+  ja: Windows Terminal の schemes 配列です。一度に複数の配色をエクスポートでき、VS Code や Tabby などでもインポートできます。
+  ko: Windows Terminal의 schemes 배열로, 여러 색 구성표를 한 번에 내보낼 수 있습니다. VS Code, Tabby 등에서도 가져올 수 있습니다.
+schemes.export.hint_iterm2:
+  zh-CN: iTerm2 的 .itermcolors 文件，每个文件一套配色。
+  en: An iTerm2 .itermcolors file, one scheme per file.
+  zh-TW: iTerm2 的 .itermcolors 檔案，每個檔案一套配色。
+  ja: iTerm2 の .itermcolors ファイルです。1 ファイルに 1 つの配色を保存します。
+  ko: iTerm2의 .itermcolors 파일로, 파일 하나에 색 구성표 하나가 들어갑니다.
+schemes.export.one_only:
+  zh-CN: iTerm2 格式每个文件只能放一套配色，请只勾选一套。
+  en: An iTerm2 file holds one scheme. Select only one.
+  zh-TW: iTerm2 格式每個檔案只能放一套配色，請只勾選一套。
+  ja: iTerm2 形式は 1 ファイルに 1 つの配色しか保存できません。1 つだけチェックしてください。
+  ko: iTerm2 형식은 파일 하나에 색 구성표 하나만 넣을 수 있습니다. 하나만 선택하세요.
+schemes.export.save:
+  zh-CN: 导出 %{count} 套…
+  en: Export %{count}…
+  zh-TW: 匯出 %{count} 套…
+  ja: "%{count} 個をエクスポート…"
+  ko: "%{count}개 내보내기…"
+schemes.export.done:
+  zh-CN: 已导出 %{count} 套配色：%{path}
+  en: "Exported %{count} to %{path}"
+  zh-TW: 已匯出 %{count} 套配色：%{path}
+  ja: "%{count} 個の配色をエクスポートしました：%{path}"
+  ko: "색 구성표 %{count}개를 내보냈습니다: %{path}"
+schemes.export.failed:
+  zh-CN: 导出失败：%{error}
+  en: "Couldn't export: %{error}"
+  zh-TW: 匯出失敗：%{error}
+  ja: エクスポートできませんでした：%{error}
+  ko: "내보내지 못했습니다: %{error}"
+schemes.picker.command:
+  zh-CN: 切换终端配色…
+  en: Change terminal color scheme…
+  zh-TW: 切換終端機配色…
+  ja: ターミナルの配色を変更…
+  ko: 터미널 색 구성표 변경…
+schemes.picker.placeholder:
+  zh-CN: 搜索配色，上下选择时预览，Enter 确定，Esc 还原
+  en: Search schemes. Arrow keys preview, Enter applies, Esc reverts
+  zh-TW: 搜尋配色，上下選擇時預覽，Enter 確定，Esc 還原
+  ja: 配色を検索（上下キーでプレビュー、Enter で確定、Esc で元に戻す）
+  ko: 색 구성표 검색(위/아래 키로 미리 보기, Enter로 적용, Esc로 되돌리기)
+schemes.picker.tab_only:
+  zh-CN: 只用于这个 Tab
+  en: Only this tab
+  zh-TW: 只用於這個分頁
+  ja: このタブのみ
+  ko: 이 탭에만 적용
+schemes.picker.hint:
+  zh-CN: 确定后修改界面当前（浅色或深色）所用的配色
+  en: Applies to the scheme used in the current mode (light or dark)
+  zh-TW: 確定後變更介面目前（淺色或深色）所用的配色
+  ja: 確定すると、現在のモード（ライトまたはダーク）で使う配色を変更します
+  ko: 적용하면 현재 모드(라이트 또는 다크)에서 사용하는 색 구성표가 바뀝니다
+schemes.picker.hint_tab:
+  zh-CN: 确定后只换这个 Tab 的配色，不修改设置
+  en: Applies to this tab only and leaves the settings unchanged
+  zh-TW: 確定後只更換這個分頁的配色，不變更設定
+  ja: 確定すると、このタブの配色だけを変更し、設定は変更しません
+  ko: 적용하면 이 탭의 색 구성표만 바꾸고 설정은 바꾸지 않습니다
+schemes.picker.note_host:
+  zh-CN: 这个终端使用主机设置的配色，修改全局配色不会改变它；可以勾选“只用于这个 Tab”
+  en: This terminal uses its host's scheme, so changing the global scheme won't affect it. Check “Only this tab” instead.
+  zh-TW: 這個終端機使用主機設定的配色，變更全域配色不會改變它；可以勾選「只用於這個分頁」
+  ja: このターミナルはホストで設定した配色を使用しているため、全体の配色を変更しても変わりません。「このタブのみ」をチェックしてください
+  ko: 이 터미널은 호스트에 설정된 색 구성표를 사용하므로 전역 색 구성표를 바꿔도 달라지지 않습니다. '이 탭에만 적용'을 선택하세요
+schemes.picker.note_group:
+  zh-CN: 这个终端使用分组设置的配色，修改全局配色不会改变它；可以勾选“只用于这个 Tab”
+  en: This terminal uses its group's scheme, so changing the global scheme won't affect it. Check “Only this tab” instead.
+  zh-TW: 這個終端機使用群組設定的配色，變更全域配色不會改變它；可以勾選「只用於這個分頁」
+  ja: このターミナルはグループで設定した配色を使用しているため、全体の配色を変更しても変わりません。「このタブのみ」をチェックしてください
+  ko: 이 터미널은 그룹에 설정된 색 구성표를 사용하므로 전역 색 구성표를 바꿔도 달라지지 않습니다. '이 탭에만 적용'을 선택하세요
+schemes.save_failed:
+  zh-CN: 保存终端配色失败：%{error}
+  en: "Couldn't save the color schemes: %{error}"
+  zh-TW: 儲存終端機配色失敗：%{error}
+  ja: ターミナルの配色を保存できませんでした：%{error}
+  ko: "터미널 색 구성표를 저장하지 못했습니다: %{error}"

@@ -1,0 +1,1027 @@
+_version: 2
+terminal.exited_with_code:
+  zh-CN: 进程已退出，退出码 %{code}。
+  en: The process exited with code %{code}.
+  zh-TW: 處理程序已結束，結束代碼 %{code}。
+  ja: プロセスが終了しました（終了コード %{code}）。
+  ko: 프로세스가 종료되었습니다(종료 코드 %{code}).
+terminal.exited:
+  zh-CN: 进程已退出。
+  en: The process exited.
+  zh-TW: 處理程序已結束。
+  ja: プロセスが終了しました。
+  ko: 프로세스가 종료되었습니다.
+terminal.failed:
+  zh-CN: 会话已断开：%{reason}
+  en: "The session ended: %{reason}"
+  zh-TW: 工作階段已中斷：%{reason}
+  ja: セッションが切断されました：%{reason}
+  ko: "세션 연결이 끊겼습니다: %{reason}"
+terminal.press_enter_to_restart:
+  zh-CN: 按 Enter 重新打开。
+  en: Press Enter to reopen.
+  zh-TW: 按 Enter 重新開啟。
+  ja: Enter キーを押すと開き直します。
+  ko: Enter 키를 누르면 다시 엽니다.
+terminal.press_enter_to_reconnect:
+  zh-CN: 按 Enter 重新连接。
+  en: Press Enter to reconnect.
+  zh-TW: 按 Enter 重新連線。
+  ja: Enter キーを押すと再接続します。
+  ko: Enter 키를 누르면 다시 연결합니다.
+terminal.session_ended_with_code:
+  zh-CN: 会话已结束（退出码 %{code}）。
+  en: The session ended (exit code %{code}).
+  zh-TW: 工作階段已結束（結束代碼 %{code}）。
+  ja: セッションが終了しました（終了コード %{code}）。
+  ko: 세션이 종료되었습니다(종료 코드 %{code}).
+terminal.session_ended:
+  zh-CN: 会话已结束。
+  en: The session ended.
+  zh-TW: 工作階段已結束。
+  ja: セッションが終了しました。
+  ko: 세션이 종료되었습니다.
+terminal.lost:
+  zh-CN: 连接已断开。
+  en: The connection was lost.
+  zh-TW: 連線已中斷。
+  ja: 接続が切断されました。
+  ko: 연결이 끊겼습니다.
+terminal.waiting:
+  zh-CN: 连接已断开，正在重连（第 %{attempt} 次）…
+  en: The connection was lost. Reconnecting (attempt %{attempt})…
+  zh-TW: 連線已中斷，正在重新連線（第 %{attempt} 次）…
+  ja: 接続が切断されました。再接続しています（%{attempt} 回目）…
+  ko: 연결이 끊겼습니다. 다시 연결하는 중(%{attempt}번째)…
+terminal.reconnect_now:
+  zh-CN: 立即重连
+  en: Reconnect now
+  zh-TW: 立即重新連線
+  ja: 今すぐ再接続
+  ko: 지금 다시 연결
+terminal.reconnect_failed:
+  zh-CN: 重新连接失败，原来的会话保持不变：%{error}
+  en: "Couldn't reconnect, so the current session was kept: %{error}"
+  zh-TW: 重新連線失敗，原本的工作階段保持不變：%{error}
+  ja: 再接続できなかったため、元のセッションをそのまま残しました：%{error}
+  ko: "다시 연결하지 못해 기존 세션을 그대로 유지했습니다: %{error}"
+terminal.restart_failed:
+  zh-CN: 重新启动失败，原来的会话保持不变：%{error}
+  en: "Couldn't restart, so the current session was kept: %{error}"
+  zh-TW: 重新啟動失敗，原本的工作階段保持不變：%{error}
+  ja: 再起動できなかったため、元のセッションをそのまま残しました：%{error}
+  ko: "다시 시작하지 못해 기존 세션을 그대로 유지했습니다: %{error}"
+terminal.stalled:
+  zh-CN: 连接没有响应，正在等待恢复（会话没有断开，网络恢复后照常）
+  en: The connection isn't responding. Waiting for it to recover (the session is still open and resumes when the network is back)
+  zh-TW: 連線沒有回應，正在等待恢復（工作階段沒有中斷，網路恢復後照常運作）
+  ja: 接続が応答していません。回復を待っています（セッションは切断されておらず、ネットワークが回復すれば通常どおり続行します）
+  ko: 연결이 응답하지 않아 복구를 기다리는 중입니다(세션은 끊기지 않았으며 네트워크가 복구되면 그대로 계속됩니다)
+terminal.notice.disconnected:
+  zh-CN: 连接已断开，正在自动重连…
+  en: The connection was lost. Reconnecting automatically…
+  zh-TW: 連線已中斷，正在自動重新連線…
+  ja: 接続が切断されました。自動的に再接続しています…
+  ko: 연결이 끊겼습니다. 자동으로 다시 연결하는 중…
+terminal.notice.certificate_expiring:
+  zh-CN: 登录用的证书将于 %{time} 过期（还剩约 %{minutes} 分钟），过期后无法重新连接，请及时重新签发。
+  en: The certificate used to log in expires at %{time} (about %{minutes} min left). After that you won't be able to reconnect, so get a new one issued in time.
+  zh-TW: 登入用的憑證將於 %{time} 過期（剩約 %{minutes} 分鐘），過期後無法重新連線，請及時重新簽發。
+  ja: ログインに使用した証明書は %{time} に期限切れになります（残り約 %{minutes} 分）。期限切れ後は再接続できないため、早めに新しい証明書を発行してください。
+  ko: 로그인에 사용한 인증서가 %{time}에 만료됩니다(약 %{minutes}분 남음). 만료 후에는 다시 연결할 수 없으니 미리 인증서를 다시 발급받으세요.
+terminal.notice.jump_certificate_expiring:
+  zh-CN: 跳板机 %{jump} 登录用的证书将于 %{time} 过期（还剩约 %{minutes} 分钟），过期后无法经它重新连接，请及时重新签发。
+  en: The certificate used to log in to the jump host %{jump} expires at %{time} (about %{minutes} min left). After that you won't be able to reconnect through it, so get a new one issued in time.
+  zh-TW: 跳板機 %{jump} 登入用的憑證將於 %{time} 過期（剩約 %{minutes} 分鐘），過期後無法經由它重新連線，請及時重新簽發。
+  ja: 踏み台ホスト %{jump} へのログインに使用した証明書は %{time} に期限切れになります（残り約 %{minutes} 分）。期限切れ後はこの踏み台ホスト経由で再接続できないため、早めに新しい証明書を発行してください。
+  ko: 점프 호스트 %{jump} 로그인에 사용한 인증서가 %{time}에 만료됩니다(약 %{minutes}분 남음). 만료 후에는 이 점프 호스트를 거쳐 다시 연결할 수 없으니 미리 인증서를 다시 발급받으세요.
+terminal.notice.reconnected:
+  zh-CN: 已重新连接（新的 shell 会话）
+  en: Reconnected (new shell session)
+  zh-TW: 已重新連線（新的 shell 工作階段）
+  ja: 再接続しました（新しいシェルセッション）
+  ko: 다시 연결했습니다(새 셸 세션)
+terminal.notice.restarted:
+  zh-CN: 已重新启动（新的 shell 会话）
+  en: Restarted (new shell session)
+  zh-TW: 已重新啟動（新的 shell 工作階段）
+  ja: 再起動しました（新しいシェルセッション）
+  ko: 다시 시작했습니다(새 셸 세션)
+terminal.notice.reconnected_tmux:
+  zh-CN: 已重新连接，回到原来的 tmux 会话
+  en: Reconnected to the same tmux session
+  zh-TW: 已重新連線，回到原本的 tmux 工作階段
+  ja: 再接続し、元の tmux セッションに戻りました
+  ko: 다시 연결해 기존 tmux 세션으로 돌아왔습니다
+terminal.notice.tmux_unavailable:
+  zh-CN: 远端没有安装 tmux，已使用普通 shell（断线后无法恢复现场）
+  en: tmux isn't installed on the server, so a plain shell is used (the session can't be restored after a disconnect)
+  zh-TW: 遠端沒有安裝 tmux，已使用一般 shell（斷線後無法還原工作階段）
+  ja: サーバーに tmux がインストールされていないため、通常のシェルを使用しています（切断後に作業状態を復元できません）
+  ko: 서버에 tmux가 설치되어 있지 않아 일반 셸을 사용합니다(연결이 끊기면 작업 상태를 복원할 수 없음)
+terminal.notice.tmux_unchecked:
+  zh-CN: 没能检查服务器上是否安装了 tmux（连接繁忙或没有及时回应），这次使用普通 shell（断线后无法恢复现场），重新打开终端会再检查
+  en: Couldn't check whether tmux is installed on the server (the connection was busy or didn't respond in time), so a plain shell is used this time (the session can't be restored after a disconnect). Reopen the terminal to check again
+  zh-TW: 無法檢查伺服器上是否安裝了 tmux（連線忙碌或沒有及時回應），這次使用一般 shell（斷線後無法還原工作階段），重新開啟終端機時會再檢查
+  ja: サーバーに tmux がインストールされているか確認できなかったため（接続が混雑していたか、時間内に応答がありませんでした）、今回は通常のシェルを使用しています（切断後に作業状態を復元できません）。ターミナルを開き直すと再確認します
+  ko: 서버에 tmux가 설치되어 있는지 확인하지 못해(연결이 바쁘거나 제때 응답하지 않음) 이번에는 일반 셸을 사용합니다(연결이 끊기면 작업 상태를 복원할 수 없음). 터미널을 다시 열면 다시 확인합니다
+terminal.notice.x11_refused:
+  zh-CN: X11 转发：服务器拒绝了（sshd 没有开启 X11Forwarding，或服务器上没有安装 xauth），图形程序不能显示在本机
+  en: "X11 forwarding: the server refused it (X11Forwarding is off in sshd, or xauth isn't installed on the server), so graphical programs can't show on this computer"
+  zh-TW: X11 轉送：伺服器拒絕了（sshd 沒有開啟 X11Forwarding，或伺服器上沒有安裝 xauth），圖形程式無法顯示在本機
+  ja: X11 転送：サーバーに拒否されました（sshd で X11Forwarding が有効になっていないか、サーバーに xauth がインストールされていません）。グラフィカルなプログラムをこのコンピューターに表示できません
+  ko: "X11 포워딩: 서버가 거부했습니다(sshd에서 X11Forwarding이 꺼져 있거나 서버에 xauth가 설치되어 있지 않음). 그래픽 프로그램을 이 컴퓨터에 표시할 수 없습니다"
+terminal.notice.x11_bad_display:
+  zh-CN: X11 转发：本机 X 显示的写法不对（%{display}），请在设置的“连接”页中修改
+  en: "X11 forwarding: the local X display (%{display}) isn't valid. Change it on the Connection page in Settings"
+  zh-TW: X11 轉送：本機 X 顯示的寫法不對（%{display}），請在設定的「連線」頁中修改
+  ja: X11 転送：ローカルの X ディスプレイの指定（%{display}）が正しくありません。設定の「接続」ページで変更してください
+  ko: "X11 포워딩: 로컬 X 디스플레이 형식(%{display})이 올바르지 않습니다. 설정의 '연결' 페이지에서 변경하세요"
+terminal.notice.x11_no_xauth:
+  zh-CN: X11 转发：不受信任的转发需要本机的 xauth，没有找到。可以在主机设置中勾选“受信任”
+  en: "X11 forwarding: untrusted forwarding needs xauth on this computer, and it wasn't found. You can select \"Trusted\" in the host settings"
+  zh-TW: X11 轉送：不受信任的轉送需要本機的 xauth，沒有找到。可以在主機設定中勾選「受信任」
+  ja: X11 転送：信頼されていない転送にはこのコンピューターの xauth が必要ですが、見つかりませんでした。ホストの設定で「信頼済み」をチェックすることもできます
+  ko: "X11 포워딩: 신뢰할 수 없는 포워딩에는 이 컴퓨터의 xauth가 필요하지만 찾지 못했습니다. 호스트 설정에서 '신뢰함'을 선택할 수도 있습니다"
+terminal.notice.x11_xauth_failed:
+  zh-CN: X11 转发：本机的 xauth 没能申请到不受信任的权限（%{reason}）。请确认本机的 X 服务器在运行，或在主机设置中勾选“受信任”
+  en: "X11 forwarding: xauth on this computer couldn't get untrusted access (%{reason}). Make sure the local X server is running, or select \"Trusted\" in the host settings"
+  zh-TW: X11 轉送：本機的 xauth 無法申請到不受信任的權限（%{reason}）。請確認本機的 X 伺服器正在執行，或在主機設定中勾選「受信任」
+  ja: X11 転送：このコンピューターの xauth で、信頼されていないアクセス権を取得できませんでした（%{reason}）。ローカルの X サーバーが実行中であることを確認するか、ホストの設定で「信頼済み」をチェックしてください
+  ko: "X11 포워딩: 이 컴퓨터의 xauth가 신뢰할 수 없는 액세스 권한을 얻지 못했습니다(%{reason}). 로컬 X 서버가 실행 중인지 확인하거나 호스트 설정에서 '신뢰함'을 선택하세요"
+terminal.notice.x11_no_server:
+  zh-CN: X 程序要打开窗口，但连不上本机的 X 服务器 %{display}（%{reason}）。请先启动 X 服务器（Windows 上可用 VcXsrv、X410），或在设置的“连接”页中修改本机的 X 显示
+  en: An X program tried to open a window, but the local X server %{display} couldn't be reached (%{reason}). Start an X server first (VcXsrv or X410 on Windows), or change the local X display on the Connection page in Settings
+  zh-TW: X 程式要開啟視窗，但連不上本機的 X 伺服器 %{display}（%{reason}）。請先啟動 X 伺服器（Windows 上可用 VcXsrv、X410），或在設定的「連線」頁中修改本機的 X 顯示
+  ja: X プログラムがウィンドウを開こうとしましたが、ローカルの X サーバー %{display} に接続できませんでした（%{reason}）。先に X サーバーを起動するか（Windows では VcXsrv、X410 などが使えます）、設定の「接続」ページでローカルの X ディスプレイを変更してください
+  ko: X 프로그램이 창을 열려고 했지만 로컬 X 서버 %{display}에 연결할 수 없습니다(%{reason}). 먼저 X 서버를 시작하거나(Windows에서는 VcXsrv, X410 등 사용 가능) 설정의 '연결' 페이지에서 로컬 X 디스플레이를 변경하세요
+terminal.confirm_reconnect.title:
+  zh-CN: 重新连接“%{name}”？
+  en: Reconnect "%{name}"?
+  zh-TW: 重新連線「%{name}」？
+  ja: 「%{name}」に再接続しますか？
+  ko: "'%{name}'에 다시 연결하시겠습니까?"
+terminal.confirm_reconnect.description:
+  zh-CN: 当前会话将断开，用新的连接重新打开，其中运行的程序会结束。
+  en: The current session will be closed and reopened over a new connection. Programs running in it will end.
+  zh-TW: 目前的工作階段將會中斷，並以新的連線重新開啟，其中執行的程式會結束。
+  ja: 現在のセッションは切断され、新しい接続で開き直されます。その中で実行中のプログラムは終了します。
+  ko: 현재 세션이 끊기고 새 연결로 다시 열립니다. 세션에서 실행 중인 프로그램은 종료됩니다.
+terminal.confirm_reconnect.description_tmux:
+  zh-CN: 当前会话将断开并用新的连接重连，重连后回到原来的 tmux 会话，其中运行的程序不受影响。
+  en: The current session will be closed and reopened over a new connection, back in the same tmux session. Programs running in it aren't affected.
+  zh-TW: 目前的工作階段將會中斷並以新的連線重新連線，重新連線後回到原本的 tmux 工作階段，其中執行的程式不受影響。
+  ja: 現在のセッションは切断され、新しい接続で再接続した後、元の tmux セッションに戻ります。その中で実行中のプログラムには影響しません。
+  ko: 현재 세션이 끊기고 새 연결로 다시 연결된 후 기존 tmux 세션으로 돌아갑니다. 세션에서 실행 중인 프로그램은 영향을 받지 않습니다.
+terminal.confirm_restart.title:
+  zh-CN: 重新打开“%{name}”？
+  en: Reopen "%{name}"?
+  zh-TW: 重新開啟「%{name}」？
+  ja: 「%{name}」を開き直しますか？
+  ko: "'%{name}'을(를) 다시 여시겠습니까?"
+terminal.confirm_restart.description:
+  zh-CN: 当前的程序会结束，在这个 Tab 中重新打开。
+  en: The current program will end and reopen in this tab.
+  zh-TW: 目前的程式會結束，並在這個分頁中重新開啟。
+  ja: 現在のプログラムは終了し、このタブで開き直されます。
+  ko: 현재 프로그램이 종료되고 이 탭에서 다시 열립니다.
+terminal.connecting:
+  zh-CN: 正在连接 %{name}…
+  en: Connecting to %{name}…
+  zh-TW: 正在連線到 %{name}…
+  ja: "%{name} に接続しています…"
+  ko: "%{name}에 연결하는 중…"
+terminal.reconnecting:
+  zh-CN: 正在重新连接…
+  en: Reconnecting…
+  zh-TW: 正在重新連線…
+  ja: 再接続しています…
+  ko: 다시 연결하는 중…
+terminal.connect_failed:
+  zh-CN: 无法连接 %{name}
+  en: Couldn't connect to %{name}
+  zh-TW: 無法連線到 %{name}
+  ja: "%{name} に接続できません"
+  ko: "%{name}에 연결할 수 없습니다"
+terminal.reconnect:
+  zh-CN: 重新连接
+  en: Reconnect
+  zh-TW: 重新連線
+  ja: 再接続
+  ko: 다시 연결
+terminal.forget_host_key:
+  zh-CN: 删除旧记录并重新连接
+  en: Remove old record and reconnect
+  zh-TW: 刪除舊記錄並重新連線
+  ja: 古い記録を削除して再接続
+  ko: 이전 기록 삭제 후 다시 연결
+terminal.open_failed:
+  zh-CN: 无法打开终端：%{error}
+  en: "Couldn't open the terminal: %{error}"
+  zh-TW: 無法開啟終端機：%{error}
+  ja: ターミナルを開けません：%{error}
+  ko: "터미널을 열 수 없습니다: %{error}"
+terminal.search.placeholder:
+  zh-CN: 查找
+  en: Find
+  zh-TW: 尋找
+  ja: 検索
+  ko: 찾기
+terminal.search.case_sensitive:
+  zh-CN: 区分大小写
+  en: Match case
+  zh-TW: 區分大小寫
+  ja: 大文字と小文字を区別
+  ko: 대/소문자 구분
+terminal.search.whole_word:
+  zh-CN: 全词匹配
+  en: Match whole word
+  zh-TW: 全字比對
+  ja: 単語単位
+  ko: 단어 단위로
+terminal.search.regex:
+  zh-CN: 正则表达式
+  en: Use regular expression
+  zh-TW: 正規表示式
+  ja: 正規表現
+  ko: 정규식
+terminal.search.previous:
+  zh-CN: 上一处（Shift+Enter）
+  en: Previous match (Shift+Enter)
+  zh-TW: 上一個（Shift+Enter）
+  ja: 前を検索（Shift+Enter）
+  ko: 이전 항목(Shift+Enter)
+terminal.search.next:
+  zh-CN: 下一处（Enter）
+  en: Next match (Enter)
+  zh-TW: 下一個（Enter）
+  ja: 次を検索（Enter）
+  ko: 다음 항목(Enter)
+terminal.search.close:
+  zh-CN: 关闭（Esc）
+  en: Close (Esc)
+  zh-TW: 關閉（Esc）
+  ja: 閉じる（Esc）
+  ko: 닫기(Esc)
+terminal.search.no_results:
+  zh-CN: 无结果
+  en: No results
+  zh-TW: 沒有結果
+  ja: 結果なし
+  ko: 결과 없음
+terminal.search.invalid:
+  zh-CN: 正则不合法
+  en: Invalid pattern
+  zh-TW: 正規表示式無效
+  ja: 正規表現が無効です
+  ko: 정규식이 올바르지 않음
+terminal.search.count:
+  zh-CN: "%{current} / %{total}"
+  en: "%{current} of %{total}"
+  zh-TW: "%{current} / %{total}"
+  ja: "%{current} / %{total}"
+  ko: "%{current} / %{total}"
+panel.menu.duplicate:
+  zh-CN: 复制会话
+  en: Duplicate session
+  zh-TW: 複製工作階段
+  ja: セッションを複製
+  ko: 세션 복제
+panel.menu.reveal_host:
+  zh-CN: 在侧边栏中显示主机
+  en: Reveal Host in Sidebar
+  zh-TW: 在側邊欄中顯示主機
+  ja: サイドバーでホストを表示
+  ko: 사이드바에서 호스트 표시
+panel.menu.split_right:
+  zh-CN: 向右分屏
+  en: Split right
+  zh-TW: 向右分割畫面
+  ja: 右に分割
+  ko: 오른쪽으로 분할
+panel.menu.split_down:
+  zh-CN: 向下分屏
+  en: Split down
+  zh-TW: 向下分割畫面
+  ja: 下に分割
+  ko: 아래로 분할
+panel.menu.reconnect:
+  zh-CN: 重新连接
+  en: Reconnect
+  zh-TW: 重新連線
+  ja: 再接続
+  ko: 다시 연결
+panel.close:
+  zh-CN: 关闭
+  en: Close
+  zh-TW: 關閉
+  ja: 閉じる
+  ko: 닫기
+panel.close_others:
+  zh-CN: 关闭其他 Tab
+  en: Close Others
+  zh-TW: 關閉其他分頁
+  ja: ほかのタブを閉じる
+  ko: 다른 탭 닫기
+panel.close_right:
+  zh-CN: 关闭右侧 Tab
+  en: Close to the Right
+  zh-TW: 關閉右側分頁
+  ja: 右側のタブを閉じる
+  ko: 오른쪽 탭 닫기
+panel.close_below:
+  zh-CN: 关闭下方 Tab
+  en: Close Below
+  zh-TW: 關閉下方分頁
+  ja: 下のタブを閉じる
+  ko: 아래쪽 탭 닫기
+panel.close_all:
+  zh-CN: 关闭所有 Tab
+  en: Close All
+  zh-TW: 關閉所有分頁
+  ja: すべてのタブを閉じる
+  ko: 모든 탭 닫기
+terminal.paste_image.single_channel:
+  zh-CN: 这台主机只用一个通道（堡垒机等），不能上传截图。
+  en: This host uses a single channel (for example a bastion), so screenshots can't be uploaded.
+  zh-TW: 這台主機只用一個通道（堡壘主機等），無法上傳螢幕截圖。
+  ja: このホストは単一のチャネルしか使用しないため（要塞ホストなど）、スクリーンショットをアップロードできません。
+  ko: 이 호스트는 채널 하나만 사용하므로(배스천 호스트 등) 스크린샷을 업로드할 수 없습니다.
+terminal.paste_image.failed:
+  zh-CN: 粘贴截图失败：%{error}
+  en: "Couldn't paste the screenshot: %{error}"
+  zh-TW: 貼上螢幕截圖失敗：%{error}
+  ja: スクリーンショットを貼り付けできませんでした：%{error}
+  ko: "스크린샷을 붙여넣지 못했습니다: %{error}"
+close.tab_title:
+  zh-CN: 确定关闭“%{name}”吗？
+  en: Close “%{name}”?
+  zh-TW: 確定要關閉「%{name}」嗎？
+  ja: 「%{name}」を閉じますか？
+  ko: "'%{name}'을(를) 닫으시겠습니까?"
+close.tab_description:
+  zh-CN: 连接将断开。
+  en: The connection will be closed.
+  zh-TW: 連線將會中斷。
+  ja: 接続は切断されます。
+  ko: 연결이 끊어집니다.
+close.tab_description_local:
+  zh-CN: 终端中正在运行的程序将被结束。
+  en: Programs running in this terminal will be ended.
+  zh-TW: 終端機中正在執行的程式將會結束。
+  ja: ターミナルで実行中のプログラムは終了します。
+  ko: 터미널에서 실행 중인 프로그램이 종료됩니다.
+close.window_title:
+  zh-CN: 确定关闭此窗口吗？
+  en: Close this window?
+  zh-TW: 確定要關閉此視窗嗎？
+  ja: このウィンドウを閉じますか？
+  ko: 이 창을 닫으시겠습니까?
+close.window_description:
+  zh-CN: 窗口中有连接着的终端或文件管理，关闭后连接将断开。
+  en: Terminals or file managers in this window are still connected. Closing the window disconnects them.
+  zh-TW: 視窗中有連線中的終端機或檔案管理，關閉後連線將會中斷。
+  ja: このウィンドウには接続中のターミナルまたはファイル管理があります。閉じると接続は切断されます。
+  ko: 이 창에 연결된 터미널이나 파일 관리자가 있습니다. 닫으면 연결이 끊어집니다.
+close.window_description_local:
+  zh-CN: 窗口中有打开着的本地终端，关闭后其中运行的程序将被结束。
+  en: Local terminals in this window are still open. Closing the window ends the programs running in them.
+  zh-TW: 視窗中有開啟中的本機終端機，關閉後其中執行的程式將會結束。
+  ja: このウィンドウには開いているローカルターミナルがあります。閉じるとその中で実行中のプログラムは終了します。
+  ko: 이 창에 열려 있는 로컬 터미널이 있습니다. 닫으면 그 안에서 실행 중인 프로그램이 종료됩니다.
+close.tabs_title:
+  zh-CN: 确定关闭这 %{count} 个 Tab 吗？
+  en: Close %{count} tabs?
+  zh-TW: 確定要關閉這 %{count} 個分頁嗎？
+  ja: "%{count} 個のタブを閉じますか？"
+  ko: 탭 %{count}개를 닫으시겠습니까?
+close.tabs_description:
+  zh-CN: 其中有连接着的终端或文件管理，关闭后连接将断开。
+  en: Some of these tabs are connected terminals or file managers. Closing them disconnects them.
+  zh-TW: 其中有連線中的終端機或檔案管理，關閉後連線將會中斷。
+  ja: 接続中のターミナルまたはファイル管理が含まれています。閉じると接続は切断されます。
+  ko: 연결된 터미널이나 파일 관리자가 포함되어 있습니다. 닫으면 연결이 끊어집니다.
+close.tabs_description_local:
+  zh-CN: 其中有打开着的本地终端，关闭后终端中运行的程序将被结束。
+  en: Some of these tabs are open local terminals. Closing them ends the programs running in them.
+  zh-TW: 其中有開啟中的本機終端機，關閉後終端機中執行的程式將會結束。
+  ja: 開いているローカルターミナルが含まれています。閉じるとターミナルで実行中のプログラムは終了します。
+  ko: 열려 있는 로컬 터미널이 포함되어 있습니다. 닫으면 터미널에서 실행 중인 프로그램이 종료됩니다.
+close.sentence_separator:
+  zh-CN: ""
+  en: " "
+  zh-TW: ""
+  ja: ""
+  ko: " "
+close.dont_ask:
+  zh-CN: 以后关闭终端、文件管理的 Tab 或窗口时不再询问
+  en: Don't ask again when closing a tab or window with open terminals or file managers
+  zh-TW: 以後關閉終端機、檔案管理的分頁或視窗時不再詢問
+  ja: 今後、ターミナルやファイル管理のタブまたはウィンドウを閉じるときに確認しない
+  ko: 앞으로 터미널이나 파일 관리자 탭 또는 창을 닫을 때 묻지 않기
+close.confirm:
+  zh-CN: 关闭
+  en: Close
+  zh-TW: 關閉
+  ja: 閉じる
+  ko: 닫기
+close.quit_title:
+  zh-CN: 确定退出 Termlet 吗？
+  en: Quit Termlet?
+  zh-TW: 確定要結束 Termlet 嗎？
+  ja: Termlet を終了しますか？
+  ko: Termlet을 종료하시겠습니까?
+close.quit_description:
+  zh-CN: 还有连接着的终端或文件管理，退出后连接将断开。
+  en: Terminals or file managers are still connected. Quitting disconnects them.
+  zh-TW: 還有連線中的終端機或檔案管理，結束後連線將會中斷。
+  ja: 接続中のターミナルまたはファイル管理があります。終了すると接続は切断されます。
+  ko: 아직 연결된 터미널이나 파일 관리자가 있습니다. 종료하면 연결이 끊어집니다.
+close.quit_description_local:
+  zh-CN: 还有打开着的本地终端，退出后其中运行的程序将被结束。
+  en: Local terminals are still open. Quitting ends the programs running in them.
+  zh-TW: 還有開啟中的本機終端機，結束後其中執行的程式將會結束。
+  ja: 開いているローカルターミナルがあります。終了するとその中で実行中のプログラムは終了します。
+  ko: 아직 열려 있는 로컬 터미널이 있습니다. 종료하면 그 안에서 실행 중인 프로그램이 종료됩니다.
+close.quit_transfers:
+  zh-CN: "%{count} 个传输任务未完成，退出后将中断。"
+  en: "%{count} transfers haven't finished and will be stopped."
+  zh-TW: "%{count} 個傳輸工作尚未完成，結束後將中斷。"
+  ja: "%{count} 件の転送が完了していません。終了すると中断されます。"
+  ko: 전송 %{count}건이 아직 완료되지 않았습니다. 종료하면 중단됩니다.
+close.quit_unsaved:
+  zh-CN: "%{count} 个文件有未保存的修改，退出后修改将丢失。"
+  en: "%{count} files have unsaved changes that will be lost."
+  zh-TW: "%{count} 個檔案有未儲存的變更，結束後變更將會遺失。"
+  ja: "%{count} 個のファイルに保存されていない変更があります。終了すると変更は失われます。"
+  ko: 파일 %{count}개에 저장하지 않은 변경 내용이 있습니다. 종료하면 변경 내용이 사라집니다.
+close.quit_confirm:
+  zh-CN: 退出
+  en: Quit
+  zh-TW: 結束
+  ja: 終了
+  ko: 종료
+paste.title:
+  zh-CN: 确认粘贴
+  en: Confirm Paste
+  zh-TW: 確認貼上
+  ja: 貼り付けの確認
+  ko: 붙여넣기 확인
+paste.hint:
+  zh-CN: 粘贴的内容可能不安全，请检查后再粘贴（可以在下面修改）。控制字符已经去掉。
+  en: This content may not be safe to paste. Check it first; you can edit it below. Control characters have been removed.
+  zh-TW: 貼上的內容可能不安全，請檢查後再貼上（可以在下方修改）。控制字元已經去除。
+  ja: 貼り付ける内容は安全でない可能性があります。確認してから貼り付けてください（下で編集できます）。制御文字は取り除いてあります。
+  ko: 붙여넣을 내용이 안전하지 않을 수 있습니다. 확인한 후 붙여넣으세요(아래에서 수정할 수 있음). 제어 문자는 이미 제거했습니다.
+paste.content:
+  zh-CN: 要粘贴的内容
+  en: Content to paste
+  zh-TW: 要貼上的內容
+  ja: 貼り付ける内容
+  ko: 붙여넣을 내용
+paste.confirm:
+  zh-CN: 粘贴
+  en: Paste
+  zh-TW: 貼上
+  ja: 貼り付け
+  ko: 붙여넣기
+paste.danger:
+  zh-CN: “%{command}”命中危险命令规则：%{rule}
+  en: "“%{command}” matches a dangerous-command rule: %{rule}"
+  zh-TW: 「%{command}」符合危險指令規則：%{rule}
+  ja: 「%{command}」は危険なコマンドのルールに該当します：%{rule}
+  ko: "'%{command}' 명령이 위험한 명령 규칙에 해당합니다: %{rule}"
+paste.multiline:
+  zh-CN: 共 %{count} 行，远端没有开启括号粘贴，粘贴后会逐行立即执行
+  en: "%{count} lines. The server hasn't turned on bracketed paste, so each line runs as soon as it's pasted"
+  zh-TW: 共 %{count} 行，遠端沒有開啟括號貼上，貼上後會逐行立即執行
+  ja: 全 %{count} 行です。サーバーでブラケットペーストモードが有効になっていないため、貼り付けると 1 行ずつすぐに実行されます
+  ko: 모두 %{count}줄입니다. 서버에서 브래킷 붙여넣기 모드가 켜져 있지 않아 붙여넣으면 줄마다 바로 실행됩니다
+paste.invisible:
+  zh-CN: 含看不见的字符：%{chars}（零宽、双向控制等，可能隐藏了真正的内容）
+  en: "Contains invisible characters: %{chars} (zero-width, bidirectional controls and similar, which can hide the real content)"
+  zh-TW: 含有看不見的字元：%{chars}（零寬、雙向控制等，可能隱藏了真正的內容）
+  ja: 見えない文字が含まれています：%{chars}（ゼロ幅文字、双方向制御文字など。本当の内容が隠されている可能性があります）
+  ko: "보이지 않는 문자가 있습니다: %{chars}(폭 없는 문자, 양방향 제어 문자 등으로 실제 내용이 숨겨져 있을 수 있음)"
+paste.homoglyph:
+  zh-CN: 有词混用了拉丁字母与外形相同的西里尔、希腊字母：%{words}
+  en: "Some words mix Latin letters with look-alike Cyrillic or Greek letters: %{words}"
+  zh-TW: 有字詞混用了拉丁字母與外形相同的西里爾、希臘字母：%{words}
+  ja: ラテン文字と、形がそっくりなキリル文字やギリシャ文字が混在している単語があります：%{words}
+  ko: "라틴 문자와 모양이 같은 키릴 문자나 그리스 문자를 섞어 쓴 단어가 있습니다: %{words}"
+paste.pipe_shell:
+  zh-CN: 把下载的内容直接交给 shell 执行
+  en: Downloaded content is passed straight to a shell
+  zh-TW: 把下載的內容直接交給 shell 執行
+  ja: ダウンロードした内容をそのままシェルに渡して実行します
+  ko: 다운로드한 내용을 바로 셸에 넘겨 실행합니다
+paste.control:
+  zh-CN: 含 %{count} 个控制字符（已去掉）
+  en: "%{count} control characters (removed)"
+  zh-TW: 含有 %{count} 個控制字元（已去除）
+  ja: 制御文字が %{count} 個含まれています（取り除き済み）
+  ko: 제어 문자 %{count}개 포함(제거됨)
+panel.menu.start_log:
+  zh-CN: 开始记录会话日志
+  en: Start Session Log
+  zh-TW: 開始記錄工作階段
+  ja: セッションログの記録を開始
+  ko: 세션 로그 기록 시작
+panel.menu.stop_log:
+  zh-CN: 停止记录会话日志
+  en: Stop Session Log
+  zh-TW: 停止記錄工作階段
+  ja: セッションログの記録を停止
+  ko: 세션 로그 기록 중지
+panel.menu.reveal_log:
+  zh-CN: 打开会话日志所在的文件夹
+  en: Show Session Log in Folder
+  zh-TW: 開啟工作階段記錄所在的資料夾
+  ja: セッションログのフォルダーを開く
+  ko: 세션 로그가 있는 폴더 열기
+panel.menu.encoding:
+  zh-CN: 编码：%{name}
+  en: "Encoding: %{name}"
+  zh-TW: 編碼：%{name}
+  ja: エンコード：%{name}
+  ko: "인코딩: %{name}"
+terminal.encoding:
+  zh-CN: 远端的编码
+  en: Server encoding
+  zh-TW: 遠端的編碼
+  ja: サーバーのエンコード
+  ko: 서버 인코딩
+terminal.sudo.prompt:
+  zh-CN: 出现了 sudo 密码提示：按 Enter 填入这台主机保存的密码，自己输入则忽略。
+  en: A sudo password prompt appeared. Press Enter to fill in the password saved for this host, or just type your own.
+  zh-TW: 出現了 sudo 密碼提示：按 Enter 填入這台主機儲存的密碼，若要自行輸入則忽略即可。
+  ja: sudo のパスワード入力を求められました。Enter キーを押すと、このホストに保存されたパスワードを入力します。自分で入力する場合は無視してください。
+  ko: sudo 비밀번호 입력 요청이 나타났습니다. Enter 키를 누르면 이 호스트에 저장된 비밀번호를 입력하고, 직접 입력하려면 무시하세요.
+terminal.sudo.fill:
+  zh-CN: 填入密码
+  en: Fill In Password
+  zh-TW: 填入密碼
+  ja: パスワードを入力
+  ko: 비밀번호 입력
+terminal.sudo.ignore:
+  zh-CN: 忽略
+  en: Ignore
+  zh-TW: 忽略
+  ja: 無視
+  ko: 무시
+terminal.log.disconnected:
+  zh-CN: 连接已断开，正在重连
+  en: The connection was lost; reconnecting
+  zh-TW: 連線已中斷，正在重新連線
+  ja: 接続が切断されました。再接続しています
+  ko: 연결이 끊겨 다시 연결하는 중입니다
+terminal.log.reconnected:
+  zh-CN: 已重新连接
+  en: Reconnected
+  zh-TW: 已重新連線
+  ja: 再接続しました
+  ko: 다시 연결했습니다
+terminal.log.restarted:
+  zh-CN: 已重新启动
+  en: Restarted
+  zh-TW: 已重新啟動
+  ja: 再起動しました
+  ko: 다시 시작했습니다
+terminal.log.full:
+  zh-CN: 会话日志已达到 100 MB，已停止记录。
+  en: The session log reached 100 MB, so recording stopped.
+  zh-TW: 工作階段記錄已達到 100 MB，已停止記錄。
+  ja: セッションログが 100 MB に達したため、記録を停止しました。
+  ko: 세션 로그가 100 MB에 도달해 기록을 중지했습니다.
+terminal.log.failed:
+  zh-CN: 会话日志写入失败，已停止记录：%{error}
+  en: "Couldn't write the session log, so recording stopped: %{error}"
+  zh-TW: 工作階段記錄寫入失敗，已停止記錄：%{error}
+  ja: セッションログに書き込めなかったため、記録を停止しました：%{error}
+  ko: "세션 로그를 쓰지 못해 기록을 중지했습니다: %{error}"
+notify.command_done:
+  zh-CN: 命令已完成：%{command}
+  en: "Command finished: %{command}"
+  zh-TW: 指令已完成：%{command}
+  ja: コマンドが完了しました：%{command}
+  ko: "명령 완료: %{command}"
+notify.command_failed:
+  zh-CN: 命令失败：%{command}
+  en: "Command failed: %{command}"
+  zh-TW: 指令失敗：%{command}
+  ja: コマンドが失敗しました：%{command}
+  ko: "명령 실패: %{command}"
+notify.took:
+  zh-CN: 用时 %{duration}
+  en: Took %{duration}
+  zh-TW: 耗時 %{duration}
+  ja: 所要時間 %{duration}
+  ko: 소요 시간 %{duration}
+notify.took_code:
+  zh-CN: 用时 %{duration}，退出码 %{code}
+  en: Took %{duration}, exit code %{code}
+  zh-TW: 耗時 %{duration}，結束代碼 %{code}
+  ja: 所要時間 %{duration}、終了コード %{code}
+  ko: 소요 시간 %{duration}, 종료 코드 %{code}
+notify.seconds:
+  zh-CN: "%{count} 秒"
+  en: "%{count} s"
+  zh-TW: "%{count} 秒"
+  ja: "%{count} 秒"
+  ko: "%{count}초"
+notify.minutes:
+  zh-CN: "%{m} 分 %{s} 秒"
+  en: "%{m} min %{s} s"
+  zh-TW: "%{m} 分 %{s} 秒"
+  ja: "%{m} 分 %{s} 秒"
+  ko: "%{m}분 %{s}초"
+terminal.menu.copy:
+  zh-CN: 复制
+  en: Copy
+  zh-TW: 複製
+  ja: コピー
+  ko: 복사
+terminal.menu.paste:
+  zh-CN: 粘贴
+  en: Paste
+  zh-TW: 貼上
+  ja: 貼り付け
+  ko: 붙여넣기
+terminal.menu.select_all:
+  zh-CN: 全选
+  en: Select All
+  zh-TW: 全選
+  ja: すべて選択
+  ko: 모두 선택
+terminal.menu.find:
+  zh-CN: 查找
+  en: Find
+  zh-TW: 尋找
+  ja: 検索
+  ko: 찾기
+terminal.menu.clear:
+  zh-CN: 清屏
+  en: Clear
+  zh-TW: 清除畫面
+  ja: 画面をクリア
+  ko: 화면 지우기
+terminal.starting:
+  zh-CN: 正在启动 %{name}…
+  en: Starting %{name}…
+  zh-TW: 正在啟動 %{name}…
+  ja: "%{name} を起動しています…"
+  ko: "%{name} 시작 중…"
+panel.menu.scheme:
+  zh-CN: 配色…
+  en: Color Scheme…
+  zh-TW: 配色…
+  ja: 配色…
+  ko: 색 구성표…
+panel.menu.clear_scheme:
+  zh-CN: 清除这个 Tab 的临时配色
+  en: Clear This Tab's Color Scheme
+  zh-TW: 清除這個分頁的暫時配色
+  ja: このタブの一時的な配色を解除
+  ko: 이 탭의 임시 색 구성표 해제
+terminal.notice.proxy_stopped:
+  zh-CN: 通过本机代理已停止（会话已结束）。重新连接后要用时，从 Tab 菜单重新开启
+  en: Lending the local proxy stopped because the session ended. After reconnecting, turn it on again from the tab menu if you need it
+  zh-TW: 透過本機代理已停止（工作階段已結束）。重新連線後若要使用，請從分頁選單重新開啟
+  ja: ローカルプロキシの共有を停止しました（セッションが終了しました）。再接続後に使う場合は、タブのメニューからもう一度オンにしてください
+  ko: 로컬 프록시 공유가 중지되었습니다(세션 종료). 다시 연결한 후 사용하려면 탭 메뉴에서 다시 켜세요
+terminal.proxy.menu:
+  zh-CN: 通过本机代理…
+  en: Lend Local Proxy…
+  zh-TW: 透過本機代理…
+  ja: ローカルプロキシを共有…
+  ko: 로컬 프록시 공유…
+terminal.proxy.menu_running:
+  zh-CN: 通过本机代理（开启中）…
+  en: Lend Local Proxy (On)…
+  zh-TW: 透過本機代理（開啟中）…
+  ja: ローカルプロキシを共有（オン）…
+  ko: 로컬 프록시 공유(켜짐)…
+terminal.proxy.title:
+  zh-CN: 通过本机代理
+  en: Lend Local Proxy to the Server
+  zh-TW: 透過本機代理
+  ja: ローカルプロキシをサーバーと共有
+  ko: 서버와 로컬 프록시 공유
+terminal.proxy.intro:
+  zh-CN: 把本机的 HTTP 代理借给服务器：服务器上只监听 127.0.0.1，那里的连接经 SSH 转回本机的代理。服务器连不上外网时可以用来装软件包、拉镜像。随这个终端的会话结束而停止。
+  en: Lends this computer's HTTP proxy to the server. The server listens only on 127.0.0.1, and connections there come back over SSH to your local proxy. Useful for installing packages or pulling images when the server can't reach the internet. It stops when this terminal's session ends.
+  zh-TW: 把本機的 HTTP 代理借給伺服器：伺服器上只監聽 127.0.0.1，那裡的連線經 SSH 轉回本機的代理。伺服器連不上外網時，可以用來安裝套件、拉取映像檔。隨這個終端機的工作階段結束而停止。
+  ja: このコンピューターの HTTP プロキシをサーバーに貸し出します。サーバーでは 127.0.0.1 だけで待ち受け、そこへの接続は SSH を通じてローカルのプロキシに戻されます。サーバーがインターネットに接続できないときに、パッケージのインストールやイメージの取得に使えます。このターミナルのセッションが終了すると停止します。
+  ko: 이 컴퓨터의 HTTP 프록시를 서버에 빌려줍니다. 서버에서는 127.0.0.1에서만 수신 대기하고, 그곳으로 들어온 연결은 SSH를 거쳐 로컬 프록시로 돌아옵니다. 서버가 외부 인터넷에 연결할 수 없을 때 패키지 설치나 이미지 받기에 쓸 수 있습니다. 이 터미널의 세션이 끝나면 함께 중지됩니다.
+terminal.proxy.local:
+  zh-CN: 本机代理
+  en: Local proxy
+  zh-TW: 本機代理
+  ja: ローカルプロキシ
+  ko: 로컬 프록시
+terminal.proxy.local_placeholder:
+  zh-CN: 例如 127.0.0.1:7890
+  en: e.g. 127.0.0.1:7890
+  zh-TW: 例如 127.0.0.1:7890
+  ja: 例：127.0.0.1:7890
+  ko: "예: 127.0.0.1:7890"
+terminal.proxy.local_from_system:
+  zh-CN: 已填入系统的代理设置。只支持 HTTP 代理。
+  en: Filled in from the system proxy settings. Only HTTP proxies work.
+  zh-TW: 已填入系統的 Proxy 設定。只支援 HTTP 代理。
+  ja: システムのプロキシ設定を入力しました。HTTP プロキシのみ対応しています。
+  ko: 시스템 프록시 설정을 입력했습니다. HTTP 프록시만 지원합니다.
+terminal.proxy.local_from_env:
+  zh-CN: 已填入环境变量中的代理。只支持 HTTP 代理。
+  en: Filled in from the proxy environment variables. Only HTTP proxies work.
+  zh-TW: 已填入環境變數中的代理。只支援 HTTP 代理。
+  ja: 環境変数のプロキシを入力しました。HTTP プロキシのみ対応しています。
+  ko: 환경 변수의 프록시를 입력했습니다. HTTP 프록시만 지원합니다.
+terminal.proxy.local_from_settings:
+  zh-CN: 上次用的本机代理，也可以在设置的“连接”中修改。只支持 HTTP 代理。
+  en: The local proxy you used last time. You can also change it under Settings > Connection. Only HTTP proxies work.
+  zh-TW: 上次使用的本機代理，也可以在設定的「連線」中修改。只支援 HTTP 代理。
+  ja: 前回使用したローカルプロキシです。設定の「接続」でも変更できます。HTTP プロキシのみ対応しています。
+  ko: 지난번에 사용한 로컬 프록시입니다. 설정의 '연결'에서도 변경할 수 있습니다. HTTP 프록시만 지원합니다.
+terminal.proxy.local_not_found:
+  zh-CN: 没有找到系统代理，请填写本机代理软件的 HTTP 端口，例如 127.0.0.1:7890。
+  en: No system proxy was found. Enter the HTTP port of your local proxy app, e.g. 127.0.0.1:7890.
+  zh-TW: 沒有找到系統代理，請填寫本機代理軟體的 HTTP 連接埠，例如 127.0.0.1:7890。
+  ja: システムのプロキシが見つかりませんでした。ローカルのプロキシソフトウェアの HTTP ポートを入力してください（例：127.0.0.1:7890）。
+  ko: "시스템 프록시를 찾지 못했습니다. 로컬 프록시 프로그램의 HTTP 포트를 입력하세요(예: 127.0.0.1:7890)."
+terminal.proxy.port:
+  zh-CN: 服务器上的端口
+  en: Port on the server
+  zh-TW: 伺服器上的連接埠
+  ja: サーバー側のポート
+  ko: 서버의 포트
+terminal.proxy.port_placeholder:
+  zh-CN: 留空时由服务器选
+  en: Leave empty to let the server pick
+  zh-TW: 留空時由伺服器選擇
+  ja: 空欄の場合はサーバーが選択します
+  ko: 비워 두면 서버가 선택합니다
+terminal.proxy.port_hint:
+  zh-CN: 端口每次开启可能不同；要把代理写进 apt、Docker 等的配置时，填一个固定的端口更方便。
+  en: The port may differ each time. Use a fixed port if you write the proxy into apt, Docker or other settings.
+  zh-TW: 連接埠每次開啟可能不同；要把代理寫進 apt、Docker 等的設定時，填一個固定的連接埠比較方便。
+  ja: ポートはオンにするたびに変わる場合があります。apt や Docker などの設定にプロキシを書き込むときは、固定のポートを指定すると便利です。
+  ko: 포트는 켤 때마다 달라질 수 있습니다. apt, Docker 등의 설정에 프록시를 적어 두려면 고정 포트를 지정하는 것이 편리합니다.
+terminal.proxy.start:
+  zh-CN: 开启
+  en: Turn On
+  zh-TW: 開啟
+  ja: オンにする
+  ko: 켜기
+terminal.proxy.stop:
+  zh-CN: 停止
+  en: Stop
+  zh-TW: 停止
+  ja: 停止
+  ko: 중지
+terminal.proxy.running:
+  zh-CN: 服务器上的 127.0.0.1:%{port} 已转到本机代理 %{local}。
+  en: 127.0.0.1:%{port} on the server now goes to your local proxy %{local}.
+  zh-TW: 伺服器上的 127.0.0.1:%{port} 已轉到本機代理 %{local}。
+  ja: サーバーの 127.0.0.1:%{port} をローカルプロキシ %{local} に転送しています。
+  ko: 서버의 127.0.0.1:%{port}이(가) 로컬 프록시 %{local}(으)로 연결되었습니다.
+terminal.proxy.port_busy:
+  zh-CN: 服务器上不能监听端口 %{wanted}（已被占用，或者低于 1024、要 root 才行），改用了 %{port}。
+  en: The server can't listen on port %{wanted} (it's in use, or below 1024 and needs root), so %{port} is used instead.
+  zh-TW: 伺服器上無法監聽連接埠 %{wanted}（已被佔用，或者低於 1024、要 root 才行），改用 %{port}。
+  ja: サーバーでポート %{wanted} を待ち受けできないため（使用中か、1024 未満で root が必要）、代わりに %{port} を使用しています。
+  ko: 서버에서 포트 %{wanted}에서 수신 대기할 수 없어(이미 사용 중이거나 1024 미만이라 root 권한 필요) 대신 %{port}을(를) 사용합니다.
+terminal.proxy.connections:
+  zh-CN: 当前 %{count} 个连接
+  en: "%{count} connections now"
+  zh-TW: 目前 %{count} 個連線
+  ja: 現在 %{count} 個の接続
+  ko: 현재 연결 %{count}개
+terminal.proxy.local_failed:
+  zh-CN: 连不上本机代理：%{error}
+  en: "Can't reach the local proxy: %{error}"
+  zh-TW: 連不上本機代理：%{error}
+  ja: ローカルプロキシに接続できません：%{error}
+  ko: "로컬 프록시에 연결할 수 없습니다: %{error}"
+terminal.proxy.kind.shell:
+  zh-CN: 环境变量
+  en: Environment
+  zh-TW: 環境變數
+  ja: 環境変数
+  ko: 환경 변수
+terminal.proxy.hint.shell:
+  zh-CN: 在当前 shell 中设置代理的环境变量，curl、wget、git、pip、npm 等都会用它；只对这个 shell 与其中启动的程序有效（sudo 默认不带这些变量）。
+  en: Sets the proxy environment variables in the current shell. curl, wget, git, pip, npm and others use them. They only affect this shell and programs started from it (sudo drops them by default).
+  zh-TW: 在目前的 shell 中設定代理的環境變數，curl、wget、git、pip、npm 等都會使用；只對這個 shell 與其中啟動的程式有效（sudo 預設不帶這些變數）。
+  ja: 現在のシェルにプロキシの環境変数を設定します。curl、wget、git、pip、npm などがこれを使用します。このシェルと、そこから起動したプログラムにのみ有効です（sudo はデフォルトではこれらの変数を引き継ぎません）。
+  ko: 현재 셸에 프록시 환경 변수를 설정합니다. curl, wget, git, pip, npm 등이 이를 사용하며, 이 셸과 여기서 시작한 프로그램에만 적용됩니다(sudo는 기본적으로 이 변수를 넘기지 않음).
+terminal.proxy.hint.apt:
+  zh-CN: 写入 apt 的配置文件，之后 apt update、apt install 经这个代理。用完请撤销，否则停止后 apt 连不上。
+  en: Writes an apt configuration file so that apt update and apt install go through the proxy. Undo it when you're done, or apt can't connect after the proxy stops.
+  zh-TW: 寫入 apt 的設定檔，之後 apt update、apt install 經過這個代理。用完請復原，否則停止後 apt 連不上。
+  ja: apt の設定ファイルに書き込み、以降の apt update や apt install がこのプロキシを経由するようにします。使い終わったら元に戻してください。戻さないと、停止後に apt が接続できなくなります。
+  ko: apt 구성 파일에 기록해 이후 apt update와 apt install이 이 프록시를 거치게 합니다. 다 쓰면 되돌리세요. 되돌리지 않으면 중지 후 apt가 연결하지 못합니다.
+terminal.proxy.hint.dnf:
+  zh-CN: 在 /etc/dnf/dnf.conf 中加一行代理设置（Fedora、RHEL 8 及以后）。用完请撤销。
+  en: Adds a proxy line to /etc/dnf/dnf.conf (Fedora, RHEL 8 and later). Undo it when you're done.
+  zh-TW: 在 /etc/dnf/dnf.conf 中加一行代理設定（Fedora、RHEL 8 及以後）。用完請復原。
+  ja: /etc/dnf/dnf.conf にプロキシ設定を 1 行追加します（Fedora、RHEL 8 以降）。使い終わったら元に戻してください。
+  ko: /etc/dnf/dnf.conf에 프록시 설정 한 줄을 추가합니다(Fedora, RHEL 8 이상). 다 쓰면 되돌리세요.
+terminal.proxy.hint.yum:
+  zh-CN: 在 /etc/yum.conf 中加一行代理设置（CentOS 7 等）。用完请撤销。
+  en: Adds a proxy line to /etc/yum.conf (CentOS 7 and similar). Undo it when you're done.
+  zh-TW: 在 /etc/yum.conf 中加一行代理設定（CentOS 7 等）。用完請復原。
+  ja: /etc/yum.conf にプロキシ設定を 1 行追加します（CentOS 7 など）。使い終わったら元に戻してください。
+  ko: /etc/yum.conf에 프록시 설정 한 줄을 추가합니다(CentOS 7 등). 다 쓰면 되돌리세요.
+terminal.proxy.hint.docker_daemon:
+  zh-CN: 让 Docker 拉取镜像时经这个代理（systemd 的 drop-in 配置）。会重启 Docker，运行中的容器随之重启（开启了 live-restore 的除外）。用完请撤销。
+  en: Makes Docker pull images through the proxy (a systemd drop-in). This restarts Docker, and running containers restart with it unless live-restore is on. Undo it when you're done.
+  zh-TW: 讓 Docker 拉取映像檔時經過這個代理（systemd 的 drop-in 設定）。會重新啟動 Docker，執行中的容器隨之重新啟動（開啟了 live-restore 的除外）。用完請復原。
+  ja: Docker がイメージを取得するときにこのプロキシを経由するようにします（systemd の drop-in 設定）。Docker が再起動し、実行中のコンテナーも再起動します（live-restore を有効にしている場合を除く）。使い終わったら元に戻してください。
+  ko: Docker가 이미지를 받을 때 이 프록시를 거치게 합니다(systemd drop-in 구성). Docker가 다시 시작되며 실행 중인 컨테이너도 함께 다시 시작됩니다(live-restore를 켠 경우 제외). 다 쓰면 되돌리세요.
+terminal.proxy.hint.docker_build:
+  zh-CN: 构建镜像时经这个代理：用主机网络，构建过程中才连得到服务器的 127.0.0.1。只对这一次构建有效，不用撤销。
+  en: Builds an image through the proxy. Host networking lets the build reach 127.0.0.1 on the server. It only applies to this build, so there's nothing to undo.
+  zh-TW: 建置映像檔時經過這個代理：使用主機網路，建置過程中才連得到伺服器的 127.0.0.1。只對這一次建置有效，不用復原。
+  ja: このプロキシを経由してイメージをビルドします。ホストネットワークを使うことで、ビルド中にサーバーの 127.0.0.1 に接続できます。このビルドにのみ有効なので、元に戻す必要はありません。
+  ko: 이 프록시를 거쳐 이미지를 빌드합니다. 호스트 네트워크를 사용해야 빌드 중에 서버의 127.0.0.1에 연결할 수 있습니다. 이번 빌드에만 적용되므로 되돌릴 필요가 없습니다.
+terminal.proxy.apply:
+  zh-CN: 使用
+  en: Use
+  zh-TW: 使用
+  ja: 使用
+  ko: 사용
+terminal.proxy.undo:
+  zh-CN: 撤销
+  en: Undo
+  zh-TW: 復原
+  ja: 元に戻す
+  ko: 되돌리기
+terminal.proxy.copy:
+  zh-CN: 复制
+  en: Copy
+  zh-TW: 複製
+  ja: コピー
+  ko: 복사
+terminal.proxy.copied:
+  zh-CN: 已复制
+  en: Copied
+  zh-TW: 已複製
+  ja: コピーしました
+  ko: 복사됨
+terminal.proxy.send:
+  zh-CN: 发到终端执行
+  en: Run in the terminal
+  zh-TW: 傳送到終端機執行
+  ja: ターミナルで実行
+  ko: 터미널에서 실행
+terminal.proxy.sent:
+  zh-CN: 已发到终端
+  en: Sent to the terminal
+  zh-TW: 已傳送到終端機
+  ja: ターミナルに送信しました
+  ko: 터미널로 보냈습니다
+terminal.proxy.send_full_screen:
+  zh-CN: 终端中正在运行全屏程序，没有发送。
+  en: A full-screen program is running in the terminal, so nothing was sent.
+  zh-TW: 終端機中正在執行全螢幕程式，沒有傳送。
+  ja: ターミナルで全画面プログラムが実行中のため、送信しませんでした。
+  ko: 터미널에서 전체 화면 프로그램이 실행 중이라 보내지 않았습니다.
+terminal.proxy.others:
+  zh-CN: 服务器上的其他用户也能连这个端口，借用你的代理。用完请停止。
+  en: Other users on the server can also connect to this port and use your proxy. Stop it when you're done.
+  zh-TW: 伺服器上的其他使用者也能連到這個連接埠，借用你的代理。用完請停止。
+  ja: サーバー上のほかのユーザーもこのポートに接続して、このプロキシを使用できます。使い終わったら停止してください。
+  ko: 서버의 다른 사용자도 이 포트에 연결해 이 프록시를 빌려 쓸 수 있습니다. 다 쓰면 중지하세요.
+terminal.proxy.bar:
+  zh-CN: 代理 :%{port}
+  en: Proxy :%{port}
+  zh-TW: 代理 :%{port}
+  ja: プロキシ :%{port}
+  ko: 프록시 :%{port}
+terminal.proxy.bar_tooltip:
+  zh-CN: 通过本机代理：服务器上的 127.0.0.1:%{port} → 本机的 %{local}
+  en: "Lending the local proxy: 127.0.0.1:%{port} on the server → %{local} here"
+  zh-TW: 透過本機代理：伺服器上的 127.0.0.1:%{port} → 本機的 %{local}
+  ja: ローカルプロキシを共有中：サーバーの 127.0.0.1:%{port} → このコンピューターの %{local}
+  ko: "로컬 프록시 공유 중: 서버의 127.0.0.1:%{port} → 이 컴퓨터의 %{local}"
+terminal.proxy.error.address_empty:
+  zh-CN: 请填写本机代理的地址，例如 127.0.0.1:7890。
+  en: Enter the address of the local proxy, e.g. 127.0.0.1:7890.
+  zh-TW: 請填寫本機代理的位址，例如 127.0.0.1:7890。
+  ja: ローカルプロキシのアドレスを入力してください（例：127.0.0.1:7890）。
+  ko: "로컬 프록시 주소를 입력하세요(예: 127.0.0.1:7890)."
+terminal.proxy.error.address:
+  zh-CN: 本机代理的地址不对：%{address}。请写成“主机:端口”（只支持 HTTP 代理）。
+  en: "The local proxy address isn't valid: %{address}. Use \"host:port\" (HTTP proxies only)."
+  zh-TW: 本機代理的位址不正確：%{address}。請寫成「主機:連接埠」（只支援 HTTP 代理）。
+  ja: ローカルプロキシのアドレスが正しくありません：%{address}。「ホスト:ポート」の形式で入力してください（HTTP プロキシのみ対応）。
+  ko: "로컬 프록시 주소가 올바르지 않습니다: %{address}. '호스트:포트' 형식으로 입력하세요(HTTP 프록시만 지원)."
+terminal.proxy.error.port:
+  zh-CN: 端口不对：%{port}。请填 1–65535，或者留空。
+  en: "The port isn't valid: %{port}. Enter 1–65535 or leave it empty."
+  zh-TW: 連接埠不正確：%{port}。請填 1–65535，或者留空。
+  ja: ポートが正しくありません：%{port}。1～65535 を入力するか、空欄のままにしてください。
+  ko: "포트가 올바르지 않습니다: %{port}. 1–65535 사이 값을 입력하거나 비워 두세요."
+terminal.proxy.error.denied:
+  zh-CN: 服务器不允许远程转发（sshd 设置了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），不能通过本机代理。
+  en: The server doesn't allow remote forwarding (sshd sets AllowTcpForwarding no, DisableForwarding, PermitListen or similar), so the local proxy can't be lent.
+  zh-TW: 伺服器不允許遠端轉送（sshd 設定了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），無法透過本機代理。
+  ja: サーバーがリモート転送を許可していないため（sshd で AllowTcpForwarding no、DisableForwarding、PermitListen などが設定されています）、ローカルプロキシを共有できません。
+  ko: 서버가 원격 포워딩을 허용하지 않아(sshd에 AllowTcpForwarding no, DisableForwarding, PermitListen 등이 설정됨) 로컬 프록시를 공유할 수 없습니다.
+terminal.proxy.error.disconnected:
+  zh-CN: 连接已断开。
+  en: The connection was lost.
+  zh-TW: 連線已中斷。
+  ja: 接続が切断されました。
+  ko: 연결이 끊겼습니다.
+terminal.proxy.error.other:
+  zh-CN: 开启失败：%{reason}
+  en: "Couldn't turn it on: %{reason}"
+  zh-TW: 開啟失敗：%{reason}
+  ja: オンにできませんでした：%{reason}
+  ko: "켜지 못했습니다: %{reason}"
+panel.menu.start_record:
+  zh-CN: "开始录制"
+  en: "Start Recording"
+  zh-TW: "開始錄製"
+  ja: "録画を開始"
+  ko: "녹화 시작"
+panel.menu.stop_record:
+  zh-CN: "停止录制"
+  en: "Stop Recording"
+  zh-TW: "停止錄製"
+  ja: "録画を停止"
+  ko: "녹화 중지"
+terminal.record.badge:
+  zh-CN: "正在录制"
+  en: "Recording"
+  zh-TW: "正在錄製"
+  ja: "録画中"
+  ko: "녹화 중"
+terminal.record.started:
+  zh-CN: "开始录制。录制文件里有终端中显示的全部内容，可能包括密码、密钥等敏感信息，分享前请检查。"
+  en: "Recording started. The recording contains everything shown in the terminal, which may include sensitive information such as passwords or keys. Check it before sharing."
+  zh-TW: "開始錄製。錄製檔裡有終端機中顯示的全部內容，可能包含密碼、金鑰等敏感資訊，分享前請檢查。"
+  ja: "録画を開始しました。録画ファイルにはターミナルに表示されたすべての内容が含まれ、パスワードや鍵などの機密情報が含まれている場合があります。共有する前に確認してください。"
+  ko: "녹화를 시작했습니다. 녹화 파일에는 터미널에 표시된 모든 내용이 들어 있으며 비밀번호나 키 같은 민감한 정보가 포함될 수 있습니다. 공유하기 전에 확인하세요."
+terminal.record.started_with_input:
+  zh-CN: "开始录制，同时录制输入。录制文件里有你输入的全部内容（包括不显示在屏幕上的密码）与终端中显示的内容，请妥善保管。"
+  en: "Recording started, including your input. The recording contains everything you type, including passwords that are not shown on screen, as well as everything shown in the terminal. Keep it safe."
+  zh-TW: "開始錄製，同時錄製輸入。錄製檔裡有你輸入的全部內容（包括不顯示在畫面上的密碼）與終端機中顯示的內容，請妥善保管。"
+  ja: "入力も含めて録画を開始しました。録画ファイルには入力したすべての内容（画面に表示されないパスワードを含む）とターミナルに表示された内容が含まれます。大切に保管してください。"
+  ko: "입력을 포함해 녹화를 시작했습니다. 녹화 파일에는 입력한 모든 내용(화면에 표시되지 않는 비밀번호 포함)과 터미널에 표시된 내용이 들어 있습니다. 안전하게 보관하세요."
+terminal.record.start_failed:
+  zh-CN: "无法开始录制：%{error}"
+  en: "Couldn't start recording: %{error}"
+  zh-TW: "無法開始錄製：%{error}"
+  ja: "録画を開始できませんでした：%{error}"
+  ko: "녹화를 시작하지 못했습니다: %{error}"
+terminal.record.failed:
+  zh-CN: "录制文件写入失败，已停止录制：%{error}"
+  en: "Couldn't write the recording, so recording stopped: %{error}"
+  zh-TW: "錄製檔寫入失敗，已停止錄製：%{error}"
+  ja: "録画ファイルに書き込めなかったため、録画を停止しました：%{error}"
+  ko: "녹화 파일을 쓰지 못해 녹화를 중지했습니다: %{error}"
+terminal.record.reason_full:
+  zh-CN: "录制文件已达到大小上限"
+  en: "The recording reached its size limit"
+  zh-TW: "錄製檔已達到大小上限"
+  ja: "録画ファイルがサイズの上限に達しました"
+  ko: "녹화 파일이 크기 한도에 도달했습니다"
+terminal.record.reason_lost:
+  zh-CN: "连接已断开"
+  en: "The connection was lost"
+  zh-TW: "連線已中斷"
+  ja: "接続が切断されました"
+  ko: "연결이 끊어졌습니다"
+terminal.record.reason_ended:
+  zh-CN: "会话已结束"
+  en: "The session ended"
+  zh-TW: "工作階段已結束"
+  ja: "セッションが終了しました"
+  ko: "세션이 종료되었습니다"
+terminal.record.saved:
+  zh-CN: "录制已保存"
+  en: "Recording saved"
+  zh-TW: "錄製已儲存"
+  ja: "録画を保存しました"
+  ko: "녹화를 저장했습니다"
+terminal.record.saved_because:
+  zh-CN: "%{reason}，录制已保存"
+  en: "%{reason}. Recording saved"
+  zh-TW: "%{reason}，錄製已儲存"
+  ja: "%{reason}。録画を保存しました"
+  ko: "%{reason}. 녹화를 저장했습니다"
+terminal.record.replay:
+  zh-CN: "回放"
+  en: "Play"
+  zh-TW: "播放"
+  ja: "再生"
+  ko: "재생"
+panel.menu.reveal_record:
+  zh-CN: "在文件夹中显示录制文件"
+  en: "Show Recording in Folder"
+  zh-TW: "在資料夾中顯示錄製檔"
+  ja: "録画ファイルをフォルダーに表示"
+  ko: "폴더에서 녹화 파일 보기"

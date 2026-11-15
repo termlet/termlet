@@ -1,0 +1,64 @@
+# 依赖检查：cargo deny check
+# Termlet 自己以 AGPL-3.0-or-later 开源，依赖仍只允许宽松协议：贡献按 CLA 授权，维护者保留另行授权（例如商业许可）的余地，
+# 依赖中有 GPL / LGPL / AGPL 就做不到；MPL 只有下面列出的例外。
+
+[graph]
+all-features = false
+
+[licenses]
+# Termlet 自己的 crate（AGPL-3.0-or-later，publish = false）不发布，不按下面的允许列表检查
+private = { ignore = true }
+confidence-threshold = 0.9
+# 允许列表中的协议不一定都有依赖在用（依赖变化时某些协议可能暂时没用到），不报警告
+unused-allowed-license = "allow"
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "BSL-1.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CDLA-Permissive-2.0",
+]
+
+# MPL-2.0 是文件级的弱 copyleft：不修改其源文件时可以与任何许可的代码一起分发（包括另行授权的版本），只需让这些文件的源码可得
+# （都在 crates.io 上）。下面几个是 GPUI 与 dirs 间接带来的、无法替换，原样使用、不修改；
+# Termlet 自己不主动引入 MPL 依赖（例如串口不用 MPL 的 serialport，自己实现）。
+exceptions = [
+    # macOS 构建时生成绑定的工具，不进入程序（gpui-pre-apple 的构建依赖）
+    { crate = "cbindgen", allow = ["MPL-2.0"] },
+    # DirectWrite 绑定（zed-font-kit，经 gpui-pre-apple）
+    { crate = "dwrote", allow = ["MPL-2.0"] },
+    # dirs-sys 的小工具（经 zed-font-kit）
+    { crate = "option-ext", allow = ["MPL-2.0"] },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+# workspace 内部的 path 依赖不写版本
+allow-wildcard-paths = true
+
+[advisories]
+# 只报漏洞，维护状态由人判断
+unmaintained = "none"
+# 有意忽略的公告：写明理由；上游有了修复版就升级并删掉这一条（cargo deny 会提示不再命中的忽略项）
+ignore = [
+    # rsa 的私钥运算不是固定耗时（Marvin 攻击），上游至今没有修复版（rsa 0.9.10、0.10.0-rc.18 都受影响）。
+    # rsa 由 russh 与 ssh-key 带进来；只有用 Termlet 自己保存的 RSA 私钥登录时，服务器能看到签名的耗时，
+    # 每次登录只签一次，隔着网络抖动极难利用。生成、导入、转换 RSA 密钥都在本机；校验 RSA 主机密钥只用公钥；
+    # 经 SSH Agent / Pageant 登录时签名在 agent 中完成；默认生成的是 Ed25519。2026-10-28 决定忽略。
+    { id = "RUSTSEC-2023-0071", reason = "rsa 的 Marvin 时间侧信道，上游无修复版；只影响用本地 RSA 私钥登录时的签名，极难利用" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

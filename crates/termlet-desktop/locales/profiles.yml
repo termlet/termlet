@@ -1,0 +1,73 @@
+_version: 2
+profiles.hint:
+  zh-CN: 多台主机共用的用户名与认证
+  en: A user name and authentication shared by several hosts
+  zh-TW: 多台主機共用的使用者名稱與驗證
+  ja: 複数のホストで共有するユーザー名と認証
+  ko: 여러 호스트가 함께 쓰는 사용자 이름과 인증
+profiles.new:
+  zh-CN: 新建凭据档案…
+  en: New credential profile…
+  zh-TW: 新增認證資訊設定檔…
+  ja: 新しい認証プロファイル…
+  ko: 새 자격 증명 프로필…
+profiles.empty:
+  zh-CN: 还没有凭据档案。编辑主机时可以选用，分组也可以设为默认值；改一处即对所有使用它的主机生效。
+  en: No credential profiles yet. Hosts can use one, and groups can set one as their default. Changing it updates every host that uses it.
+  zh-TW: 還沒有認證資訊設定檔。編輯主機時可以選用，群組也可以設為預設值；改一處即對所有使用它的主機生效。
+  ja: 認証プロファイルはまだありません。ホストの編集時に選択でき、グループのデフォルトにも設定できます。1 か所を変更すると、それを使うすべてのホストに反映されます。
+  ko: 아직 자격 증명 프로필이 없습니다. 호스트를 편집할 때 선택할 수 있고, 그룹의 기본값으로도 설정할 수 있습니다. 한 곳만 바꾸면 이 프로필을 쓰는 모든 호스트에 적용됩니다.
+profiles.row.detail:
+  zh-CN: "%{username} · %{auth} · %{hosts} 台主机、%{groups} 个分组"
+  en: "%{username} · %{auth} · %{hosts} hosts, %{groups} groups"
+  zh-TW: "%{username} · %{auth} · %{hosts} 台主機、%{groups} 個群組"
+  ja: "%{username} · %{auth} · ホスト %{hosts} 台、グループ %{groups} 個"
+  ko: "%{username} · %{auth} · 호스트 %{hosts}대, 그룹 %{groups}개"
+profiles.menu.edit:
+  zh-CN: 编辑…
+  en: Edit…
+  zh-TW: 編輯…
+  ja: 編集…
+  ko: 편집…
+profiles.menu.delete:
+  zh-CN: 删除…
+  en: Delete…
+  zh-TW: 刪除…
+  ja: 削除…
+  ko: 삭제…
+profile.new.title:
+  zh-CN: 新建凭据档案
+  en: New credential profile
+  zh-TW: 新增認證資訊設定檔
+  ja: 新しい認証プロファイル
+  ko: 새 자격 증명 프로필
+profile.edit.title:
+  zh-CN: 编辑凭据档案
+  en: Edit credential profile
+  zh-TW: 編輯認證資訊設定檔
+  ja: 認証プロファイルの編集
+  ko: 자격 증명 프로필 편집
+profile.field.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+profile.field.name_placeholder:
+  zh-CN: 例如：生产环境 deploy 账号
+  en: "For example: production deploy account"
+  zh-TW: 例如：正式環境 deploy 帳號
+  ja: 例：本番環境の deploy アカウント
+  ko: "예: 운영 환경 deploy 계정"
+profile.error.username_required:
+  zh-CN: 请填写用户名。
+  en: Enter a user name.
+  zh-TW: 請填寫使用者名稱。
+  ja: ユーザー名を入力してください。
+  ko: 사용자 이름을 입력하세요.
+profile.delete.title:
+  zh-CN: 删除凭据档案“%{name}”？
+  en: Delete credential profile "%{name}"?
+  zh-TW: 刪除認證資訊設定檔「%{name}」？
+  ja: 認証プロファイル「%{name}」を削除しますか？
+  ko: "'%{name}' 자격 증명 프로필을 삭제하시겠습니까?"

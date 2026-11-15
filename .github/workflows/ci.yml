@@ -1,0 +1,206 @@
+# 持续集成：推送与合并请求时检查格式、clippy、测试、依赖与秘密。
+#
+# 每次推送（任何分支）在 Linux 上并行跑：clippy（格式与 clippy）、ui（界面与终端的测试、文档测试）、core（核心、
+# 命令行工具、协议的测试，不依赖 GPUI，不用装系统库）、deny（依赖检查，不编译）、gitleaks（秘密扫描）。缓存按 job
+# 分开，各存自己用到的依赖（clippy 只有检查的产物，core 不含 GPUI）；core 的那份用 shared-key linux-core，与
+# sshd.yml 共用。
+#
+# 推送到默认分支与合并请求时另跑 Windows 的全量 clippy 与测试（windows.yml）、Linux 上连真实 sshd 的集成测试
+# （sshd.yml）、arm64 上的核心测试（arm64.yml）；其他分支的推送不跑这三项，开合并请求时再跑。打版本标签时 release.yml 在打包前也调用前两项（arm64 的测试在它的 arm64 打包 job 中跑）。
+# 同一仓库的合并请求不再跑 Linux 的几项（推送时已经跑过）；来自 fork 的合并请求全部都跑（拿不到任何 Secrets，
+# 工作流也只有读权限）。
+#
+# 测试用 cargo-nextest（每个测试一个进程，配置见 .config/nextest.toml），文档测试 nextest 不跑，另用 cargo test --doc。
+#
+# 本机复现：testing/linux/Dockerfile 的镜像（同样的系统库、工具链与编译设置，以普通用户运行），用法见其中的注释。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: CI
+
+# 只改文档时不跑（两处的 paths 相同）：后面的模式优先，crates 下的 .md（如命令行工具的技能说明）与程序图标用的
+# logo 在编译时嵌入程序，照常触发
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '**'
+      - '!**.md'
+      - '!docs/**'
+      - '!.claude/**'
+      - '.github/**'
+      - '.config/**'
+      - 'crates/**'
+      - 'docs/brand/logo.svg'
+  pull_request:
+    paths:
+      - '**'
+      - '!**.md'
+      - '!docs/**'
+      - '!.claude/**'
+      - '.github/**'
+      - '.config/**'
+      - 'crates/**'
+      - 'docs/brand/logo.svg'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一分支连续推送时只跑最新的一次
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # 不生成调试信息、不增量编译：编译与链接更快，缓存也小得多（测试失败时的文件与行号来自 panic 信息，不受影响）
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_INCREMENTAL: '0'
+  # GPUI 在 Linux 上编译时链接的系统库（xkbcommon 含 x11、xcb、fontconfig、freetype）；wayland、vulkan 运行时加载。
+  # 与 release.yml、testing/linux/Dockerfile 的相同
+  LINUX_DEPS: libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libfontconfig-dev libfreetype-dev
+
+jobs:
+  clippy:
+    name: 格式、clippy
+    # 同一仓库的合并请求在推送时已经跑过
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # 检查时也要：-sys 的构建脚本用 pkg-config 找它们
+      - name: 安装系统库
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $LINUX_DEPS
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: 格式
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  ui:
+    name: 界面与终端的测试
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装系统库
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $LINUX_DEPS
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与 testing/linux/Dockerfile 的版本相同
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 测试
+        run: cargo nextest run --locked --profile ci -p termlet-desktop -p termlet-terminal
+      # 全部 crate 的文档测试（这时各个库都已编好，只编文档中的示例）
+      - name: 文档测试
+        run: cargo test --workspace --locked --doc
+
+  core:
+    name: 核心与命令行工具的测试
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: linux-core
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 测试
+        run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io
+
+  deny:
+    name: 依赖（许可、来源、安全公告）
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与本机用的版本相同
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-deny@0.20.2
+          fallback: none
+      # 含安全公告：出现新的公告时这个 job 失败，处理（升级或在 deny.toml 中写明理由忽略）之前一直失败
+      - run: cargo deny --locked check
+
+  # 推送到默认分支、合并请求与手动运行时：其他分支的推送不跑（开合并请求时再跑）。
+  # 同一仓库的可复用工作流按本次运行的提交解析，不经工作区；zizmor 建议的 `$/…` 写法（GitHub 2026-07 才有）
+  # actionlint 1.7.12 还不认，先不换
+  windows:
+    name: Windows
+    if: github.event_name != 'push' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: ./.github/workflows/windows.yml # zizmor: ignore[self-repository]
+
+  sshd:
+    name: sshd
+    if: github.event_name != 'push' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: ./.github/workflows/sshd.yml # zizmor: ignore[self-repository]
+
+  arm64:
+    name: arm64
+    if: github.event_name != 'push' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: ./.github/workflows/arm64.yml # zizmor: ignore[self-repository]
+
+  # 秘密扫描：gitleaks 的命令行（官方发布的预编译二进制，固定版本、核对 SHA-256；gitleaks-action 在组织账号下要付费
+  # 许可证，不用）。规则用仓库的 .gitleaks.toml，已确认的误报记在 .gitleaksignore（git 模式的指纹带提交号）。
+  # 扫描全部历史而不是只扫本次推送的提交：历史很小（几十个提交），全部扫一遍只要几秒，也省掉新分支、强推时
+  # “本次推送的范围”算不出来的情况；历史变大后再改成 --log-opts="<推送前>..<推送后>"。--redact：日志中不显示找到的内容
+  gitleaks:
+    name: 秘密扫描（gitleaks）
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      # 与发布页的 gitleaks_8.30.1_checksums.txt 中的相同
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: 安装 gitleaks
+        run: |
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl -fsSL --retry 3 -o "$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "$GITLEAKS_SHA256  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+      - name: 扫描
+        run: '"$RUNNER_TEMP/gitleaks" git --no-banner --redact -c .gitleaks.toml .'

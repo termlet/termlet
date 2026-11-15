@@ -1,0 +1,78 @@
+# 远程配置：给 packaging/remote-config/update.json 签名并发布到下载站（https://dl.termlet.dev/update.json 与
+# update.json.minisig），只手动运行，只能在默认分支上运行。
+#
+# 应用启动后与检查更新时读这份配置（字段见 crates/termlet-core/src/remote_config.rs：更新源、暂停更新与通知、崩溃报告
+# 与使用统计的接收地址），签名带签发时间与有效期，过期后应用不再采用它。改配置：改 update.json 并提交到默认分支后运行；
+# 续期：内容不变，直接运行（提前一个月，现在这份的有效期见 update.json.minisig 的可信注释）。
+#
+# 与 release.yml 的 release job 共用 GitHub Environment `release`（秘密只存一份）：要用户在网页或手机上批准才运行，
+# 批准前拿不到它的 Secrets（签名私钥与口令、R2 与清缓存的令牌）；环境的部署规则是 v* 标签加 main 分支，这个工作流
+# 从 main 运行。只运行 scripts/release.mjs（只用 Node 自带的模块），不编译、不装工具：sign-config
+# 签名（核对公钥在 keys.rs 中；私钥写进 $RUNNER_TEMP 下权限 600 的临时文件，下一步无论成败都删掉），publish-config
+# 先传签名、再传配置，清 CDN 缓存后经 https 取回核对。每个秘密只放在用它的那一步的 env 中。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: Remote config
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 签名的有效期（天，1–366）
+        required: true
+        default: '366'
+        type: string
+      dry-run:
+        description: 只签名、核对，不上传
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: remote-config
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 签名并发布远程配置
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: release
+      url: https://dl.termlet.dev/update.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 签名
+        env:
+          DAYS: ${{ inputs.days }}
+          UPDATE_KEY_JSON: ${{ secrets.TERMLET_UPDATE_KEY_JSON }}
+          TERMLET_UPDATE_KEY_PASSPHRASE: ${{ secrets.TERMLET_UPDATE_KEY_PASSPHRASE }}
+        run: |
+          key="$RUNNER_TEMP/update-key.json"
+          (umask 077 && printf '%s' "$UPDATE_KEY_JSON" > "$key")
+          chmod 600 "$key"
+          unset UPDATE_KEY_JSON
+          node scripts/release.mjs sign-config --key "$key" --days "$DAYS" packaging/remote-config/update.json
+      - name: 删除签名密钥的临时文件
+        if: always()
+        run: rm -f "$RUNNER_TEMP/update-key.json"
+      - name: 发布
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_PURGE_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          if [ "$DRY_RUN" = true ]; then
+            node scripts/release.mjs publish-config --dry-run packaging/remote-config/update.json
+          else
+            node scripts/release.mjs publish-config packaging/remote-config/update.json
+          fi

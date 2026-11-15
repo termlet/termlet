@@ -1,0 +1,211 @@
+_version: 2
+editor.reload:
+  zh-CN: 重新加载远程文件
+  en: Reload the remote file
+  zh-TW: 重新載入遠端檔案
+  ja: リモートファイルを再読み込み
+  ko: 원격 파일 다시 불러오기
+editor.find:
+  zh-CN: 查找与替换
+  en: Find and replace
+  zh-TW: 尋找與取代
+  ja: 検索と置換
+  ko: 찾기 및 바꾸기
+editor.saving:
+  zh-CN: 正在保存…
+  en: Saving…
+  zh-TW: 正在儲存…
+  ja: 保存しています…
+  ko: 저장하는 중…
+editor.saved:
+  zh-CN: 已保存
+  en: Saved
+  zh-TW: 已儲存
+  ja: 保存済み
+  ko: 저장됨
+editor.unsaved:
+  zh-CN: 有未保存的修改
+  en: Unsaved changes
+  zh-TW: 有未儲存的變更
+  ja: 未保存の変更があります
+  ko: 저장하지 않은 변경 사항이 있습니다
+editor.reloading:
+  zh-CN: 正在重新加载…
+  en: Reloading…
+  zh-TW: 正在重新載入…
+  ja: 再読み込みしています…
+  ko: 다시 불러오는 중…
+editor.plain_text:
+  zh-CN: 纯文本
+  en: Plain text
+  zh-TW: 純文字
+  ja: プレーンテキスト
+  ko: 일반 텍스트
+editor.eol_mixed:
+  zh-CN: 混合换行符
+  en: Mixed line endings
+  zh-TW: 混合的換行字元
+  ja: 改行コードが混在
+  ko: 혼합된 줄 바꿈 문자
+editor.encoding:
+  zh-CN: 按其他编码重新打开
+  en: Reopen with another encoding
+  zh-TW: 以其他編碼重新開啟
+  ja: 別のエンコードで開き直す
+  ko: 다른 인코딩으로 다시 열기
+editor.close_window_unsaved:
+  zh-CN: "%{count} 个文件有未保存的修改，关闭后修改将丢失。"
+  en: "%{count} files have unsaved changes that will be lost."
+  zh-TW: "%{count} 個檔案有未儲存的變更，關閉後變更將會遺失。"
+  ja: "%{count} 個のファイルに未保存の変更があります。閉じると変更は失われます。"
+  ko: 파일 %{count}개에 저장하지 않은 변경 사항이 있습니다. 닫으면 변경 사항이 사라집니다.
+editor.confirm_close:
+  zh-CN: “%{name}”有未保存的修改，确定关闭吗？
+  en: “%{name}” has unsaved changes. Close it anyway?
+  zh-TW: 「%{name}」有未儲存的變更，確定要關閉嗎？
+  ja: 「%{name}」には未保存の変更があります。閉じますか？
+  ko: "'%{name}'에 저장하지 않은 변경 사항이 있습니다. 닫으시겠습니까?"
+editor.confirm_close_detail:
+  zh-CN: 修改将丢失。
+  en: Your changes will be lost.
+  zh-TW: 變更將會遺失。
+  ja: 変更は失われます。
+  ko: 변경 사항이 사라집니다.
+editor.discard_and_close:
+  zh-CN: 放弃修改并关闭
+  en: Discard and close
+  zh-TW: 捨棄變更並關閉
+  ja: 変更を破棄して閉じる
+  ko: 변경 사항 버리고 닫기
+editor.confirm_reload:
+  zh-CN: 放弃未保存的修改，重新加载远程文件吗？
+  en: Discard your unsaved changes and reload the remote file?
+  zh-TW: 要捨棄未儲存的變更，重新載入遠端檔案嗎？
+  ja: 未保存の変更を破棄して、リモートファイルを再読み込みしますか？
+  ko: 저장하지 않은 변경 사항을 버리고 원격 파일을 다시 불러오시겠습니까?
+editor.discard_and_reload:
+  zh-CN: 放弃修改并重新加载
+  en: Discard and reload
+  zh-TW: 捨棄變更並重新載入
+  ja: 変更を破棄して再読み込み
+  ko: 변경 사항 버리고 다시 불러오기
+editor.confirm_reopen:
+  zh-CN: 放弃未保存的修改，用 %{name} 重新打开吗？
+  en: Discard your unsaved changes and reopen with %{name}?
+  zh-TW: 要捨棄未儲存的變更，以 %{name} 重新開啟嗎？
+  ja: 未保存の変更を破棄して、%{name} で開き直しますか？
+  ko: 저장하지 않은 변경 사항을 버리고 %{name}(으)로 다시 여시겠습니까?
+editor.discard_and_reopen:
+  zh-CN: 放弃修改并重新打开
+  en: Discard and reopen
+  zh-TW: 捨棄變更並重新開啟
+  ja: 変更を破棄して開き直す
+  ko: 변경 사항 버리고 다시 열기
+editor.conflict:
+  zh-CN: 远程文件在打开后已被修改（可能是其他人或程序），保存会覆盖对方的修改。
+  en: The remote file has changed since you opened it (someone or something else modified it). Saving will overwrite those changes.
+  zh-TW: 遠端檔案在開啟後已被修改（可能是其他人或程式），儲存會覆寫對方的修改。
+  ja: リモートファイルは開いた後に変更されています（ほかのユーザーかプログラムによる変更の可能性があります）。保存すると相手の変更が上書きされます。
+  ko: 원격 파일이 연 이후에 변경되었습니다(다른 사용자나 프로그램이 변경했을 수 있음). 저장하면 그 변경 사항을 덮어씁니다.
+editor.conflict_deleted:
+  zh-CN: 远程文件在打开后已被删除（可能是其他人或程序），保存会重新创建它。
+  en: The remote file has been deleted since you opened it (by someone or something else). Saving will create it again.
+  zh-TW: 遠端檔案在開啟後已被刪除（可能是其他人或程式），儲存會重新建立它。
+  ja: リモートファイルは開いた後に削除されています（ほかのユーザーかプログラムによる削除の可能性があります）。保存するとファイルが作成し直されます。
+  ko: 원격 파일이 연 이후에 삭제되었습니다(다른 사용자나 프로그램이 삭제했을 수 있음). 저장하면 파일을 다시 만듭니다.
+editor.overwrite:
+  zh-CN: 仍然覆盖
+  en: Overwrite anyway
+  zh-TW: 仍要覆寫
+  ja: 上書きする
+  ko: 그래도 덮어쓰기
+editor.save_anyway:
+  zh-CN: 仍然保存
+  en: Save anyway
+  zh-TW: 仍要儲存
+  ja: 保存する
+  ko: 그래도 저장
+editor.discard:
+  zh-CN: 放弃我的修改并重新加载
+  en: Discard my changes and reload
+  zh-TW: 捨棄我的變更並重新載入
+  ja: 自分の変更を破棄して再読み込み
+  ko: 내 변경 사항 버리고 다시 불러오기
+editor.keep_editing:
+  zh-CN: 暂不保存
+  en: Not now
+  zh-TW: 暫不儲存
+  ja: 今は保存しない
+  ko: 지금 저장 안 함
+editor.lost:
+  zh-CN: SFTP 连接已断开，修改尚未保存
+  en: The SFTP connection was lost. Your changes haven't been saved.
+  zh-TW: SFTP 連線已中斷，變更尚未儲存
+  ja: SFTP の接続が切断されました。変更はまだ保存されていません
+  ko: SFTP 연결이 끊어졌습니다. 변경 사항은 아직 저장되지 않았습니다
+editor.lost_sftp_closed:
+  zh-CN: SFTP 连接已断开，修改尚未保存。“%{host}”的 SFTP 已关闭：重新打开它后会自动连上
+  en: The SFTP connection was lost and your changes haven't been saved. SFTP for “%{host}” is closed; open it again to reconnect.
+  zh-TW: SFTP 連線已中斷，變更尚未儲存。「%{host}」的 SFTP 已關閉：重新開啟它後會自動連線
+  ja: SFTP の接続が切断されました。変更はまだ保存されていません。「%{host}」の SFTP は閉じられています。開き直すと自動的に接続されます
+  ko: SFTP 연결이 끊어졌습니다. 변경 사항은 아직 저장되지 않았습니다. '%{host}'의 SFTP가 닫혔습니다. 다시 열면 자동으로 연결됩니다
+editor.reconnecting:
+  zh-CN: SFTP 连接已断开，正在自动重连…（修改会保留）
+  en: The SFTP connection was lost. Reconnecting… (your changes are kept)
+  zh-TW: SFTP 連線已中斷，正在自動重新連線…（變更會保留）
+  ja: SFTP の接続が切断されました。自動的に再接続しています…（変更は保持されます）
+  ko: SFTP 연결이 끊어졌습니다. 자동으로 다시 연결하는 중…(변경 사항은 유지됨)
+editor.waiting:
+  zh-CN: 正在重新连接 SFTP…（修改会保留）
+  en: Reconnecting SFTP… (your changes are kept)
+  zh-TW: 正在重新連線 SFTP…（變更會保留）
+  ja: SFTP に再接続しています…（変更は保持されます）
+  ko: SFTP에 다시 연결하는 중…(변경 사항은 유지됨)
+editor.menu.undo:
+  zh-CN: 撤销
+  en: Undo
+  zh-TW: 復原
+  ja: 元に戻す
+  ko: 실행 취소
+editor.menu.redo:
+  zh-CN: 重做
+  en: Redo
+  zh-TW: 取消復原
+  ja: やり直し
+  ko: 다시 실행
+editor.menu.cut:
+  zh-CN: 剪切
+  en: Cut
+  zh-TW: 剪下
+  ja: 切り取り
+  ko: 잘라내기
+editor.menu.copy:
+  zh-CN: 复制
+  en: Copy
+  zh-TW: 複製
+  ja: コピー
+  ko: 복사
+editor.menu.paste:
+  zh-CN: 粘贴
+  en: Paste
+  zh-TW: 貼上
+  ja: 貼り付け
+  ko: 붙여넣기
+editor.menu.select_all:
+  zh-CN: 全选
+  en: Select all
+  zh-TW: 全選
+  ja: すべて選択
+  ko: 모두 선택
+editor.load_failed:
+  zh-CN: 无法打开：%{error}
+  en: "Couldn't open the file: %{error}"
+  zh-TW: 無法開啟：%{error}
+  ja: 開けませんでした：%{error}
+  ko: "열 수 없습니다: %{error}"
+editor.retry:
+  zh-CN: 重试
+  en: Retry
+  zh-TW: 重試
+  ja: 再試行
+  ko: 다시 시도

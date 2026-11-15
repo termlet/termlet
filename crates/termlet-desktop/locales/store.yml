@@ -1,0 +1,199 @@
+_version: 2
+store.error.vault_locked:
+  zh-CN: 保险库已锁定，解锁后再保存。
+  en: The vault is locked. Unlock it before saving.
+  zh-TW: 保險庫已鎖定，解鎖後再儲存。
+  ja: 保管庫がロックされています。ロックを解除してから保存してください。
+  ko: 보관함이 잠겨 있습니다. 잠금을 해제한 후 저장하세요.
+store.error.not_found:
+  zh-CN: 要修改的条目已被删除。
+  en: The item you're editing was deleted.
+  zh-TW: 要修改的項目已被刪除。
+  ja: 編集中の項目は削除されています。
+  ko: 편집하려는 항목이 삭제되었습니다.
+store.error.failed:
+  zh-CN: 保存失败：%{error}
+  en: "Couldn't save: %{error}"
+  zh-TW: 儲存失敗：%{error}
+  ja: 保存できませんでした：%{error}
+  ko: "저장하지 못했습니다: %{error}"
+store.invalid.name_required:
+  zh-CN: 请填写名称。
+  en: Enter a name.
+  zh-TW: 請填寫名稱。
+  ja: 名前を入力してください。
+  ko: 이름을 입력하세요.
+store.invalid.name_too_long:
+  zh-CN: 名称太长了。
+  en: The name is too long.
+  zh-TW: 名稱太長了。
+  ja: 名前が長すぎます。
+  ko: 이름이 너무 깁니다.
+store.invalid.address:
+  zh-CN: 请填写地址，地址中不能有空格或斜杠。
+  en: Enter an address. It can't contain spaces or slashes.
+  zh-TW: 請填寫位址，位址中不能有空格或斜線。
+  ja: アドレスを入力してください。アドレスに空白やスラッシュは使えません。
+  ko: 주소를 입력하세요. 주소에는 공백이나 슬래시를 사용할 수 없습니다.
+store.invalid.address_too_long:
+  zh-CN: 地址太长了。
+  en: The address is too long.
+  zh-TW: 位址太長了。
+  ja: アドレスが長すぎます。
+  ko: 주소가 너무 깁니다.
+store.invalid.username_too_long:
+  zh-CN: 用户名不能超过 128 个字符。
+  en: The user name can't be longer than 128 characters.
+  zh-TW: 使用者名稱不能超過 128 個字元。
+  ja: ユーザー名は 128 文字以内にしてください。
+  ko: 사용자 이름은 128자를 넘을 수 없습니다.
+store.invalid.note_too_long:
+  zh-CN: 备注不能超过 2000 个字符。
+  en: The note can't be longer than 2,000 characters.
+  zh-TW: 備註不能超過 2000 個字元。
+  ja: メモは 2000 文字以内にしてください。
+  ko: 메모는 2000자를 넘을 수 없습니다.
+store.invalid.tag_too_long:
+  zh-CN: 每个标签不能超过 32 个字符。
+  en: Each tag can be at most 32 characters.
+  zh-TW: 每個標籤不能超過 32 個字元。
+  ja: タグは 1 つにつき 32 文字以内にしてください。
+  ko: 태그는 각각 32자를 넘을 수 없습니다.
+store.invalid.too_many_tags:
+  zh-CN: 每台主机最多 20 个标签。
+  en: A host can have at most 20 tags.
+  zh-TW: 每台主機最多 20 個標籤。
+  ja: タグは 1 台のホストにつき 20 個までです。
+  ko: 호스트 하나에 태그는 최대 20개까지입니다.
+store.invalid.jump_cycle:
+  zh-CN: 跳板机不能是主机自己，也不能形成循环。
+  en: A host can't be its own jump host, and jump hosts can't form a loop.
+  zh-TW: 跳板機不能是主機自己，也不能形成循環。
+  ja: ホスト自身を踏み台ホストにすることはできず、踏み台ホストが循環してもいけません。
+  ko: 호스트 자신을 점프 호스트로 지정할 수 없으며, 점프 호스트가 순환해서도 안 됩니다.
+store.invalid.jump_too_deep:
+  zh-CN: 跳板机最多 5 层。
+  en: Jump hosts can be chained at most 5 deep.
+  zh-TW: 跳板機最多 5 層。
+  ja: 踏み台ホストは 5 段までです。
+  ko: 점프 호스트는 최대 5단계까지입니다.
+store.invalid.jump_not_found:
+  zh-CN: 选择的跳板机已被删除。
+  en: The selected jump host was deleted.
+  zh-TW: 選擇的跳板機已被刪除。
+  ja: 選択した踏み台ホストは削除されています。
+  ko: 선택한 점프 호스트가 삭제되었습니다.
+store.invalid.jump_not_ssh:
+  zh-CN: 跳板机只能是 SSH 主机。
+  en: A jump host must be an SSH host.
+  zh-TW: 跳板機只能是 SSH 主機。
+  ja: 踏み台ホストには SSH ホストのみ指定できます。
+  ko: 점프 호스트는 SSH 호스트만 지정할 수 있습니다.
+store.invalid.profile_not_found:
+  zh-CN: 选择的凭据档案已被删除。
+  en: The selected credential profile was deleted.
+  zh-TW: 選擇的認證資訊設定檔已被刪除。
+  ja: 選択した認証プロファイルは削除されています。
+  ko: 선택한 자격 증명 프로필이 삭제되었습니다.
+store.invalid.profile_in_use:
+  zh-CN: 凭据档案仍被主机使用或被分组设为默认值，请先改掉再删除。
+  en: The credential profile is still used by hosts or as a group default. Change those first.
+  zh-TW: 認證資訊設定檔仍被主機使用或被群組設為預設值，請先改掉再刪除。
+  ja: この認証プロファイルはまだホストで使われているか、グループのデフォルトに設定されています。先にそれらを変更してから削除してください。
+  ko: 이 자격 증명 프로필은 아직 호스트에서 사용 중이거나 그룹의 기본값으로 설정되어 있습니다. 먼저 해당 설정을 바꾼 후 삭제하세요.
+store.invalid.key_in_use:
+  zh-CN: 密钥仍被主机或凭据档案使用，请先改掉再删除。
+  en: The key is still used by hosts or credential profiles. Change those first.
+  zh-TW: 金鑰仍被主機或認證資訊設定檔使用，請先改掉再刪除。
+  ja: この鍵はまだホストまたは認証プロファイルで使われています。先にそれらを変更してから削除してください。
+  ko: 이 키는 아직 호스트나 자격 증명 프로필에서 사용 중입니다. 먼저 해당 설정을 바꾼 후 삭제하세요.
+store.invalid.parent_cycle:
+  zh-CN: 不能把分组移到它自己或它的子分组下。
+  en: A group can't be moved into itself or one of its subgroups.
+  zh-TW: 不能把群組移到它自己或它的子群組下。
+  ja: グループをそれ自身やそのサブグループの下に移動することはできません。
+  ko: 그룹을 자기 자신이나 하위 그룹 아래로 옮길 수 없습니다.
+store.invalid.parent_not_found:
+  zh-CN: 目标分组已被删除。
+  en: The target group was deleted.
+  zh-TW: 目標群組已被刪除。
+  ja: 移動先のグループは削除されています。
+  ko: 대상 그룹이 삭제되었습니다.
+store.invalid.proxy_address:
+  zh-CN: 请填写代理地址，地址中不能有空格或斜杠。
+  en: Enter the proxy address. It can't contain spaces or slashes.
+  zh-TW: 請填寫代理位址，位址中不能有空格或斜線。
+  ja: プロキシのアドレスを入力してください。アドレスに空白やスラッシュは使えません。
+  ko: 프록시 주소를 입력하세요. 주소에는 공백이나 슬래시를 사용할 수 없습니다.
+store.invalid.proxy_port:
+  zh-CN: 代理端口需在 1 到 65535 之间。
+  en: The proxy port must be between 1 and 65535.
+  zh-TW: 代理連接埠需在 1 到 65535 之間。
+  ja: プロキシのポートは 1～65535 の範囲で指定してください。
+  ko: 프록시 포트는 1에서 65535 사이여야 합니다.
+store.invalid.proxy_command_required:
+  zh-CN: 请填写代理命令。
+  en: Enter the proxy command.
+  zh-TW: 請填寫代理指令。
+  ja: プロキシコマンドを入力してください。
+  ko: 프록시 명령을 입력하세요.
+store.invalid.proxy_command:
+  zh-CN: 代理命令太长，或含有换行。
+  en: The proxy command is too long or contains a line break.
+  zh-TW: 代理指令太長，或含有換行。
+  ja: プロキシコマンドが長すぎるか、改行が含まれています。
+  ko: 프록시 명령이 너무 길거나 줄 바꿈이 포함되어 있습니다.
+store.invalid.startup_too_many_lines:
+  zh-CN: 登录后执行的命令最多 20 行。
+  en: Login commands can have at most 20 lines.
+  zh-TW: 登入後執行的指令最多 20 行。
+  ja: ログイン後に実行するコマンドは 20 行までです。
+  ko: 로그인 후 실행할 명령은 최대 20줄입니다.
+store.invalid.startup_line_too_long:
+  zh-CN: 登录后执行的命令每行最多 1000 个字符。
+  en: Each login command line can be at most 1,000 characters.
+  zh-TW: 登入後執行的指令每行最多 1000 個字元。
+  ja: ログイン後に実行するコマンドは 1 行 1000 文字までです。
+  ko: 로그인 후 실행할 명령은 한 줄에 최대 1000자입니다.
+store.invalid.startup_control_chars:
+  zh-CN: 登录后执行的命令中有控制字符。
+  en: The login commands contain control characters.
+  zh-TW: 登入後執行的指令中有控制字元。
+  ja: ログイン後に実行するコマンドに制御文字が含まれています。
+  ko: 로그인 후 실행할 명령에 제어 문자가 포함되어 있습니다.
+store.invalid.other:
+  zh-CN: 内容不合法（%{field}：%{reason}）。
+  en: "Invalid value (%{field}: %{reason})."
+  zh-TW: 內容無效（%{field}：%{reason}）。
+  ja: 内容が正しくありません（%{field}：%{reason}）。
+  ko: "값이 올바르지 않습니다(%{field}: %{reason})."
+store.invalid.serial_port:
+  zh-CN: "串口名只能包含字母、数字和 . _ / \\ : - ，最长 128 个字符。"
+  en: "A serial port name can only contain letters, digits and . _ / \\ : - (up to 128 characters)."
+  zh-TW: "序列埠名稱只能包含字母、數字和 . _ / \\ : - ，最長 128 個字元。"
+  ja: 'シリアルポート名に使えるのは英字、数字、. _ / \ : - のみで、最大 128 文字です。'
+  ko: '직렬 포트 이름에는 영문자, 숫자, . _ / \ : - 만 사용할 수 있으며 최대 128자입니다.'
+store.invalid.term_type:
+  zh-CN: 终端类型只能包含字母、数字和 . _ + - ，最长 40 个字符。
+  en: "The terminal type can only contain letters, digits and . _ + - (up to 40 characters)."
+  zh-TW: 終端機類型只能包含字母、數字和 . _ + - ，最長 40 個字元。
+  ja: ターミナルの種類に使えるのは英字、数字、. _ + - のみで、最大 40 文字です。
+  ko: 터미널 유형에는 영문자, 숫자, . _ + - 만 사용할 수 있으며 최대 40자입니다.
+store.invalid.serial_baud:
+  zh-CN: 波特率需在 50 到 20000000 之间。
+  en: The baud rate must be between 50 and 20000000.
+  zh-TW: 鮑率需在 50 到 20000000 之間。
+  ja: ボーレートは 50～20000000 の範囲で指定してください。
+  ko: 보드 레이트는 50에서 20000000 사이여야 합니다.
+store.invalid.serial_data_bits:
+  zh-CN: 数据位只能是 5 到 8。
+  en: Data bits must be 5 to 8.
+  zh-TW: 資料位元只能是 5 到 8。
+  ja: データビットは 5～8 で指定してください。
+  ko: 데이터 비트는 5에서 8 사이만 가능합니다.
+store.invalid.serial_usb:
+  zh-CN: 串口设备的标识不合法。
+  en: The serial device's identifier isn't valid.
+  zh-TW: 序列埠裝置的識別碼無效。
+  ja: シリアルデバイスの識別子が正しくありません。
+  ko: 직렬 장치의 식별자가 올바르지 않습니다.

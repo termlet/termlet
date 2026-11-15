@@ -1,0 +1,461 @@
+# 发布：推送 v* 标签时测试、构建 Windows x64 与 arm64、Linux x64 与 arm64、macOS arm64 的发布版，经用户批准后签名、
+# 生成构建来源证明并发布到下载站 dl.termlet.dev（R2）与本仓库的 GitHub Releases，最后让官网重建。arm64 的 Windows、
+# Linux 是实验版（没有真机，只在 CI 上编译、测试）。
+#
+# 发版前先运行 node scripts/release.mjs prepare <版本>（改版本号，把更新日志最上面“未发布”的一节改成版本号与日期），
+# 提交、推送，再推送标签 v<版本>。各 job：
+#   check          核对标签与 Cargo.toml 的版本一致、更新日志中这一版已写上日期（release.mjs notes，还是“未发布”时
+#                  在这里失败，不白跑构建），在日志中打印 GitHub Release 的说明。
+#   windows-test、sshd  Windows 的全量 clippy 与测试、Linux 上连 sshd 的集成测试（与推送到 main 时 ci.yml 跑的相同）。
+#   windows、linux、macos-arm64  各平台的打包，等上面三个都通过。这几个 job（连同测试）只有 contents: read，不接触
+#                  任何秘密：依赖的构建脚本只在这里运行。arm64 的打包 job 先在 arm64 上跑核心测试（与 arm64.yml 相同）；
+#                  它是实验版，不挡 x64 与 macOS 的发布：失败（continue-on-error）不算运行失败，只是没有它的产物，这一版
+#                  不出那个 arm64 的清单与包（下载站上原有的不动，arm64 的客户端停在旧版本）。各自把上传的产物 zip 的
+#                  SHA-256（upload-artifact 的 artifact-digest）作为 job 的输出交给 release job。
+#   release        签名与发布，只在推送 v* 标签时运行。用 GitHub Environment `release`：要用户在网页或手机上批准（Required
+#                  reviewers）才开始，批准前拿不到这个环境的 Secrets（签名私钥与口令、R2 与清缓存的令牌、官网的部署钩子）；
+#                  环境的部署规则是 v* 标签加 main 分支（main 给 remote-config.yml 用；这个 job 的 if 只认推送的 v* 标签）。
+#                  只下载上一步的产物（zip 原样），不编译、不运行 npm / pnpm install 与任何依赖的构建脚本（只运行
+#                  scripts/release.mjs，它只用 Node 自带的模块，加上运行器自带的 unzip、gh）：
+#                  collect 先用构建 job 报告的摘要核对每个 zip、再解开核对内容（这之前不碰任何秘密），sign 签更新清单与
+#                  SHA256SUMS（私钥写进 $RUNNER_TEMP 下权限 600 的临时文件，下一步无论成败都删掉），actions/attest 生成构建
+#                  来源证明（SHA256SUMS 中的每个文件），publish 依次传到 R2（先包、最后清单）、清 CDN 缓存、经 https 取回
+#                  核对，建 GitHub Release（说明取更新日志中这一版的中英文两节），最后调用 Cloudflare Pages 的部署钩子让
+#                  官网重建。每个秘密只放在用它的那一步的 env 中。
+#                  签名与发布合在一个 job 中：GitHub 的环境审批按 job 算，分成两个 job 要批准两次。中途失败时在网页上
+#                  重新运行这个 job（要再批准一次；同名的文件覆盖，签名不变）。
+# 也可以手动运行：验证构建，版本号取 Cargo.toml 的，不核对标签，不签名、不发布（产物可用 release.mjs fetch --run 下载）。
+#
+# 产物（每个是一个 zip，保留 14 天；release job 与本机的 release.mjs fetch 下载后合进一个目录）：
+#   windows-x64   termlet-<版本>-win-x64.exe、termlet-<版本>-win-x64-portable.zip（便携版），latest.yml（依次列出这两个），
+#                 stage/（打包用的暂存目录：程序、许可文本、version.txt；sign 核对其中的 Termlet.exe 内置了公钥，以后
+#                 有了代码签名证书时在本机签名其中的程序后 build --stage 重新打安装包与便携版）
+#   windows-arm64 termlet-<版本>-win-arm64.exe、termlet-<版本>-win-arm64-portable.zip，latest-arm64.yml，stage-arm64/
+#                 （实验版，job 失败时没有这个产物）
+#   linux-x64     termlet-<版本>-linux-x64.tar.gz、.deb、.rpm、.AppImage，latest-linux.yml（依次列出这四个）
+#   linux-arm64   termlet-<版本>-linux-arm64.tar.gz、.deb、.rpm、.AppImage，latest-linux-arm64.yml（实验版，同上）
+#   macos-arm64   termlet-<版本>-mac-arm64.zip、latest-mac.yml
+# 安装包与其中的程序都没有代码签名；macOS 只做 ad-hoc 签名（没有开发者证书、不公证）。
+# 每个平台、每种架构的包旁边有它的版本描述文件（应用读取，release.mjs build / manifest 生成；x64 的沿用最初的文件名，
+# arm64 的另起一份，各架构的客户端只读自己的）：Windows 安装版据此自动下载、安装（x64 读 latest.yml，arm64 读
+# latest-arm64.yml）；Linux、macOS 不自动安装，读 latest-linux.yml / latest-linux-arm64.yml、latest-mac.yml 只提示
+# 新版本、打开下载页。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# 测试与构建只读源码；release job 另行声明它要的权限
+permissions:
+  contents: read
+
+# 同一个标签（或分支上的手动运行）同时只跑一次，后来的排队、不取消正在跑的
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: 核对版本与更新日志
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 核对标签、版本号与更新日志
+        if: github.ref_type == 'tag'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: node scripts/release.mjs notes --tag "$TAG"
+      - name: 手动运行
+        if: github.ref_type != 'tag'
+        run: echo "::notice::手动运行：只做验证构建，不核对标签，不签名、不发布"
+
+  # 打包之前先跑 Windows 的全量 clippy 与测试、Linux 上连真实 sshd 的集成测试，各平台的打包都等两者通过（同一份代码，
+  # 任何一个不过都不该出包）。arm64 的核心测试在 arm64 的打包 job 中跑（不单独成 job：只挡那一个架构的打包）。
+  # 同一仓库的可复用工作流按本次运行的提交解析，不经工作区；zizmor 建议的 `$/…` 写法（GitHub 2026-07 才有）
+  # actionlint 1.7.12 还不认，先不换
+  windows-test:
+    name: Windows 测试
+    needs: check
+    uses: ./.github/workflows/windows.yml # zizmor: ignore[self-repository]
+
+  sshd:
+    name: sshd 测试
+    needs: check
+    uses: ./.github/workflows/sshd.yml # zizmor: ignore[self-repository]
+
+  # x64 在 windows-2025 上、arm64 在 windows-11-arm 上各自原生编译（先核对 Rust 工具链的主机就是这个架构），打包的
+  # 步骤相同：release.mjs build --arch 按架构取暂存目录名、包名与清单名，并核对程序的 PE 头是这个架构的。
+  # arm64 先跑核心测试；它是实验版，失败不算运行失败（continue-on-error），只是没有 windows-arm64 的产物
+  windows:
+    name: Windows ${{ matrix.arch }}
+    needs: [check, windows-test, sshd]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-2025
+            host: x86_64-pc-windows-msvc
+          - arch: arm64
+            runner: windows-11-arm
+            host: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.arch == 'arm64' }}
+    timeout-minutes: 150
+    # 产物 zip 的 SHA-256（upload-artifact 的 artifact-digest），release job 下载后先核对它。矩阵各腿的输出按名字合在
+    # 一起：每条腿只填自己那个架构的，另一个为空（空值不覆盖别的腿填的）
+    outputs:
+      digest-x64: ${{ matrix.arch == 'x64' && steps.upload.outputs.artifact-digest || '' }}
+      digest-arm64: ${{ matrix.arch == 'arm64' && steps.upload.outputs.artifact-digest || '' }}
+    env:
+      # 不叫 ARCH：一些构建脚本与打包工具（如 appimagetool）会读这个名字
+      TERMLET_ARCH: ${{ matrix.arch }}
+      # 运行器上没有 NSIS（arm64 的运行器上有的版本不同）：下载固定版本的便携版（官方 zip），核对 SHA-256（与
+      # SourceForge 文件页列出的相同）。NSIS 只有 x86 的程序，arm64 的 Windows 经仿真运行它
+      NSIS_VERSION: '3.13'
+      NSIS_SHA256: ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - name: 核对工具链的架构
+        env:
+          EXPECTED_HOST: ${{ matrix.host }}
+        run: |
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          if [ "$host" != "$EXPECTED_HOST" ]; then
+            echo "::error::Rust 工具链的主机是 $host，应为 $EXPECTED_HOST"
+            exit 1
+          fi
+      - name: 核对版本
+        id: version
+        run: |
+          version=$(cargo pkgid -p termlet-desktop | sed 's/.*[#@]//')
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::标签 $GITHUB_REF_NAME 与 Cargo.toml 的版本 $version 不一致"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # arm64 的核心测试（与 arm64.yml 相同；x64 的由 windows.yml 测过）：预编译的 cargo-nextest，与 ci.yml 的版本相同
+      - if: matrix.arch == 'arm64'
+        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 核心测试（arm64）
+        if: matrix.arch == 'arm64'
+        timeout-minutes: 45
+        env:
+          CARGO_PROFILE_DEV_DEBUG: '0'
+          CARGO_INCREMENTAL: '0'
+        run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io
+      # release.mjs 先看环境变量 MAKENSIS
+      - name: 安装 NSIS
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "nsis-$env:NSIS_VERSION.zip"
+          curl.exe -fsSL --retry 3 -o $zip "https://downloads.sourceforge.net/project/nsis/NSIS%203/$env:NSIS_VERSION/nsis-$env:NSIS_VERSION.zip"
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash
+          if ($hash -ne $env:NSIS_SHA256) { throw "NSIS 的 SHA-256 不符：$hash" }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          "MAKENSIS=$env:RUNNER_TEMP\nsis-$env:NSIS_VERSION\makensis.exe" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      # 发布构建（Cargo.toml 的发布配置）、确认程序内置了更新公钥且是这个架构的、准备暂存目录、打安装包与便携版 zip
+      # （同一个暂存目录，便携版的内容见 release.mjs 的 buildPortableZip）、写这个架构的清单（latest.yml 或
+      # latest-arm64.yml）
+      - name: 构建与打包
+        run: node scripts/release.mjs build --arch "$TERMLET_ARCH" --out dist
+      - id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  # x64 在 ubuntu-24.04 上、arm64 在 ubuntu-24.04-arm 上，用同一个容器镜像（多架构的镜像，按运行器的架构取对应的
+  # 那份）原生编译；打包工具按架构下载各自的二进制。arm64 与 Windows 的一样先跑核心测试，失败不算运行失败
+  linux:
+    name: Linux ${{ matrix.arch }}
+    needs: [check, windows-test, sshd]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+            tool-arch: x86_64
+            nfpm-arch: x86_64
+            nfpm-sha256: 6d7f9a28b2f397934403950fcbba83f598b08d02edbe79a0815b3b4897341750
+            appimagetool-sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+            appimage-runtime-sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            tool-arch: aarch64
+            nfpm-arch: arm64
+            nfpm-sha256: a9a75213763783b7669719e505474c748c5ad7dc66591a195619deb50f85c2f4
+            appimagetool-sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
+            appimage-runtime-sha256: 00cbdfcf917cc6c0ff6d3347d59e0ca1f7f45a6df1a428a0d6d8a78664d87444
+    runs-on: ${{ matrix.runner }}
+    # 在 Debian 12（glibc 2.36）中构建，比在 ubuntu-24.04（glibc 2.39）上构建能在更多系统上运行：实测程序用到的
+    # glibc 符号最高是 2.35（hypotf），Ubuntu 22.04、Debian 12 及更新的发行版都能运行（package.sh 打包前核对，两种
+    # 架构都不能超过 2.35）。工具链与 rust-toolchain.toml 一致（rust-toolchain.toml 升级时这里一起改），与本机验证用的
+    # 镜像相同。固定到镜像的摘要（多架构的索引，含 amd64 与 arm64）：同一个标签会被重新构建（Debian 的安全更新），
+    # 摘要不变才是同一个镜像；与 testing/linux/Dockerfile 的 FROM 相同，升级时一起改
+    container: rust:1.99.1-bookworm@sha256:9181b56c2a21ab1d5e73cffe04fc762426d30aa7fac3c91141dd033f49a7fc8b
+    continue-on-error: ${{ matrix.arch == 'arm64' }}
+    timeout-minutes: 150
+    # 产物 zip 的 SHA-256，同 windows job
+    outputs:
+      digest-x64: ${{ matrix.arch == 'x64' && steps.upload.outputs.artifact-digest || '' }}
+      digest-arm64: ${{ matrix.arch == 'arm64' && steps.upload.outputs.artifact-digest || '' }}
+    env:
+      # 不叫 ARCH：一些构建脚本与打包工具（package.sh 中的 appimagetool）会读这个名字
+      TERMLET_ARCH: ${{ matrix.arch }}
+      # 打 deb、rpm、AppImage 的工具（都不进 Rust 依赖）：固定版本并核对 SHA-256（各架构的在 matrix 中）。nfpm（MIT）
+      # 的与它发布的 checksums.txt 相同；appimagetool（MIT）与 AppImage 的 type2 运行时（MIT，静态链接的库见
+      # packaging/licenses/appimage-runtime.txt）的是下载后算的（与发布页记录的摘要相同），运行时另用它发布的 GPG
+      # 公钥（570C77ACEA40C0F1B758902CBF96CCA56490F695）核对过签名
+      NFPM_VERSION: '2.48.0'
+      NFPM_ARCH: ${{ matrix.nfpm-arch }}
+      NFPM_SHA256: ${{ matrix.nfpm-sha256 }}
+      APPIMAGETOOL_VERSION: '1.9.1'
+      APPIMAGETOOL_SHA256: ${{ matrix.appimagetool-sha256 }}
+      APPIMAGE_RUNTIME_VERSION: '20251108'
+      APPIMAGE_RUNTIME_SHA256: ${{ matrix.appimage-runtime-sha256 }}
+      TOOL_ARCH: ${{ matrix.tool-arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 核对版本
+        id: version
+        run: |
+          version=$(cargo pkgid -p termlet-desktop | sed 's/.*[#@]//')
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::标签 $GITHUB_REF_NAME 与 Cargo.toml 的版本 $version 不一致"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # 系统库与 ci.yml 的 LINUX_DEPS、testing/linux/Dockerfile 的相同；nodejs 用来运行 scripts/release.mjs 写许可文本
+      - name: 安装系统库
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libfontconfig-dev libfreetype-dev nodejs
+      # arm64 的核心测试（与 arm64.yml 相同；x64 的由 ci.yml 测过）。install-action 在容器中缺 jq 时自己用 apt 装上
+      - if: matrix.arch == 'arm64'
+        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 核心测试（arm64）
+        if: matrix.arch == 'arm64'
+        timeout-minutes: 45
+        env:
+          CARGO_PROFILE_DEV_DEBUG: '0'
+          CARGO_INCREMENTAL: '0'
+        run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io
+      - name: 构建
+        run: cargo build --release --locked -p termlet-desktop -p termlet-cli
+      # appimagetool 本身是 AppImage：容器中没有 FUSE，解开后运行（APPIMAGE_EXTRACT_AND_RUN）
+      - name: 安装打包工具
+        run: |
+          tools="$RUNNER_TEMP/packaging-tools"
+          mkdir -p "$tools"
+          cd "$tools"
+          curl -fsSL --retry 3 -o nfpm.tar.gz \
+            "https://github.com/goreleaser/nfpm/releases/download/v$NFPM_VERSION/nfpm_${NFPM_VERSION}_Linux_${NFPM_ARCH}.tar.gz"
+          curl -fsSL --retry 3 -o appimagetool \
+            "https://github.com/AppImage/appimagetool/releases/download/$APPIMAGETOOL_VERSION/appimagetool-${TOOL_ARCH}.AppImage"
+          curl -fsSL --retry 3 -o appimage-runtime \
+            "https://github.com/AppImage/type2-runtime/releases/download/$APPIMAGE_RUNTIME_VERSION/runtime-${TOOL_ARCH}"
+          printf '%s  %s\n' "$NFPM_SHA256" nfpm.tar.gz "$APPIMAGETOOL_SHA256" appimagetool \
+            "$APPIMAGE_RUNTIME_SHA256" appimage-runtime | sha256sum -c -
+          tar -xzf nfpm.tar.gz nfpm
+          chmod 755 nfpm appimagetool
+          {
+            echo "NFPM=$tools/nfpm"
+            echo "APPIMAGETOOL=$tools/appimagetool"
+            echo "APPIMAGE_RUNTIME=$tools/appimage-runtime"
+            echo "APPIMAGE_EXTRACT_AND_RUN=1"
+          } >> "$GITHUB_ENV"
+      # tar.gz、deb、rpm、AppImage（内容见 packaging/linux/package.sh 的说明），再写这个架构的版本描述文件
+      # latest-linux.yml 或 latest-linux-arm64.yml：依次列出这四个，tar.gz 在前（清单的 path）
+      - name: 打包
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sh packaging/linux/package.sh "$VERSION" target/release dist "$TERMLET_ARCH"
+          name="dist/termlet-$VERSION-linux-$TERMLET_ARCH"
+          node scripts/release.mjs manifest --file "$name.tar.gz" --file "$name.deb" --file "$name.rpm" \
+            --file "$name.AppImage"
+      # 已经压缩过，产物的 zip 不再压缩
+      - id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linux-${{ matrix.arch }}
+          path: |
+            dist/termlet-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz
+            dist/termlet-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.deb
+            dist/termlet-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.rpm
+            dist/termlet-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.AppImage
+            dist/latest-linux*.yml
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
+  macos-arm64:
+    name: macOS arm64
+    needs: [check, windows-test, sshd]
+    runs-on: macos-15
+    timeout-minutes: 120
+    # 产物 zip 的 SHA-256，同 windows job
+    outputs:
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    env:
+      # 与 Info.plist 的 LSMinimumSystemVersion 一致（Apple 芯片的 Mac 最早就是 macOS 11）
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - name: 核对版本
+        id: version
+        run: |
+          version=$(cargo pkgid -p termlet-desktop | sed 's/.*[#@]//')
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::标签 $GITHUB_REF_NAME 与 Cargo.toml 的版本 $version 不一致"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # Cargo.toml 的发布配置（与 Windows、Linux 相同：thin LTO、一个代码生成单元）
+      - name: 构建
+        run: cargo build --release --locked -p termlet-desktop -p termlet-cli
+      # Termlet.app：程序在 Contents/MacOS/Termlet，命令行工具在 Contents/MacOS/bin/termlet（命令行工具在上一级找
+      # Termlet；APFS 默认不分大小写，两者不能在同一目录），图标与许可文本在 Contents/Resources。图标 Termlet.icns
+      # 由 iconutil 从仓库中的图标集生成（packaging/render-icons.mjs 渲染的各尺寸 PNG）。最后写 latest-mac.yml
+      - name: 打包
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          app=dist/Termlet.app
+          mkdir -p "$app/Contents/MacOS/bin" "$app/Contents/Resources"
+          sed "s/@VERSION@/$VERSION/g" packaging/macos/Info.plist > "$app/Contents/Info.plist"
+          plutil -lint "$app/Contents/Info.plist"
+          install -m 755 target/release/termlet-desktop "$app/Contents/MacOS/Termlet"
+          install -m 755 target/release/termlet "$app/Contents/MacOS/bin/termlet"
+          iconutil -c icns -o "$app/Contents/Resources/Termlet.icns" packaging/macos/Termlet.iconset
+          node scripts/release.mjs notices --target aarch64-apple-darwin --out "$app/Contents/Resources"
+          # ad-hoc 签名：先签里面的命令行工具，再签整个应用包（封存 Info.plist 与 Resources）。
+          # 不开 hardened runtime（公证时才需要，以后有了开发者证书再开）
+          codesign --force --sign - "$app/Contents/MacOS/bin/termlet"
+          codesign --force --sign - "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          ditto -c -k --keepParent "$app" "dist/termlet-$VERSION-mac-arm64.zip"
+          node scripts/release.mjs manifest --file "dist/termlet-$VERSION-mac-arm64.zip"
+          ls -l dist
+      # 已经压缩过，产物的 zip 不再压缩
+      - id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-arm64
+          path: |
+            dist/termlet-${{ steps.version.outputs.version }}-mac-arm64.zip
+            dist/latest-mac.yml
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
+  # 签名与发布：要用户批准（release 环境的 Required reviewers），Secrets 只在这个 job 中。只用上一步的产物与仓库中的
+  # scripts/release.mjs（及它读取的 keys.rs、更新日志；只用 Node 自带的模块）与运行器自带的 node、unzip、gh，不运行
+  # npm / pnpm install，不编译。先核对产物的摘要与内容，之后的步骤才用到秘密
+  release:
+    name: 签名与发布
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux, macos-arm64]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment:
+      name: release
+      url: ${{ format('https://github.com/{0}/releases/tag/{1}', github.repository, github.ref_name) }}
+    permissions:
+      contents: write # 建 GitHub Release、上传附件（gh release）
+      id-token: write # 构建来源证明：向 Sigstore 申请短期签名证书
+      attestations: write # 构建来源证明：存到本仓库的 attestations
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # 这次运行的全部产物，原样（zip，不解开）各自放到 artifacts/<产物名>/（download-artifact 也按 GitHub 记录的摘要核对，
+      # 不一致时失败）
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/artifacts
+          skip-decompress: true
+      # 碰任何秘密之前：每个 zip 的 SHA-256 与构建 job 报告的（job 的输出）一致，报告了的都下载到；解开后做与本机 fetch
+      # 相同的核对（各平台的包与清单齐全、版本与标签一致、暂存目录中的程序是那个架构的）；arm64 缺了时警告
+      - name: 核对产物的摘要与内容
+        env:
+          TAG: ${{ github.ref_name }}
+          DIGEST_WINDOWS_X64: ${{ needs.windows.outputs.digest-x64 }}
+          DIGEST_WINDOWS_ARM64: ${{ needs.windows.outputs.digest-arm64 }}
+          DIGEST_LINUX_X64: ${{ needs.linux.outputs.digest-x64 }}
+          DIGEST_LINUX_ARM64: ${{ needs.linux.outputs.digest-arm64 }}
+          DIGEST_MACOS_ARM64: ${{ needs.macos-arm64.outputs.digest }}
+        run: |
+          node scripts/release.mjs collect --from "$RUNNER_TEMP/artifacts" --out "$RUNNER_TEMP/release" --tag "$TAG" \
+            --digest "windows-x64=$DIGEST_WINDOWS_X64" --digest "windows-arm64=$DIGEST_WINDOWS_ARM64" \
+            --digest "linux-x64=$DIGEST_LINUX_X64" --digest "linux-arm64=$DIGEST_LINUX_ARM64" \
+            --digest "macos-arm64=$DIGEST_MACOS_ARM64"
+      # 在用的密钥（70538B50651A6352）：密钥文件的内容与口令分开存。私钥写进 $RUNNER_TEMP 下权限 600 的临时文件（写完即从
+      # 这一步的 shell 环境中去掉），签完由下一步删掉。签名前核对公钥在 keys.rs 中、Windows 的程序内置了它
+      - name: 签名
+        env:
+          UPDATE_KEY_JSON: ${{ secrets.TERMLET_UPDATE_KEY_JSON }}
+          TERMLET_UPDATE_KEY_PASSPHRASE: ${{ secrets.TERMLET_UPDATE_KEY_PASSPHRASE }}
+        run: |
+          key="$RUNNER_TEMP/update-key.json"
+          (umask 077 && printf '%s' "$UPDATE_KEY_JSON" > "$key")
+          chmod 600 "$key"
+          unset UPDATE_KEY_JSON
+          node scripts/release.mjs sign --key "$key" --dir "$RUNNER_TEMP/release"
+      - name: 删除签名密钥的临时文件
+        if: always()
+        run: rm -f "$RUNNER_TEMP/update-key.json"
+      # SHA256SUMS 中的每个文件（各平台的包与清单）：gh attestation verify <文件> -R <本仓库> 核对
+      - name: 构建来源证明
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/release/SHA256SUMS
+      # R2 令牌只能读写桶 termlet-dl 的对象，清缓存的令牌只能清 termlet.dev 的缓存；zone ID 不是秘密，存为环境的变量
+      - name: 发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_PURGE_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          TERMLET_PAGES_DEPLOY_HOOK: ${{ secrets.TERMLET_PAGES_DEPLOY_HOOK }}
+        run: node scripts/release.mjs publish --dir "$RUNNER_TEMP/release"

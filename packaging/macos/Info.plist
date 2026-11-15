@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Termlet.app 的 Info.plist。@VERSION@ 由 .github/workflows/release.yml 打包时换成版本号；图标 Contents/Resources/Termlet.icns
+     由打包时 iconutil 从 packaging/macos/Termlet.iconset 生成（CFBundleIconFile 可以不写扩展名）。
+     Bundle ID dev.termlet.Termlet（反向的域名 termlet.dev 加应用名），Linux 的 app_id 与 .desktop 文件名也用它；
+     有 CFBundleIdentifier 时 GPUI 才启用系统通知（不在应用包中运行时关闭）。 -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Termlet</string>
+	<key>CFBundleExecutable</key>
+	<string>Termlet</string>
+	<key>CFBundleIconFile</key>
+	<string>Termlet</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.termlet.Termlet</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>ja</string>
+		<string>ko</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>Termlet</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@VERSION@</string>
+	<key>CFBundleVersion</key>
+	<string>@VERSION@</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 ruan</string>
+</dict>
+</plist>

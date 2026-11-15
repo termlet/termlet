@@ -1,0 +1,30 @@
+# 日志与本地环境
+*.log
+.env
+.env.*
+!.env.example
+
+# 签名私钥、证书与令牌（发布脚本本来就不许把密钥放在仓库里，这里再兜一层）
+*.key.json
+*.pfx
+*.p12
+*.pem
+*.minisign
+*.secret
+
+# 编辑器与系统
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Rust 构建产物
+/target/
+
+# Cloudflare 的 cf 命令行在当前目录记下的账号选择（含账号 ID 与账号名）
+.cloudflare/
+
+# Claude Code 的本机运行文件
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

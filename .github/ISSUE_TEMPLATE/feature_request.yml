@@ -1,0 +1,55 @@
+name: 功能建议 / Feature request
+description: 希望 Termlet 新增或改进的功能 / Suggest a new feature or an improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢建议！提交前请先搜索已有的 issue 与[讨论区](https://github.com/termlet/termlet/discussions)；一个 issue 只提一件事。想法还不成形时，可以先在讨论区的"想法"中聊聊。
+
+        Thanks for the suggestion! Please search the existing issues and [Discussions](https://github.com/termlet/termlet/discussions) first, and keep to one request per issue. If the idea is still rough, start in the Ideas category of Discussions.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 功能 / Area
+      options:
+        - 连接与认证 / Connection and authentication
+        - 终端 / Terminal
+        - SFTP 与文件传输 / SFTP and file transfer
+        - 端口转发 / Port forwarding
+        - 密钥库 / Keys
+        - 主机工具 / Host tools
+        - 命令行工具与 AI / Command-line tool and AI
+        - 导入、导出与备份 / Import, export and backup
+        - 同步 / Sync
+        - 界面与设置 / Interface and settings
+        - 安装与更新 / Installation and updates
+        - 其他 / Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想解决的问题 / The problem
+      description: 你在做什么、现在哪里不方便 / What you are trying to do and what gets in the way today
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 希望的做法 / Proposed solution
+      description: 希望 Termlet 怎样做；界面草图、截图都可以 / How you would like Termlet to handle it; sketches and screenshots are welcome
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 其他客户端的做法或替代办法（可选）/ How other clients do it, or workarounds (optional)
+      description: 例如 Xshell、MobaXterm、Termius、Tabby、WindTerm 中的做法，或你现在怎样绕过 / For example how Xshell, MobaXterm, Termius, Tabby or WindTerm handle it, or how you work around it now
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认 / Checklist
+      options:
+        - label: 我搜索过已有的 issue 与讨论，没有重复 / I searched the existing issues and discussions and this is not a duplicate
+          required: true

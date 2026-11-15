@@ -1,0 +1,14 @@
+[package]
+name = "termlet-io"
+description = "Termlet 终端会话的字节接口（传输与终端之间）"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+async-channel.workspace = true
+
+[lints]
+workspace = true

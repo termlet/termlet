@@ -1,0 +1,1623 @@
+_version: 2
+backup_ui.password.new:
+  zh-CN: 密码（至少 %{min} 个字符）
+  en: Password (at least %{min} characters)
+  zh-TW: 密碼（至少 %{min} 個字元）
+  ja: パスワード（%{min} 文字以上）
+  ko: 비밀번호(%{min}자 이상)
+backup_ui.password.repeat:
+  zh-CN: 再次输入密码
+  en: Enter the password again
+  zh-TW: 再次輸入密碼
+  ja: パスワードをもう一度入力
+  ko: 비밀번호 다시 입력
+backup_ui.password.too_short:
+  zh-CN: 密码至少 %{min} 个字符。
+  en: The password must be at least %{min} characters.
+  zh-TW: 密碼至少 %{min} 個字元。
+  ja: パスワードは %{min} 文字以上にしてください。
+  ko: 비밀번호는 %{min}자 이상이어야 합니다.
+backup_ui.password.mismatch:
+  zh-CN: 两次输入的密码不一致。
+  en: The passwords don’t match.
+  zh-TW: 兩次輸入的密碼不一致。
+  ja: 入力した 2 つのパスワードが一致しません。
+  ko: 두 번 입력한 비밀번호가 일치하지 않습니다.
+backup_ui.counts:
+  zh-CN: 主机 %{hosts} 台、密钥 %{keys} 把、凭据档案 %{profiles} 个、快捷命令 %{snippets} 条、端口转发 %{forwards} 条
+  en: "%{hosts} hosts, %{keys} keys, %{profiles} credential profiles, %{snippets} snippets, %{forwards} port forwards"
+  zh-TW: 主機 %{hosts} 台、金鑰 %{keys} 把、認證資訊設定檔 %{profiles} 個、快速指令 %{snippets} 條、連接埠轉送 %{forwards} 條
+  ja: ホスト %{hosts} 台、鍵 %{keys} 個、認証プロファイル %{profiles} 個、スニペット %{snippets} 件、ポート転送 %{forwards} 件
+  ko: 호스트 %{hosts}대, 키 %{keys}개, 자격 증명 프로필 %{profiles}개, 스니펫 %{snippets}개, 포트 포워딩 %{forwards}개
+backup_ui.counts_more:
+  zh-CN: 分组 %{groups} 个、工作区 %{workspaces} 个、自定义配色 %{schemes} 套、主机指纹 %{known_hosts} 个、命令历史 %{history} 条
+  en: "%{groups} groups, %{workspaces} workspaces, %{schemes} custom color schemes, %{known_hosts} host keys, %{history} history entries"
+  zh-TW: 群組 %{groups} 個、工作區 %{workspaces} 個、自訂配色 %{schemes} 套、主機指紋 %{known_hosts} 個、指令歷史記錄 %{history} 筆
+  ja: グループ %{groups} 個、ワークスペース %{workspaces} 個、カスタム配色 %{schemes} 個、ホストキー %{known_hosts} 個、コマンド履歴 %{history} 件
+  ko: 그룹 %{groups}개, 작업 영역 %{workspaces}개, 사용자 지정 색 구성표 %{schemes}개, 호스트 키 %{known_hosts}개, 명령 기록 %{history}건
+
+backup_ui.error.password_required:
+  zh-CN: 文件已加密，请输入密码。
+  en: The file is encrypted. Enter its password.
+  zh-TW: 檔案已加密，請輸入密碼。
+  ja: ファイルは暗号化されています。パスワードを入力してください。
+  ko: 파일이 암호화되어 있습니다. 비밀번호를 입력하세요.
+backup_ui.error.wrong_password:
+  zh-CN: 密码错误，或文件已损坏。
+  en: Wrong password, or the file is damaged.
+  zh-TW: 密碼錯誤，或檔案已損毀。
+  ja: パスワードが間違っているか、ファイルが破損しています。
+  ko: 비밀번호가 틀렸거나 파일이 손상되었습니다.
+backup_ui.error.invalid:
+  zh-CN: 不是 Termlet 的备份或导出文件，或文件已损坏。
+  en: This isn’t a Termlet backup or export file, or the file is damaged.
+  zh-TW: 不是 Termlet 的備份或匯出檔案，或檔案已損毀。
+  ja: Termlet のバックアップまたはエクスポートファイルではないか、ファイルが破損しています。
+  ko: Termlet 백업 또는 내보내기 파일이 아니거나 파일이 손상되었습니다.
+backup_ui.error.too_new:
+  zh-CN: 文件来自更新版本的 Termlet（版本 %{found}，这个版本最高支持 %{supported}），请先升级 Termlet。
+  en: The file comes from a newer version of Termlet (version %{found}; this version supports up to %{supported}). Upgrade Termlet first.
+  zh-TW: 檔案來自較新版本的 Termlet（版本 %{found}，這個版本最高支援 %{supported}），請先升級 Termlet。
+  ja: このファイルは新しいバージョンの Termlet で作成されています（バージョン %{found}、このバージョンが対応するのは %{supported} まで）。先に Termlet をアップグレードしてください。
+  ko: 이 파일은 더 새로운 버전의 Termlet에서 만들어졌습니다(버전 %{found}, 이 버전은 %{supported}까지 지원). 먼저 Termlet을 업그레이드하세요.
+backup_ui.error.is_hosts_file:
+  zh-CN: 这是导出的主机文件，请在侧边栏的“导入主机”中导入。
+  en: This is an exported host file. Import it with “Import Hosts” in the sidebar.
+  zh-TW: 這是匯出的主機檔案，請在側邊欄的「匯入主機」中匯入。
+  ja: これはエクスポートしたホストファイルです。サイドバーの「ホストをインポート」からインポートしてください。
+  ko: 내보낸 호스트 파일입니다. 사이드바의 '호스트 가져오기'에서 가져오세요.
+backup_ui.error.is_full_backup:
+  zh-CN: 这是完整备份，请在“设置 → 备份”中恢复。
+  en: This is a full backup. Restore it in Settings → Backup.
+  zh-TW: 這是完整備份，請在「設定 → 備份」中還原。
+  ja: これは完全バックアップです。「設定 → バックアップ」で復元してください。
+  ko: 전체 백업입니다. '설정 → 백업'에서 복원하세요.
+backup_ui.error.foreign_snapshot:
+  zh-CN: 快照中的凭据无法用这台电脑的主密钥解开：快照来自另一台电脑，或之后重置过保险库。
+  en: The credentials in this snapshot can’t be opened with this computer’s master key. The snapshot comes from another computer, or the vault was reset afterwards.
+  zh-TW: 快照中的認證資訊無法用這台電腦的主金鑰解開：快照來自另一台電腦，或之後重設過保險庫。
+  ja: このスナップショットの認証情報は、このコンピューターのマスターキーでは復号できません。スナップショットが別のコンピューターで作成されたか、その後に保管庫がリセットされています。
+  ko: 이 스냅샷의 자격 증명은 이 컴퓨터의 마스터 키로 열 수 없습니다. 스냅샷이 다른 컴퓨터에서 만들어졌거나, 그 후에 보관함을 초기화했습니다.
+backup_ui.error.snapshot_not_found:
+  zh-CN: 快照不存在，可能已被清理。
+  en: The snapshot no longer exists. It may have been cleaned up.
+  zh-TW: 快照不存在，可能已被清除。
+  ja: スナップショットが存在しません。すでに整理された可能性があります。
+  ko: 스냅샷이 없습니다. 이미 정리되었을 수 있습니다.
+backup_ui.error.invalid_snapshot_name:
+  zh-CN: 快照的名称不正确。
+  en: The snapshot name isn’t valid.
+  zh-TW: 快照的名稱不正確。
+  ja: スナップショットの名前が正しくありません。
+  ko: 스냅샷 이름이 올바르지 않습니다.
+backup_ui.error.nothing_selected:
+  zh-CN: 没有选择主机。
+  en: No hosts are selected.
+  zh-TW: 沒有選取主機。
+  ja: ホストが選択されていません。
+  ko: 선택한 호스트가 없습니다.
+backup_ui.error.host_not_found:
+  zh-CN: 要导出的主机已被删除。
+  en: A host to export was deleted.
+  zh-TW: 要匯出的主機已被刪除。
+  ja: エクスポートするホストが削除されています。
+  ko: 내보낼 호스트가 삭제되었습니다.
+backup_ui.error.vault_locked:
+  zh-CN: 保险库已锁定，解锁后再试。
+  en: The vault is locked. Unlock it and try again.
+  zh-TW: 保險庫已鎖定，解鎖後再試。
+  ja: 保管庫がロックされています。ロックを解除してからやり直してください。
+  ko: 보관함이 잠겨 있습니다. 잠금을 해제한 후 다시 시도하세요.
+backup_ui.error.vault_unavailable:
+  zh-CN: 系统钥匙串不可用：%{reason}
+  en: "The system keychain isn’t available: %{reason}"
+  zh-TW: 系統鑰匙圈無法使用：%{reason}
+  ja: システムのキーチェーンを使用できません：%{reason}
+  ko: "시스템 키체인을 사용할 수 없습니다: %{reason}"
+backup_ui.error.file_not_found:
+  zh-CN: 文件不存在：%{path}
+  en: "File not found: %{path}"
+  zh-TW: 檔案不存在：%{path}
+  ja: ファイルが存在しません：%{path}
+  ko: "파일이 없습니다: %{path}"
+backup_ui.error.permission_denied:
+  zh-CN: 没有权限访问 %{path}。
+  en: No permission to access %{path}.
+  zh-TW: 沒有權限存取 %{path}。
+  ja: "%{path} にアクセスする権限がありません。"
+  ko: "%{path}에 액세스할 권한이 없습니다."
+backup_ui.error.read_failed:
+  zh-CN: 读取 %{path} 失败：%{reason}
+  en: "Couldn’t read %{path}: %{reason}"
+  zh-TW: 讀取 %{path} 失敗：%{reason}
+  ja: "%{path} を読み取れませんでした：%{reason}"
+  ko: "%{path}을(를) 읽지 못했습니다: %{reason}"
+backup_ui.error.write_failed:
+  zh-CN: 写入 %{path} 失败：%{reason}
+  en: "Couldn’t write %{path}: %{reason}"
+  zh-TW: 寫入 %{path} 失敗：%{reason}
+  ja: "%{path} に書き込めませんでした：%{reason}"
+  ko: "%{path}에 쓰지 못했습니다: %{reason}"
+backup_ui.error.not_absolute:
+  zh-CN: 请填写完整的路径。
+  en: Enter a full path.
+  zh-TW: 請填寫完整的路徑。
+  ja: 完全なパスを入力してください。
+  ko: 전체 경로를 입력하세요.
+backup_ui.error.is_directory:
+  zh-CN: “%{path}”是一个文件夹，请选择文件。
+  en: “%{path}” is a folder. Choose a file.
+  zh-TW: 「%{path}」是一個資料夾，請選擇檔案。
+  ja: 「%{path}」はフォルダーです。ファイルを選択してください。
+  ko: "'%{path}'은(는) 폴더입니다. 파일을 선택하세요."
+backup_ui.error.too_large:
+  zh-CN: 文件过大，不是 Termlet 的备份或导出文件。
+  en: The file is too large to be a Termlet backup or export file.
+  zh-TW: 檔案過大，不是 Termlet 的備份或匯出檔案。
+  ja: ファイルが大きすぎます。Termlet のバックアップまたはエクスポートファイルではありません。
+  ko: 파일이 너무 큽니다. Termlet 백업 또는 내보내기 파일이 아닙니다.
+backup_ui.error.folder_missing:
+  zh-CN: 备份文件夹不存在或无法访问：%{path}。在 U 盘或网盘中时，插上或挂载后再试。
+  en: "The backup folder doesn’t exist or can’t be accessed: %{path}. If it’s on a USB drive or a cloud drive, connect it and try again."
+  zh-TW: 備份資料夾不存在或無法存取：%{path}。位於 USB 隨身碟或雲端硬碟時，請插上或掛接後再試。
+  ja: バックアップフォルダーが存在しないか、アクセスできません：%{path}。USB メモリやクラウドストレージにある場合は、接続またはマウントしてからやり直してください。
+  ko: "백업 폴더가 없거나 액세스할 수 없습니다: %{path}. USB 드라이브나 클라우드 드라이브에 있다면 연결하거나 마운트한 후 다시 시도하세요."
+backup_ui.error.invalid_schedule:
+  zh-CN: 定时备份的计划不正确，请检查时间与保留份数。
+  en: The backup schedule isn’t valid. Check the time and the number of backups to keep.
+  zh-TW: 定時備份的排程不正確，請檢查時間與保留份數。
+  ja: 定期バックアップのスケジュールが正しくありません。時刻と保持する数を確認してください。
+  ko: 예약 백업 일정이 올바르지 않습니다. 시간과 보관 개수를 확인하세요.
+backup_ui.error.not_scheduled:
+  zh-CN: 还没有设置定时备份。
+  en: Scheduled backups aren’t set up.
+  zh-TW: 還沒有設定定時備份。
+  ja: 定期バックアップはまだ設定されていません。
+  ko: 예약 백업이 아직 설정되지 않았습니다.
+backup_ui.error.schedule_password_lost:
+  zh-CN: 保险库重置过，定时备份的密码已无法解开，请在“更改设置”中重新输入。
+  en: The vault was reset, so the scheduled backup password can’t be opened. Enter it again under “Change Settings”.
+  zh-TW: 保險庫重設過，定時備份的密碼已無法解開，請在「變更設定」中重新輸入。
+  ja: 保管庫がリセットされたため、定期バックアップのパスワードを復号できなくなりました。「設定を変更」でもう一度入力してください。
+  ko: 보관함이 초기화되어 예약 백업 비밀번호를 열 수 없게 되었습니다. '설정 변경'에서 다시 입력하세요.
+backup_ui.error.store:
+  zh-CN: 操作失败：%{error}
+  en: "The operation failed: %{error}"
+  zh-TW: 操作失敗：%{error}
+  ja: 操作に失敗しました：%{error}
+  ko: "작업에 실패했습니다: %{error}"
+
+backup_ui.import_error.not_found:
+  zh-CN: 找不到 %{path}。
+  en: "%{path} wasn’t found."
+  zh-TW: 找不到 %{path}。
+  ja: "%{path} が見つかりません。"
+  ko: "%{path}을(를) 찾을 수 없습니다."
+backup_ui.import_error.permission:
+  zh-CN: 没有权限读取 %{path}。
+  en: No permission to read %{path}.
+  zh-TW: 沒有權限讀取 %{path}。
+  ja: "%{path} を読み取る権限がありません。"
+  ko: "%{path}을(를) 읽을 권한이 없습니다."
+backup_ui.import_error.io:
+  zh-CN: 读取 %{path} 失败：%{error}
+  en: "Couldn’t read %{path}: %{error}"
+  zh-TW: 讀取 %{path} 失敗：%{error}
+  ja: "%{path} を読み取れませんでした：%{error}"
+  ko: "%{path}을(를) 읽지 못했습니다: %{error}"
+backup_ui.import_error.too_large:
+  zh-CN: “%{path}”超过 %{limit} MB，不像是配置文件。
+  en: “%{path}” is larger than %{limit} MB and doesn’t look like a configuration file.
+  zh-TW: 「%{path}」超過 %{limit} MB，不像是設定檔。
+  ja: 「%{path}」は %{limit} MB を超えており、設定ファイルとは思えません。
+  ko: "'%{path}'은(는) %{limit} MB를 넘어 구성 파일로 보이지 않습니다."
+backup_ui.import_error.syntax:
+  zh-CN: 配置文件有语法错误：%{error}
+  en: "The configuration file has a syntax error: %{error}"
+  zh-TW: 設定檔有語法錯誤：%{error}
+  ja: 設定ファイルに構文エラーがあります：%{error}
+  ko: "구성 파일에 구문 오류가 있습니다: %{error}"
+backup_ui.import_error.tabby_encrypted:
+  zh-CN: 配置文件已被 Tabby 加密，请先在 Tabby 的设置中关闭配置加密。
+  en: The configuration is encrypted by Tabby. Turn off config encryption in Tabby’s settings first.
+  zh-TW: 設定檔已被 Tabby 加密，請先在 Tabby 的設定中關閉設定加密。
+  ja: 設定ファイルは Tabby によって暗号化されています。先に Tabby の設定で設定の暗号化をオフにしてください。
+  ko: 구성 파일이 Tabby에서 암호화되어 있습니다. 먼저 Tabby 설정에서 구성 암호화를 끄세요.
+backup_ui.import_error.registry:
+  zh-CN: 读取 MobaXterm 的注册表失败：%{error}
+  en: "Couldn’t read MobaXterm’s registry entries: %{error}"
+  zh-TW: 讀取 MobaXterm 的登錄檔失敗：%{error}
+  ja: MobaXterm のレジストリを読み取れませんでした：%{error}
+  ko: "MobaXterm의 레지스트리 항목을 읽지 못했습니다: %{error}"
+backup_ui.import_error.termora_v1:
+  zh-CN: 这是 Termora 1.x 的数据，请先用 Termora 2.x 打开一次完成数据迁移。
+  en: This is Termora 1.x data. Open it once with Termora 2.x to migrate it first.
+  zh-TW: 這是 Termora 1.x 的資料，請先用 Termora 2.x 開啟一次以完成資料移轉。
+  ja: これは Termora 1.x のデータです。先に Termora 2.x で一度開いて、データの移行を済ませてください。
+  ko: Termora 1.x의 데이터입니다. 먼저 Termora 2.x에서 한 번 열어 데이터 마이그레이션을 마치세요.
+backup_ui.import_error.termora_not_found:
+  zh-CN: 没有找到 Termora 的数据库（config/termora.db）。
+  en: Termora’s database (config/termora.db) wasn’t found.
+  zh-TW: 沒有找到 Termora 的資料庫（config/termora.db）。
+  ja: Termora のデータベース（config/termora.db）が見つかりません。
+  ko: Termora 데이터베이스(config/termora.db)를 찾을 수 없습니다.
+backup_ui.import_error.not_termora:
+  zh-CN: 不是 Termora 2.x 的数据库：%{error}
+  en: "This isn’t a Termora 2.x database: %{error}"
+  zh-TW: 不是 Termora 2.x 的資料庫：%{error}
+  ja: Termora 2.x のデータベースではありません：%{error}
+  ko: "Termora 2.x 데이터베이스가 아닙니다: %{error}"
+backup_ui.import_error.termora_key_missing:
+  zh-CN: Termora 的数据库中缺少解密所需的信息，可能是不支持的 Termora 版本。
+  en: Termora’s database is missing what’s needed to decrypt it. This Termora version may not be supported.
+  zh-TW: Termora 的資料庫中缺少解密所需的資訊，可能是不支援的 Termora 版本。
+  ja: Termora のデータベースに復号に必要な情報がありません。対応していない Termora のバージョンの可能性があります。
+  ko: Termora 데이터베이스에 복호화에 필요한 정보가 없습니다. 지원하지 않는 Termora 버전일 수 있습니다.
+backup_ui.import_error.termora_decrypt:
+  zh-CN: 无法解密 Termora 的数据，可能是不支持的 Termora 版本。
+  en: Termora’s data couldn’t be decrypted. This Termora version may not be supported.
+  zh-TW: 無法解密 Termora 的資料，可能是不支援的 Termora 版本。
+  ja: Termora のデータを復号できません。対応していない Termora のバージョンの可能性があります。
+  ko: Termora 데이터를 복호화할 수 없습니다. 지원하지 않는 Termora 버전일 수 있습니다.
+backup_ui.import_error.windterm_not_found:
+  zh-CN: 没有找到 WindTerm 的会话文件（.wind\profiles\default.v10\terminal\user.sessions）。请选择 WindTerm 的程序目录或数据目录 .wind。
+  en: WindTerm’s session file (.wind\profiles\default.v10\terminal\user.sessions) wasn’t found. Choose WindTerm’s program folder or its .wind data folder.
+  zh-TW: 沒有找到 WindTerm 的工作階段檔案（.wind\profiles\default.v10\terminal\user.sessions）。請選擇 WindTerm 的程式目錄或資料目錄 .wind。
+  ja: 'WindTerm のセッションファイル（.wind\profiles\default.v10\terminal\user.sessions）が見つかりません。WindTerm のプログラムフォルダーまたはデータフォルダー .wind を選択してください。'
+  ko: 'WindTerm 세션 파일(.wind\profiles\default.v10\terminal\user.sessions)을 찾을 수 없습니다. WindTerm 프로그램 폴더나 데이터 폴더 .wind를 선택하세요.'
+backup_ui.import_error.windterm_password_required:
+  zh-CN: WindTerm 设了主密码，请输入主密码。
+  en: WindTerm has a master password. Enter it.
+  zh-TW: WindTerm 設了主密碼，請輸入主密碼。
+  ja: WindTerm にマスターパスワードが設定されています。マスターパスワードを入力してください。
+  ko: WindTerm에 마스터 비밀번호가 설정되어 있습니다. 마스터 비밀번호를 입력하세요.
+backup_ui.import_error.windterm_wrong_password:
+  zh-CN: WindTerm 的主密码不对，解不开保存的密码。
+  en: The WindTerm master password is wrong; the saved passwords can’t be decrypted.
+  zh-TW: WindTerm 的主密碼不正確，無法解開儲存的密碼。
+  ja: WindTerm のマスターパスワードが正しくないため、保存されたパスワードを復号できません。
+  ko: WindTerm 마스터 비밀번호가 올바르지 않아 저장된 비밀번호를 열 수 없습니다.
+backup_ui.import_error.not_electerm:
+  zh-CN: 不是 Electerm 的书签导出或数据目录：%{error}
+  en: "This isn’t an Electerm bookmark export or data folder: %{error}"
+  zh-TW: 不是 Electerm 的書籤匯出檔或資料目錄：%{error}
+  ja: Electerm のブックマークのエクスポートまたはデータフォルダーではありません：%{error}
+  ko: "Electerm 북마크 내보내기 파일이나 데이터 폴더가 아닙니다: %{error}"
+backup_ui.import_error.electerm_encrypted:
+  zh-CN: Electerm 3.0 起用系统的加密保存书签，Termlet 读不了。请在 Electerm 中导出书签，再选择导出的 JSON 文件。
+  en: Since 3.0, Electerm stores bookmarks with the system’s encryption, which Termlet can’t read. Export the bookmarks in Electerm, then choose the exported JSON file.
+  zh-TW: Electerm 3.0 起用系統的加密儲存書籤，Termlet 讀不了。請在 Electerm 中匯出書籤，再選擇匯出的 JSON 檔案。
+  ja: Electerm 3.0 以降はブックマークをシステムの暗号化で保存しているため、Termlet では読み取れません。Electerm でブックマークをエクスポートしてから、エクスポートした JSON ファイルを選択してください。
+  ko: Electerm 3.0부터는 북마크를 시스템 암호화로 저장하므로 Termlet에서 읽을 수 없습니다. Electerm에서 북마크를 내보낸 다음 내보낸 JSON 파일을 선택하세요.
+backup_ui.import_error.not_netcatty:
+  zh-CN: 不是 Netcatty 导出的主机 CSV（缺少 Hostname/IP 列）。请在 Netcatty 的主机页点“导出”得到 CSV 文件。
+  en: This isn’t a host CSV exported from Netcatty (it has no Hostname/IP column). Click “Export” on Netcatty’s hosts page to get the CSV file.
+  zh-TW: 不是 Netcatty 匯出的主機 CSV（缺少 Hostname/IP 欄）。請在 Netcatty 的主機頁點「匯出」取得 CSV 檔案。
+  ja: Netcatty からエクスポートしたホストの CSV ではありません（Hostname/IP 列がありません）。Netcatty のホストページで「エクスポート」をクリックして CSV ファイルを作成してください。
+  ko: Netcatty에서 내보낸 호스트 CSV가 아닙니다(Hostname/IP 열이 없음). Netcatty의 호스트 페이지에서 '내보내기'를 클릭해 CSV 파일을 만드세요.
+
+backup_ui.failure.host:
+  zh-CN: 主机“%{name}”没能导入：%{reason}
+  en: "Host “%{name}” wasn’t imported: %{reason}"
+  zh-TW: 主機「%{name}」未能匯入：%{reason}
+  ja: ホスト「%{name}」をインポートできませんでした：%{reason}
+  ko: "'%{name}' 호스트를 가져오지 못했습니다: %{reason}"
+backup_ui.failure.secrets:
+  zh-CN: 主机“%{host}”已导入，但它的密码等凭据没能保存：%{reason}
+  en: "Host “%{host}” was imported, but its password and other credentials weren’t saved: %{reason}"
+  zh-TW: 主機「%{host}」已匯入，但它的密碼等認證資訊未能儲存：%{reason}
+  ja: ホスト「%{host}」はインポートしましたが、パスワードなどの認証情報を保存できませんでした：%{reason}
+  ko: "'%{host}' 호스트는 가져왔지만 비밀번호 등 자격 증명을 저장하지 못했습니다: %{reason}"
+backup_ui.failure.key:
+  zh-CN: 私钥“%{name}”没能存入密钥库，用它的主机改用密码登录：%{reason}
+  en: "Private key “%{name}” wasn’t added to the key library, so hosts using it log in with a password: %{reason}"
+  zh-TW: 私密金鑰「%{name}」未能存入金鑰庫，使用它的主機改用密碼登入：%{reason}
+  ja: 秘密鍵「%{name}」を鍵ライブラリに保存できなかったため、それを使うホストはパスワードでログインします：%{reason}
+  ko: "'%{name}' 개인 키를 키 라이브러리에 저장하지 못해, 이 키를 쓰는 호스트는 비밀번호로 로그인합니다: %{reason}"
+backup_ui.failure.profile:
+  zh-CN: 凭据档案“%{name}”没能导入：%{reason}
+  en: "Credential profile “%{name}” wasn’t imported: %{reason}"
+  zh-TW: 認證資訊設定檔「%{name}」未能匯入：%{reason}
+  ja: 認証プロファイル「%{name}」をインポートできませんでした：%{reason}
+  ko: "'%{name}' 자격 증명 프로필을 가져오지 못했습니다: %{reason}"
+backup_ui.failure.group:
+  zh-CN: 分组“%{name}”的默认设置没能写入：%{reason}
+  en: "The defaults of group “%{name}” weren’t saved: %{reason}"
+  zh-TW: 群組「%{name}」的預設設定未能寫入：%{reason}
+  ja: グループ「%{name}」のデフォルト設定を保存できませんでした：%{reason}
+  ko: "'%{name}' 그룹의 기본 설정을 저장하지 못했습니다: %{reason}"
+backup_ui.failure.forward:
+  zh-CN: 主机“%{host}”的端口转发 %{label} 没能导入：%{reason}
+  en: "Port forward %{label} of host “%{host}” wasn’t imported: %{reason}"
+  zh-TW: 主機「%{host}」的連接埠轉送 %{label} 未能匯入：%{reason}
+  ja: ホスト「%{host}」のポート転送 %{label} をインポートできませんでした：%{reason}
+  ko: "'%{host}' 호스트의 포트 포워딩 %{label}을(를) 가져오지 못했습니다: %{reason}"
+backup_ui.failure.jump:
+  zh-CN: 主机“%{host}”的跳板机没能设置，保持原来的设置：%{reason}
+  en: "The jump host of “%{host}” wasn’t set and its previous setting is kept: %{reason}"
+  zh-TW: 主機「%{host}」的跳板機未能設定，保留原來的設定：%{reason}
+  ja: ホスト「%{host}」の踏み台ホストを設定できなかったため、元の設定のままです：%{reason}
+  ko: "'%{host}' 호스트의 점프 호스트를 설정하지 못해 기존 설정을 유지합니다: %{reason}"
+backup_ui.failure.group_jump:
+  zh-CN: 分组“%{group}”的默认跳板机没能设置：%{reason}
+  en: "The default jump host of group “%{group}” wasn’t set: %{reason}"
+  zh-TW: 群組「%{group}」的預設跳板機未能設定：%{reason}
+  ja: グループ「%{group}」のデフォルトの踏み台ホストを設定できませんでした：%{reason}
+  ko: "'%{group}' 그룹의 기본 점프 호스트를 설정하지 못했습니다: %{reason}"
+backup_ui.failure.snippet:
+  zh-CN: 快捷命令“%{name}”没能导入：%{reason}
+  en: "Quick command “%{name}” wasn’t imported: %{reason}"
+  zh-TW: 快速指令「%{name}」未能匯入：%{reason}
+  ja: スニペット「%{name}」をインポートできませんでした：%{reason}
+  ko: "'%{name}' 스니펫을 가져오지 못했습니다: %{reason}"
+backup_ui.invalid.bind_conflict:
+  zh-CN: 监听的地址与端口已被其他转发规则占用。
+  en: Another port forward already listens on this address and port.
+  zh-TW: 監聽的位址與連接埠已被其他轉送規則佔用。
+  ja: 待ち受けアドレスとポートは、ほかのポート転送ですでに使われています。
+  ko: 다른 포트 포워딩이 이미 이 주소와 포트에서 수신 대기 중입니다.
+backup_ui.invalid.bind_port:
+  zh-CN: 监听端口不正确。
+  en: The listening port isn’t valid.
+  zh-TW: 監聽連接埠不正確。
+  ja: 待ち受けポートが正しくありません。
+  ko: 수신 대기 포트가 올바르지 않습니다.
+backup_ui.invalid.target_port:
+  zh-CN: 目标端口不正确。
+  en: The target port isn’t valid.
+  zh-TW: 目標連接埠不正確。
+  ja: 接続先ポートが正しくありません。
+  ko: 대상 포트가 올바르지 않습니다.
+backup_ui.invalid.bind_host:
+  zh-CN: 监听地址不正确。
+  en: The listening address isn’t valid.
+  zh-TW: 監聽位址不正確。
+  ja: 待ち受けアドレスが正しくありません。
+  ko: 수신 대기 주소가 올바르지 않습니다.
+backup_ui.invalid.target_host:
+  zh-CN: 目标地址不正确。
+  en: The target address isn’t valid.
+  zh-TW: 目標位址不正確。
+  ja: 接続先アドレスが正しくありません。
+  ko: 대상 주소가 올바르지 않습니다.
+
+backup_ui.hint.missing_username:
+  zh-CN: 来源中没有用户名，导入后请补充。
+  en: The source has no user name. Fill it in after importing.
+  zh-TW: 來源中沒有使用者名稱，匯入後請補上。
+  ja: インポート元にユーザー名がありません。インポート後に入力してください。
+  ko: 원본에 사용자 이름이 없습니다. 가져온 후 입력하세요.
+backup_ui.hint.private_key_not_imported:
+  zh-CN: “%{source}”使用它自己保存的私钥，导入后请重新选择私钥文件。
+  en: “%{source}” uses a private key stored in its own key manager. Choose the key file again after importing.
+  zh-TW: 「%{source}」使用它自己儲存的私密金鑰，匯入後請重新選擇私密金鑰檔案。
+  ja: 「%{source}」は独自に保存した秘密鍵を使っています。インポート後に秘密鍵ファイルを選び直してください。
+  ko: "'%{source}'은(는) 자체적으로 저장한 개인 키를 사용합니다. 가져온 후 개인 키 파일을 다시 선택하세요."
+backup_ui.hint.private_key_not_imported_named:
+  zh-CN: “%{source}”使用它自己保存的私钥“%{name}”，导入后请重新选择私钥文件。
+  en: “%{source}” uses the private key “%{name}” stored in its own key manager. Choose the key file again after importing.
+  zh-TW: 「%{source}」使用它自己儲存的私密金鑰「%{name}」，匯入後請重新選擇私密金鑰檔案。
+  ja: 「%{source}」は独自に保存した秘密鍵「%{name}」を使っています。インポート後に秘密鍵ファイルを選び直してください。
+  ko: "'%{source}'은(는) 자체적으로 저장한 개인 키 '%{name}'을(를) 사용합니다. 가져온 후 개인 키 파일을 다시 선택하세요."
+backup_ui.hint.private_key_file_missing:
+  zh-CN: “%{source}”中设为私钥登录，但没有指定私钥文件，导入后请选择私钥。
+  en: “%{source}” uses key authentication without a key file. Choose a private key after importing.
+  zh-TW: 「%{source}」中設為私密金鑰登入，但沒有指定私密金鑰檔案，匯入後請選擇私密金鑰。
+  ja: 「%{source}」は秘密鍵によるログインに設定されていますが、秘密鍵ファイルが指定されていません。インポート後に秘密鍵を選択してください。
+  ko: "'%{source}'은(는) 개인 키 로그인으로 설정되어 있지만 개인 키 파일이 지정되지 않았습니다. 가져온 후 개인 키를 선택하세요."
+backup_ui.hint.extra_private_keys:
+  zh-CN: “%{source}”中配置了 %{total} 个私钥，只导入了第一个。
+  en: “%{source}” has %{total} private keys configured; only the first one was imported.
+  zh-TW: 「%{source}」中設定了 %{total} 個私密金鑰，只匯入了第一個。
+  ja: 「%{source}」には秘密鍵が %{total} 個設定されていますが、最初の 1 つだけをインポートしました。
+  ko: "'%{source}'에 개인 키가 %{total}개 설정되어 있지만 첫 번째 키만 가져왔습니다."
+backup_ui.hint.library_key_missing:
+  zh-CN: “%{source}”中使用的密钥已不存在，请重新选择私钥。
+  en: The key used in “%{source}” no longer exists. Choose a private key again.
+  zh-TW: 「%{source}」中使用的金鑰已不存在，請重新選擇私密金鑰。
+  ja: 「%{source}」で使われている鍵はもう存在しません。秘密鍵を選び直してください。
+  ko: "'%{source}'에서 사용하는 키가 더 이상 없습니다. 개인 키를 다시 선택하세요."
+backup_ui.hint.library_key_unusable:
+  zh-CN: “%{source}”中的密钥“%{name}”无法导入（格式不支持或已损坏），请重新选择私钥。
+  en: The key “%{name}” in “%{source}” can’t be imported (unsupported or damaged). Choose a private key again.
+  zh-TW: 「%{source}」中的金鑰「%{name}」無法匯入（格式不受支援或已損毀），請重新選擇私密金鑰。
+  ja: 「%{source}」の鍵「%{name}」はインポートできません（形式に対応していないか、破損しています）。秘密鍵を選び直してください。
+  ko: "'%{source}'의 '%{name}' 키를 가져올 수 없습니다(지원하지 않는 형식이거나 손상됨). 개인 키를 다시 선택하세요."
+backup_ui.hint.unknown_path_placeholder:
+  zh-CN: 私钥路径中有无法识别的占位符 %{placeholder}，导入后请确认私钥路径。
+  en: The key path has an unknown placeholder %{placeholder}. Check the key path after importing.
+  zh-TW: 私密金鑰路徑中有無法辨識的佔位符 %{placeholder}，匯入後請確認私密金鑰路徑。
+  ja: 秘密鍵のパスに認識できないプレースホルダー %{placeholder} があります。インポート後に秘密鍵のパスを確認してください。
+  ko: 개인 키 경로에 인식할 수 없는 자리 표시자 %{placeholder}이(가) 있습니다. 가져온 후 개인 키 경로를 확인하세요.
+backup_ui.hint.multi_hop_jump:
+  zh-CN: 来源中经多级跳板机连接（%{chain}），只导入了最后一跳作为跳板机，请检查那台跳板机自己的跳板设置。
+  en: The source connects through several jump hosts (%{chain}). Only the last one was imported as the jump host; check that host’s own jump setting.
+  zh-TW: 來源中經多層跳板機連線（%{chain}），只匯入了最後一跳作為跳板機，請檢查那台跳板機本身的跳板設定。
+  ja: インポート元は複数の踏み台ホストを経由して接続しています（%{chain}）。最後のホストだけを踏み台ホストとしてインポートしたので、その踏み台ホスト自身の踏み台設定を確認してください。
+  ko: 원본은 여러 단계의 점프 호스트를 거쳐 연결합니다(%{chain}). 마지막 호스트만 점프 호스트로 가져왔으니, 그 점프 호스트 자체의 점프 설정을 확인하세요.
+backup_ui.hint.jump_not_found:
+  zh-CN: “%{source}”中引用的跳板机不存在，导入后直连。
+  en: The jump host referenced in “%{source}” doesn’t exist, so the host connects directly.
+  zh-TW: 「%{source}」中參照的跳板機不存在，匯入後直接連線。
+  ja: 「%{source}」で参照されている踏み台ホストが存在しないため、インポート後は直接接続します。
+  ko: "'%{source}'에서 참조하는 점프 호스트가 없어 가져온 후 직접 연결합니다."
+backup_ui.hint.jump_missing_username:
+  zh-CN: 跳板机 %{name} 没有用户名，导入后请手动设置跳板机。
+  en: Jump host %{name} has no user name. Set the jump host manually after importing.
+  zh-TW: 跳板機 %{name} 沒有使用者名稱，匯入後請手動設定跳板機。
+  ja: 踏み台ホスト %{name} にユーザー名がありません。インポート後に踏み台ホストを手動で設定してください。
+  ko: 점프 호스트 %{name}에 사용자 이름이 없습니다. 가져온 후 점프 호스트를 직접 설정하세요.
+backup_ui.hint.proxy_command_ignored:
+  zh-CN: 同时配置了 ProxyJump 与 ProxyCommand，只导入了 ProxyJump。
+  en: Both ProxyJump and ProxyCommand are configured; only ProxyJump was imported.
+  zh-TW: 同時設定了 ProxyJump 與 ProxyCommand，只匯入了 ProxyJump。
+  ja: ProxyJump と ProxyCommand の両方が設定されていたため、ProxyJump だけをインポートしました。
+  ko: ProxyJump와 ProxyCommand가 모두 설정되어 있어 ProxyJump만 가져왔습니다.
+backup_ui.hint.proxy_command_imported:
+  zh-CN: 导入了代理命令，连接时会在本机执行。
+  en: A proxy command was imported. It runs on this computer when connecting.
+  zh-TW: 匯入了代理指令，連線時會在本機執行。
+  ja: プロキシコマンドをインポートしました。接続時にこのコンピューターで実行されます。
+  ko: 프록시 명령을 가져왔습니다. 연결할 때 이 컴퓨터에서 실행됩니다.
+backup_ui.hint.proxy_port_defaulted:
+  zh-CN: 来源中没有设置代理端口，按 %{port} 导入，请确认。
+  en: The source has no proxy port, so %{port} was used. Check it.
+  zh-TW: 來源中沒有設定代理連接埠，以 %{port} 匯入，請確認。
+  ja: インポート元にプロキシのポートが設定されていないため、%{port} としてインポートしました。確認してください。
+  ko: 원본에 프록시 포트가 설정되어 있지 않아 %{port}(으)로 가져왔습니다. 확인하세요.
+backup_ui.hint.proxy_password_required:
+  zh-CN: 代理需要密码，导入后请在主机的代理设置中填写。
+  en: The proxy needs a password. Enter it in the host’s proxy settings after importing.
+  zh-TW: 代理需要密碼，匯入後請在主機的代理設定中填寫。
+  ja: プロキシにはパスワードが必要です。インポート後にホストのプロキシ設定で入力してください。
+  ko: 프록시에 비밀번호가 필요합니다. 가져온 후 호스트의 프록시 설정에서 입력하세요.
+backup_ui.hint.unsupported_proxy:
+  zh-CN: “%{source}”中的代理类型不支持，导入后直连。
+  en: The proxy type used in “%{source}” isn’t supported, so the host connects directly.
+  zh-TW: 「%{source}」中的代理類型不受支援，匯入後直接連線。
+  ja: 「%{source}」のプロキシの種類には対応していないため、インポート後は直接接続します。
+  ko: "'%{source}'의 프록시 유형은 지원하지 않아 가져온 후 직접 연결합니다."
+backup_ui.hint.gateway_for:
+  zh-CN: 为“%{source}”会话“%{session}”的 SSH 网关新建的主机。
+  en: Created for the SSH gateway of the “%{source}” session “%{session}”.
+  zh-TW: 為「%{source}」工作階段「%{session}」的 SSH 閘道新增的主機。
+  ja: 「%{source}」のセッション「%{session}」の SSH ゲートウェイ用に作成したホストです。
+  ko: "'%{source}' 세션 '%{session}'의 SSH 게이트웨이용으로 만든 호스트입니다."
+backup_ui.hint.forwards_not_imported:
+  zh-CN: “%{source}”中的 %{count} 条端口转发没有导入。
+  en: "%{count} port forwards in “%{source}” weren’t imported."
+  zh-TW: 「%{source}」中的 %{count} 條連接埠轉送沒有匯入。
+  ja: 「%{source}」のポート転送 %{count} 件はインポートされていません。
+  ko: "'%{source}'의 포트 포워딩 %{count}개를 가져오지 않았습니다."
+backup_ui.hint.agent_forward_disabled:
+  zh-CN: 文件中开启了 agent 转发，导入后已关闭：开着时对方的服务器可以借用本机的 SSH agent 登录别的服务器。确实需要时在主机设置中打开。
+  en: Agent forwarding was on in the file and has been turned off, since it lets the server use your local SSH agent to sign in elsewhere. Turn it back on in the host settings if you need it.
+  zh-TW: 檔案中開啟了 agent 轉送，匯入後已關閉：開啟時對方的伺服器可以借用本機的 SSH agent 登入其他伺服器。確實需要時在主機設定中開啟。
+  ja: ファイルではエージェント転送がオンになっていましたが、インポート時にオフにしました。オンのままだと、接続先のサーバーがこのコンピューターの SSH agent を使ってほかのサーバーにログインできてしまいます。本当に必要な場合はホストの設定でオンにしてください。
+  ko: 파일에서는 에이전트 포워딩이 켜져 있었지만 가져올 때 껐습니다. 켜 두면 상대 서버가 이 컴퓨터의 SSH agent를 빌려 다른 서버에 로그인할 수 있습니다. 꼭 필요하면 호스트 설정에서 켜세요.
+backup_ui.hint.unsupported_encoding:
+  zh-CN: 来源中的编码 %{name} 不支持，导入后按 UTF-8，请在主机设置中确认编码。
+  en: The encoding %{name} isn’t supported, so UTF-8 is used. Check the encoding in the host settings.
+  zh-TW: 來源中的編碼 %{name} 不受支援，匯入後使用 UTF-8，請在主機設定中確認編碼。
+  ja: インポート元のエンコード %{name} には対応していないため、UTF-8 としてインポートしました。ホストの設定でエンコードを確認してください。
+  ko: 원본의 인코딩 %{name}은(는) 지원하지 않아 UTF-8로 가져왔습니다. 호스트 설정에서 인코딩을 확인하세요.
+backup_ui.hint.proxy_not_imported:
+  zh-CN: “%{source}”中的代理“%{name}”保存在它自己的代理列表中，没有导入，导入后直连。
+  en: The proxy “%{name}” is kept in “%{source}”’s own proxy list and wasn’t imported, so the host connects directly.
+  zh-TW: 「%{source}」中的代理「%{name}」儲存在它自己的代理清單中，沒有匯入，匯入後直接連線。
+  ja: 「%{source}」のプロキシ「%{name}」は独自のプロキシ一覧に保存されているためインポートされず、インポート後は直接接続します。
+  ko: "'%{source}'의 '%{name}' 프록시는 자체 프록시 목록에 저장되어 있어 가져오지 않았으며, 가져온 후 직접 연결합니다."
+backup_ui.hint.jump_not_imported:
+  zh-CN: “%{source}”中设置的跳板机没有导入，导入后直连，需要时请手动设置跳板机。
+  en: The jump host set in “%{source}” wasn’t imported, so the host connects directly. Set a jump host manually if needed.
+  zh-TW: 「%{source}」中設定的跳板機沒有匯入，匯入後直接連線，需要時請手動設定跳板機。
+  ja: 「%{source}」で設定された踏み台ホストはインポートされていないため、インポート後は直接接続します。必要な場合は踏み台ホストを手動で設定してください。
+  ko: "'%{source}'에 설정된 점프 호스트는 가져오지 않아 가져온 후 직접 연결합니다. 필요하면 점프 호스트를 직접 설정하세요."
+backup_ui.hint.login_script_not_imported:
+  zh-CN: “%{source}”中的登录脚本（等待提示后自动发送）没有导入。
+  en: The login script in “%{source}” (wait for a prompt, then send) wasn’t imported.
+  zh-TW: 「%{source}」中的登入指令碼（等待提示後自動傳送）沒有匯入。
+  ja: 「%{source}」のログインスクリプト（プロンプトを待ってから自動送信）はインポートされていません。
+  ko: "'%{source}'의 로그인 스크립트(프롬프트를 기다린 후 자동 전송)는 가져오지 않았습니다."
+backup_ui.hint.serial_settings_unverified:
+  zh-CN: 串口参数是按“%{source}”保存的编号换算的，导入后请核对波特率、数据位、校验、停止位与流控。
+  en: The serial settings were converted from the numbers “%{source}” saves. Check the baud rate, data bits, parity, stop bits and flow control after importing.
+  zh-TW: 序列埠參數是依「%{source}」儲存的編號換算的，匯入後請核對鮑率、資料位元、同位檢查、停止位元與流量控制。
+  ja: シリアルポートのパラメーターは「%{source}」が保存している番号から換算したものです。インポート後にボーレート、データビット、パリティ、ストップビット、フロー制御を確認してください。
+  ko: 직렬 포트 매개 변수는 '%{source}'에 저장된 번호를 변환한 것입니다. 가져온 후 보드 레이트, 데이터 비트, 패리티, 정지 비트, 흐름 제어를 확인하세요.
+backup_ui.hint.saved_password_unreadable:
+  zh-CN: “%{source}”中保存的密码没能解开（可能是用以前的主密码保存的），连接时再输入。
+  en: The password saved in “%{source}” couldn’t be decrypted (it may have been saved with an earlier master password). Enter it when connecting.
+  zh-TW: 「%{source}」中儲存的密碼未能解開（可能是用先前的主密碼儲存的），連線時再輸入。
+  ja: 「%{source}」に保存されたパスワードを復号できませんでした（以前のマスターパスワードで保存された可能性があります）。接続時に入力してください。
+  ko: "'%{source}'에 저장된 비밀번호를 열지 못했습니다(이전 마스터 비밀번호로 저장되었을 수 있습니다). 연결할 때 입력하세요."
+backup_ui.hint.saved_password_encrypted:
+  zh-CN: “%{source}”导出时没能解开这台主机的密码（文件中是密文），没有导入，连接时再输入。
+  en: “%{source}” couldn’t decrypt this host’s password when exporting (the file has it encrypted), so it wasn’t imported. Enter it when connecting.
+  zh-TW: 「%{source}」匯出時未能解開這台主機的密碼（檔案中是密文），沒有匯入，連線時再輸入。
+  ja: 「%{source}」がエクスポート時にこのホストのパスワードを復号できなかったため（ファイルには暗号化されたまま入っています）、インポートしていません。接続時に入力してください。
+  ko: "'%{source}'에서 내보낼 때 이 호스트의 비밀번호를 열지 못해(파일에는 암호화된 채로 들어 있음) 가져오지 않았습니다. 연결할 때 입력하세요."
+backup_ui.hint.credential_profile_missing:
+  zh-CN: “%{source}”中这台主机用凭据档案登录，文件中没有这个档案（“导出全部数据”的文件中才有），导入后请设置登录方式。
+  en: This host signs in with a credential profile in “%{source}”, but the file doesn’t include it (only an “export all data” file does). Set how it signs in after importing.
+  zh-TW: 「%{source}」中這台主機用認證資訊設定檔登入，檔案中沒有這個設定檔（「匯出全部資料」的檔案中才有），匯入後請設定登入方式。
+  ja: 「%{source}」ではこのホストは認証プロファイルでログインしますが、ファイルにそのプロファイルが含まれていません（「全データのエクスポート」のファイルにだけ含まれます）。インポート後にログイン方法を設定してください。
+  ko: "'%{source}'에서 이 호스트는 자격 증명 프로필로 로그인하지만 파일에 그 프로필이 없습니다('모든 데이터 내보내기' 파일에만 들어 있음). 가져온 후 로그인 방식을 설정하세요."
+backup_ui.hint.jump_host_for:
+  zh-CN: 为“%{source}”中“%{session}”的跳板机新建的主机。
+  en: A new host created for the jump host of “%{session}” in “%{source}”.
+  zh-TW: 為「%{source}」中「%{session}」的跳板機新增的主機。
+  ja: 「%{source}」の「%{session}」の踏み台ホストとして新しく作成したホストです。
+  ko: "'%{source}'에 있는 '%{session}'의 점프 호스트로 새로 만든 호스트입니다."
+
+backup_ui.import.title:
+  zh-CN: 导入主机
+  en: Import Hosts
+  zh-TW: 匯入主機
+  ja: ホストをインポート
+  ko: 호스트 가져오기
+backup_ui.import.hint:
+  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm 除外；Electerm、Netcatty 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
+  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora and WindTerm; for Electerm and Netcatty, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
+  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm 除外；Electerm、Netcatty 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
+  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
+  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
+backup_ui.import.hint_hostfile:
+  zh-CN: 导入另一台电脑或其他人的 Termlet 导出的主机。导入的主机不允许命令行工具访问，需要时在主机设置中勾选；预览中标出了连接时在本机执行的代理命令、登录后在服务器上执行的命令与随主机导入的端口转发（导入的转发不会自动启动），导入前请确认来源可信。
+  en: Import hosts exported from Termlet on another computer or by someone else. Imported hosts aren’t allowed command-line access; enable it in the host settings if needed. The preview marks proxy commands (run on this computer when connecting), startup commands (run on the server after login) and port forwards imported with the hosts (they aren’t started automatically). Make sure the file comes from a trusted source.
+  zh-TW: 匯入另一台電腦或其他人的 Termlet 匯出的主機。匯入的主機不允許命令列工具存取，需要時在主機設定中勾選；預覽中標出了連線時在本機執行的代理指令、登入後在伺服器上執行的指令與隨主機匯入的連接埠轉送（匯入的轉送不會自動啟動），匯入前請確認來源可信。
+  ja: 別のコンピューターやほかの人の Termlet からエクスポートしたホストをインポートします。インポートしたホストにはコマンドラインツールからのアクセスを許可しません。必要な場合はホストの設定でオンにしてください。プレビューには、接続時にこのコンピューターで実行されるプロキシコマンド、ログイン後にサーバーで実行されるコマンド、ホストと一緒にインポートされるポート転送（インポートしたポート転送は自動では開始されません）が示されます。インポートする前に、ファイルの入手元が信頼できることを確認してください。
+  ko: 다른 컴퓨터나 다른 사람의 Termlet에서 내보낸 호스트를 가져옵니다. 가져온 호스트에는 명령줄 도구의 액세스를 허용하지 않으며, 필요하면 호스트 설정에서 켜세요. 미리 보기에는 연결할 때 이 컴퓨터에서 실행되는 프록시 명령, 로그인 후 서버에서 실행되는 명령, 호스트와 함께 가져오는 포트 포워딩(가져온 포트 포워딩은 자동으로 시작되지 않음)이 표시됩니다. 가져오기 전에 파일 출처를 신뢰할 수 있는지 확인하세요.
+backup_ui.import.source.hostfile:
+  zh-CN: Termlet 主机文件（.termlet-hosts）
+  en: Termlet host file (.termlet-hosts)
+  zh-TW: Termlet 主機檔案（.termlet-hosts）
+  ja: Termlet ホストファイル（.termlet-hosts）
+  ko: Termlet 호스트 파일(.termlet-hosts)
+backup_ui.import.source.ssh_config:
+  zh-CN: OpenSSH 配置（~/.ssh/config）
+  en: OpenSSH config (~/.ssh/config)
+  zh-TW: OpenSSH 設定（~/.ssh/config）
+  ja: OpenSSH の設定（~/.ssh/config）
+  ko: OpenSSH 구성(~/.ssh/config)
+backup_ui.import.source.xshell:
+  zh-CN: Xshell 会话目录（Sessions）
+  en: Xshell sessions folder (Sessions)
+  zh-TW: Xshell 工作階段目錄（Sessions）
+  ja: Xshell のセッションフォルダー（Sessions）
+  ko: Xshell 세션 폴더(Sessions)
+backup_ui.import.source.finalshell:
+  zh-CN: FinalShell 连接目录（conn）
+  en: FinalShell connections folder (conn)
+  zh-TW: FinalShell 連線目錄（conn）
+  ja: FinalShell の接続フォルダー（conn）
+  ko: FinalShell 연결 폴더(conn)
+backup_ui.import.source.mobaxterm:
+  zh-CN: MobaXterm 书签（MobaXterm.ini 或 .mxtsessions）
+  en: MobaXterm bookmarks (MobaXterm.ini or .mxtsessions)
+  zh-TW: MobaXterm 書籤（MobaXterm.ini 或 .mxtsessions）
+  ja: MobaXterm のブックマーク（MobaXterm.ini または .mxtsessions）
+  ko: MobaXterm 북마크(MobaXterm.ini 또는 .mxtsessions)
+backup_ui.import.source.tabby:
+  zh-CN: Tabby 配置（config.yaml）
+  en: Tabby config (config.yaml)
+  zh-TW: Tabby 設定（config.yaml）
+  ja: Tabby の設定（config.yaml）
+  ko: Tabby 구성(config.yaml)
+backup_ui.import.source.termora:
+  zh-CN: Termora 数据目录（.termora）
+  en: Termora data folder (.termora)
+  zh-TW: Termora 資料目錄（.termora）
+  ja: Termora のデータフォルダー（.termora）
+  ko: Termora 데이터 폴더(.termora)
+backup_ui.import.source.windterm:
+  zh-CN: WindTerm 数据目录（.wind）
+  en: WindTerm data folder (.wind)
+  zh-TW: WindTerm 資料目錄（.wind）
+  ja: WindTerm のデータフォルダー（.wind）
+  ko: WindTerm 데이터 폴더(.wind)
+backup_ui.import.source.electerm:
+  zh-CN: Electerm 书签（导出的 .json）
+  en: Electerm bookmarks (exported .json)
+  zh-TW: Electerm 書籤（匯出的 .json）
+  ja: Electerm のブックマーク（エクスポートした .json）
+  ko: Electerm 북마크(내보낸 .json)
+backup_ui.import.source.netcatty:
+  zh-CN: Netcatty 主机（导出的 .csv）
+  en: Netcatty hosts (exported .csv)
+  zh-TW: Netcatty 主機（匯出的 .csv）
+  ja: Netcatty のホスト（エクスポートした .csv）
+  ko: Netcatty 호스트(내보낸 .csv)
+backup_ui.import.source_hint.xshell:
+  zh-CN: 选择 Xshell 的会话目录 Sessions（在 Xshell 的“工具 → 选项 → 常规”中可以看到会话的保存位置）。导入 SSH、Telnet 与串口会话，会话所在的子目录成为分组，编码、备注与端口转发一并导入（转发不会自动启动）；Xshell 自己加密的密码、用户密钥库中的私钥与代理不导入。
+  en: Choose Xshell’s Sessions folder (Xshell shows where sessions are stored in Tools → Options → General). SSH, Telnet and serial sessions are imported; subfolders become groups, and encodings, descriptions and port forwards are kept (forwards aren’t started automatically). Passwords encrypted by Xshell, keys in its user key store and proxies aren’t imported.
+  zh-TW: 選擇 Xshell 的工作階段目錄 Sessions（在 Xshell 的「工具 → 選項 → 一般」中可以看到工作階段的儲存位置）。匯入 SSH、Telnet 與序列埠工作階段，工作階段所在的子目錄成為群組，編碼、備註與連接埠轉送一併匯入（轉送不會自動啟動）；Xshell 自己加密的密碼、使用者金鑰庫中的私密金鑰與代理不匯入。
+  ja: Xshell のセッションフォルダー Sessions を選択してください（セッションの保存場所は Xshell の「ツール → オプション → 全般」で確認できます）。SSH、Telnet、シリアルポートのセッションをインポートし、セッションがあるサブフォルダーはグループになります。エンコード、説明、ポート転送も一緒にインポートします（ポート転送は自動では開始されません）。Xshell が独自に暗号化したパスワード、ユーザーキーストアの秘密鍵、プロキシはインポートしません。
+  ko: Xshell의 세션 폴더 Sessions를 선택하세요(세션 저장 위치는 Xshell의 '도구 → 옵션 → 일반'에서 확인할 수 있습니다). SSH, Telnet, 직렬 포트 세션을 가져오며, 세션이 있는 하위 폴더는 그룹이 되고 인코딩, 설명, 포트 포워딩도 함께 가져옵니다(포트 포워딩은 자동으로 시작되지 않음). Xshell이 자체적으로 암호화한 비밀번호, 사용자 키 저장소의 개인 키, 프록시는 가져오지 않습니다.
+backup_ui.import.source_hint.mobaxterm:
+  zh-CN: '便携版请选择程序目录下的 MobaXterm.ini；安装版的书签可能保存在注册表中，路径为 HKEY_CURRENT_USER\Software\Mobatek\MobaXterm。导入 SSH、Telnet 与串口会话，SSH 网关作为跳板机导入，编码与登录后执行的命令一并导入。'
+  en: 'For the portable edition, choose MobaXterm.ini in its program folder. The installer edition may keep bookmarks in the registry at HKEY_CURRENT_USER\Software\Mobatek\MobaXterm. SSH, Telnet and serial sessions are imported; SSH gateways become jump hosts, and encodings and commands run after login are kept.'
+  zh-TW: '可攜版請選擇程式目錄下的 MobaXterm.ini；安裝版的書籤可能儲存在登錄檔中，路徑為 HKEY_CURRENT_USER\Software\Mobatek\MobaXterm。匯入 SSH、Telnet 與序列埠工作階段，SSH 閘道作為跳板機匯入，編碼與登入後執行的指令一併匯入。'
+  ja: 'ポータブル版の場合はプログラムフォルダーにある MobaXterm.ini を選択してください。インストール版のブックマークはレジストリの HKEY_CURRENT_USER\Software\Mobatek\MobaXterm に保存されている場合があります。SSH、Telnet、シリアルポートのセッションをインポートし、SSH ゲートウェイは踏み台ホストとしてインポートします。エンコードとログイン後に実行するコマンドも一緒にインポートします。'
+  ko: '포터블 버전은 프로그램 폴더의 MobaXterm.ini를 선택하세요. 설치 버전의 북마크는 레지스트리의 HKEY_CURRENT_USER\Software\Mobatek\MobaXterm에 저장되어 있을 수 있습니다. SSH, Telnet, 직렬 포트 세션을 가져오며, SSH 게이트웨이는 점프 호스트로 가져오고 인코딩과 로그인 후 실행할 명령도 함께 가져옵니다.'
+backup_ui.import.source_hint.tabby:
+  zh-CN: '便携版的配置在程序目录下的 data\config.yaml。在 Tabby 中开启了配置加密时，需要先关闭加密。'
+  en: 'The portable edition keeps its config in data\config.yaml under the program folder. If config encryption is on in Tabby, turn it off first.'
+  zh-TW: '可攜版的設定在程式目錄下的 data\config.yaml。在 Tabby 中開啟了設定加密時，需要先關閉加密。'
+  ja: 'ポータブル版の設定はプログラムフォルダーの data\config.yaml にあります。Tabby で設定の暗号化をオンにしている場合は、先に暗号化をオフにしてください。'
+  ko: '포터블 버전의 구성은 프로그램 폴더의 data\config.yaml에 있습니다. Tabby에서 구성 암호화를 켠 경우 먼저 암호화를 끄세요.'
+backup_ui.import.source_hint.termora:
+  zh-CN: '支持 Termora 2.x：选择数据目录（默认是用户目录下的 .termora，绿色版为程序目录下的 data）或其中的 config\termora.db。只导入 SSH 主机，文件夹成为分组，备注、标签、登录密码、代理密码一并导入，钥匙管理器中的私钥存入密钥库。Termora 的数据只用保存在同一文件中的密钥加密，本机任何程序都能读出其中的密码。'
+  en: 'Supports Termora 2.x: choose its data folder (by default .termora in your home folder; data under the program folder for the portable edition) or config\termora.db inside it. Only SSH hosts are imported; folders become groups, and notes, tags, login passwords and proxy passwords are kept; private keys from the Termora key manager go to the key library. Termora encrypts its data with a key stored in the same file, so any program on this computer can read the passwords in it.'
+  zh-TW: '支援 Termora 2.x：選擇資料目錄（預設是使用者目錄下的 .termora，免安裝版為程式目錄下的 data）或其中的 config\termora.db。只匯入 SSH 主機，資料夾成為群組，備註、標籤、登入密碼、代理密碼一併匯入，金鑰管理員中的私密金鑰存入金鑰庫。Termora 的資料只用儲存在同一檔案中的金鑰加密，本機任何程式都能讀出其中的密碼。'
+  ja: 'Termora 2.x に対応しています。データフォルダー（デフォルトはユーザーフォルダーの .termora、ポータブル版はプログラムフォルダーの data）またはその中の config\termora.db を選択してください。SSH ホストだけをインポートし、フォルダーはグループになります。メモ、タグ、ログインパスワード、プロキシのパスワードも一緒にインポートし、キーマネージャーの秘密鍵は鍵ライブラリに保存します。Termora のデータは同じファイルに保存された鍵だけで暗号化されているため、このコンピューター上のどのプログラムでもパスワードを読み出せます。'
+  ko: 'Termora 2.x를 지원합니다. 데이터 폴더(기본값은 사용자 폴더의 .termora, 포터블 버전은 프로그램 폴더의 data)나 그 안의 config\termora.db를 선택하세요. SSH 호스트만 가져오며, 폴더는 그룹이 되고 메모, 태그, 로그인 비밀번호, 프록시 비밀번호도 함께 가져옵니다. 키 관리자의 개인 키는 키 라이브러리에 저장합니다. Termora의 데이터는 같은 파일에 저장된 키로만 암호화되어 있어, 이 컴퓨터의 어떤 프로그램이든 그 안의 비밀번호를 읽을 수 있습니다.'
+backup_ui.import.source_hint.windterm:
+  zh-CN: '选择 WindTerm 的程序目录或数据目录 .wind（用户目录下，或程序目录下），也可以选其中的 profiles\default.v10。导入 SSH、Telnet 与串口会话，分组、备注、编码、私钥文件、登录后执行的命令、登录密码与快捷命令一并导入；设了主密码时需要输入主密码。代理、跳板机与隧道不导入。'
+  en: 'Choose WindTerm’s program folder or its .wind data folder (in your home folder or the program folder), or profiles\default.v10 inside it. SSH, Telnet and serial sessions are imported with their groups, descriptions, encodings, key files, startup commands and saved passwords, along with quick commands. If WindTerm has a master password, you’ll be asked for it. Proxies, jump hosts and tunnels aren’t imported.'
+  zh-TW: '選擇 WindTerm 的程式目錄或資料目錄 .wind（使用者目錄下，或程式目錄下），也可以選其中的 profiles\default.v10。匯入 SSH、Telnet 與序列埠工作階段，群組、備註、編碼、私密金鑰檔案、登入後執行的指令、登入密碼與快速指令一併匯入；設了主密碼時需要輸入主密碼。代理、跳板機與通道不匯入。'
+  ja: 'WindTerm のプログラムフォルダーまたはデータフォルダー .wind（ユーザーフォルダーまたはプログラムフォルダーにあります）を選択してください。その中の profiles\default.v10 も選択できます。SSH、Telnet、シリアルポートのセッションをインポートし、グループ、説明、エンコード、秘密鍵ファイル、ログイン後に実行するコマンド、ログインパスワード、スニペットも一緒にインポートします。マスターパスワードが設定されている場合は入力が必要です。プロキシ、踏み台ホスト、トンネルはインポートしません。'
+  ko: 'WindTerm 프로그램 폴더나 데이터 폴더 .wind(사용자 폴더 또는 프로그램 폴더에 있음)를 선택하세요. 그 안의 profiles\default.v10도 선택할 수 있습니다. SSH, Telnet, 직렬 포트 세션을 가져오며 그룹, 설명, 인코딩, 개인 키 파일, 로그인 후 실행할 명령, 로그인 비밀번호와 스니펫도 함께 가져옵니다. 마스터 비밀번호가 설정되어 있으면 입력해야 합니다. 프록시, 점프 호스트, 터널은 가져오지 않습니다.'
+backup_ui.import.source_hint.electerm:
+  zh-CN: 选择在 Electerm 中导出的书签文件（bookmarks-….json；“导出全部数据”的文件还带凭据档案）。Electerm 3.0 起本机的书签用系统加密保存，Termlet 读不了，请先导出；更早的版本也可以直接选它的数据目录（electerm\users\default_user）。导入 SSH、Telnet 与串口书签，分组、跳板机（写在书签里的跳板机会新建主机）、代理、私钥、端口转发、起始目录与登录脚本一并导入。
+  en: Choose a bookmark file exported from Electerm (bookmarks-….json; an “export all data” file also has the credential profiles). Since 3.0, Electerm stores bookmarks on this computer with the system’s encryption, which Termlet can’t read, so export them first; for earlier versions you can also choose the data folder (electerm\users\default_user). SSH, Telnet and serial bookmarks are imported with their groups, jump hosts (new hosts are created for jump hosts written inside bookmarks), proxies, private keys, port forwards, start folders and login scripts.
+  zh-TW: 選擇在 Electerm 中匯出的書籤檔案（bookmarks-….json；「匯出全部資料」的檔案還帶有認證資訊設定檔）。Electerm 3.0 起本機的書籤用系統加密儲存，Termlet 讀不了，請先匯出；更早的版本也可以直接選它的資料目錄（electerm\users\default_user）。匯入 SSH、Telnet 與序列埠書籤，群組、跳板機（寫在書籤裡的跳板機會新增主機）、代理、私密金鑰、連接埠轉送、起始目錄與登入指令碼一併匯入。
+  ja: Electerm でエクスポートしたブックマークファイル（bookmarks-….json。「全データのエクスポート」のファイルには認証プロファイルも含まれます）を選択してください。Electerm 3.0 以降はこのコンピューター上のブックマークをシステムの暗号化で保存しており、Termlet では読み取れないため、先にエクスポートしてください。それより前のバージョンでは、データフォルダー（electerm\users\default_user）を直接選択することもできます。SSH、Telnet、シリアルポートのブックマークをインポートし、グループ、踏み台ホスト（ブックマーク内に書かれた踏み台ホストは新しいホストとして作成します）、プロキシ、秘密鍵、ポート転送、開始フォルダー、ログインスクリプトも一緒にインポートします。
+  ko: Electerm에서 내보낸 북마크 파일(bookmarks-….json. '모든 데이터 내보내기' 파일에는 자격 증명 프로필도 들어 있음)을 선택하세요. Electerm 3.0부터는 이 컴퓨터의 북마크를 시스템 암호화로 저장해 Termlet에서 읽을 수 없으므로 먼저 내보내세요. 그 이전 버전은 데이터 폴더(electerm\users\default_user)를 직접 선택할 수도 있습니다. SSH, Telnet, 직렬 포트 북마크를 가져오며 그룹, 점프 호스트(북마크 안에 적힌 점프 호스트는 새 호스트로 만듦), 프록시, 개인 키, 포트 포워딩, 시작 폴더, 로그인 스크립트도 함께 가져옵니다.
+backup_ui.import.source_hint.netcatty:
+  zh-CN: 在 Netcatty 的主机页点“导出”，再选择导出的 CSV 文件（hosts_export_….csv）。Netcatty 本机的数据用系统加密保存，只能读导出的文件。导入 SSH 与 Telnet 主机，分组、标签、备注、私钥文件路径、代理与跳板机一并导入；Netcatty 密钥库中的私钥、身份与端口转发不在导出的文件中。
+  en: Click “Export” on Netcatty’s hosts page, then choose the exported CSV file (hosts_export_….csv). Netcatty stores its data on this computer with the system’s encryption, so only the export can be read. SSH and Telnet hosts are imported with their groups, tags, notes, key file paths, proxies and jump hosts; keys in Netcatty’s key library, identities and port forwards aren’t in the export.
+  zh-TW: 在 Netcatty 的主機頁點「匯出」，再選擇匯出的 CSV 檔案（hosts_export_….csv）。Netcatty 本機的資料用系統加密儲存，只能讀匯出的檔案。匯入 SSH 與 Telnet 主機，群組、標籤、備註、私密金鑰檔案路徑、代理與跳板機一併匯入；Netcatty 金鑰庫中的私密金鑰、身分與連接埠轉送不在匯出的檔案中。
+  ja: Netcatty のホストページで「エクスポート」をクリックし、エクスポートした CSV ファイル（hosts_export_….csv）を選択してください。Netcatty はこのコンピューター上のデータをシステムの暗号化で保存しているため、読み取れるのはエクスポートしたファイルだけです。SSH と Telnet のホストをインポートし、グループ、タグ、メモ、秘密鍵ファイルのパス、プロキシ、踏み台ホストも一緒にインポートします。Netcatty の鍵ライブラリにある秘密鍵、ID、ポート転送はエクスポートしたファイルに含まれません。
+  ko: Netcatty의 호스트 페이지에서 '내보내기'를 클릭한 다음 내보낸 CSV 파일(hosts_export_….csv)을 선택하세요. Netcatty는 이 컴퓨터의 데이터를 시스템 암호화로 저장하므로 내보낸 파일만 읽을 수 있습니다. SSH와 Telnet 호스트를 가져오며 그룹, 태그, 메모, 개인 키 파일 경로, 프록시, 점프 호스트도 함께 가져옵니다. Netcatty 키 라이브러리의 개인 키, ID, 포트 포워딩은 내보낸 파일에 들어 있지 않습니다.
+backup_ui.import.path_placeholder:
+  zh-CN: 文件或文件夹的路径
+  en: File or folder path
+  zh-TW: 檔案或資料夾的路徑
+  ja: ファイルまたはフォルダーのパス
+  ko: 파일 또는 폴더 경로
+backup_ui.import.browse:
+  zh-CN: 浏览…
+  en: Browse…
+  zh-TW: 瀏覽…
+  ja: 参照…
+  ko: 찾아보기…
+backup_ui.import.preview:
+  zh-CN: 预览
+  en: Preview
+  zh-TW: 預覽
+  ja: プレビュー
+  ko: 미리 보기
+backup_ui.import.password_placeholder:
+  zh-CN: 导出时设置的密码
+  en: Password set when exporting
+  zh-TW: 匯出時設定的密碼
+  ja: エクスポート時に設定したパスワード
+  ko: 내보낼 때 설정한 비밀번호
+backup_ui.import.password_hint:
+  zh-CN: 文件含凭据，已用密码加密。
+  en: The file contains credentials and is encrypted with a password.
+  zh-TW: 檔案含認證資訊，已用密碼加密。
+  ja: このファイルには認証情報が含まれており、パスワードで暗号化されています。
+  ko: 이 파일에는 자격 증명이 들어 있으며 비밀번호로 암호화되어 있습니다.
+backup_ui.import.windterm_password_placeholder:
+  zh-CN: WindTerm 的主密码
+  en: WindTerm master password
+  zh-TW: WindTerm 的主密碼
+  ja: WindTerm のマスターパスワード
+  ko: WindTerm 마스터 비밀번호
+backup_ui.import.windterm_password_hint:
+  zh-CN: WindTerm 设了主密码，输入后才能解开保存的密码。
+  en: WindTerm has a master password. Enter it to decrypt the saved passwords.
+  zh-TW: WindTerm 設了主密碼，輸入後才能解開儲存的密碼。
+  ja: WindTerm にマスターパスワードが設定されています。入力すると、保存されたパスワードを復号できます。
+  ko: WindTerm에 마스터 비밀번호가 설정되어 있습니다. 입력해야 저장된 비밀번호를 열 수 있습니다.
+backup_ui.import.hostfile_info:
+  zh-CN: 导出于 %{time}（Termlet %{app}），共 %{count} 台主机
+  en: Exported on %{time} (Termlet %{app}), %{count} hosts
+  zh-TW: 匯出於 %{time}（Termlet %{app}），共 %{count} 台主機
+  ja: "%{time} にエクスポート（Termlet %{app}）、ホスト %{count} 台"
+  ko: "%{time}에 내보냄(Termlet %{app}), 호스트 %{count}대"
+backup_ui.import.search:
+  zh-CN: 搜索名称、地址、用户名、分组、标签
+  en: Search name, address, user, group, tag
+  zh-TW: 搜尋名稱、位址、使用者名稱、群組、標籤
+  ja: 名前、アドレス、ユーザー名、グループ、タグを検索
+  ko: 이름, 주소, 사용자 이름, 그룹, 태그 검색
+backup_ui.import.filter.all:
+  zh-CN: 全部 %{count}
+  en: All %{count}
+  zh-TW: 全部 %{count}
+  ja: すべて %{count}
+  ko: 전체 %{count}
+backup_ui.import.filter.new:
+  zh-CN: 新主机 %{count}
+  en: New %{count}
+  zh-TW: 新主機 %{count}
+  ja: 新規 %{count}
+  ko: 새 호스트 %{count}
+backup_ui.import.filter.duplicate:
+  zh-CN: 已存在 %{count}
+  en: Existing %{count}
+  zh-TW: 已存在 %{count}
+  ja: 既存 %{count}
+  ko: 기존 %{count}
+backup_ui.import.select.all:
+  zh-CN: 全选
+  en: Select All
+  zh-TW: 全選
+  ja: すべて選択
+  ko: 모두 선택
+backup_ui.import.select.none:
+  zh-CN: 全不选
+  en: Select None
+  zh-TW: 取消全選
+  ja: 選択を解除
+  ko: 모두 선택 해제
+backup_ui.import.select.new:
+  zh-CN: 只选新主机
+  en: Only New
+  zh-TW: 只選新主機
+  ja: 新規のみ選択
+  ko: 새 호스트만 선택
+backup_ui.import.select.invert:
+  zh-CN: 反选
+  en: Invert
+  zh-TW: 反向選取
+  ja: 選択を反転
+  ko: 선택 반전
+backup_ui.import.column.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+backup_ui.import.column.address:
+  zh-CN: 地址
+  en: Address
+  zh-TW: 位址
+  ja: アドレス
+  ko: 주소
+backup_ui.import.column.group:
+  zh-CN: 分组
+  en: Group
+  zh-TW: 群組
+  ja: グループ
+  ko: 그룹
+backup_ui.import.column.status:
+  zh-CN: 状态
+  en: Status
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+backup_ui.import.status.new:
+  zh-CN: 新主机
+  en: New
+  zh-TW: 新主機
+  ja: 新規
+  ko: 새 호스트
+backup_ui.import.status.duplicate:
+  zh-CN: 已存在
+  en: Exists
+  zh-TW: 已存在
+  ja: 既存
+  ko: 기존
+backup_ui.import.has_password:
+  zh-CN: 带密码
+  en: Password
+  zh-TW: 含密碼
+  ja: パスワードあり
+  ko: 비밀번호 포함
+backup_ui.import.has_key:
+  zh-CN: 带私钥
+  en: Key
+  zh-TW: 含私鑰
+  ja: 秘密鍵あり
+  ko: 개인 키 포함
+backup_ui.import.via:
+  zh-CN: 经跳板机 %{name}
+  en: Via jump host %{name}
+  zh-TW: 經跳板機 %{name}
+  ja: 踏み台ホスト %{name} 経由
+  ko: 점프 호스트 %{name} 경유
+backup_ui.import.proxy_command:
+  zh-CN: 连接时在本机执行的代理命令：%{command}
+  en: "Proxy command run on this computer when connecting: %{command}"
+  zh-TW: 連線時在本機執行的代理指令：%{command}
+  ja: 接続時にこのコンピューターで実行されるプロキシコマンド：%{command}
+  ko: "연결할 때 이 컴퓨터에서 실행되는 프록시 명령: %{command}"
+backup_ui.import.startup:
+  zh-CN: 登录后在服务器上执行：%{command}
+  en: "Runs on the server after login: %{command}"
+  zh-TW: 登入後在伺服器上執行：%{command}
+  ja: ログイン後にサーバーで実行：%{command}
+  ko: "로그인 후 서버에서 실행: %{command}"
+backup_ui.import.forwards:
+  zh-CN: 随主机导入 %{count} 条端口转发（导入后不会自动启动）：
+  en: "%{count} port forwards are imported with the host (not started automatically):"
+  zh-TW: 隨主機匯入 %{count} 條連接埠轉送（匯入後不會自動啟動）：
+  ja: ホストと一緒にポート転送 %{count} 件をインポートします（インポート後に自動では開始されません）：
+  ko: "호스트와 함께 포트 포워딩 %{count}개를 가져옵니다(가져온 후 자동으로 시작되지 않음):"
+backup_ui.import.forwards_merge:
+  zh-CN: 将在已有的这台主机上添加 %{count} 条端口转发（导入后不会自动启动）：
+  en: "%{count} port forwards will be added to the existing host (not started automatically):"
+  zh-TW: 將在已有的這台主機上新增 %{count} 條連接埠轉送（匯入後不會自動啟動）：
+  ja: 既存のこのホストにポート転送 %{count} 件を追加します（インポート後に自動では開始されません）：
+  ko: "기존 호스트에 포트 포워딩 %{count}개를 추가합니다(가져온 후 자동으로 시작되지 않음):"
+backup_ui.import.forward_line:
+  zh-CN: "%{kind} %{route}"
+  en: "%{kind} %{route}"
+  zh-TW: "%{kind} %{route}"
+  ja: "%{kind} %{route}"
+  ko: "%{kind} %{route}"
+backup_ui.import.forward_exposed:
+  zh-CN: 监听回环以外的地址，局域网内的其他设备也能访问
+  en: Listens beyond loopback; other devices on the network can use it
+  zh-TW: 監聽回送以外的位址，區域網路內的其他裝置也能存取
+  ja: ループバック以外のアドレスで待ち受けるため、LAN 内のほかのデバイスからもアクセスできます
+  ko: 루프백 이외의 주소에서 수신 대기하므로 LAN의 다른 장치에서도 액세스할 수 있습니다
+backup_ui.import.forward_remote_exposed:
+  zh-CN: 监听服务器回环以外的地址，能访问服务器的设备都能经它连到本机
+  en: Listens beyond the server’s loopback; devices that can reach the server can connect to this computer through it
+  zh-TW: 監聽伺服器回送以外的位址，能存取伺服器的裝置都能經由它連到本機
+  ja: サーバーのループバック以外のアドレスで待ち受けるため、サーバーにアクセスできるデバイスはどれも、これを経由してこのコンピューターに接続できます
+  ko: 서버의 루프백 이외의 주소에서 수신 대기하므로 서버에 접근할 수 있는 장치는 모두 이를 거쳐 이 컴퓨터에 연결할 수 있습니다
+backup_ui.import.forward_auto_start:
+  zh-CN: 文件中设为自动启动
+  en: Set to start automatically in the file
+  zh-TW: 檔案中設為自動啟動
+  ja: ファイルでは自動開始に設定
+  ko: 파일에서 자동 시작으로 설정됨
+backup_ui.import.none:
+  zh-CN: 没有找到可导入的主机。
+  en: No importable hosts were found.
+  zh-TW: 沒有找到可匯入的主機。
+  ja: インポートできるホストが見つかりませんでした。
+  ko: 가져올 수 있는 호스트를 찾지 못했습니다.
+backup_ui.import.no_match:
+  zh-CN: 没有匹配的主机。
+  en: No matching hosts.
+  zh-TW: 沒有符合的主機。
+  ja: 一致するホストはありません。
+  ko: 일치하는 호스트가 없습니다.
+backup_ui.import.selected_count:
+  zh-CN: 已选 %{selected} / 共 %{total} 台
+  en: "%{selected} of %{total} selected"
+  zh-TW: 已選 %{selected} / 共 %{total} 台
+  ja: "%{total} 台中 %{selected} 台を選択"
+  ko: "%{total}대 중 %{selected}대 선택됨"
+backup_ui.import.shift_hint:
+  zh-CN: 单击整行勾选，按住 Shift 单击连续勾选；全选等操作只作用于筛选出的主机。
+  en: Click a row to select it, Shift+click to select a range. Select All and the others apply to the filtered hosts.
+  zh-TW: 按一下整列即可勾選，按住 Shift 按一下可連續勾選；全選等操作只作用於篩選出的主機。
+  ja: 行をクリックすると選択でき、Shift キーを押しながらクリックすると範囲を選択できます。「すべて選択」などの操作は絞り込まれたホストだけに適用されます。
+  ko: 행을 클릭하면 선택하고, Shift 키를 누른 채 클릭하면 범위를 선택합니다. '모두 선택' 등의 작업은 필터링된 호스트에만 적용됩니다.
+backup_ui.import.skipped_other:
+  zh-CN: 另有 %{count} 个不支持的（RDP、VNC 等）或缺少地址的会话已跳过。
+  en: "%{count} unsupported (RDP, VNC, etc.) or address-less sessions were skipped."
+  zh-TW: 另有 %{count} 個不支援的（RDP、VNC 等）或缺少位址的工作階段已略過。
+  ja: ほかに、対応していない（RDP、VNC など）またはアドレスのないセッション %{count} 件をスキップしました。
+  ko: 이 밖에 지원하지 않거나(RDP, VNC 등) 주소가 없는 세션 %{count}개를 건너뛰었습니다.
+backup_ui.import.snippets:
+  zh-CN: 还会导入 %{count} 条快捷命令（与已有的名称、内容都相同的不重复导入）。
+  en: "%{count} quick commands will be imported too (ones identical to existing commands are skipped)."
+  zh-TW: 還會匯入 %{count} 條快速指令（與現有的名稱、內容都相同的不重複匯入）。
+  ja: スニペット %{count} 件もインポートします（名前と内容が既存のものと同じスニペットは重複してインポートしません）。
+  ko: 스니펫 %{count}개도 가져옵니다(이름과 내용이 모두 기존 스니펫과 같은 것은 중복으로 가져오지 않음).
+backup_ui.import.import_secrets:
+  zh-CN: 导入保存的密码
+  en: Import saved passwords
+  zh-TW: 匯入儲存的密碼
+  ja: 保存されたパスワードをインポート
+  ko: 저장된 비밀번호 가져오기
+backup_ui.import.secrets_hint.electerm:
+  zh-CN: Electerm 的书签导出中密码与私钥是明文（本机旧数据中的密码只是简单移位，任何人都能还原）。勾选后，登录密码、私钥密码与代理密码存进 Termlet 的保险库，私钥存进密钥库，已有的主机只补上还没保存的密码、不覆盖；不勾选时只导入主机，连接时再输入。导入后请删除导出的文件。
+  en: Electerm’s bookmark export has passwords and private keys in plain text (passwords in its older local data are only shifted, which anyone can undo). When ticked, login, key and proxy passwords go into Termlet’s vault and private keys into the key library; existing hosts only get passwords they don’t have yet, nothing is overwritten. When not ticked, only the hosts are imported and you enter passwords when connecting. Delete the exported file afterwards.
+  zh-TW: Electerm 的書籤匯出檔中密碼與私密金鑰是明文（本機舊資料中的密碼只是簡單位移，任何人都能還原）。勾選後，登入密碼、私密金鑰密碼與代理密碼存進 Termlet 的保險庫，私密金鑰存進金鑰庫，現有的主機只補上還沒儲存的密碼、不覆寫；不勾選時只匯入主機，連線時再輸入。匯入後請刪除匯出的檔案。
+  ja: Electerm のブックマークのエクスポートでは、パスワードと秘密鍵が平文で入っています（このコンピューター上の古いデータのパスワードは文字をずらしただけなので、誰でも元に戻せます）。オンにすると、ログインパスワード、秘密鍵のパスワード、プロキシのパスワードを Termlet の保管庫に、秘密鍵を鍵ライブラリに保存します。既存のホストにはまだ保存されていないパスワードだけを補い、上書きはしません。オフの場合はホストだけをインポートし、パスワードは接続時に入力します。インポート後はエクスポートしたファイルを削除してください。
+  ko: Electerm 북마크 내보내기 파일에는 비밀번호와 개인 키가 평문으로 들어 있습니다(이 컴퓨터의 예전 데이터에 있는 비밀번호는 글자를 밀어 놓은 것뿐이라 누구나 되돌릴 수 있음). 켜면 로그인 비밀번호, 개인 키 비밀번호, 프록시 비밀번호를 Termlet 보관함에, 개인 키를 키 라이브러리에 저장하며, 기존 호스트에는 아직 저장되지 않은 비밀번호만 채우고 덮어쓰지 않습니다. 끄면 호스트만 가져오고 비밀번호는 연결할 때 입력합니다. 가져온 후에는 내보낸 파일을 삭제하세요.
+backup_ui.import.secrets_hint.netcatty:
+  zh-CN: Netcatty 导出的 CSV 中密码是明文。勾选后，登录密码、私钥密码与代理密码存进 Termlet 的保险库，已有的主机只补上还没保存的密码、不覆盖；不勾选时只导入主机，连接时再输入。导入后请删除这份 CSV 文件。
+  en: Netcatty’s CSV export has passwords in plain text. When ticked, login, key and proxy passwords go into Termlet’s vault; existing hosts only get passwords they don’t have yet, nothing is overwritten. When not ticked, only the hosts are imported and you enter passwords when connecting. Delete the CSV file afterwards.
+  zh-TW: Netcatty 匯出的 CSV 中密碼是明文。勾選後，登入密碼、私密金鑰密碼與代理密碼存進 Termlet 的保險庫，現有的主機只補上還沒儲存的密碼、不覆寫；不勾選時只匯入主機，連線時再輸入。匯入後請刪除這份 CSV 檔案。
+  ja: Netcatty からエクスポートした CSV では、パスワードが平文で入っています。オンにすると、ログインパスワード、秘密鍵のパスワード、プロキシのパスワードを Termlet の保管庫に保存します。既存のホストにはまだ保存されていないパスワードだけを補い、上書きはしません。オフの場合はホストだけをインポートし、パスワードは接続時に入力します。インポート後はこの CSV ファイルを削除してください。
+  ko: Netcatty에서 내보낸 CSV에는 비밀번호가 평문으로 들어 있습니다. 켜면 로그인 비밀번호, 개인 키 비밀번호, 프록시 비밀번호를 Termlet 보관함에 저장하며, 기존 호스트에는 아직 저장되지 않은 비밀번호만 채우고 덮어쓰지 않습니다. 끄면 호스트만 가져오고 비밀번호는 연결할 때 입력합니다. 가져온 후에는 이 CSV 파일을 삭제하세요.
+backup_ui.import.on_duplicate:
+  zh-CN: 已存在的主机
+  en: Existing hosts
+  zh-TW: 已存在的主機
+  ja: 既存のホスト
+  ko: 기존 호스트
+backup_ui.import.skip:
+  zh-CN: 跳过
+  en: Skip
+  zh-TW: 略過
+  ja: スキップ
+  ko: 건너뛰기
+backup_ui.import.merge:
+  zh-CN: 合并（用导入的名称、分组更新，保留已有的凭据）
+  en: Merge (update name and group, keep existing credentials)
+  zh-TW: 合併（用匯入的名稱、群組更新，保留現有的認證資訊）
+  ja: 統合（インポートした名前とグループで更新し、既存の認証情報は残す）
+  ko: 병합(가져온 이름과 그룹으로 업데이트하고 기존 자격 증명은 유지)
+backup_ui.import.apply:
+  zh-CN: 导入 %{count} 台
+  en: Import %{count}
+  zh-TW: 匯入 %{count} 台
+  ja: "%{count} 台をインポート"
+  ko: "%{count}대 가져오기"
+backup_ui.import.done:
+  zh-CN: 导入完成：新建 %{created} 台，合并 %{merged} 台，跳过 %{skipped} 台。
+  en: "Import finished: %{created} new, %{merged} merged, %{skipped} skipped."
+  zh-TW: 匯入完成：新增 %{created} 台，合併 %{merged} 台，略過 %{skipped} 台。
+  ja: インポートが完了しました：新規 %{created} 台、統合 %{merged} 台、スキップ %{skipped} 台。
+  ko: "가져오기 완료: 새로 만듦 %{created}대, 병합 %{merged}대, 건너뜀 %{skipped}대."
+backup_ui.import.snippets_done:
+  zh-CN: 新增 %{count} 条快捷命令。
+  en: "%{count} quick commands added."
+  zh-TW: 新增 %{count} 條快速指令。
+  ja: スニペットを %{count} 件追加しました。
+  ko: 스니펫 %{count}개를 추가했습니다.
+backup_ui.import.passwords_filled:
+  zh-CN: 为 %{count} 台已有的主机补上了还没保存的密码。
+  en: Filled in missing passwords for %{count} existing hosts.
+  zh-TW: 為 %{count} 台現有的主機補上了還沒儲存的密碼。
+  ja: 既存のホスト %{count} 台に、まだ保存されていなかったパスワードを補いました。
+  ko: 기존 호스트 %{count}대에 아직 저장되지 않았던 비밀번호를 채웠습니다.
+backup_ui.import.failed_hosts:
+  zh-CN: 有 %{count} 台主机没能导入。
+  en: "%{count} hosts weren’t imported."
+  zh-TW: 有 %{count} 台主機未能匯入。
+  ja: "%{count} 台のホストをインポートできませんでした。"
+  ko: 호스트 %{count}대를 가져오지 못했습니다.
+backup_ui.import.failures:
+  zh-CN: 有 %{count} 项没能导入：
+  en: "%{count} items weren’t imported:"
+  zh-TW: 有 %{count} 項未能匯入：
+  ja: "%{count} 件の項目をインポートできませんでした："
+  ko: "항목 %{count}개를 가져오지 못했습니다:"
+
+backup_ui.export.title:
+  zh-CN: 导出主机
+  en: Export Hosts
+  zh-TW: 匯出主機
+  ja: ホストをエクスポート
+  ko: 호스트 내보내기
+backup_ui.export.hint.termlet:
+  zh-CN: 导出为 Termlet 的主机文件，可在另一台电脑或其他人的 Termlet 中导入。用到的跳板机、凭据档案、密钥库中的密钥、分组默认值会一并导出。
+  en: Export as a Termlet host file that can be imported into Termlet on another computer or by someone else. Jump hosts, credential profiles, library keys and group defaults that the hosts use are exported with them.
+  zh-TW: 匯出為 Termlet 的主機檔案，可在另一台電腦或其他人的 Termlet 中匯入。用到的跳板機、認證資訊設定檔、金鑰庫中的金鑰、群組預設值會一併匯出。
+  ja: Termlet のホストファイルとしてエクスポートします。別のコンピューターやほかの人の Termlet でインポートできます。使用している踏み台ホスト、認証プロファイル、鍵ライブラリの鍵、グループのデフォルト値も一緒にエクスポートされます。
+  ko: Termlet 호스트 파일로 내보냅니다. 다른 컴퓨터나 다른 사람의 Termlet에서 가져올 수 있습니다. 사용하는 점프 호스트, 자격 증명 프로필, 키 라이브러리의 키, 그룹 기본값도 함께 내보냅니다.
+backup_ui.export.hint.ssh_config:
+  zh-CN: 导出为 OpenSSH 的配置文件（ssh_config），只含 SSH 主机的地址、端口、用户名、私钥文件、跳板机与端口转发，不含密码；Telnet、串口主机不导出。
+  en: Export as an OpenSSH config file (ssh_config) with the address, port, user name, key file, jump host and port forwards of SSH hosts. Passwords aren’t included, and Telnet and serial hosts are skipped.
+  zh-TW: 匯出為 OpenSSH 的設定檔（ssh_config），只含 SSH 主機的位址、連接埠、使用者名稱、私密金鑰檔案、跳板機與連接埠轉送，不含密碼；Telnet、序列埠主機不匯出。
+  ja: OpenSSH の設定ファイル（ssh_config）としてエクスポートします。含まれるのは SSH ホストのアドレス、ポート、ユーザー名、秘密鍵ファイル、踏み台ホスト、ポート転送だけで、パスワードは含みません。Telnet、シリアルポートのホストはエクスポートされません。
+  ko: OpenSSH 구성 파일(ssh_config)로 내보냅니다. SSH 호스트의 주소, 포트, 사용자 이름, 개인 키 파일, 점프 호스트, 포트 포워딩만 포함하며 비밀번호는 포함하지 않습니다. Telnet, 직렬 포트 호스트는 내보내지 않습니다.
+backup_ui.export.format.termlet:
+  zh-CN: Termlet 主机文件
+  en: Termlet host file
+  zh-TW: Termlet 主機檔案
+  ja: Termlet ホストファイル
+  ko: Termlet 호스트 파일
+backup_ui.export.format.ssh_config:
+  zh-CN: OpenSSH 配置（ssh_config）
+  en: OpenSSH config (ssh_config)
+  zh-TW: OpenSSH 設定（ssh_config）
+  ja: OpenSSH の設定（ssh_config）
+  ko: OpenSSH 구성(ssh_config)
+backup_ui.export.all:
+  zh-CN: 全部主机（%{count}）
+  en: All hosts (%{count})
+  zh-TW: 全部主機（%{count}）
+  ja: すべてのホスト（%{count}）
+  ko: 모든 호스트(%{count})
+backup_ui.export.no_hosts:
+  zh-CN: 还没有主机。
+  en: There are no hosts yet.
+  zh-TW: 還沒有主機。
+  ja: ホストはまだありません。
+  ko: 아직 호스트가 없습니다.
+backup_ui.export.forwards:
+  zh-CN: 包含端口转发规则
+  en: Include port forwards
+  zh-TW: 包含連接埠轉送規則
+  ja: ポート転送ルールを含める
+  ko: 포트 포워딩 규칙 포함
+backup_ui.export.secrets:
+  zh-CN: 包含密码、私钥等凭据
+  en: Include passwords, private keys and other credentials
+  zh-TW: 包含密碼、私密金鑰等認證資訊
+  ja: パスワード、秘密鍵などの認証情報を含める
+  ko: 비밀번호, 개인 키 등 자격 증명 포함
+backup_ui.export.secrets_off:
+  zh-CN: 不含凭据时文件是可以直接阅读、编辑的 JSON，导入后用密码登录的主机需要补填密码。
+  en: Without credentials the file is plain JSON that you can read and edit. Hosts that log in with a password need it filled in after import.
+  zh-TW: 不含認證資訊時，檔案是可以直接閱讀、編輯的 JSON，匯入後以密碼登入的主機需要補填密碼。
+  ja: 認証情報を含めない場合、ファイルはそのまま読んだり編集したりできる JSON になります。インポート後、パスワードでログインするホストにはパスワードの入力が必要です。
+  ko: 자격 증명을 포함하지 않으면 파일은 그대로 읽고 편집할 수 있는 JSON이 됩니다. 가져온 후 비밀번호로 로그인하는 호스트는 비밀번호를 입력해야 합니다.
+backup_ui.export.secrets_on:
+  zh-CN: 文件将用下面的密码整体加密，导入时需要输入。文件中有可以直接登录服务器的凭据，请妥善保管。
+  en: The whole file is encrypted with the password below, which is needed to import it. It contains credentials that can log in to your servers, so keep it safe.
+  zh-TW: 檔案將用下面的密碼整體加密，匯入時需要輸入。檔案中有可以直接登入伺服器的認證資訊，請妥善保管。
+  ja: ファイル全体が下のパスワードで暗号化され、インポート時に入力が必要です。ファイルにはサーバーに直接ログインできる認証情報が含まれるため、大切に保管してください。
+  ko: 파일 전체가 아래 비밀번호로 암호화되며, 가져올 때 입력해야 합니다. 파일에는 서버에 바로 로그인할 수 있는 자격 증명이 들어 있으니 안전하게 보관하세요.
+backup_ui.export.summary.termlet:
+  zh-CN: 将导出主机 %{hosts} 台、分组 %{groups} 个、凭据档案 %{profiles} 个、密钥 %{keys} 把、端口转发 %{forwards} 条。
+  en: "To export: %{hosts} hosts, %{groups} groups, %{profiles} credential profiles, %{keys} keys, %{forwards} port forwards."
+  zh-TW: 將匯出主機 %{hosts} 台、群組 %{groups} 個、認證資訊設定檔 %{profiles} 個、金鑰 %{keys} 把、連接埠轉送 %{forwards} 條。
+  ja: ホスト %{hosts} 台、グループ %{groups} 個、認証プロファイル %{profiles} 個、鍵 %{keys} 個、ポート転送 %{forwards} 件をエクスポートします。
+  ko: 호스트 %{hosts}대, 그룹 %{groups}개, 자격 증명 프로필 %{profiles}개, 키 %{keys}개, 포트 포워딩 %{forwards}개를 내보냅니다.
+backup_ui.export.summary.ssh_config:
+  zh-CN: 将导出 SSH 主机 %{hosts} 台、端口转发 %{forwards} 条。
+  en: "To export: %{hosts} SSH hosts, %{forwards} port forwards."
+  zh-TW: 將匯出 SSH 主機 %{hosts} 台、連接埠轉送 %{forwards} 條。
+  ja: SSH ホスト %{hosts} 台、ポート転送 %{forwards} 件をエクスポートします。
+  ko: SSH 호스트 %{hosts}대, 포트 포워딩 %{forwards}개를 내보냅니다.
+backup_ui.export.summary.added:
+  zh-CN: 其中 %{count} 台是一并导出的跳板机。
+  en: "%{count} of them are jump hosts exported along with the selection."
+  zh-TW: 其中 %{count} 台是一併匯出的跳板機。
+  ja: そのうち %{count} 台は一緒にエクスポートされる踏み台ホストです。
+  ko: 그중 %{count}대는 함께 내보내는 점프 호스트입니다.
+backup_ui.export.summary.skipped:
+  zh-CN: 选中的 %{count} 台 Telnet、串口主机不会导出。
+  en: "%{count} selected Telnet and serial hosts won’t be exported."
+  zh-TW: 選取的 %{count} 台 Telnet、序列埠主機不會匯出。
+  ja: 選択した Telnet、シリアルポートのホスト %{count} 台はエクスポートされません。
+  ko: 선택한 Telnet, 직렬 포트 호스트 %{count}대는 내보내지 않습니다.
+backup_ui.export.submit:
+  zh-CN: 导出 %{count} 台…
+  en: Export %{count}…
+  zh-TW: 匯出 %{count} 台…
+  ja: "%{count} 台をエクスポート…"
+  ko: "%{count}대 내보내기…"
+backup_ui.export.done:
+  zh-CN: 已导出 %{count} 台主机到 %{path}
+  en: Exported %{count} hosts to %{path}
+  zh-TW: 已匯出 %{count} 台主機到 %{path}
+  ja: "%{count} 台のホストを %{path} にエクスポートしました"
+  ko: 호스트 %{count}대를 %{path}에 내보냈습니다
+backup_ui.export.done_added:
+  zh-CN: 其中 %{count} 台是一并导出的跳板机。
+  en: "%{count} of them are jump hosts exported along with the selection."
+  zh-TW: 其中 %{count} 台是一併匯出的跳板機。
+  ja: そのうち %{count} 台は一緒にエクスポートされた踏み台ホストです。
+  ko: 그중 %{count}대는 함께 내보낸 점프 호스트입니다.
+backup_ui.export.done_skipped:
+  zh-CN: 有 %{count} 台 Telnet、串口主机没有导出：ssh_config 只能描述 SSH 主机。
+  en: "%{count} Telnet and serial hosts weren’t exported: ssh_config only describes SSH hosts."
+  zh-TW: 有 %{count} 台 Telnet、序列埠主機沒有匯出：ssh_config 只能描述 SSH 主機。
+  ja: Telnet、シリアルポートのホスト %{count} 台はエクスポートされませんでした。ssh_config で記述できるのは SSH ホストだけです。
+  ko: Telnet, 직렬 포트 호스트 %{count}대는 내보내지 않았습니다. ssh_config에는 SSH 호스트만 기술할 수 있습니다.
+backup_ui.export.done_encrypted:
+  zh-CN: 文件已用密码加密，导入时需要输入这个密码。
+  en: The file is encrypted with your password, which is needed to import it.
+  zh-TW: 檔案已用密碼加密，匯入時需要輸入這個密碼。
+  ja: ファイルはパスワードで暗号化されています。インポート時にこのパスワードの入力が必要です。
+  ko: 파일이 비밀번호로 암호화되었습니다. 가져올 때 이 비밀번호를 입력해야 합니다.
+
+backup_ui.page.full_title:
+  zh-CN: 完整备份
+  en: Full Backup
+  zh-TW: 完整備份
+  ja: 完全バックアップ
+  ko: 전체 백업
+backup_ui.page.full_description:
+  zh-CN: 完整备份把主机、分组、凭据、密钥、凭据档案、快捷命令、端口转发、工作区、终端配色、设置、主机指纹与命令历史导出为一个用密码加密的文件，可在另一台电脑上恢复（换机或重装后迁移）。
+  en: A full backup exports hosts, groups, credentials, keys, credential profiles, snippets, port forwards, workspaces, color schemes, settings, host keys and command history into one password-encrypted file that can be restored on another computer (when moving or reinstalling).
+  zh-TW: 完整備份把主機、群組、認證資訊、金鑰、認證資訊設定檔、快速指令、連接埠轉送、工作區、終端機配色、設定、主機指紋與指令歷史記錄匯出為一個用密碼加密的檔案，可在另一台電腦上還原（換電腦或重新安裝後移轉）。
+  ja: 完全バックアップでは、ホスト、グループ、認証情報、鍵、認証プロファイル、スニペット、ポート転送、ワークスペース、ターミナルの配色、設定、ホストキー、コマンド履歴を、パスワードで暗号化した 1 つのファイルにエクスポートします。別のコンピューターで復元できます（コンピューターの買い替えや再インストール後の移行に）。
+  ko: 전체 백업은 호스트, 그룹, 자격 증명, 키, 자격 증명 프로필, 스니펫, 포트 포워딩, 작업 영역, 터미널 색 구성표, 설정, 호스트 키, 명령 기록을 비밀번호로 암호화한 하나의 파일로 내보냅니다. 다른 컴퓨터에서 복원할 수 있습니다(컴퓨터를 바꾸거나 다시 설치한 후 옮길 때).
+backup_ui.page.create:
+  zh-CN: 创建备份…
+  en: Create Backup…
+  zh-TW: 建立備份…
+  ja: バックアップを作成…
+  ko: 백업 만들기…
+backup_ui.page.restore_from:
+  zh-CN: 从备份恢复…
+  en: Restore from Backup…
+  zh-TW: 從備份還原…
+  ja: バックアップから復元…
+  ko: 백업에서 복원…
+backup_ui.page.current:
+  zh-CN: 当前数据：%{counts}
+  en: "Current data: %{counts}"
+  zh-TW: 目前資料：%{counts}
+  ja: 現在のデータ：%{counts}
+  ko: "현재 데이터: %{counts}"
+backup_ui.page.include_audit:
+  zh-CN: 包含审计日志
+  en: Include the audit log
+  zh-TW: 包含稽核記錄
+  ja: 監査ログを含める
+  ko: 감사 로그 포함
+backup_ui.page.include_audit_hint:
+  zh-CN: 不含时，恢复后保留目标电脑上原有的审计日志。
+  en: Without it, the audit log already on the target computer is kept when restoring.
+  zh-TW: 不含時，還原後保留目標電腦上原有的稽核記錄。
+  ja: 含めない場合、復元後も復元先のコンピューターにある監査ログはそのまま残ります。
+  ko: 포함하지 않으면 복원한 후에도 대상 컴퓨터에 있던 감사 로그가 그대로 유지됩니다.
+backup_ui.page.password_hint:
+  zh-CN: 恢复时需要输入这个密码，忘记后无法解开备份，请牢记。
+  en: You’ll need this password to restore. The backup can’t be opened without it.
+  zh-TW: 還原時需要輸入這個密碼，忘記後無法解開備份，請牢記。
+  ja: 復元時にこのパスワードの入力が必要です。忘れるとバックアップを復号できないので、必ず覚えておいてください。
+  ko: 복원할 때 이 비밀번호를 입력해야 합니다. 잊어버리면 백업을 열 수 없으니 꼭 기억해 두세요.
+backup_ui.page.create_submit:
+  zh-CN: 选择位置并备份…
+  en: Choose Location and Back Up…
+  zh-TW: 選擇位置並備份…
+  ja: 保存先を選んでバックアップ…
+  ko: 위치 선택 후 백업…
+backup_ui.page.created:
+  zh-CN: 已备份到 %{path}
+  en: Backed up to %{path}
+  zh-TW: 已備份到 %{path}
+  ja: "%{path} にバックアップしました"
+  ko: "%{path}에 백업했습니다"
+backup_ui.page.restore_password:
+  zh-CN: 备份密码
+  en: Backup password
+  zh-TW: 備份密碼
+  ja: バックアップのパスワード
+  ko: 백업 비밀번호
+backup_ui.page.inspect:
+  zh-CN: 读取备份
+  en: Read Backup
+  zh-TW: 讀取備份
+  ja: バックアップを読み込む
+  ko: 백업 읽기
+backup_ui.page.summary_time:
+  zh-CN: 备份于 %{time}（Termlet %{app}）
+  en: Backed up on %{time} (Termlet %{app})
+  zh-TW: 備份於 %{time}（Termlet %{app}）
+  ja: "%{time} にバックアップ（Termlet %{app}）"
+  ko: "%{time}에 백업함(Termlet %{app})"
+backup_ui.page.summary_audit:
+  zh-CN: 含审计日志 %{count} 条。
+  en: Includes %{count} audit log entries.
+  zh-TW: 含稽核記錄 %{count} 筆。
+  ja: 監査ログ %{count} 件を含みます。
+  ko: 감사 로그 %{count}건을 포함합니다.
+backup_ui.page.summary_no_audit:
+  zh-CN: 不含审计日志（恢复后保留本机的）。
+  en: No audit log (the local one is kept).
+  zh-TW: 不含稽核記錄（還原後保留本機的）。
+  ja: 監査ログは含みません（復元後もこのコンピューターの監査ログが残ります）。
+  ko: 감사 로그는 포함하지 않습니다(복원 후에도 이 컴퓨터의 감사 로그가 유지됨).
+backup_ui.page.restore_warning:
+  zh-CN: 恢复会替换当前的全部数据（主机、凭据、密钥、快捷命令、设置等），正在运行的端口转发会停止，已打开的终端不受影响。恢复前会自动保存一份当前数据的快照，可在下方的本机快照中回退。
+  en: Restoring replaces all current data (hosts, credentials, keys, snippets, settings and more). Running port forwards are stopped; open terminals aren’t affected. A snapshot of the current data is saved first, so you can roll back from the local snapshots below.
+  zh-TW: 還原會取代目前的全部資料（主機、認證資訊、金鑰、快速指令、設定等），執行中的連接埠轉送會停止，已開啟的終端機不受影響。還原前會自動儲存一份目前資料的快照，可在下方的本機快照中回復。
+  ja: 復元すると現在のすべてのデータ（ホスト、認証情報、鍵、スニペット、設定など）が置き換えられ、実行中のポート転送は停止します。開いているターミナルには影響しません。復元の前に現在のデータのスナップショットが自動で保存されるため、下のローカルスナップショットから元に戻せます。
+  ko: 복원하면 현재의 모든 데이터(호스트, 자격 증명, 키, 스니펫, 설정 등)가 바뀌고, 실행 중인 포트 포워딩은 중지됩니다. 열려 있는 터미널에는 영향이 없습니다. 복원 전에 현재 데이터의 스냅샷이 자동으로 저장되므로 아래의 로컬 스냅샷에서 되돌릴 수 있습니다.
+backup_ui.page.restore_submit:
+  zh-CN: 替换并恢复
+  en: Replace and Restore
+  zh-TW: 取代並還原
+  ja: 置き換えて復元
+  ko: 바꾸고 복원
+backup_ui.page.restored:
+  zh-CN: 已用 %{time} 的备份替换了全部数据，恢复前的数据已保存为快照。
+  en: All data was replaced with the backup from %{time}. The previous data was saved as a snapshot.
+  zh-TW: 已用 %{time} 的備份取代了全部資料，還原前的資料已儲存為快照。
+  ja: "%{time} のバックアップですべてのデータを置き換えました。復元前のデータはスナップショットとして保存されています。"
+  ko: "%{time}의 백업으로 모든 데이터를 바꿨습니다. 복원 전의 데이터는 스냅샷으로 저장되었습니다."
+backup_ui.page.vault_reset:
+  zh-CN: 这台电脑上的主密钥已丢失，恢复前重置了保险库，备份中的凭据已用新的主密钥保存。
+  en: This computer’s master key was missing, so the vault was reset before restoring. The credentials from the backup are now protected by the new master key.
+  zh-TW: 這台電腦上的主金鑰已遺失，還原前重設了保險庫，備份中的認證資訊已用新的主金鑰儲存。
+  ja: このコンピューターのマスターキーが失われていたため、復元の前に保管庫をリセットしました。バックアップの認証情報は新しいマスターキーで保存されています。
+  ko: 이 컴퓨터의 마스터 키가 없어져 복원 전에 보관함을 초기화했습니다. 백업의 자격 증명은 새 마스터 키로 저장되었습니다.
+backup_ui.page.snapshots_title:
+  zh-CN: 本机快照
+  en: Local Snapshots
+  zh-TW: 本機快照
+  ja: ローカルスナップショット
+  ko: 로컬 스냅샷
+backup_ui.page.auto:
+  zh-CN: 每天自动保存一份快照
+  en: Save a snapshot automatically every day
+  zh-TW: 每天自動儲存一份快照
+  ja: 毎日スナップショットを自動保存
+  ko: 매일 스냅샷 자동 저장
+backup_ui.page.keep:
+  zh-CN: 自动快照保留的份数
+  en: Daily snapshots to keep
+  zh-TW: 自動快照保留的份數
+  ja: 自動スナップショットの保持数
+  ko: 보관할 자동 스냅샷 수
+backup_ui.page.keep_hint:
+  zh-CN: "%{min}–%{max} 份。手动保存的，以及导入、恢复、升级、云同步之前保存的快照另外各自保留最近的几份。"
+  en: "%{min}–%{max}. Manual snapshots and those saved before importing, restoring, upgrading and cloud sync are kept separately."
+  zh-TW: "%{min}–%{max} 份。手動儲存的，以及匯入、還原、升級、雲端同步之前儲存的快照另外各自保留最近的幾份。"
+  ja: "%{min}～%{max} 個。手動で保存したスナップショットと、インポート、復元、アップグレード、クラウド同期の前に保存したスナップショットは、それぞれ別に最新のものをいくつか保持します。"
+  ko: "%{min}~%{max}개. 수동으로 저장한 스냅샷과 가져오기, 복원, 업그레이드, 클라우드 동기화 전에 저장한 스냅샷은 각각 따로 최근 몇 개를 보관합니다."
+backup_ui.page.keep_invalid:
+  zh-CN: 自动快照保留的份数应为 %{min}–%{max}。
+  en: Daily snapshots to keep must be %{min}–%{max}.
+  zh-TW: 自動快照保留的份數應為 %{min}–%{max}。
+  ja: 自動スナップショットの保持数は %{min}～%{max} にしてください。
+  ko: 보관할 자동 스냅샷 수는 %{min}~%{max} 사이여야 합니다.
+backup_ui.page.snapshot_hint:
+  zh-CN: 快照保存在数据目录的 backups 文件夹中，内容没有变化时不重复保存；恢复、导入主机、升级到新版本之前也会自动保存一份。快照中的凭据仍由这台电脑的主密钥加密，只能在这台电脑上恢复，迁移到其他电脑请用上面的完整备份。
+  en: Snapshots are stored in the backups folder of the data directory and aren’t saved again when nothing has changed. A snapshot is also saved before restoring, importing hosts and upgrading to a new version. Credentials in snapshots stay encrypted with this computer’s master key, so they can only be restored here. To move to another computer, use the full backup above.
+  zh-TW: 快照儲存在資料目錄的 backups 資料夾中，內容沒有變化時不重複儲存；還原、匯入主機、升級到新版本之前也會自動儲存一份。快照中的認證資訊仍由這台電腦的主金鑰加密，只能在這台電腦上還原，移轉到其他電腦請用上面的完整備份。
+  ja: スナップショットはデータフォルダーの backups フォルダーに保存され、内容が変わっていないときは重複して保存しません。復元、ホストのインポート、新しいバージョンへのアップグレードの前にも自動で保存されます。スナップショット内の認証情報は引き続きこのコンピューターのマスターキーで暗号化されているため、このコンピューターでしか復元できません。別のコンピューターへ移行するには、上の完全バックアップを使ってください。
+  ko: 스냅샷은 데이터 폴더의 backups 폴더에 저장되며, 내용이 바뀌지 않았으면 다시 저장하지 않습니다. 복원, 호스트 가져오기, 새 버전으로 업그레이드하기 전에도 자동으로 저장됩니다. 스냅샷의 자격 증명은 계속 이 컴퓨터의 마스터 키로 암호화되어 있어 이 컴퓨터에서만 복원할 수 있습니다. 다른 컴퓨터로 옮기려면 위의 전체 백업을 사용하세요.
+backup_ui.page.snapshot_now:
+  zh-CN: 立即保存快照
+  en: Save Snapshot Now
+  zh-TW: 立即儲存快照
+  ja: 今すぐスナップショットを保存
+  ko: 지금 스냅샷 저장
+backup_ui.page.open_folder:
+  zh-CN: 打开文件夹
+  en: Open Folder
+  zh-TW: 開啟資料夾
+  ja: フォルダーを開く
+  ko: 폴더 열기
+backup_ui.page.no_snapshots:
+  zh-CN: 还没有快照。
+  en: No snapshots yet.
+  zh-TW: 還沒有快照。
+  ja: スナップショットはまだありません。
+  ko: 아직 스냅샷이 없습니다.
+backup_ui.page.loading_snapshots:
+  zh-CN: 正在读取快照…
+  en: Reading snapshots…
+  zh-TW: 正在讀取快照…
+  ja: スナップショットを読み込んでいます…
+  ko: 스냅샷을 읽는 중…
+backup_ui.page.column.time:
+  zh-CN: 时间
+  en: Time
+  zh-TW: 時間
+  ja: 日時
+  ko: 시간
+backup_ui.page.column.reason:
+  zh-CN: 原因
+  en: Reason
+  zh-TW: 原因
+  ja: 理由
+  ko: 이유
+backup_ui.page.column.hosts:
+  zh-CN: 主机
+  en: Hosts
+  zh-TW: 主機
+  ja: ホスト
+  ko: 호스트
+backup_ui.page.column.size:
+  zh-CN: 大小
+  en: Size
+  zh-TW: 大小
+  ja: サイズ
+  ko: 크기
+backup_ui.page.restore_snapshot:
+  zh-CN: 恢复…
+  en: Restore…
+  zh-TW: 還原…
+  ja: 復元…
+  ko: 복원…
+backup_ui.page.confirm_snapshot:
+  zh-CN: 用 %{time} 的快照恢复吗？
+  en: Restore the snapshot from %{time}?
+  zh-TW: 要用 %{time} 的快照還原嗎？
+  ja: "%{time} のスナップショットから復元しますか？"
+  ko: "%{time}의 스냅샷으로 복원하시겠습니까?"
+backup_ui.page.confirm_snapshot_ok:
+  zh-CN: 恢复
+  en: Restore
+  zh-TW: 還原
+  ja: 復元
+  ko: 복원
+backup_ui.page.snapshot_saved:
+  zh-CN: 已保存快照。
+  en: Snapshot saved.
+  zh-TW: 已儲存快照。
+  ja: スナップショットを保存しました。
+  ko: 스냅샷을 저장했습니다.
+backup_ui.page.snapshot_restored:
+  zh-CN: 已用 %{time} 的快照恢复，恢复前的数据已另存为快照。
+  en: Restored the snapshot from %{time}. The previous data was saved as another snapshot.
+  zh-TW: 已用 %{time} 的快照還原，還原前的資料已另存為快照。
+  ja: "%{time} のスナップショットから復元しました。復元前のデータは別のスナップショットとして保存されています。"
+  ko: "%{time}의 스냅샷으로 복원했습니다. 복원 전의 데이터는 별도의 스냅샷으로 저장되었습니다."
+backup_ui.reason.auto:
+  zh-CN: 每天自动
+  en: Daily
+  zh-TW: 每天自動
+  ja: 毎日自動
+  ko: 매일 자동
+backup_ui.reason.manual:
+  zh-CN: 手动
+  en: Manual
+  zh-TW: 手動
+  ja: 手動
+  ko: 수동
+backup_ui.reason.restore:
+  zh-CN: 恢复之前
+  en: Before restore
+  zh-TW: 還原之前
+  ja: 復元前
+  ko: 복원 전
+backup_ui.reason.import:
+  zh-CN: 导入之前
+  en: Before import
+  zh-TW: 匯入之前
+  ja: インポート前
+  ko: 가져오기 전
+backup_ui.reason.upgrade:
+  zh-CN: 升级之前
+  en: Before upgrade
+  zh-TW: 升級之前
+  ja: アップグレード前
+  ko: 업그레이드 전
+backup_ui.reason.sync:
+  zh-CN: 云同步之前
+  en: Before cloud sync
+  zh-TW: 雲端同步之前
+  ja: クラウド同期前
+  ko: 클라우드 동기화 전
+
+backup_ui.schedule.title:
+  zh-CN: 定时备份
+  en: Scheduled Backups
+  zh-TW: 定時備份
+  ja: 定期バックアップ
+  ko: 예약 백업
+backup_ui.schedule.description:
+  zh-CN: 按计划自动创建完整备份，存到指定的文件夹（可以是网盘的同步目录），保留最近几份。Termlet 运行时到点备份；到点时没有运行的，下次启动后补做一次。
+  en: Creates full backups automatically on a schedule and keeps the latest few in a folder you choose (which can be a cloud drive's synced folder). Backups run on time while Termlet is running; a missed one is made once after the next start.
+  zh-TW: 依排程自動建立完整備份，存到指定的資料夾（可以是雲端硬碟的同步目錄），保留最近幾份。Termlet 執行時到點備份；到點時沒有執行的，下次啟動後補做一次。
+  ja: スケジュールに従って完全バックアップを自動で作成し、指定したフォルダー（クラウドストレージの同期フォルダーでも可）に保存して、最新のいくつかを保持します。Termlet の実行中は予定の時刻にバックアップし、その時刻に実行していなかった場合は次回の起動後に一度だけ実行します。
+  ko: 일정에 따라 전체 백업을 자동으로 만들어 지정한 폴더(클라우드 드라이브의 동기화 폴더도 가능)에 저장하고 최근 몇 개를 보관합니다. Termlet이 실행 중이면 예정된 시간에 백업하고, 그 시간에 실행 중이 아니었다면 다음에 시작한 후 한 번 백업합니다.
+backup_ui.schedule.setup:
+  zh-CN: 设置定时备份…
+  en: Set Up Scheduled Backups…
+  zh-TW: 設定定時備份…
+  ja: 定期バックアップを設定…
+  ko: 예약 백업 설정…
+backup_ui.schedule.folder:
+  zh-CN: 文件夹
+  en: Folder
+  zh-TW: 資料夾
+  ja: フォルダー
+  ko: 폴더
+backup_ui.schedule.folder_placeholder:
+  zh-CN: 选择或填写文件夹的完整路径
+  en: Choose a folder or enter its full path
+  zh-TW: 選擇或填寫資料夾的完整路徑
+  ja: フォルダーを選択するか、完全なパスを入力
+  ko: 폴더를 선택하거나 전체 경로 입력
+backup_ui.schedule.folder_hint:
+  zh-CN: 备份的文件名为 termlet-auto-日期-时间.termlet-backup；清理旧备份时只删这样的文件，手动保存的备份与其他文件都不动。
+  en: Backups are named termlet-auto-date-time.termlet-backup; only such files are removed when old backups are cleaned up, never manual backups or other files.
+  zh-TW: 備份的檔名為 termlet-auto-日期-時間.termlet-backup；清除舊備份時只刪除這樣的檔案，手動儲存的備份與其他檔案都不動。
+  ja: バックアップのファイル名は termlet-auto-日付-時刻.termlet-backup です。古いバックアップを整理するときはこの名前のファイルだけを削除し、手動で保存したバックアップやほかのファイルには触れません。
+  ko: 백업 파일 이름은 termlet-auto-날짜-시간.termlet-backup입니다. 오래된 백업을 정리할 때는 이런 이름의 파일만 삭제하며, 수동으로 저장한 백업이나 다른 파일은 건드리지 않습니다.
+backup_ui.schedule.browse:
+  zh-CN: 浏览…
+  en: Browse…
+  zh-TW: 瀏覽…
+  ja: 参照…
+  ko: 찾아보기…
+backup_ui.schedule.frequency:
+  zh-CN: 频率
+  en: Repeat
+  zh-TW: 頻率
+  ja: 頻度
+  ko: 주기
+backup_ui.schedule.daily:
+  zh-CN: 每天
+  en: Daily
+  zh-TW: 每天
+  ja: 毎日
+  ko: 매일
+backup_ui.schedule.weekly:
+  zh-CN: 每周
+  en: Weekly
+  zh-TW: 每週
+  ja: 毎週
+  ko: 매주
+backup_ui.schedule.at:
+  zh-CN: 时间
+  en: at
+  zh-TW: 時間
+  ja: 時刻
+  ko: 시간
+backup_ui.schedule.monday:
+  zh-CN: 星期一
+  en: Monday
+  zh-TW: 星期一
+  ja: 月曜日
+  ko: 월요일
+backup_ui.schedule.tuesday:
+  zh-CN: 星期二
+  en: Tuesday
+  zh-TW: 星期二
+  ja: 火曜日
+  ko: 화요일
+backup_ui.schedule.wednesday:
+  zh-CN: 星期三
+  en: Wednesday
+  zh-TW: 星期三
+  ja: 水曜日
+  ko: 수요일
+backup_ui.schedule.thursday:
+  zh-CN: 星期四
+  en: Thursday
+  zh-TW: 星期四
+  ja: 木曜日
+  ko: 목요일
+backup_ui.schedule.friday:
+  zh-CN: 星期五
+  en: Friday
+  zh-TW: 星期五
+  ja: 金曜日
+  ko: 금요일
+backup_ui.schedule.saturday:
+  zh-CN: 星期六
+  en: Saturday
+  zh-TW: 星期六
+  ja: 土曜日
+  ko: 토요일
+backup_ui.schedule.sunday:
+  zh-CN: 星期日
+  en: Sunday
+  zh-TW: 星期日
+  ja: 日曜日
+  ko: 일요일
+backup_ui.schedule.keep:
+  zh-CN: 保留份数
+  en: Keep
+  zh-TW: 保留份數
+  ja: 保持数
+  ko: 보관 개수
+backup_ui.schedule.keep_hint:
+  zh-CN: 可保留 %{min}–%{max} 份；超出的旧备份自动删除。
+  en: Keep %{min}–%{max} backups; older ones are removed automatically.
+  zh-TW: 可保留 %{min}–%{max} 份；超出的舊備份自動刪除。
+  ja: "%{min}～%{max} 個まで保持できます。超えた古いバックアップは自動的に削除されます。"
+  ko: "%{min}~%{max}개까지 보관할 수 있습니다. 초과한 오래된 백업은 자동으로 삭제됩니다."
+backup_ui.schedule.keep_invalid:
+  zh-CN: 保留份数应在 %{min} 到 %{max} 之间。
+  en: The number of backups to keep must be between %{min} and %{max}.
+  zh-TW: 保留份數應在 %{min} 到 %{max} 之間。
+  ja: 保持数は %{min}～%{max} の範囲で指定してください。
+  ko: 보관 개수는 %{min}에서 %{max} 사이여야 합니다.
+backup_ui.schedule.password:
+  zh-CN: 备份密码
+  en: Backup password
+  zh-TW: 備份密碼
+  ja: バックアップのパスワード
+  ko: 백업 비밀번호
+backup_ui.schedule.password_hint:
+  zh-CN: 定时备份的文件用这个密码加密，恢复时需要输入，忘记后无法解开。它经保险库加密后保存在这台电脑上。
+  en: Scheduled backups are encrypted with this password, which you’ll need to restore them and can’t be recovered if forgotten. It’s kept on this computer, encrypted by the vault.
+  zh-TW: 定時備份的檔案用這個密碼加密，還原時需要輸入，忘記後無法解開。它經保險庫加密後儲存在這台電腦上。
+  ja: 定期バックアップのファイルはこのパスワードで暗号化され、復元時に入力が必要です。忘れると復号できません。パスワードは保管庫で暗号化してこのコンピューターに保存されます。
+  ko: 예약 백업 파일은 이 비밀번호로 암호화되며, 복원할 때 입력해야 합니다. 잊어버리면 열 수 없습니다. 비밀번호는 보관함으로 암호화되어 이 컴퓨터에 저장됩니다.
+backup_ui.schedule.password_keep_hint:
+  zh-CN: 留空则沿用原来的密码；填写则之后的备份改用新密码（已有的备份仍用原来的密码）。
+  en: Leave empty to keep the current password; a new one applies to later backups (existing backups keep the old password).
+  zh-TW: 留空則沿用原來的密碼；填寫則之後的備份改用新密碼（已有的備份仍使用原來的密碼）。
+  ja: 空欄にすると現在のパスワードをそのまま使います。入力すると、以降のバックアップは新しいパスワードを使います（既存のバックアップは元のパスワードのままです）。
+  ko: 비워 두면 현재 비밀번호를 그대로 사용합니다. 입력하면 이후 백업부터 새 비밀번호를 사용합니다(기존 백업은 원래 비밀번호 그대로).
+backup_ui.schedule.password_repeat:
+  zh-CN: 请再次输入备份密码。
+  en: Enter the backup password again.
+  zh-TW: 請再次輸入備份密碼。
+  ja: バックアップのパスワードをもう一度入力してください。
+  ko: 백업 비밀번호를 다시 입력하세요.
+backup_ui.schedule.folder_required:
+  zh-CN: 请选择存放备份的文件夹。
+  en: Choose a folder for the backups.
+  zh-TW: 請選擇存放備份的資料夾。
+  ja: バックアップを保存するフォルダーを選択してください。
+  ko: 백업을 저장할 폴더를 선택하세요.
+backup_ui.schedule.time_invalid:
+  zh-CN: 时间应写成 03:00 这样的格式（24 小时制）。
+  en: Enter the time like 03:00 (24-hour clock).
+  zh-TW: 時間應寫成 03:00 這樣的格式（24 小時制）。
+  ja: 時刻は 03:00 のような形式（24 時間表記）で入力してください。
+  ko: 시간은 03:00 같은 형식(24시간제)으로 입력하세요.
+backup_ui.schedule.save:
+  zh-CN: 保存
+  en: Save
+  zh-TW: 儲存
+  ja: 保存
+  ko: 저장
+backup_ui.schedule.saved:
+  zh-CN: 已保存定时备份的设置。
+  en: The backup schedule was saved.
+  zh-TW: 已儲存定時備份的設定。
+  ja: 定期バックアップの設定を保存しました。
+  ko: 예약 백업 설정을 저장했습니다.
+backup_ui.schedule.plan_daily:
+  zh-CN: 每天 %{time}
+  en: Every day at %{time}
+  zh-TW: 每天 %{time}
+  ja: 毎日 %{time}
+  ko: 매일 %{time}
+backup_ui.schedule.plan_weekly:
+  zh-CN: 每周%{weekday} %{time}
+  en: Every %{weekday} at %{time}
+  zh-TW: 每週%{weekday} %{time}
+  ja: 毎週%{weekday} %{time}
+  ko: 매주 %{weekday} %{time}
+backup_ui.schedule.summary:
+  zh-CN: "%{plan} 备份到 %{folder}，保留 %{keep} 份。"
+  en: "%{plan}, backed up to %{folder}, keeping %{keep}."
+  zh-TW: "%{plan} 備份到 %{folder}，保留 %{keep} 份。"
+  ja: "%{plan} に %{folder} へバックアップし、%{keep} 個を保持します。"
+  ko: "%{plan} %{folder}에 백업하고 %{keep}개를 보관합니다."
+backup_ui.schedule.next:
+  zh-CN: 下次：%{time}
+  en: "Next: %{time}"
+  zh-TW: 下次：%{time}
+  ja: 次回：%{time}
+  ko: "다음: %{time}"
+backup_ui.schedule.next_soon:
+  zh-CN: 下次：错过了上次的时间，马上补做
+  en: "Next: the last time was missed, making it up shortly"
+  zh-TW: 下次：錯過了上次的時間，馬上補做
+  ja: 次回：前回の予定時刻を過ぎていたため、まもなく実行します
+  ko: "다음: 지난 예정 시간을 놓쳐 곧 실행합니다"
+backup_ui.schedule.running:
+  zh-CN: 正在备份…
+  en: Backing up…
+  zh-TW: 正在備份…
+  ja: バックアップしています…
+  ko: 백업하는 중…
+backup_ui.schedule.never:
+  zh-CN: 还没有备份过。
+  en: No backup has been made yet.
+  zh-TW: 還沒有備份過。
+  ja: まだバックアップしていません。
+  ko: 아직 백업한 적이 없습니다.
+backup_ui.schedule.last_ok:
+  zh-CN: 上次：%{time} 成功（%{file}）
+  en: "Last: %{time}, succeeded (%{file})"
+  zh-TW: 上次：%{time} 成功（%{file}）
+  ja: 前回：%{time} 成功（%{file}）
+  ko: "마지막: %{time} 성공(%{file})"
+backup_ui.schedule.last_ok_pruned:
+  zh-CN: 上次：%{time} 成功（%{file}），删除了 %{count} 份旧备份
+  en: "Last: %{time}, succeeded (%{file}); %{count} old backups removed"
+  zh-TW: 上次：%{time} 成功（%{file}），刪除了 %{count} 份舊備份
+  ja: 前回：%{time} 成功（%{file}）、古いバックアップを %{count} 個削除
+  ko: "마지막: %{time} 성공(%{file}), 오래된 백업 %{count}개 삭제"
+backup_ui.schedule.last_failed:
+  zh-CN: 上次：%{time} 失败：%{error}
+  en: "Last: %{time}, failed: %{error}"
+  zh-TW: 上次：%{time} 失敗：%{error}
+  ja: 前回：%{time} 失敗：%{error}
+  ko: "마지막: %{time} 실패: %{error}"
+backup_ui.schedule.password_lost:
+  zh-CN: 保险库重置过，备份密码已无法解开，定时备份已暂停。请点“更改设置”重新输入密码。
+  en: The vault was reset, so the backup password can’t be opened and scheduled backups are paused. Click “Change Settings” to enter the password again.
+  zh-TW: 保險庫重設過，備份密碼已無法解開，定時備份已暫停。請按一下「變更設定」重新輸入密碼。
+  ja: 保管庫がリセットされたため、バックアップのパスワードを復号できなくなり、定期バックアップを一時停止しました。「設定を変更」をクリックしてパスワードをもう一度入力してください。
+  ko: 보관함이 초기화되어 백업 비밀번호를 열 수 없게 되었고 예약 백업이 일시 중지되었습니다. '설정 변경'을 클릭해 비밀번호를 다시 입력하세요.
+backup_ui.schedule.run_now:
+  zh-CN: 立即备份
+  en: Back Up Now
+  zh-TW: 立即備份
+  ja: 今すぐバックアップ
+  ko: 지금 백업
+backup_ui.schedule.edit:
+  zh-CN: 更改设置
+  en: Change Settings
+  zh-TW: 變更設定
+  ja: 設定を変更
+  ko: 설정 변경
+backup_ui.schedule.disable:
+  zh-CN: 停止定时备份
+  en: Stop Scheduled Backups
+  zh-TW: 停止定時備份
+  ja: 定期バックアップを停止
+  ko: 예약 백업 중지

@@ -1,0 +1,121 @@
+_version: 2
+toolbar.nav:
+  zh-CN: 工具栏
+  en: Toolbar
+  zh-TW: 工具列
+  ja: ツールバー
+  ko: 도구 모음
+toolbar.settings_hint:
+  zh-CN: 标题栏右侧显示哪些按钮、按什么顺序（只在这台电脑上）。有的按钮只在需要时出现；隐藏的按钮对应的功能仍可从命令面板与快捷键使用。窗口放不下时，排在后面的按钮收进“更多”菜单。
+  en: Choose which buttons appear on the right of the title bar, and in what order (on this computer only). Some buttons appear only when needed; hidden buttons stay available from the command palette and their shortcuts. When the window is too narrow, the last buttons move into the More menu.
+  zh-TW: 標題列右側顯示哪些按鈕、按什麼順序（只在這台電腦上）。有的按鈕只在需要時出現；隱藏的按鈕對應的功能仍可從命令選擇區與快速鍵使用。視窗放不下時，排在後面的按鈕收進「更多」選單。
+  ja: タイトルバーの右側に表示するボタンと順序を設定します（このコンピューターのみ）。必要なときだけ表示されるボタンもあります。非表示にしたボタンの機能は、コマンドパレットとショートカットキーから引き続き使用できます。ウィンドウに収まらないときは、後ろのボタンが「その他」メニューに入ります。
+  ko: 제목 표시줄 오른쪽에 표시할 버튼과 순서를 정합니다(이 컴퓨터에만 적용). 필요할 때만 나타나는 버튼도 있습니다. 숨긴 버튼의 기능은 명령 팔레트와 바로 가기 키에서 계속 사용할 수 있습니다. 창에 다 들어가지 않으면 뒤쪽 버튼은 '더 보기' 메뉴로 들어갑니다.
+toolbar.item.host_tools:
+  zh-CN: 主机工具
+  en: Host tools
+  zh-TW: 主機工具
+  ja: ホストツール
+  ko: 호스트 도구
+toolbar.item.multi_exec:
+  zh-CN: 同步输入
+  en: Sync input
+  zh-TW: 同步輸入
+  ja: 同時入力
+  ko: 동시 입력
+toolbar.item.forwards:
+  zh-CN: 运行中的端口转发
+  en: Running port forwards
+  zh-TW: 執行中的連接埠轉送
+  ja: 実行中のポート転送
+  ko: 실행 중인 포트 포워딩
+toolbar.item.sftp:
+  zh-CN: SFTP 文件管理
+  en: SFTP file manager
+  zh-TW: SFTP 檔案管理
+  ja: SFTP ファイル管理
+  ko: SFTP 파일 관리
+toolbar.item.snippets:
+  zh-CN: 快捷命令
+  en: Snippets
+  zh-TW: 快速指令
+  ja: スニペット
+  ko: 스니펫
+toolbar.item.compose:
+  zh-CN: 撰写栏
+  en: Compose bar
+  zh-TW: 撰寫列
+  ja: コンポーズバー
+  ko: 작성 표시줄
+toolbar.item.highlight:
+  zh-CN: 关键词高亮
+  en: Keyword highlighting
+  zh-TW: 關鍵字醒目提示
+  ja: キーワードの強調表示
+  ko: 키워드 강조 표시
+toolbar.item.theme:
+  zh-CN: 切换浅色 / 深色
+  en: Switch light / dark
+  zh-TW: 切換淺色 / 深色
+  ja: ライト / ダークを切り替え
+  ko: 라이트 / 다크 전환
+toolbar.item.lock:
+  zh-CN: 立即锁定
+  en: Lock now
+  zh-TW: 立即鎖定
+  ja: 今すぐロック
+  ko: 지금 잠그기
+toolbar.when.terminals:
+  zh-CN: 有终端时出现
+  en: Shown when a terminal is open
+  zh-TW: 有終端機時出現
+  ja: ターミナルを開いているときに表示
+  ko: 터미널이 열려 있을 때 표시
+toolbar.when.forwards:
+  zh-CN: 有运行中的端口转发时出现
+  en: Shown while port forwards are running
+  zh-TW: 有執行中的連接埠轉送時出現
+  ja: ポート転送の実行中に表示
+  ko: 포트 포워딩이 실행 중일 때 표시
+toolbar.when.ssh:
+  zh-CN: 当前是 SSH 终端时出现
+  en: Shown when the current terminal is SSH
+  zh-TW: 目前是 SSH 終端機時出現
+  ja: 現在のターミナルが SSH のときに表示
+  ko: 현재 터미널이 SSH일 때 표시
+toolbar.when.app_lock:
+  zh-CN: 启用应用锁后出现
+  en: Shown once App Lock is on
+  zh-TW: 啟用應用程式鎖定後出現
+  ja: アプリロックを有効にすると表示
+  ko: 앱 잠금을 사용하면 표시
+toolbar.reset:
+  zh-CN: 恢复默认
+  en: Restore defaults
+  zh-TW: 還原預設值
+  ja: デフォルトに戻す
+  ko: 기본값으로 복원
+toolbar.hide_button:
+  zh-CN: 隐藏这个按钮
+  en: Hide this button
+  zh-TW: 隱藏這個按鈕
+  ja: このボタンを非表示
+  ko: 이 버튼 숨기기
+toolbar.customize:
+  zh-CN: 自定义工具栏…
+  en: Customize Toolbar…
+  zh-TW: 自訂工具列…
+  ja: ツールバーをカスタマイズ…
+  ko: 도구 모음 사용자 지정…
+toolbar.more:
+  zh-CN: 更多
+  en: More
+  zh-TW: 更多
+  ja: その他
+  ko: 더 보기
+toolbar.hidden:
+  zh-CN: 已隐藏“%{name}”。可在设置的“工具栏”中重新显示，它的功能仍可从命令面板使用。
+  en: Hid "%{name}". You can show it again in Settings > Toolbar; it's still available from the command palette.
+  zh-TW: 已隱藏「%{name}」。可在設定的「工具列」中重新顯示，它的功能仍可從命令選擇區使用。
+  ja: 「%{name}」を非表示にしました。設定の「ツールバー」で再び表示できます。機能はコマンドパレットから引き続き使用できます。
+  ko: "'%{name}'을(를) 숨겼습니다. 설정의 '도구 모음'에서 다시 표시할 수 있으며, 기능은 명령 팔레트에서 계속 사용할 수 있습니다."

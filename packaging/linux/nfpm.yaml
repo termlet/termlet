@@ -1,0 +1,110 @@
+# deb 与 rpm 的打包配置（nfpm，https://nfpm.goreleaser.com，MIT）。由 packaging/linux/package.sh 在它的工作目录中
+# 调用（nfpm 不展开 contents 中的环境变量，源文件都写相对于那个目录的路径）：
+#   VERSION                     版本号（环境变量；1.2.3 或 1.2.3-beta.1，预发布在 deb、rpm 中写成 1.2.3~beta.1，
+#                               排在正式版之前）
+#   PACKAGE_ARCH                架构（环境变量，Go 的写法：amd64 或 arm64；nfpm 在 deb 中写成 amd64 / arm64，
+#                               rpm 中写成 x86_64 / aarch64）
+#   stage/                      tar.gz 的暂存目录（Termlet、bin/termlet、许可文本、share/icons）
+#   dev.termlet.Termlet.desktop 菜单项（Exec 改成 /opt/termlet/Termlet 的那份）
+# 程序装在 /opt/termlet（与 tar.gz、Windows 的安装目录相同：命令行工具在 bin/termlet，在上一级找 Termlet），
+# /usr/bin/termlet 链接到命令行工具；菜单项与 hicolor 图标装到 /usr/share（Debian、Fedora 的 desktop-file-utils 与
+# 图标主题用文件触发器刷新缓存，不用维护脚本）。卸载时这些都由包管理器删掉；用户数据（~/.config/termlet）不动。
+name: termlet
+arch: ${PACKAGE_ARCH}
+platform: linux
+version: ${VERSION}
+version_schema: semver
+release: 1
+section: net
+priority: optional
+maintainer: Termlet <hi@termlet.dev>
+vendor: Termlet
+homepage: https://termlet.dev
+license: AGPL-3.0-or-later
+description: |-
+  Lightweight SSH client that AI tools can safely use
+  Termlet is an SSH client with SFTP, port forwarding, Telnet and serial
+  ports. Its termlet command lets AI tools such as Claude Code run commands
+  and transfer files on the servers you allow, while your credentials stay
+  in Termlet.
+
+# 运行依赖与 packaging/linux/README.txt 写的相同（x64 与 arm64 一样；rpm 的 (64bit) 在 aarch64 上也这样写）：
+# 程序链接 libxcb、libxkbcommon、libxkbcommon-x11（glibc 2.35 起，package.sh 打包前核对）；
+# 检查更新、同步等 HTTPS 连接按系统的根证书校验（ca-certificates）。显卡驱动（Vulkan，没有时退回 OpenGL ES）与
+# Wayland 在运行时加载，界面字体用系统的（一个也没有时启动即退出，桌面系统都有），写成推荐；没有 Secret Service
+# 时改用主密码，钥匙串只作建议。rpm 按 soname 与 font() 写，Fedora、openSUSE 的包名不同也都能满足
+overrides:
+  deb:
+    depends:
+      - libc6 (>= 2.35)
+      - libgcc-s1
+      - libxcb1
+      - libxkbcommon0
+      - libxkbcommon-x11-0
+      - ca-certificates
+    recommends:
+      - libvulkan1
+      - mesa-vulkan-drivers | vulkan-icd
+      - libegl1
+      - libwayland-client0
+      - fonts-dejavu-core | fonts-noto-core
+    suggests:
+      - gnome-keyring | kwalletmanager | keepassxc
+  rpm:
+    depends:
+      - libc.so.6(GLIBC_2.35)(64bit)
+      - libxcb.so.1()(64bit)
+      - libxkbcommon.so.0()(64bit)
+      - libxkbcommon-x11.so.0()(64bit)
+      - ca-certificates
+    recommends:
+      - libvulkan.so.1()(64bit)
+      - mesa-vulkan-drivers
+      - libEGL.so.1()(64bit)
+      - libwayland-client.so.0()(64bit)
+      - font(dejavusans)
+    suggests:
+      - gnome-keyring
+
+contents:
+  # 写明目录，rpm 才把它们算作这个包的（卸载时删掉）；deb 本来就记下包中的目录
+  - dst: /opt/termlet
+    type: dir
+    file_info:
+      mode: 0755
+  - dst: /opt/termlet/bin
+    type: dir
+    file_info:
+      mode: 0755
+  - dst: /opt/termlet/licenses
+    type: dir
+    file_info:
+      mode: 0755
+  - src: stage/Termlet
+    dst: /opt/termlet/Termlet
+    file_info:
+      mode: 0755
+  - src: stage/bin/termlet
+    dst: /opt/termlet/bin/termlet
+    file_info:
+      mode: 0755
+  - src: stage/license_*.txt
+    dst: /opt/termlet/
+    file_info:
+      mode: 0644
+  - src: stage/licenses/*
+    dst: /opt/termlet/licenses/
+    file_info:
+      mode: 0644
+  - src: /opt/termlet/bin/termlet
+    dst: /usr/bin/termlet
+    type: symlink
+  - src: dev.termlet.Termlet.desktop
+    dst: /usr/share/applications/dev.termlet.Termlet.desktop
+    file_info:
+      mode: 0644
+  # 整个目录照原样装进去（其中只有 Termlet 的图标）；hicolor 下的各级目录属于图标主题的包，这里不另外写
+  - src: stage/share/icons/hicolor
+    dst: /usr/share/icons/hicolor
+    file_info:
+      mode: 0644

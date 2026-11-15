@@ -1,0 +1,4 @@
+# gpui-kit 的警示对话框（确认框、提示框）默认宽度写死像素，界面放大后显得窄：桌面端经 ui_scale::open_alert 打开
+disallowed-methods = [
+    { path = "gpui_component::WindowExt::open_alert_dialog", reason = "用 crate::ui_scale::open_alert 打开，宽度随界面大小" },
+]

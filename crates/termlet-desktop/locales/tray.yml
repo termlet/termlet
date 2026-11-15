@@ -1,0 +1,13 @@
+_version: 2
+tray.show:
+  zh-CN: 显示 Termlet
+  en: Show Termlet
+  zh-TW: 顯示 Termlet
+  ja: Termlet を表示
+  ko: Termlet 표시
+tray.quit:
+  zh-CN: 退出 Termlet
+  en: Quit Termlet
+  zh-TW: 結束 Termlet
+  ja: Termlet を終了
+  ko: Termlet 종료

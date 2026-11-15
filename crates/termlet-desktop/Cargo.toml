@@ -1,0 +1,68 @@
+[package]
+name = "termlet-desktop"
+description = "Termlet 桌面端（GPUI）"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+termlet-core.workspace = true
+termlet-terminal.workspace = true
+# 在线编辑器的语法高亮（tree-sitter 语法，JSON 随 tree-sitter 自带）；没有语法的语言按纯文本
+gpui-kit = { workspace = true, features = [
+    "tree-sitter-bash",
+    "tree-sitter-css",
+    "tree-sitter-html",
+    "tree-sitter-javascript",
+    "tree-sitter-markdown",
+    "tree-sitter-python",
+    "tree-sitter-toml",
+    "tree-sitter-tsx",
+    "tree-sitter-typescript",
+    "tree-sitter-yaml",
+] }
+rust-i18n.workspace = true
+sys-locale.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+futures.workspace = true
+async-channel.workspace = true
+regex.workspace = true
+image.workspace = true
+
+# Windows Hello 的验证框属于 Termlet 的窗口（取窗口的 HWND）。GPUI 用的同一个包，不引入新的包
+[target.'cfg(windows)'.dependencies]
+raw-window-handle.workspace = true
+# 关闭窗口时最小化到托盘：通知区域的图标（Shell_NotifyIconW）与它的菜单，隐藏、显示窗口；任务栏按钮上的传输进度
+# （ITaskbarList3，经 CoCreateInstance）；主机概览小窗的置顶（SetWindowPos）。核心已依赖这个版本，只加特性
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+# Linux：任务栏进度经 D-Bus 发 Unity 的 LauncherEntry 信号（src/taskbar/unity.rs）。GPUI（ashpd）与系统凭据管理器
+# 用的同一个包（MIT），默认特性与它们相同，不引入新的包
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus.workspace = true
+
+# macOS：系统请求退出时先确认、中文界面的窗口菜单（src/macos.rs），主机概览小窗的置顶（取窗口的 NSWindow，
+# src/topmost.rs）。GPUI 用的同一个包，不引入新的包
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2.workspace = true
+raw-window-handle.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }
+
+# 给 Windows 程序嵌入图标与版本信息（build.rs）。GPUI 嵌入清单用的同一个包（MIT），不引入新的包
+[build-dependencies]
+embed-resource = "3"

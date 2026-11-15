@@ -1,0 +1,169 @@
+_version: 2
+tab_list.title:
+  zh-CN: Tab
+  en: Tabs
+  zh-TW: 分頁
+  ja: タブ
+  ko: 탭
+tab_list.new:
+  zh-CN: 新建
+  en: New
+  zh-TW: 新增
+  ja: 新規
+  ko: 새로 만들기
+tab_list.collapse:
+  zh-CN: 收成只显示图标的窄栏（悬停时展开）
+  en: Collapse to icons (expands on hover)
+  zh-TW: 收合成只顯示圖示的窄欄（游標停留時展開）
+  ja: アイコンだけの細い列にする（ポインターを置くと展開）
+  ko: 아이콘만 표시하도록 접기(포인터를 올리면 펼쳐짐)
+tab_list.expand:
+  zh-CN: 展开 Tab 列表
+  en: Expand the tab list
+  zh-TW: 展開分頁清單
+  ja: タブ一覧を展開
+  ko: 탭 목록 펼치기
+tab_list.resize:
+  zh-CN: 拖动调整 Tab 列表的宽度（点一下后也可以用方向键微调），双击恢复默认
+  en: Drag to resize the tab list (or click it and use the arrow keys); double-click to reset
+  zh-TW: 拖曳以調整分頁清單的寬度（按一下後也可以用方向鍵微調），按兩下還原預設值
+  ja: ドラッグしてタブ一覧の幅を調整（クリック後に矢印キーでも微調整できます）、ダブルクリックでデフォルトに戻す
+  ko: 드래그하여 탭 목록 너비 조정(클릭한 후 화살표 키로도 미세 조정 가능), 더블클릭하면 기본값으로 복원
+tab_list.group_by_host:
+  zh-CN: 按主机分组
+  en: Group by Host
+  zh-TW: 依主機分組
+  ja: ホストごとにまとめる
+  ko: 호스트별로 묶기
+tab_list.move_to_top:
+  zh-CN: 把 Tab 放到顶部
+  en: Move Tabs to the Top
+  zh-TW: 把分頁放到頂部
+  ja: タブを上に表示
+  ko: 탭을 위쪽에 표시
+tab_list.host_expand:
+  zh-CN: 展开
+  en: Expand
+  zh-TW: 展開
+  ja: 展開
+  ko: 펼치기
+tab_list.host_collapse:
+  zh-CN: 折叠
+  en: Collapse
+  zh-TW: 摺疊
+  ja: 折りたたむ
+  ko: 접기
+tab_list.pane.left:
+  zh-CN: 左侧窗格
+  en: Left pane
+  zh-TW: 左側窗格
+  ja: 左のペイン
+  ko: 왼쪽 창
+tab_list.pane.right:
+  zh-CN: 右侧窗格
+  en: Right pane
+  zh-TW: 右側窗格
+  ja: 右のペイン
+  ko: 오른쪽 창
+tab_list.pane.middle:
+  zh-CN: 中间窗格
+  en: Middle pane
+  zh-TW: 中間窗格
+  ja: 中央のペイン
+  ko: 가운데 창
+tab_list.pane.top:
+  zh-CN: 上方窗格
+  en: Top pane
+  zh-TW: 上方窗格
+  ja: 上のペイン
+  ko: 위쪽 창
+tab_list.pane.bottom:
+  zh-CN: 下方窗格
+  en: Bottom pane
+  zh-TW: 下方窗格
+  ja: 下のペイン
+  ko: 아래쪽 창
+tab_list.pane.top_left:
+  zh-CN: 左上窗格
+  en: Top-left pane
+  zh-TW: 左上窗格
+  ja: 左上のペイン
+  ko: 왼쪽 위 창
+tab_list.pane.top_right:
+  zh-CN: 右上窗格
+  en: Top-right pane
+  zh-TW: 右上窗格
+  ja: 右上のペイン
+  ko: 오른쪽 위 창
+tab_list.pane.bottom_left:
+  zh-CN: 左下窗格
+  en: Bottom-left pane
+  zh-TW: 左下窗格
+  ja: 左下のペイン
+  ko: 왼쪽 아래 창
+tab_list.pane.bottom_right:
+  zh-CN: 右下窗格
+  en: Bottom-right pane
+  zh-TW: 右下窗格
+  ja: 右下のペイン
+  ko: 오른쪽 아래 창
+tab_list.pane.numbered:
+  zh-CN: 窗格 %{n}
+  en: Pane %{n}
+  zh-TW: 窗格 %{n}
+  ja: ペイン %{n}
+  ko: 창 %{n}
+tab_list.status.connecting:
+  zh-CN: 正在连接
+  en: Connecting
+  zh-TW: 正在連線
+  ja: 接続中
+  ko: 연결 중
+tab_list.status.stalled:
+  zh-CN: 连接没有响应
+  en: The connection isn't responding
+  zh-TW: 連線沒有回應
+  ja: 接続が応答していません
+  ko: 연결이 응답하지 않음
+tab_list.status.disconnected:
+  zh-CN: 连接已断开
+  en: Disconnected
+  zh-TW: 連線已中斷
+  ja: 接続が切断されました
+  ko: 연결 끊김
+tab_list.status.bell:
+  zh-CN: 响铃了
+  en: The bell rang
+  zh-TW: 響鈴了
+  ja: ベルが鳴りました
+  ko: 벨이 울림
+tab_list.status.recording:
+  zh-CN: 正在录制
+  en: Recording
+  zh-TW: 正在錄製
+  ja: 録画中
+  ko: 녹화 중
+tab_list.status.activity:
+  zh-CN: 有新输出
+  en: New output
+  zh-TW: 有新輸出
+  ja: 新しい出力があります
+  ko: 새 출력 있음
+tab_list.status.logging:
+  zh-CN: 正在记录会话日志
+  en: Recording the session log
+  zh-TW: 正在記錄工作階段
+  ja: セッションログを記録中
+  ko: 세션 로그 기록 중
+tab_list.status.sync:
+  zh-CN: 同步输入中
+  en: Sync input on
+  zh-TW: 同步輸入中
+  ja: 同時入力中
+  ko: 동시 입력 중
+tab_list.status.following:
+  zh-CN: 跟随新的日志
+  en: Following new log lines
+  zh-TW: 追蹤新的記錄
+  ja: 新しいログに追従中
+  ko: 새 로그 따라가는 중

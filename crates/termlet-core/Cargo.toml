@@ -1,0 +1,112 @@
+[package]
+name = "termlet-core"
+description = "Termlet 核心：存储、保险库、SSH、SFTP、端口转发等，不依赖界面"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+termlet-proto.workspace = true
+termlet-io.workspace = true
+portable-pty.workspace = true
+async-channel.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+aes-gcm.workspace = true
+argon2.workspace = true
+zeroize.workspace = true
+socket2.workspace = true
+keyring.workspace = true
+dirs.workspace = true
+data-encoding.workspace = true
+getrandom.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+tokio = { workspace = true, features = ["sync", "rt-multi-thread", "net", "time", "io-util", "macros", "process", "fs"] }
+sha2.workspace = true
+url.workspace = true
+tokio-rustls.workspace = true
+rustls-native-certs.workspace = true
+futures.workspace = true
+russh.workspace = true
+russh-sftp.workspace = true
+ssh-key.workspace = true
+sha1.workspace = true
+hmac.workspace = true
+md-5.workspace = true
+des.workspace = true
+cbc.workspace = true
+pbkdf2.workspace = true
+# WindTerm 导入：解开保存的密码（PBKDF2-HMAC-SHA3-512、AES-256-CBC）；与 cbc、pbkdf2 用同一套接口，都已在依赖树中
+aes = "0.9"
+sha3 = "0.11"
+regex.workspace = true
+chrono.workspace = true
+encoding_rs.workspace = true
+serde-saphyr.workspace = true
+plist.workspace = true
+# 终端中的文件传输：trzsz 的 zlib 压缩、ZModem 的 CRC-32（flate2::Crc）、在输出中查找握手（都已在依赖树中）
+flate2 = "1"
+memchr = "2"
+# 云同步的 WebDAV：精确固定版本（升级时逐项核对锁文件的变化；GPUI 用的 gpui-pre-reqwest 自己固定版本，与这里无关）；
+# 只开 rustls（ring）与系统根证书，不用 OpenSSL / native-tls；system-proxy：读 Windows 的代理设置
+# （更新与崩溃报告用；0.12.15 在 Windows 上总会读，新的 0.12.x 改为由这个特性控制）
+reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls-native-roots", "system-proxy"] }
+# 自动更新与远程配置的签名校验（minisign 格式）；MIT，没有依赖
+minisign-verify = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+windows-registry.workspace = true
+windows-sys = { workspace = true, features = [
+    "Win32_Devices_Communication",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Foundation",
+    "Win32_Networking_WinSock",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    # 原生崩溃的内存转储（MiniDumpWriteDump、SetUnhandledExceptionFilter）
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_IO",
+    # 代理命令：进程放进作业对象，连接结束时连同它启动的子进程一并结束
+    "Win32_System_JobObjects",
+    "Win32_System_Kernel",
+    "Win32_System_Memory",
+    "Win32_System_Registry",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+# 应用锁：Windows Hello（WinRT 的 UserConsentVerifier）、系统空闲时间与锁屏状态。依赖树中已有这个版本
+# （GPUI 的 Windows 平台层、russh 的 pageant），只加特性、不加新的包
+windows = { version = "0.62", features = [
+    "Foundation",
+    "Security_Credentials_UI",
+    "Win32_Foundation",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_SystemInformation",
+    "Win32_System_WinRT",
+    "Win32_UI_Input_KeyboardAndMouse",
+] }
+
+# 串口（termios、poll）
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile.workspace = true
+# SFTP 的测试服务端解析、编码协议包（russh-sftp 的接口用 bytes::Bytes；已在依赖树中）
+bytes = "1"
+# 测试中生成 minisign 签名（发布时由 scripts/release.mjs 签名）：ssh-key 用的 ed25519-dalek、argon2 用的 blake2，都已在依赖树中
+ed25519-dalek = { version = "=3.0.0", default-features = false }
+blake2 = "0.11"
+
+[lints]
+workspace = true

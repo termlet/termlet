@@ -1,0 +1,133 @@
+_version: 2
+multi_exec.title:
+  zh-CN: 同步输入
+  en: Sync input
+  zh-TW: 同步輸入
+  ja: 同時入力
+  ko: 동시 입력
+multi_exec.need_two:
+  zh-CN: 至少要有两个已连接的终端才能同步输入
+  en: Sync input needs at least two connected terminals
+  zh-TW: 至少要有兩個已連線的終端機才能同步輸入
+  ja: 同時入力には接続済みのターミナルが 2 つ以上必要です
+  ko: 동시 입력을 사용하려면 연결된 터미널이 두 개 이상 있어야 합니다
+multi_exec.banner:
+  zh-CN: 同步输入：键盘输入会同时发送到 %{count} 个终端
+  en: "Sync input: keystrokes go to %{count} terminals at once"
+  zh-TW: 同步輸入：鍵盤輸入會同時傳送到 %{count} 個終端機
+  ja: 同時入力：キーボード入力が %{count} 個のターミナルに同時に送信されます
+  ko: "동시 입력: 키보드 입력이 터미널 %{count}개에 동시에 전송됩니다"
+multi_exec.banner_none:
+  zh-CN: 同步输入：没有同步中的终端，点窗格标题上的“已排除”加入
+  en: "Sync input: no terminal is synced. Click “Excluded” on a pane title to add it."
+  zh-TW: 同步輸入：沒有同步中的終端機，按窗格標題上的「已排除」以加入
+  ja: 同時入力：同期中のターミナルがありません。ペインのタイトルにある「除外」をクリックすると追加できます
+  ko: "동시 입력: 동기화 중인 터미널이 없습니다. 창 제목의 '제외됨'을 클릭하면 추가됩니다"
+multi_exec.all:
+  zh-CN: 全部同步
+  en: Sync All
+  zh-TW: 全部同步
+  ja: すべて同期
+  ko: 모두 동기화
+multi_exec.none:
+  zh-CN: 全部排除
+  en: Exclude All
+  zh-TW: 全部排除
+  ja: すべて除外
+  ko: 모두 제외
+multi_exec.invert:
+  zh-CN: 反选
+  en: Invert
+  zh-TW: 反向選取
+  ja: 選択を反転
+  ko: 선택 반전
+multi_exec.back_to_grid:
+  zh-CN: 返回网格
+  en: Back to Grid
+  zh-TW: 返回格狀檢視
+  ja: グリッドに戻る
+  ko: 그리드로 돌아가기
+multi_exec.exit:
+  zh-CN: 退出同步输入
+  en: Exit Sync Input
+  zh-TW: 結束同步輸入
+  ja: 同時入力を終了
+  ko: 동시 입력 종료
+multi_exec.on:
+  zh-CN: 同步中
+  en: Synced
+  zh-TW: 同步中
+  ja: 同期中
+  ko: 동기화 중
+multi_exec.off:
+  zh-CN: 已排除
+  en: Excluded
+  zh-TW: 已排除
+  ja: 除外
+  ko: 제외됨
+multi_exec.offline:
+  zh-CN: 未连接
+  en: Not connected
+  zh-TW: 未連線
+  ja: 未接続
+  ko: 연결 안 됨
+multi_exec.exclude:
+  zh-CN: 点击排除：不再接收同步的输入
+  en: "Click to exclude: stop receiving synced input"
+  zh-TW: 按一下以排除：不再接收同步的輸入
+  ja: クリックして除外：同時入力を受け取らなくなります
+  ko: "클릭하여 제외: 동시 입력을 더 이상 받지 않습니다"
+multi_exec.include:
+  zh-CN: 点击加入同步
+  en: Click to sync this terminal
+  zh-TW: 按一下以加入同步
+  ja: クリックして同期に追加
+  ko: 클릭하여 동기화에 추가
+multi_exec.offline_hint:
+  zh-CN: 未连接的终端不能同步；断开或重连过的终端不会自动加入，连上后点击加入
+  en: Terminals that aren't connected can't be synced. Terminals that disconnected or reconnected aren't added back automatically; click to add them once connected.
+  zh-TW: 未連線的終端機不能同步；中斷或重新連線過的終端機不會自動加入，連上後按一下以加入
+  ja: 未接続のターミナルは同期できません。切断・再接続したターミナルは自動では追加されないため、接続後にクリックして追加してください
+  ko: 연결되지 않은 터미널은 동기화할 수 없습니다. 연결이 끊어졌거나 다시 연결된 터미널은 자동으로 추가되지 않으므로 연결된 후 클릭하여 추가하세요
+multi_exec.zoom:
+  zh-CN: 放大（双击标题）
+  en: Maximize (double-click the title)
+  zh-TW: 放大（按兩下標題）
+  ja: 最大化（タイトルをダブルクリック）
+  ko: 최대화(제목 더블클릭)
+multi_exec.unzoom:
+  zh-CN: 还原网格（双击标题）
+  en: Back to grid (double-click the title)
+  zh-TW: 還原格狀檢視（按兩下標題）
+  ja: グリッドに戻す（タイトルをダブルクリック）
+  ko: 그리드로 복원(제목 더블클릭)
+multi_exec.close_pane:
+  zh-CN: 关闭
+  en: Close
+  zh-TW: 關閉
+  ja: 閉じる
+  ko: 닫기
+multi_exec.paste_targets:
+  zh-CN: 将粘贴到 %{count} 个终端。
+  en: This will be pasted into %{count} terminals.
+  zh-TW: 將貼上到 %{count} 個終端機。
+  ja: "%{count} 個のターミナルに貼り付けます。"
+  ko: 터미널 %{count}개에 붙여넣습니다.
+multi_exec.danger_title:
+  zh-CN: 要在 %{count} 个终端中执行危险命令吗？
+  en: Run a dangerous command in %{count} terminals?
+  zh-TW: 要在 %{count} 個終端機中執行危險指令嗎？
+  ja: "%{count} 個のターミナルで危険なコマンドを実行しますか？"
+  ko: 터미널 %{count}개에서 위험한 명령을 실행하시겠습니까?
+multi_exec.danger_hint:
+  zh-CN: “%{command}”命中了危险命令规则：%{rule}。取消后不会发送这次输入，各终端输入行里的内容保持不变。
+  en: "“%{command}” matches a dangerous-command rule: %{rule}. If you cancel, this input isn't sent and the input lines stay as they are."
+  zh-TW: 「%{command}」符合危險指令規則：%{rule}。取消後不會傳送這次輸入，各終端機輸入行裡的內容保持不變。
+  ja: 「%{command}」は危険なコマンドのルールに該当します：%{rule}。キャンセルするとこの入力は送信されず、各ターミナルの入力行の内容もそのまま残ります。
+  ko: "\"%{command}\"이(가) 위험한 명령 규칙에 해당합니다: %{rule}. 취소하면 이 입력은 전송되지 않으며 각 터미널의 입력 줄 내용은 그대로 유지됩니다."
+multi_exec.run_anyway:
+  zh-CN: 仍然执行
+  en: Run Anyway
+  zh-TW: 仍要執行
+  ja: 実行する
+  ko: 그래도 실행

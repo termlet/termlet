@@ -1,0 +1,17 @@
+# 旧版本（配置版本 5 之前）：profile.group 直接是分组名，jumpHost 按名称引用
+version: 2
+profiles:
+  - type: ssh
+    name: legacy-jump
+    group: 旧分组
+    options:
+      host: 10.1.0.1
+  - type: ssh
+    name: legacy-app
+    group: 旧分组
+    options:
+      host: 10.1.0.2
+      user: app
+      jumpHost: legacy-jump
+      privateKeys:
+        - ~/.ssh/%h_%r

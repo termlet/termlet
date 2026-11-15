@@ -1,0 +1,17 @@
+# cargo-nextest 的配置（本机与 CI 共用）：每个测试在自己的进程中运行。文档测试 nextest 不跑，另用 cargo test --doc。
+
+[profile.default]
+# 测试卡住时报出来：每 60 秒提示一次，到 3 分钟时结束它并算失败，不让 CI 一直等到 job 超时
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+# CI 用（--profile ci）：失败了也跑完全部测试，最后再列出失败的输出。不重试：偶发失败要找出原因，不靠重试掩盖
+[profile.ci]
+fail-fast = false
+failure-output = "immediate-final"
+retries = 0
+
+# 这两个测试在不受文件权限限制的账户下（root、启用了备份特权的管理员，例如 GitHub 的 Windows 运行器）跳过并打印
+# 原因：通过时也列出输出，在 CI 的日志中看得到这次是真的测了还是跳过了
+[[profile.ci.overrides]]
+filter = 'test(skips_unreadable)'
+success-output = "final"

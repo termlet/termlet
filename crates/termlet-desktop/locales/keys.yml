@@ -1,0 +1,877 @@
+_version: 2
+sidebar.page.keys:
+  zh-CN: 密钥
+  en: Keys
+  zh-TW: 金鑰
+  ja: 鍵
+  ko: 키
+keys.tab_keys:
+  zh-CN: 密钥
+  en: Keys
+  zh-TW: 金鑰
+  ja: 鍵
+  ko: 키
+keys.hint:
+  zh-CN: 可被多台主机共用
+  en: Shared by multiple hosts
+  zh-TW: 可供多台主機共用
+  ja: 複数のホストで共有できます
+  ko: 여러 호스트에서 공유할 수 있습니다
+keys.empty:
+  zh-CN: 还没有密钥。生成或导入后可在编辑主机时选择。
+  en: No keys yet. Generated or imported keys can be chosen when editing a host.
+  zh-TW: 還沒有金鑰。產生或匯入後可在編輯主機時選擇。
+  ja: 鍵はまだありません。生成またはインポートした鍵は、ホストの編集時に選択できます。
+  ko: 아직 키가 없습니다. 생성하거나 가져온 키는 호스트를 편집할 때 선택할 수 있습니다.
+keys.row.detail:
+  zh-CN: "%{kind} · %{hosts} 台主机使用"
+  en: "%{kind} · used by %{hosts} hosts"
+  zh-TW: "%{kind} · %{hosts} 台主機使用"
+  ja: "%{kind} · 使用中：ホスト %{hosts} 台"
+  ko: "%{kind} · 사용 중: 호스트 %{hosts}대"
+keys.row.profiles:
+  zh-CN: "、%{count} 个凭据档案"
+  en: ", %{count} credential profiles"
+  zh-TW: "、%{count} 個認證資訊設定檔"
+  ja: 、認証プロファイル %{count} 個
+  ko: ", 자격 증명 프로필 %{count}개"
+keys.view:
+  zh-CN: 查看公钥
+  en: View Public Key
+  zh-TW: 檢視公開金鑰
+  ja: 公開鍵を表示
+  ko: 공개 키 보기
+keys.deploy:
+  zh-CN: 部署公钥到服务器
+  en: Deploy Public Key to Servers
+  zh-TW: 部署公開金鑰到伺服器
+  ja: 公開鍵をサーバーに配置
+  ko: 서버에 공개 키 배포
+keys.export:
+  zh-CN: 导出私钥
+  en: Export Private Key
+  zh-TW: 匯出私密金鑰
+  ja: 秘密鍵をエクスポート
+  ko: 개인 키 내보내기
+keys.rename:
+  zh-CN: 重命名
+  en: Rename
+  zh-TW: 重新命名
+  ja: 名前の変更
+  ko: 이름 바꾸기
+keys.rename_title:
+  zh-CN: 重命名密钥
+  en: Rename Key
+  zh-TW: 重新命名金鑰
+  ja: 鍵の名前の変更
+  ko: 키 이름 바꾸기
+keys.generate:
+  zh-CN: 生成密钥
+  en: Generate Key
+  zh-TW: 產生金鑰
+  ja: 鍵を生成
+  ko: 키 생성
+keys.import:
+  zh-CN: 导入私钥
+  en: Import Private Key
+  zh-TW: 匯入私密金鑰
+  ja: 秘密鍵をインポート
+  ko: 개인 키 가져오기
+keys.delete_title:
+  zh-CN: 确定删除密钥“%{name}”吗？
+  en: Delete the key “%{name}”?
+  zh-TW: 確定要刪除金鑰「%{name}」嗎？
+  ja: 鍵「%{name}」を削除しますか？
+  ko: "'%{name}' 키를 삭제하시겠습니까?"
+keys.delete_description:
+  zh-CN: 私钥会从本机删除，无法恢复。
+  en: The private key will be removed from this computer and can't be recovered.
+  zh-TW: 私密金鑰會從本機刪除，無法還原。
+  ja: 秘密鍵はこのコンピューターから削除され、元に戻せません。
+  ko: 개인 키가 이 컴퓨터에서 삭제되며 복구할 수 없습니다.
+keys.type:
+  zh-CN: 类型
+  en: Type
+  zh-TW: 類型
+  ja: 種類
+  ko: 유형
+keys.fingerprint:
+  zh-CN: 指纹
+  en: Fingerprint
+  zh-TW: 指紋
+  ja: フィンガープリント
+  ko: 지문
+keys.public_key:
+  zh-CN: 公钥
+  en: Public key
+  zh-TW: 公開金鑰
+  ja: 公開鍵
+  ko: 공개 키
+keys.public_key_hint:
+  zh-CN: 把这一行加入服务器上 ~/.ssh/authorized_keys 即可使用这把密钥登录。
+  en: Add this line to ~/.ssh/authorized_keys on the server to log in with this key.
+  zh-TW: 把這一行加入伺服器上的 ~/.ssh/authorized_keys 即可使用這把金鑰登入。
+  ja: この行をサーバーの ~/.ssh/authorized_keys に追加すると、この鍵でログインできます。
+  ko: 이 줄을 서버의 ~/.ssh/authorized_keys에 추가하면 이 키로 로그인할 수 있습니다.
+keys.copy:
+  zh-CN: 复制公钥
+  en: Copy Public Key
+  zh-TW: 複製公開金鑰
+  ja: 公開鍵をコピー
+  ko: 공개 키 복사
+keys.export_public:
+  zh-CN: 导出公钥…
+  en: Export Public Key…
+  zh-TW: 匯出公開金鑰…
+  ja: 公開鍵をエクスポート…
+  ko: 공개 키 내보내기…
+keys.public_exported:
+  zh-CN: 公钥已导出到 %{path}
+  en: Public key exported to %{path}
+  zh-TW: 公開金鑰已匯出到 %{path}
+  ja: 公開鍵を %{path} にエクスポートしました
+  ko: 공개 키를 %{path}(으)로 내보냈습니다
+keys.copied:
+  zh-CN: 已复制
+  en: Copied
+  zh-TW: 已複製
+  ja: コピーしました
+  ko: 복사됨
+keys.import_hint:
+  zh-CN: 支持 OpenSSH、PEM 与 PuTTY（.ppk）格式。私钥解密后加密保存在本机，之后连接不再需要私钥密码。
+  en: OpenSSH, PEM and PuTTY (.ppk) formats are supported. The key is decrypted and stored encrypted on this computer, so no passphrase is needed when connecting.
+  zh-TW: 支援 OpenSSH、PEM 與 PuTTY（.ppk）格式。私密金鑰解密後加密儲存在本機，之後連線不再需要私密金鑰密碼。
+  ja: OpenSSH、PEM、PuTTY（.ppk）形式に対応しています。秘密鍵は復号した後に暗号化してこのコンピューターに保存されるため、以後の接続ではパスフレーズは不要です。
+  ko: OpenSSH, PEM 및 PuTTY(.ppk) 형식을 지원합니다. 개인 키는 복호화한 후 암호화하여 이 컴퓨터에 저장하므로 이후 연결할 때 암호 문구가 필요하지 않습니다.
+keys.import_name:
+  zh-CN: 名称（留空则使用私钥注释或文件名）
+  en: Name (defaults to the key comment or file name)
+  zh-TW: 名稱（留空則使用私密金鑰註解或檔名）
+  ja: 名前（空欄の場合は秘密鍵のコメントまたはファイル名を使用）
+  ko: 이름(비워 두면 키 주석 또는 파일 이름 사용)
+keys.import_path:
+  zh-CN: 私钥文件路径
+  en: Private key file path
+  zh-TW: 私密金鑰檔案路徑
+  ja: 秘密鍵ファイルのパス
+  ko: 개인 키 파일 경로
+keys.import_paste_placeholder:
+  zh-CN: "-----BEGIN OPENSSH PRIVATE KEY----- 或 PuTTY-User-Key-File-3: …"
+  en: "-----BEGIN OPENSSH PRIVATE KEY----- or PuTTY-User-Key-File-3: …"
+  zh-TW: "-----BEGIN OPENSSH PRIVATE KEY----- 或 PuTTY-User-Key-File-3: …"
+  ja: "-----BEGIN OPENSSH PRIVATE KEY----- または PuTTY-User-Key-File-3: …"
+  ko: "-----BEGIN OPENSSH PRIVATE KEY----- 또는 PuTTY-User-Key-File-3: …"
+keys.browse:
+  zh-CN: 浏览…
+  en: Browse…
+  zh-TW: 瀏覽…
+  ja: 参照…
+  ko: 찾아보기…
+keys.passphrase:
+  zh-CN: 私钥密码
+  en: Key passphrase
+  zh-TW: 私密金鑰密碼
+  ja: パスフレーズ
+  ko: 암호 문구
+keys.import_submit:
+  zh-CN: 导入
+  en: Import
+  zh-TW: 匯入
+  ja: インポート
+  ko: 가져오기
+keys.generate_hint:
+  zh-CN: 新密钥直接保存在本机密钥库（私钥加密存储），可被多台主机共用。推荐 Ed25519；只有不支持 Ed25519 的老旧服务器才需要 RSA。
+  en: The new key is stored in the key library on this computer (private key encrypted) and can be shared by several hosts. Ed25519 is recommended; use RSA only for old servers that don't support Ed25519.
+  zh-TW: 新金鑰直接儲存在本機金鑰庫（私密金鑰加密儲存），可供多台主機共用。推薦 Ed25519；只有不支援 Ed25519 的老舊伺服器才需要 RSA。
+  ja: 新しい鍵はこのコンピューターの鍵ライブラリに保存され（秘密鍵は暗号化して保存）、複数のホストで共有できます。Ed25519 をお勧めします。RSA が必要なのは Ed25519 に対応していない古いサーバーだけです。
+  ko: 새 키는 이 컴퓨터의 키 라이브러리에 저장되며(개인 키는 암호화하여 저장) 여러 호스트에서 공유할 수 있습니다. Ed25519를 권장합니다. RSA는 Ed25519를 지원하지 않는 오래된 서버에만 필요합니다.
+keys.generate_name:
+  zh-CN: 名称（留空则使用注释）
+  en: Name (defaults to the comment)
+  zh-TW: 名稱（留空則使用註解）
+  ja: 名前（空欄の場合はコメントを使用）
+  ko: 이름(비워 두면 주석 사용)
+keys.generate_comment:
+  zh-CN: 注释（可选，附在公钥末尾，例如 ruan@laptop）
+  en: Comment (optional, appended to the public key, e.g. ruan@laptop)
+  zh-TW: 註解（選用，附在公開金鑰末尾，例如 ruan@laptop）
+  ja: コメント（省略可。公開鍵の末尾に付きます。例：ruan@laptop）
+  ko: "주석(선택 사항, 공개 키 끝에 붙음, 예: ruan@laptop)"
+keys.rsa_bits:
+  zh-CN: 位数
+  en: Bits
+  zh-TW: 位元數
+  ja: ビット数
+  ko: 비트 수
+keys.generate_submit:
+  zh-CN: 生成
+  en: Generate
+  zh-TW: 產生
+  ja: 生成
+  ko: 생성
+keys.generating:
+  zh-CN: 正在生成…
+  en: Generating…
+  zh-TW: 正在產生…
+  ja: 生成しています…
+  ko: 생성하는 중…
+keys.export_title:
+  zh-CN: 导出私钥：%{name}
+  en: "Export Private Key: %{name}"
+  zh-TW: 匯出私密金鑰：%{name}
+  ja: 秘密鍵をエクスポート：%{name}
+  ko: "개인 키 내보내기: %{name}"
+keys.export_warning:
+  zh-CN: 私钥将离开 Termlet 的加密密钥库，以文件形式保存在本机。任何拿到这个文件的人都能登录部署了对应公钥的服务器。建议设置私钥密码，并妥善保管文件。
+  en: The private key will leave Termlet's encrypted key library and be saved as a file on this computer. Anyone who gets the file can log in to the servers that trust this key. Setting a passphrase and keeping the file safe is recommended.
+  zh-TW: 私密金鑰將離開 Termlet 的加密金鑰庫，以檔案形式儲存在本機。任何拿到這個檔案的人都能登入部署了對應公開金鑰的伺服器。建議設定私密金鑰密碼，並妥善保管檔案。
+  ja: 秘密鍵は Termlet の暗号化された鍵ライブラリから出て、ファイルとしてこのコンピューターに保存されます。このファイルを手に入れた人は誰でも、対応する公開鍵を配置したサーバーにログインできます。パスフレーズを設定し、ファイルを安全に保管することをお勧めします。
+  ko: 개인 키가 Termlet의 암호화된 키 라이브러리를 벗어나 파일로 이 컴퓨터에 저장됩니다. 이 파일을 얻은 사람은 누구나 해당 공개 키가 배포된 서버에 로그인할 수 있습니다. 암호 문구를 설정하고 파일을 안전하게 보관하는 것이 좋습니다.
+keys.export_passphrase:
+  zh-CN: 私钥密码（可选，留空则不加密）
+  en: Passphrase (optional; leave empty for no encryption)
+  zh-TW: 私密金鑰密碼（選用，留空則不加密）
+  ja: パスフレーズ（省略可。空欄の場合は暗号化しません）
+  ko: 암호 문구(선택 사항, 비워 두면 암호화하지 않음)
+keys.export_repeat:
+  zh-CN: 再次输入私钥密码
+  en: Repeat the passphrase
+  zh-TW: 再次輸入私密金鑰密碼
+  ja: パスフレーズをもう一度入力
+  ko: 암호 문구 다시 입력
+keys.export_mismatch:
+  zh-CN: 两次输入的私钥密码不一致
+  en: The passphrases don't match
+  zh-TW: 兩次輸入的私密金鑰密碼不一致
+  ja: 入力したパスフレーズが一致しません
+  ko: 입력한 암호 문구가 일치하지 않습니다
+keys.export_acknowledge:
+  zh-CN: 我了解风险，确定要导出私钥
+  en: I understand the risk and want to export the private key
+  zh-TW: 我了解風險，確定要匯出私密金鑰
+  ja: リスクを理解したうえで秘密鍵をエクスポートします
+  ko: 위험을 이해했으며 개인 키를 내보냅니다
+keys.export_submit:
+  zh-CN: 选择保存位置并导出
+  en: Choose a Location and Export
+  zh-TW: 選擇儲存位置並匯出
+  ja: 保存先を選択してエクスポート
+  ko: 저장 위치 선택 후 내보내기
+keys.export_overwrite:
+  zh-CN: "%{path} 已存在，确定覆盖吗？"
+  en: "%{path} already exists. Overwrite it?"
+  zh-TW: "%{path} 已存在，確定要覆寫嗎？"
+  ja: "%{path} はすでに存在します。上書きしますか？"
+  ko: "%{path}이(가) 이미 있습니다. 덮어쓰시겠습니까?"
+keys.exported:
+  zh-CN: 已导出到 %{path}
+  en: Exported to %{path}
+  zh-TW: 已匯出到 %{path}
+  ja: "%{path} にエクスポートしました"
+  ko: "%{path}(으)로 내보냈습니다"
+keys.exported_hint:
+  zh-CN: OpenSSH 格式，只有当前用户可以读写。
+  en: OpenSSH format, readable and writable only by the current user.
+  zh-TW: OpenSSH 格式，只有目前使用者可以讀寫。
+  ja: OpenSSH 形式。現在のユーザーだけが読み書きできます。
+  ko: OpenSSH 형식이며 현재 사용자만 읽고 쓸 수 있습니다.
+keys.deploy_title:
+  zh-CN: 部署公钥：%{name}
+  en: "Deploy Public Key: %{name}"
+  zh-TW: 部署公開金鑰：%{name}
+  ja: 公開鍵を配置：%{name}
+  ko: "공개 키 배포: %{name}"
+keys.deploy_hint:
+  zh-CN: 用各主机已保存的凭据登录，把公钥追加到 ~/.ssh/authorized_keys（已存在时不重复添加），再只用这把密钥单独验证一次登录。
+  en: Logs in with each host's saved credentials, appends the public key to ~/.ssh/authorized_keys (skipped if it's already there), then verifies a login using only this key.
+  zh-TW: 用各主機已儲存的認證資訊登入，把公開金鑰附加到 ~/.ssh/authorized_keys（已存在時不重複新增），再只用這把金鑰單獨驗證一次登入。
+  ja: 各ホストに保存されている認証情報でログインして公開鍵を ~/.ssh/authorized_keys に追加し（すでにある場合は追加しません）、続けてこの鍵だけでログインできるかを確認します。
+  ko: 각 호스트에 저장된 자격 증명으로 로그인하여 공개 키를 ~/.ssh/authorized_keys에 추가한 후(이미 있으면 추가하지 않음), 이 키만으로 로그인되는지 한 번 확인합니다.
+keys.deploy_filter:
+  zh-CN: 搜索主机
+  en: Search hosts
+  zh-TW: 搜尋主機
+  ja: ホストを検索
+  ko: 호스트 검색
+keys.deploy_no_hosts:
+  zh-CN: 没有主机
+  en: No hosts
+  zh-TW: 沒有主機
+  ja: ホストがありません
+  ko: 호스트가 없습니다
+keys.deploy_use_key:
+  zh-CN: 验证通过后，改用此密钥登录这些主机
+  en: After verification succeeds, log in to these hosts with this key
+  zh-TW: 驗證通過後，改用此金鑰登入這些主機
+  ja: 確認に成功したら、これらのホストへのログインにこの鍵を使う
+  ko: 확인에 성공하면 이 호스트들에 이 키로 로그인
+keys.deploy_submit:
+  zh-CN: 部署到 %{count} 台主机
+  en: Deploy to %{count} hosts
+  zh-TW: 部署到 %{count} 台主機
+  ja: "%{count} 台のホストに配置"
+  ko: 호스트 %{count}대에 배포
+keys.deploy_waiting:
+  zh-CN: 等待中
+  en: Waiting
+  zh-TW: 等待中
+  ja: 待機中
+  ko: 대기 중
+keys.deploy_running:
+  zh-CN: 部署中…
+  en: Deploying…
+  zh-TW: 部署中…
+  ja: 配置しています…
+  ko: 배포하는 중…
+keys.deploy_added:
+  zh-CN: 已添加公钥
+  en: Public key added
+  zh-TW: 已新增公開金鑰
+  ja: 公開鍵を追加しました
+  ko: 공개 키를 추가했습니다
+keys.deploy_exists:
+  zh-CN: 公钥已存在，未重复添加
+  en: The public key was already there
+  zh-TW: 公開金鑰已存在，未重複新增
+  ja: 公開鍵はすでにあるため追加しませんでした
+  ko: 공개 키가 이미 있어 추가하지 않았습니다
+keys.deploy_verified:
+  zh-CN: 密钥登录验证通过
+  en: Key login verified
+  zh-TW: 金鑰登入驗證通過
+  ja: 鍵でのログインを確認しました
+  ko: 키 로그인을 확인했습니다
+keys.deploy_not_verified:
+  zh-CN: 密钥登录验证未通过：%{reason}
+  en: "Key login verification failed: %{reason}"
+  zh-TW: 金鑰登入驗證未通過：%{reason}
+  ja: 鍵でのログインを確認できませんでした：%{reason}
+  ko: "키 로그인을 확인하지 못했습니다: %{reason}"
+keys.deploy_switched:
+  zh-CN: 已改用此密钥登录
+  en: Now logging in with this key
+  zh-TW: 已改用此金鑰登入
+  ja: この鍵でログインするように変更しました
+  ko: 이 키로 로그인하도록 변경했습니다
+keys.deploy_not_switched:
+  zh-CN: 未修改认证方式
+  en: Authentication not changed
+  zh-TW: 未修改驗證方式
+  ja: 認証方式は変更していません
+  ko: 인증 방식을 변경하지 않았습니다
+keys.deploy_failed:
+  zh-CN: 部署失败：%{reason}
+  en: "Deployment failed: %{reason}"
+  zh-TW: 部署失敗：%{reason}
+  ja: 配置できませんでした：%{reason}
+  ko: "배포하지 못했습니다: %{reason}"
+keys.deploy_hostkey_hint:
+  zh-CN: 主机指纹没有被接受：请确认指纹后再部署（也可以先在终端中连接这台主机一次）。
+  en: The host key wasn't accepted. Confirm the fingerprint and deploy again (or connect to this host in a terminal once first).
+  zh-TW: 主機指紋未被接受：請確認指紋後再部署（也可以先在終端機中連線這台主機一次）。
+  ja: ホストキーが受け入れられていません。フィンガープリントを確認してから配置してください（先にターミナルでこのホストに一度接続しておく方法もあります）。
+  ko: 호스트 키가 수락되지 않았습니다. 지문을 확인한 후 다시 배포하세요(먼저 터미널에서 이 호스트에 한 번 연결해도 됩니다).
+keys.error.name_too_long:
+  zh-CN: 名称不能超过 64 个字符
+  en: The name can't be longer than 64 characters
+  zh-TW: 名稱不能超過 64 個字元
+  ja: 名前は 64 文字以内にしてください
+  ko: 이름은 64자를 넘을 수 없습니다
+keys.error.name_required:
+  zh-CN: 请填写名称
+  en: Enter a name
+  zh-TW: 請填寫名稱
+  ja: 名前を入力してください
+  ko: 이름을 입력하세요
+keys.error.comment_too_long:
+  zh-CN: 注释不能超过 256 个字符
+  en: The comment can't be longer than 256 characters
+  zh-TW: 註解不能超過 256 個字元
+  ja: コメントは 256 文字以内にしてください
+  ko: 주석은 256자를 넘을 수 없습니다
+keys.error.comment_control:
+  zh-CN: 注释不能包含换行等控制字符
+  en: The comment can't contain line breaks or other control characters
+  zh-TW: 註解不能包含換行等控制字元
+  ja: コメントに改行などの制御文字は使用できません
+  ko: 주석에 줄 바꿈 등의 제어 문자를 넣을 수 없습니다
+keys.error.exists:
+  zh-CN: 这把密钥已经导入过（“%{name}”）
+  en: This key was already imported (“%{name}”)
+  zh-TW: 這把金鑰已經匯入過（「%{name}」）
+  ja: この鍵はすでにインポートされています（「%{name}」）
+  ko: 이 키는 이미 가져왔습니다('%{name}')
+keys.error.not_found:
+  zh-CN: 密钥不存在
+  en: The key doesn't exist
+  zh-TW: 金鑰不存在
+  ja: 鍵が存在しません
+  ko: 키가 없습니다
+keys.error.host_not_found:
+  zh-CN: 主机不存在
+  en: The host doesn't exist
+  zh-TW: 主機不存在
+  ja: ホストが存在しません
+  ko: 호스트가 없습니다
+keys.error.not_ssh:
+  zh-CN: 不是 SSH 主机
+  en: Not an SSH host
+  zh-TW: 不是 SSH 主機
+  ja: SSH ホストではありません
+  ko: SSH 호스트가 아닙니다
+keys.error.private_key_missing:
+  zh-CN: 密钥库中没有这把密钥的私钥（保险库重置过）：重新导入同一把私钥即可补上
+  en: The library no longer has this key's private key (the vault was reset). Import the same private key again to restore it.
+  zh-TW: 金鑰庫中沒有這把金鑰的私密金鑰（保險庫重設過）：重新匯入同一把私密金鑰即可補上
+  ja: 鍵ライブラリにこの鍵の秘密鍵がありません（保管庫がリセットされています）。同じ秘密鍵をもう一度インポートすると復元できます
+  ko: 키 라이브러리에 이 키의 개인 키가 없습니다(보관함이 초기화됨). 같은 개인 키를 다시 가져오면 복원됩니다
+keys.error.in_use:
+  zh-CN: 还有 %{hosts} 台主机、%{profiles} 个凭据档案在使用这把密钥，请先修改它们的认证方式
+  en: "%{hosts} hosts and %{profiles} credential profiles still use this key. Change their authentication first."
+  zh-TW: 還有 %{hosts} 台主機、%{profiles} 個認證資訊設定檔在使用這把金鑰，請先修改它們的驗證方式
+  ja: この鍵はまだホスト %{hosts} 台、認証プロファイル %{profiles} 個で使用されています。先にそれらの認証方式を変更してください
+  ko: 아직 호스트 %{hosts}대, 자격 증명 프로필 %{profiles}개가 이 키를 사용하고 있습니다. 먼저 해당 항목의 인증 방식을 변경하세요
+keys.error.file_not_found:
+  zh-CN: 文件不存在：%{path}
+  en: "The file doesn't exist: %{path}"
+  zh-TW: 檔案不存在：%{path}
+  ja: ファイルが存在しません：%{path}
+  ko: "파일이 없습니다: %{path}"
+keys.error.permission:
+  zh-CN: 没有权限访问：%{path}
+  en: "No permission to access %{path}"
+  zh-TW: 沒有權限存取：%{path}
+  ja: アクセスする権限がありません：%{path}
+  ko: "액세스 권한이 없습니다: %{path}"
+keys.error.read_failed:
+  zh-CN: 读取 %{path} 失败：%{reason}
+  en: "Couldn't read %{path}: %{reason}"
+  zh-TW: 讀取 %{path} 失敗：%{reason}
+  ja: "%{path} を読み取れませんでした：%{reason}"
+  ko: "%{path}을(를) 읽지 못했습니다: %{reason}"
+keys.error.not_absolute:
+  zh-CN: 路径必须是绝对路径
+  en: The path must be absolute
+  zh-TW: 路徑必須是絕對路徑
+  ja: パスは絶対パスで指定してください
+  ko: 경로는 절대 경로여야 합니다
+keys.error.file_exists:
+  zh-CN: 文件已存在：%{path}
+  en: "The file already exists: %{path}"
+  zh-TW: 檔案已存在：%{path}
+  ja: ファイルはすでに存在します：%{path}
+  ko: "파일이 이미 있습니다: %{path}"
+keys.error.is_directory:
+  zh-CN: 同名的文件夹已存在：%{path}
+  en: "A folder with that name already exists: %{path}"
+  zh-TW: 同名的資料夾已存在：%{path}
+  ja: 同じ名前のフォルダーがすでに存在します：%{path}
+  ko: "같은 이름의 폴더가 이미 있습니다: %{path}"
+keys.error.directory_missing:
+  zh-CN: 文件夹不存在：%{path}
+  en: "The folder doesn't exist: %{path}"
+  zh-TW: 資料夾不存在：%{path}
+  ja: フォルダーが存在しません：%{path}
+  ko: "폴더가 없습니다: %{path}"
+keys.error.write_failed:
+  zh-CN: 写入 %{path} 失败：%{reason}
+  en: "Couldn't write %{path}: %{reason}"
+  zh-TW: 寫入 %{path} 失敗：%{reason}
+  ja: "%{path} に書き込めませんでした：%{reason}"
+  ko: "%{path}에 쓰지 못했습니다: %{reason}"
+keys.error.deploy_failed:
+  zh-CN: 写入 ~/.ssh/authorized_keys 失败：%{detail}
+  en: "Writing ~/.ssh/authorized_keys failed: %{detail}"
+  zh-TW: 寫入 ~/.ssh/authorized_keys 失敗：%{detail}
+  ja: ~/.ssh/authorized_keys に書き込めませんでした：%{detail}
+  ko: "~/.ssh/authorized_keys에 쓰지 못했습니다: %{detail}"
+keys.error.deploy_failed_code:
+  zh-CN: 写入 ~/.ssh/authorized_keys 失败（退出码 %{code}）：%{detail}
+  en: "Writing ~/.ssh/authorized_keys failed (exit code %{code}): %{detail}"
+  zh-TW: 寫入 ~/.ssh/authorized_keys 失敗（結束代碼 %{code}）：%{detail}
+  ja: ~/.ssh/authorized_keys に書き込めませんでした（終了コード %{code}）：%{detail}
+  ko: "~/.ssh/authorized_keys에 쓰지 못했습니다(종료 코드 %{code}): %{detail}"
+keys.error.timeout:
+  zh-CN: 部署超时（90 秒）
+  en: The deployment timed out (90 seconds)
+  zh-TW: 部署逾時（90 秒）
+  ja: 配置がタイムアウトしました（90 秒）
+  ko: 배포 시간이 초과되었습니다(90초)
+keys.error.passphrase_required:
+  zh-CN: 私钥已加密，请输入私钥密码
+  en: The key is encrypted. Enter its passphrase.
+  zh-TW: 私密金鑰已加密，請輸入私密金鑰密碼
+  ja: 秘密鍵は暗号化されています。パスフレーズを入力してください
+  ko: 개인 키가 암호화되어 있습니다. 암호 문구를 입력하세요
+keys.error.wrong_passphrase:
+  zh-CN: 私钥密码错误
+  en: Wrong passphrase
+  zh-TW: 私密金鑰密碼錯誤
+  ja: パスフレーズが正しくありません
+  ko: 암호 문구가 올바르지 않습니다
+keys.error.unsupported:
+  zh-CN: 不支持这种私钥：%{what}
+  en: "This kind of key isn't supported: %{what}"
+  zh-TW: 不支援這種私密金鑰：%{what}
+  ja: この種類の秘密鍵には対応していません：%{what}
+  ko: "지원하지 않는 개인 키입니다: %{what}"
+keys.error.internal:
+  zh-CN: 处理私钥失败：%{reason}
+  en: "Processing the key failed: %{reason}"
+  zh-TW: 處理私密金鑰失敗：%{reason}
+  ja: 秘密鍵を処理できませんでした：%{reason}
+  ko: "개인 키를 처리하지 못했습니다: %{reason}"
+keys.unsupported.dsa:
+  zh-CN: DSA 密钥
+  en: DSA keys
+  zh-TW: DSA 金鑰
+  ja: DSA 鍵
+  ko: DSA 키
+keys.unsupported.ed448:
+  zh-CN: Ed448 密钥
+  en: Ed448 keys
+  zh-TW: Ed448 金鑰
+  ja: Ed448 鍵
+  ko: Ed448 키
+keys.unsupported.security_key:
+  zh-CN: FIDO 安全密钥（私钥在硬件里）
+  en: FIDO security keys (the private key stays in the hardware)
+  zh-TW: FIDO 安全性金鑰（私密金鑰在硬體裡）
+  ja: FIDO セキュリティキー（秘密鍵はハードウェア内にあります）
+  ko: FIDO 보안 키(개인 키가 하드웨어 안에 있음)
+keys.unsupported.rsa_too_small:
+  zh-CN: 只有 %{bits} 位的 RSA 密钥（至少需要 1024 位）
+  en: "%{bits}-bit RSA keys (at least 1024 bits are needed)"
+  zh-TW: 只有 %{bits} 位元的 RSA 金鑰（至少需要 1024 位元）
+  ja: "%{bits} ビットしかない RSA 鍵（1024 ビット以上が必要です）"
+  ko: "%{bits}비트밖에 안 되는 RSA 키(최소 1024비트 필요)"
+keys.unsupported.curve:
+  zh-CN: NIST P-256 / P-384 / P-521 以外的椭圆曲线
+  en: elliptic curves other than NIST P-256 / P-384 / P-521
+  zh-TW: NIST P-256 / P-384 / P-521 以外的橢圓曲線
+  ja: NIST P-256 / P-384 / P-521 以外の楕円曲線
+  ko: NIST P-256 / P-384 / P-521 이외의 타원 곡선
+keys.unsupported.algorithm:
+  zh-CN: 这种算法
+  en: this algorithm
+  zh-TW: 這種演算法
+  ja: このアルゴリズム
+  ko: 이 알고리즘
+keys.unsupported.encrypted_pkcs8:
+  zh-CN: 加密的 PKCS#8 私钥（请先用 ssh-keygen 或 openssl 转换）
+  en: encrypted PKCS#8 keys (convert it with ssh-keygen or openssl first)
+  zh-TW: 加密的 PKCS#8 私密金鑰（請先用 ssh-keygen 或 openssl 轉換）
+  ja: 暗号化された PKCS#8 秘密鍵（先に ssh-keygen または openssl で変換してください）
+  ko: 암호화된 PKCS#8 개인 키(먼저 ssh-keygen 또는 openssl로 변환하세요)
+keys.unsupported.pem_cipher:
+  zh-CN: 旧式加密 PEM 的这种加密算法
+  en: this cipher in a legacy encrypted PEM
+  zh-TW: 舊式加密 PEM 的這種加密演算法
+  ja: 旧形式の暗号化 PEM のこの暗号方式
+  ko: 이전 형식 암호화 PEM의 이 암호화 알고리즘
+keys.unsupported.pem_type:
+  zh-CN: 这种 PEM 类型
+  en: this PEM type
+  zh-TW: 這種 PEM 類型
+  ja: この PEM の種類
+  ko: 이 PEM 유형
+keys.unsupported.openssh_cipher:
+  zh-CN: OpenSSH 私钥的这种加密算法
+  en: this cipher in an OpenSSH key
+  zh-TW: OpenSSH 私密金鑰的這種加密演算法
+  ja: OpenSSH 秘密鍵のこの暗号方式
+  ko: OpenSSH 개인 키의 이 암호화 알고리즘
+keys.unsupported.ppk_v1:
+  zh-CN: PuTTY ppk v1（请用新版 PuTTYgen 重新保存）
+  en: PuTTY ppk v1 (save it again with a newer PuTTYgen)
+  zh-TW: PuTTY ppk v1（請用新版 PuTTYgen 重新儲存）
+  ja: PuTTY ppk v1（新しい PuTTYgen で保存し直してください）
+  ko: PuTTY ppk v1(새 버전의 PuTTYgen으로 다시 저장하세요)
+keys.unsupported.ppk_version:
+  zh-CN: 未知版本的 ppk
+  en: an unknown ppk version
+  zh-TW: 未知版本的 ppk
+  ja: 不明なバージョンの ppk
+  ko: 알 수 없는 버전의 ppk
+keys.unsupported.ppk_cipher:
+  zh-CN: ppk 的这种加密方式
+  en: this ppk encryption
+  zh-TW: ppk 的這種加密方式
+  ja: ppk のこの暗号化方式
+  ko: ppk의 이 암호화 방식
+keys.unsupported.ppk_kdf:
+  zh-CN: ppk 的这种密钥派生算法
+  en: this ppk key derivation
+  zh-TW: ppk 的這種金鑰衍生演算法
+  ja: ppk のこの鍵導出アルゴリズム
+  ko: ppk의 이 키 파생 알고리즘
+keys.unsupported.kdf_too_costly:
+  zh-CN: 密钥派生参数过大的私钥
+  en: keys with excessive key-derivation parameters
+  zh-TW: 金鑰衍生參數過大的私密金鑰
+  ja: 鍵導出のパラメーターが大きすぎる秘密鍵
+  ko: 키 파생 매개 변수가 너무 큰 개인 키
+keys.unsupported.ssh1:
+  zh-CN: SSH-1 私钥
+  en: SSH-1 keys
+  zh-TW: SSH-1 私密金鑰
+  ja: SSH-1 秘密鍵
+  ko: SSH-1 개인 키
+keys.unsupported.ssh_com:
+  zh-CN: ssh.com 格式的私钥（请先用 PuTTYgen 或 ssh-keygen 转换）
+  en: ssh.com keys (convert it with PuTTYgen or ssh-keygen first)
+  zh-TW: ssh.com 格式的私密金鑰（請先用 PuTTYgen 或 ssh-keygen 轉換）
+  ja: ssh.com 形式の秘密鍵（先に PuTTYgen または ssh-keygen で変換してください）
+  ko: ssh.com 형식의 개인 키(먼저 PuTTYgen 또는 ssh-keygen으로 변환하세요)
+keys.malformed.empty:
+  zh-CN: 私钥内容为空
+  en: The key is empty
+  zh-TW: 私密金鑰內容為空
+  ja: 秘密鍵の内容が空です
+  ko: 개인 키 내용이 비어 있습니다
+keys.malformed.too_large:
+  zh-CN: 私钥文件过大
+  en: The key file is too large
+  zh-TW: 私密金鑰檔案過大
+  ja: 秘密鍵ファイルが大きすぎます
+  ko: 개인 키 파일이 너무 큽니다
+keys.malformed.unrecognized:
+  zh-CN: 无法识别的私钥格式
+  en: Unrecognized key format
+  zh-TW: 無法辨識的私密金鑰格式
+  ja: 認識できない秘密鍵の形式です
+  ko: 인식할 수 없는 개인 키 형식입니다
+keys.malformed.not_private_key:
+  zh-CN: 这是公钥或证书，不是私钥
+  en: This is a public key or certificate, not a private key
+  zh-TW: 這是公開金鑰或憑證，不是私密金鑰
+  ja: これは公開鍵または証明書で、秘密鍵ではありません
+  ko: 개인 키가 아니라 공개 키 또는 인증서입니다
+keys.malformed.corrupted:
+  zh-CN: 私钥内容已损坏
+  en: The key is corrupted
+  zh-TW: 私密金鑰內容已損毀
+  ja: 秘密鍵の内容が壊れています
+  ko: 개인 키 내용이 손상되었습니다
+keys.row.certificate:
+  zh-CN: " · 证书"
+  en: " · certificate"
+  zh-TW: " · 憑證"
+  ja: " · 証明書"
+  ko: " · 인증서"
+keys.row.certificate_expired:
+  zh-CN: " · 证书已过期"
+  en: " · certificate expired"
+  zh-TW: " · 憑證已過期"
+  ja: " · 証明書の期限切れ"
+  ko: " · 인증서 만료됨"
+keys.certificate:
+  zh-CN: 证书
+  en: Certificate
+  zh-TW: 憑證
+  ja: 証明書
+  ko: 인증서
+keys.certificate_none:
+  zh-CN: 没有附带证书。所在的组织用 SSH CA 签发证书时，附带后用这把密钥登录会先出示证书。
+  en: No certificate attached. If your organization issues SSH certificates, attach yours and it will be presented first when logging in with this key.
+  zh-TW: 沒有附帶憑證。所在的組織以 SSH CA 簽發憑證時，附帶後使用這把金鑰登入會先出示憑證。
+  ja: 証明書は添付されていません。組織が SSH CA で証明書を発行している場合は、添付するとこの鍵でログインするときに証明書が先に提示されます。
+  ko: 첨부된 인증서가 없습니다. 조직에서 SSH CA로 인증서를 발급하는 경우 첨부하면 이 키로 로그인할 때 인증서를 먼저 제시합니다.
+keys.certificate_attach:
+  zh-CN: 附带证书
+  en: Attach Certificate
+  zh-TW: 附帶憑證
+  ja: 証明書を添付
+  ko: 인증서 첨부
+keys.certificate_replace:
+  zh-CN: 替换证书
+  en: Replace Certificate
+  zh-TW: 取代憑證
+  ja: 証明書を置き換え
+  ko: 인증서 교체
+keys.certificate_remove:
+  zh-CN: 去掉证书
+  en: Remove Certificate
+  zh-TW: 移除憑證
+  ja: 証明書を削除
+  ko: 인증서 제거
+keys.certificate_attach_hint:
+  zh-CN: 选择证书文件（通常是私钥旁的 *-cert.pub），或粘贴证书的一行内容。证书里的公钥必须是这把密钥的。
+  en: Choose the certificate file (usually *-cert.pub next to the private key), or paste the certificate line. The public key in the certificate must be this key's.
+  zh-TW: 選擇憑證檔案（通常是私密金鑰旁的 *-cert.pub），或貼上憑證的一行內容。憑證中的公開金鑰必須是這把金鑰的。
+  ja: 証明書ファイル（通常は秘密鍵の隣にある *-cert.pub）を選択するか、証明書の行を貼り付けてください。証明書内の公開鍵はこの鍵のものである必要があります。
+  ko: 인증서 파일(보통 개인 키 옆의 *-cert.pub)을 선택하거나 인증서 한 줄을 붙여넣으세요. 인증서의 공개 키는 이 키의 것이어야 합니다.
+keys.certificate_from_file:
+  zh-CN: 证书文件
+  en: Certificate file
+  zh-TW: 憑證檔案
+  ja: 証明書ファイル
+  ko: 인증서 파일
+keys.certificate_from_paste:
+  zh-CN: 粘贴证书内容
+  en: Paste certificate
+  zh-TW: 貼上憑證內容
+  ja: 証明書を貼り付け
+  ko: 인증서 붙여넣기
+keys.certificate_path:
+  zh-CN: 证书文件路径
+  en: Path to the certificate file
+  zh-TW: 憑證檔案路徑
+  ja: 証明書ファイルのパス
+  ko: 인증서 파일 경로
+keys.certificate_attach_submit:
+  zh-CN: 附带
+  en: Attach
+  zh-TW: 附帶
+  ja: 添付
+  ko: 첨부
+keys.cert.kind_user:
+  zh-CN: 用户证书
+  en: User certificate
+  zh-TW: 使用者憑證
+  ja: ユーザー証明書
+  ko: 사용자 인증서
+keys.cert.kind_host:
+  zh-CN: 主机证书
+  en: Host certificate
+  zh-TW: 主機憑證
+  ja: ホスト証明書
+  ko: 호스트 인증서
+keys.cert.ca:
+  zh-CN: 签发的 CA
+  en: Issuing CA
+  zh-TW: 簽發的 CA
+  ja: 発行元 CA
+  ko: 발급 CA
+keys.cert.serial:
+  zh-CN: 序号
+  en: Serial
+  zh-TW: 序號
+  ja: シリアル番号
+  ko: 일련번호
+keys.cert.key_id:
+  zh-CN: 标识
+  en: Key ID
+  zh-TW: 識別碼
+  ja: キー ID
+  ko: 키 ID
+keys.cert.validity:
+  zh-CN: 有效期
+  en: Valid
+  zh-TW: 有效期
+  ja: 有効期間
+  ko: 유효 기간
+keys.cert.validity_range:
+  zh-CN: "%{from} 至 %{until}"
+  en: "%{from} to %{until}"
+  zh-TW: "%{from} 至 %{until}"
+  ja: "%{from} ～ %{until}"
+  ko: "%{from} ~ %{until}"
+keys.cert.no_start:
+  zh-CN: 不限
+  en: any time
+  zh-TW: 不限
+  ja: 制限なし
+  ko: 제한 없음
+keys.cert.no_end:
+  zh-CN: 永不过期
+  en: no expiry
+  zh-TW: 永不過期
+  ja: 無期限
+  ko: 만료 없음
+keys.cert.forever:
+  zh-CN: 永久有效
+  en: Forever
+  zh-TW: 永久有效
+  ja: 無期限
+  ko: 영구
+keys.cert.expired:
+  zh-CN: 已过期
+  en: Expired
+  zh-TW: 已過期
+  ja: 期限切れ
+  ko: 만료됨
+keys.cert.not_yet_valid:
+  zh-CN: 尚未生效
+  en: Not yet valid
+  zh-TW: 尚未生效
+  ja: まだ有効ではありません
+  ko: 아직 유효하지 않음
+keys.cert.principals:
+  zh-CN: 允许的用户名
+  en: Usernames
+  zh-TW: 允許的使用者名稱
+  ja: 許可されたユーザー名
+  ko: 허용된 사용자 이름
+keys.cert.any_principal:
+  zh-CN: 不限
+  en: Any
+  zh-TW: 不限
+  ja: 制限なし
+  ko: 제한 없음
+keys.cert.extensions:
+  zh-CN: 扩展项
+  en: Extensions
+  zh-TW: 擴充項目
+  ja: 拡張
+  ko: 확장
+keys.cert.critical_options:
+  zh-CN: 关键选项
+  en: Critical options
+  zh-TW: 關鍵選項
+  ja: 重要なオプション
+  ko: 중요 옵션
+keys.cert.none:
+  zh-CN: 无
+  en: None
+  zh-TW: 無
+  ja: なし
+  ko: 없음
+keys.cert.error.empty:
+  zh-CN: 内容为空
+  en: the content is empty
+  zh-TW: 內容為空
+  ja: 内容が空です
+  ko: 내용이 비어 있습니다
+keys.cert.error.too_large:
+  zh-CN: 内容过大
+  en: the content is too large
+  zh-TW: 內容過大
+  ja: 内容が大きすぎます
+  ko: 내용이 너무 큽니다
+keys.cert.error.not_certificate:
+  zh-CN: 这是公钥或私钥，不是证书
+  en: this is a public or private key, not a certificate
+  zh-TW: 這是公開金鑰或私密金鑰，不是憑證
+  ja: 公開鍵または秘密鍵であり、証明書ではありません
+  ko: 공개 키 또는 개인 키이며 인증서가 아닙니다
+keys.cert.error.malformed:
+  zh-CN: 内容无效或已损坏
+  en: the content is invalid or corrupted
+  zh-TW: 內容無效或已損毀
+  ja: 内容が無効か壊れています
+  ko: 내용이 잘못되었거나 손상되었습니다
+keys.error.certificate:
+  zh-CN: 证书不能使用：%{reason}
+  en: "The certificate can't be used: %{reason}"
+  zh-TW: 憑證無法使用：%{reason}
+  ja: 証明書を使用できません：%{reason}
+  ko: "인증서를 사용할 수 없습니다: %{reason}"
+keys.error.certificate_mismatch:
+  zh-CN: 这张证书不是给这把密钥签发的（证书里的公钥与这把密钥不同）。
+  en: This certificate wasn't issued for this key (the public key in it is different).
+  zh-TW: 這張憑證不是為這把金鑰簽發的（憑證中的公開金鑰與這把金鑰不同）。
+  ja: この証明書はこの鍵に対して発行されたものではありません（証明書内の公開鍵がこの鍵と異なります）。
+  ko: 이 인증서는 이 키에 대해 발급된 것이 아닙니다(인증서의 공개 키가 이 키와 다릅니다).
+keys.error.host_certificate:
+  zh-CN: 这是主机证书，不能用来登录。请选择用户证书。
+  en: This is a host certificate and can't be used to log in. Choose a user certificate.
+  zh-TW: 這是主機憑證，不能用來登入。請選擇使用者憑證。
+  ja: これはホスト証明書のため、ログインには使用できません。ユーザー証明書を選択してください。
+  ko: 호스트 인증서라서 로그인에 사용할 수 없습니다. 사용자 인증서를 선택하세요.
+keys.error.file_not_found_short:
+  zh-CN: 文件不存在
+  en: the file doesn't exist
+  zh-TW: 檔案不存在
+  ja: ファイルが存在しません
+  ko: 파일이 없습니다

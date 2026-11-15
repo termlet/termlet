@@ -1,0 +1,187 @@
+_version: 2
+compose.send_to:
+  zh-CN: 发送到：%{mode}（%{count}）
+  en: "Send to: %{mode} (%{count})"
+  zh-TW: 傳送到：%{mode}（%{count}）
+  ja: 送信先：%{mode}（%{count}）
+  ko: "보낼 대상: %{mode}(%{count})"
+compose.mode_view:
+  zh-CN: 当前 Tab
+  en: Current tab
+  zh-TW: 目前分頁
+  ja: 現在のタブ
+  ko: 현재 탭
+compose.mode_host:
+  zh-CN: 同一主机
+  en: Same host
+  zh-TW: 同一主機
+  ja: 同じホスト
+  ko: 같은 호스트
+compose.mode_all:
+  zh-CN: 全部终端
+  en: All terminals
+  zh-TW: 全部終端機
+  ja: すべてのターミナル
+  ko: 모든 터미널
+compose.mode_custom:
+  zh-CN: 自选
+  en: Custom
+  zh-TW: 自選
+  ja: 個別に選択
+  ko: 직접 선택
+compose.pick:
+  zh-CN: 选择终端
+  en: Choose terminals
+  zh-TW: 選擇終端機
+  ja: ターミナルを選択
+  ko: 터미널 선택
+compose.placeholder:
+  zh-CN: 输入命令，Enter 发送，Shift+Enter 换行，↑ ↓ 翻看发送过的命令
+  en: Type a command. Enter sends it, Shift+Enter adds a line, ↑ ↓ recall sent commands
+  zh-TW: 輸入指令，Enter 傳送，Shift+Enter 換行，↑ ↓ 瀏覽傳送過的指令
+  ja: コマンドを入力（Enter で送信、Shift+Enter で改行、↑ ↓ で送信済みのコマンドを表示）
+  ko: 명령을 입력하세요. Enter로 보내고 Shift+Enter로 줄을 바꾸며 ↑ ↓로 보낸 명령을 다시 불러옵니다
+compose.send:
+  zh-CN: 发送
+  en: Send
+  zh-TW: 傳送
+  ja: 送信
+  ko: 보내기
+compose.danger_title:
+  zh-CN: 确定把这条命令发送到 %{count} 个终端吗？
+  en: Send this command to %{count} terminals?
+  zh-TW: 確定要把這條指令傳送到 %{count} 個終端機嗎？
+  ja: このコマンドを %{count} 個のターミナルに送信しますか？
+  ko: 이 명령을 터미널 %{count}개에 보내시겠습니까?
+compose.danger_hint:
+  zh-CN: “%{command}”命中危险命令规则：%{rule}
+  en: "“%{command}” matches a dangerous-command rule: %{rule}"
+  zh-TW: 「%{command}」符合危險指令規則：%{rule}
+  ja: 「%{command}」は危険なコマンドのルールに該当します：%{rule}
+  ko: "'%{command}' 명령이 위험한 명령 규칙에 해당합니다: %{rule}"
+compose.send_anyway:
+  zh-CN: 仍然发送
+  en: Send Anyway
+  zh-TW: 仍要傳送
+  ja: 送信する
+  ko: 그래도 보내기
+compose.compare:
+  zh-CN: 执行并对比
+  en: Run and Compare
+  zh-TW: 執行並比對
+  ja: 実行して比較
+  ko: 실행 후 비교
+compose.compare_hint:
+  zh-CN: 在各终端中执行（需要 bash / sh），收集输出后按内容分组，显示与多数主机不同的地方
+  en: Run in each terminal (needs bash / sh), then group the outputs and show where they differ from most hosts
+  zh-TW: 在各終端機中執行（需要 bash / sh），收集輸出後依內容分組，顯示與多數主機不同的地方
+  ja: 各ターミナルで実行し（bash / sh が必要）、出力を内容ごとにまとめて、多数のホストと異なる箇所を表示します
+  ko: 각 터미널에서 실행하고(bash / sh 필요) 출력을 내용별로 묶어 대다수 호스트와 다른 부분을 표시합니다
+batch.title:
+  zh-CN: 执行并对比
+  en: Run and Compare
+  zh-TW: 執行並比對
+  ja: 実行して比較
+  ko: 실행 후 비교
+batch.running:
+  zh-CN: 还在执行（%{count} 个）：%{names}
+  en: "Still running (%{count}): %{names}"
+  zh-TW: 仍在執行（%{count} 個）：%{names}
+  ja: 実行中（%{count} 個）：%{names}
+  ko: "아직 실행 중(%{count}개): %{names}"
+batch.all_same:
+  zh-CN: "%{count} 台的输出与退出码都相同"
+  en: All %{count} hosts returned the same output and exit code
+  zh-TW: "%{count} 台的輸出與結束代碼都相同"
+  ja: "%{count} 台すべての出力と終了コードが同じです"
+  ko: 호스트 %{count}대의 출력과 종료 코드가 모두 같습니다
+batch.summary:
+  zh-CN: 输出分为 %{groups} 组，%{failed} 台没有执行成功
+  en: The outputs fall into %{groups} groups; %{failed} hosts didn't run
+  zh-TW: 輸出分為 %{groups} 組，%{failed} 台沒有執行成功
+  ja: 出力は %{groups} グループに分かれ、%{failed} 台は実行できませんでした
+  ko: 출력이 %{groups}개 그룹으로 나뉘고, %{failed}대는 실행하지 못했습니다
+batch.failed:
+  zh-CN: 没有执行成功
+  en: Didn't run
+  zh-TW: 沒有執行成功
+  ja: 実行できませんでした
+  ko: 실행하지 못함
+batch.base_group:
+  zh-CN: 多数（%{count} 台）
+  en: Most hosts (%{count})
+  zh-TW: 多數（%{count} 台）
+  ja: 多数（%{count} 台）
+  ko: 대다수(%{count}대)
+batch.other_group:
+  zh-CN: 不同（%{count} 台）
+  en: Different (%{count})
+  zh-TW: 不同（%{count} 台）
+  ja: 相違（%{count} 台）
+  ko: 다름(%{count}대)
+batch.exit_code:
+  zh-CN: 退出码 %{code}
+  en: Exit code %{code}
+  zh-TW: 結束代碼 %{code}
+  ja: 終了コード %{code}
+  ko: 종료 코드 %{code}
+batch.show_diff:
+  zh-CN: 只看差异
+  en: Differences only
+  zh-TW: 只看差異
+  ja: 差分のみ
+  ko: 차이만 보기
+batch.show_full:
+  zh-CN: 完整输出
+  en: Full output
+  zh-TW: 完整輸出
+  ja: すべての出力
+  ko: 전체 출력
+batch.no_output:
+  zh-CN: （没有输出）
+  en: (no output)
+  zh-TW: （沒有輸出）
+  ja: （出力なし）
+  ko: (출력 없음)
+batch.too_long_diff:
+  zh-CN: 输出过长，不显示逐行差异
+  en: The output is too long to show line-by-line differences
+  zh-TW: 輸出過長，不顯示逐行差異
+  ja: 出力が長すぎるため、行ごとの差分は表示しません
+  ko: 출력이 너무 길어 줄 단위 차이를 표시하지 않습니다
+batch.unsupported:
+  zh-CN: 本地的 Windows 终端、Telnet、串口不支持（需要 bash / sh）
+  en: Not supported in local Windows terminals, Telnet or serial connections (needs bash / sh)
+  zh-TW: 本機的 Windows 終端機、Telnet、序列埠不支援（需要 bash / sh）
+  ja: ローカルの Windows ターミナル、Telnet、シリアルポートには対応していません（bash / sh が必要）
+  ko: 로컬 Windows 터미널, Telnet, 직렬 포트에서는 지원하지 않습니다(bash / sh 필요)
+batch.not_connected:
+  zh-CN: 终端没有连接
+  en: The terminal isn't connected
+  zh-TW: 終端機沒有連線
+  ja: ターミナルが接続されていません
+  ko: 터미널이 연결되어 있지 않습니다
+batch.busy:
+  zh-CN: 终端正忙（正在运行程序、全屏程序或传输文件），请回到 shell 提示符后重试
+  en: The terminal is busy (running a program, a full-screen program or a file transfer). Return to the shell prompt and try again.
+  zh-TW: 終端機正忙（正在執行程式、全螢幕程式或傳輸檔案），請回到 shell 提示字元後再試一次
+  ja: ターミナルが使用中です（プログラム、全画面プログラム、ファイル転送のいずれかを実行中）。シェルのプロンプトに戻ってからやり直してください
+  ko: 터미널이 사용 중입니다(프로그램, 전체 화면 프로그램 또는 파일 전송 실행 중). 셸 프롬프트로 돌아간 후 다시 시도하세요
+batch.closed:
+  zh-CN: 终端已关闭
+  en: The terminal was closed
+  zh-TW: 終端機已關閉
+  ja: ターミナルは閉じられました
+  ko: 터미널이 닫혔습니다
+batch.too_long:
+  zh-CN: 命令太长，不能在终端中执行（请改用脚本文件）
+  en: The command is too long to run in the terminal (use a script file instead)
+  zh-TW: 指令太長，無法在終端機中執行（請改用指令碼檔案）
+  ja: コマンドが長すぎるため、ターミナルで実行できません（スクリプトファイルを使用してください）
+  ko: 명령이 너무 길어 터미널에서 실행할 수 없습니다(스크립트 파일을 사용하세요)
+batch.canceled:
+  zh-CN: 已取消
+  en: Canceled
+  zh-TW: 已取消
+  ja: キャンセルしました
+  ko: 취소됨

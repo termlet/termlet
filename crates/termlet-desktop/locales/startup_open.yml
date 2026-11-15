@@ -1,0 +1,67 @@
+_version: 2
+startup_open.label:
+  zh-CN: 启动时打开
+  en: Open at startup
+  zh-TW: 啟動時開啟
+  ja: 起動時に開く
+  ko: 시작할 때 열기
+startup_open.hint:
+  zh-CN: 只在启动 Termlet 时打开，新窗口不打开；保险库、应用锁解锁后才打开，已经打开的主机不重复打开。只对这台电脑生效。
+  en: Opens only when Termlet starts, not in new windows, and only after the vault and App Lock are unlocked. Hosts that are already open aren't opened again. Applies to this computer only.
+  zh-TW: 只在啟動 Termlet 時開啟，新視窗不開啟；保險庫、應用程式鎖定解鎖後才開啟，已經開啟的主機不重複開啟。只對這台電腦生效。
+  ja: Termlet の起動時にだけ開きます。新しいウィンドウでは開きません。保管庫とアプリロックのロック解除後に開き、すでに開いているホストは重ねて開きません。このコンピューターにのみ適用されます。
+  ko: Termlet을 시작할 때만 열며 새 창에서는 열지 않습니다. 보관함과 앱 잠금이 해제된 뒤에 열고, 이미 열려 있는 호스트는 다시 열지 않습니다. 이 컴퓨터에만 적용됩니다.
+startup_open.nothing:
+  zh-CN: 不额外打开
+  en: Nothing
+  zh-TW: 不額外開啟
+  ja: 何も開かない
+  ko: 열지 않음
+startup_open.local:
+  zh-CN: 默认的本地终端
+  en: The default local terminal
+  zh-TW: 預設的本機終端機
+  ja: デフォルトのローカルターミナル
+  ko: 기본 로컬 터미널
+startup_open.local_named:
+  zh-CN: 默认的本地终端（%{name}）
+  en: The default local terminal (%{name})
+  zh-TW: 預設的本機終端機（%{name}）
+  ja: デフォルトのローカルターミナル（%{name}）
+  ko: 기본 로컬 터미널(%{name})
+startup_open.hosts:
+  zh-CN: 指定的主机（按下面的顺序打开）
+  en: These hosts (opened in this order)
+  zh-TW: 指定的主機（按下面的順序開啟）
+  ja: 指定したホスト（下の順に開く）
+  ko: 지정한 호스트(아래 순서로 열기)
+startup_open.no_hosts:
+  zh-CN: 还没有选主机，在下面添加。
+  en: No hosts yet. Add them below.
+  zh-TW: 還沒有選主機，在下面新增。
+  ja: ホストがまだ選ばれていません。下で追加してください。
+  ko: 아직 선택한 호스트가 없습니다. 아래에서 추가하세요.
+startup_open.add_host:
+  zh-CN: 添加主机…
+  en: Add a host…
+  zh-TW: 新增主機…
+  ja: ホストを追加…
+  ko: 호스트 추가…
+startup_open.search_host:
+  zh-CN: 搜索主机
+  en: Search hosts
+  zh-TW: 搜尋主機
+  ja: ホストを検索
+  ko: 호스트 검색
+startup_open.remove:
+  zh-CN: 移除
+  en: Remove
+  zh-TW: 移除
+  ja: 外す
+  ko: 제거
+startup_open.hosts_missing:
+  zh-CN: 启动时打开的主机中有 %{count} 台已删除，已跳过，并从“启动时打开”中去掉。
+  en: "%{count} of the hosts to open at startup were deleted. They were skipped and removed from \"Open at startup\"."
+  zh-TW: 啟動時開啟的主機中有 %{count} 台已刪除，已略過，並從「啟動時開啟」中移除。
+  ja: 起動時に開くホストのうち %{count} 台は削除されていたため、スキップして「起動時に開く」から外しました。
+  ko: "시작할 때 열 호스트 중 %{count}대가 삭제되어 건너뛰었고 '시작할 때 열기'에서 제거했습니다."

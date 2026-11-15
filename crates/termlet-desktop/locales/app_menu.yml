@@ -1,0 +1,307 @@
+_version: 2
+app_menu.about:
+  zh-CN: 关于 Termlet
+  en: About Termlet
+  zh-TW: 關於 Termlet
+  ja: Termlet について
+  ko: Termlet에 관하여
+app_menu.settings:
+  zh-CN: 设置…
+  en: Settings…
+  zh-TW: 設定…
+  ja: 設定…
+  ko: 설정…
+app_menu.services:
+  zh-CN: 服务
+  en: Services
+  zh-TW: 服務
+  ja: サービス
+  ko: 서비스
+app_menu.hide:
+  zh-CN: 隐藏 Termlet
+  en: Hide Termlet
+  zh-TW: 隱藏 Termlet
+  ja: Termlet を隠す
+  ko: Termlet 가리기
+app_menu.hide_others:
+  zh-CN: 隐藏其他
+  en: Hide Others
+  zh-TW: 隱藏其他
+  ja: ほかを隠す
+  ko: 기타 가리기
+app_menu.show_all:
+  zh-CN: 全部显示
+  en: Show All
+  zh-TW: 全部顯示
+  ja: すべてを表示
+  ko: 모두 보기
+app_menu.quit:
+  zh-CN: 退出 Termlet
+  en: Quit Termlet
+  zh-TW: 結束 Termlet
+  ja: Termlet を終了
+  ko: Termlet 종료
+app_menu.shell:
+  zh-CN: Shell
+  en: Shell
+  zh-TW: Shell
+  ja: シェル
+  ko: 셸
+app_menu.new_window:
+  zh-CN: 新窗口
+  en: New Window
+  zh-TW: 新視窗
+  ja: 新規ウインドウ
+  ko: 새로운 윈도우
+app_menu.new_local:
+  zh-CN: 新本地终端
+  en: New Local Terminal
+  zh-TW: 新本機終端機
+  ja: 新規ローカルターミナル
+  ko: 새로운 로컬 터미널
+app_menu.duplicate:
+  zh-CN: 复制会话
+  en: Duplicate Session
+  zh-TW: 複製工作階段
+  ja: セッションを複製
+  ko: 세션 복제
+app_menu.reconnect:
+  zh-CN: 重新连接
+  en: Reconnect
+  zh-TW: 重新連線
+  ja: 再接続
+  ko: 다시 연결
+app_menu.sftp_beside:
+  zh-CN: 在旁边打开 SFTP
+  en: Open SFTP Beside the Terminal
+  zh-TW: 在旁邊開啟 SFTP
+  ja: ターミナルの横に SFTP を開く
+  ko: 터미널 옆에 SFTP 열기
+app_menu.split_right:
+  zh-CN: 向右分屏
+  en: Split Right
+  zh-TW: 向右分割畫面
+  ja: 右に分割
+  ko: 오른쪽으로 분할
+app_menu.split_down:
+  zh-CN: 向下分屏
+  en: Split Down
+  zh-TW: 向下分割畫面
+  ja: 下に分割
+  ko: 아래로 분할
+app_menu.close_tab:
+  zh-CN: 关闭 Tab
+  en: Close Tab
+  zh-TW: 關閉分頁
+  ja: タブを閉じる
+  ko: 탭 닫기
+app_menu.close_window:
+  zh-CN: 关闭窗口
+  en: Close Window
+  zh-TW: 關閉視窗
+  ja: ウインドウを閉じる
+  ko: 윈도우 닫기
+app_menu.edit:
+  zh-CN: 编辑
+  en: Edit
+  zh-TW: 編輯
+  ja: 編集
+  ko: 편집
+app_menu.undo:
+  zh-CN: 撤销
+  en: Undo
+  zh-TW: 復原
+  ja: 取り消す
+  ko: 실행 취소
+app_menu.redo:
+  zh-CN: 重做
+  en: Redo
+  zh-TW: 取消復原
+  ja: やり直す
+  ko: 실행 복귀
+app_menu.cut:
+  zh-CN: 剪切
+  en: Cut
+  zh-TW: 剪下
+  ja: カット
+  ko: 오려두기
+app_menu.copy:
+  zh-CN: 复制
+  en: Copy
+  zh-TW: 複製
+  ja: コピー
+  ko: 복사하기
+app_menu.paste:
+  zh-CN: 粘贴
+  en: Paste
+  zh-TW: 貼上
+  ja: ペースト
+  ko: 붙여넣기
+app_menu.select_all:
+  zh-CN: 全选
+  en: Select All
+  zh-TW: 全選
+  ja: すべてを選択
+  ko: 전체 선택
+app_menu.find:
+  zh-CN: 查找…
+  en: Find…
+  zh-TW: 尋找…
+  ja: 検索…
+  ko: 찾기…
+app_menu.clear:
+  zh-CN: 清屏
+  en: Clear Screen
+  zh-TW: 清除畫面
+  ja: 画面をクリア
+  ko: 화면 지우기
+app_menu.view:
+  zh-CN: 显示
+  en: View
+  zh-TW: 顯示方式
+  ja: 表示
+  ko: 보기
+app_menu.toggle_sidebar:
+  zh-CN: 隐藏 / 显示侧边栏
+  en: Hide or Show Sidebar
+  zh-TW: 隱藏 / 顯示側邊欄
+  ja: サイドバーを隠す / 表示
+  ko: 사이드바 가리기 / 보기
+app_menu.host_tools:
+  zh-CN: 打开 / 收起主机工具
+  en: Show or Hide Host Tools
+  zh-TW: 開啟 / 收合主機工具
+  ja: ホストツールを開く / 閉じる
+  ko: 호스트 도구 열기 / 닫기
+app_menu.host_tools_overview:
+  zh-CN: 主机工具概览
+  en: Host Tools Overview
+  zh-TW: 主機工具概覽
+  ja: ホストツールの概要
+  ko: 호스트 도구 개요
+app_menu.command_palette:
+  zh-CN: 命令面板…
+  en: Command Palette…
+  zh-TW: 命令選擇區…
+  ja: コマンドパレット…
+  ko: 명령 팔레트…
+app_menu.snippets:
+  zh-CN: 快捷命令…
+  en: Snippets…
+  zh-TW: 快速指令…
+  ja: スニペット…
+  ko: 스니펫…
+app_menu.compose:
+  zh-CN: 撰写栏
+  en: Compose Bar
+  zh-TW: 撰寫列
+  ja: コンポーズバー
+  ko: 작성 표시줄
+app_menu.multi_exec:
+  zh-CN: 同步输入
+  en: Sync Input
+  zh-TW: 同步輸入
+  ja: 同時入力
+  ko: 동시 입력
+app_menu.zoom_in:
+  zh-CN: 放大
+  en: Zoom In
+  zh-TW: 放大
+  ja: 拡大
+  ko: 확대
+app_menu.zoom_out:
+  zh-CN: 缩小
+  en: Zoom Out
+  zh-TW: 縮小
+  ja: 縮小
+  ko: 축소
+app_menu.actual_size:
+  zh-CN: 实际大小
+  en: Actual Size
+  zh-TW: 實際大小
+  ja: 実際のサイズ
+  ko: 실제 크기
+app_menu.ui_zoom_in:
+  zh-CN: 放大界面
+  en: Zoom In Interface
+  zh-TW: 放大介面
+  ja: 表示を拡大
+  ko: 화면 확대
+app_menu.ui_zoom_out:
+  zh-CN: 缩小界面
+  en: Zoom Out Interface
+  zh-TW: 縮小介面
+  ja: 表示を縮小
+  ko: 화면 축소
+app_menu.ui_zoom_reset:
+  zh-CN: 界面大小恢复默认
+  en: Reset Interface Size
+  zh-TW: 介面大小還原為預設
+  ja: 表示サイズをデフォルトに戻す
+  ko: 화면 크기를 기본값으로 복원
+app_menu.full_screen:
+  zh-CN: 进入 / 退出全屏
+  en: Enter or Exit Full Screen
+  zh-TW: 進入 / 結束全螢幕
+  ja: フルスクリーンにする / 解除
+  ko: 전체 화면 시작 / 종료
+app_menu.window:
+  zh-CN: 窗口
+  en: Window
+  zh-TW: 視窗
+  ja: ウインドウ
+  ko: 윈도우
+app_menu.minimize:
+  zh-CN: 最小化
+  en: Minimize
+  zh-TW: 縮到最小
+  ja: しまう
+  ko: 최소화
+app_menu.zoom:
+  zh-CN: 缩放
+  en: Zoom
+  zh-TW: 縮放
+  ja: 拡大/縮小
+  ko: 확대/축소
+app_menu.prev_tab:
+  zh-CN: 显示上一个 Tab
+  en: Show Previous Tab
+  zh-TW: 顯示上一個分頁
+  ja: 前のタブを表示
+  ko: 이전 탭 보기
+app_menu.next_tab:
+  zh-CN: 显示下一个 Tab
+  en: Show Next Tab
+  zh-TW: 顯示下一個分頁
+  ja: 次のタブを表示
+  ko: 다음 탭 보기
+app_menu.bring_all_to_front:
+  zh-CN: 前置全部窗口
+  en: Bring All to Front
+  zh-TW: 將所有視窗移至最前
+  ja: すべてを手前に移動
+  ko: 모두 앞으로 가져오기
+app_menu.help:
+  zh-CN: 帮助
+  en: Help
+  zh-TW: 說明
+  ja: ヘルプ
+  ko: 도움말
+app_menu.website:
+  zh-CN: Termlet 官网
+  en: Termlet Website
+  zh-TW: Termlet 官方網站
+  ja: Termlet の Web サイト
+  ko: Termlet 웹사이트
+app_menu.privacy:
+  zh-CN: 隐私说明
+  en: Privacy Policy
+  zh-TW: 隱私權聲明
+  ja: プライバシーポリシー
+  ko: 개인정보 처리방침
+app_menu.feedback:
+  zh-CN: 发送反馈…
+  en: Send Feedback…
+  zh-TW: 傳送意見回饋…
+  ja: フィードバックを送信…
+  ko: 피드백 보내기…

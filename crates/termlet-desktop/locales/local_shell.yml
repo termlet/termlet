@@ -1,0 +1,193 @@
+_version: 2
+local_shell.cmd:
+  zh-CN: 命令提示符
+  en: Command Prompt
+  zh-TW: 命令提示字元
+  ja: コマンドプロンプト
+  ko: 명령 프롬프트
+local_shell.none:
+  zh-CN: 没有找到可以打开的本地终端。
+  en: No local terminal was found.
+  zh-TW: 沒有找到可以開啟的本機終端機。
+  ja: 開けるローカルターミナルが見つかりません。
+  ko: 열 수 있는 로컬 터미널을 찾지 못했습니다.
+local_shell.error.unknown:
+  zh-CN: 找不到这个本地终端，可能已卸载或被删除。
+  en: This local terminal can't be found. It may have been uninstalled or removed.
+  zh-TW: 找不到這個本機終端機，可能已解除安裝或被刪除。
+  ja: このローカルターミナルが見つかりません。アンインストールまたは削除された可能性があります。
+  ko: 이 로컬 터미널을 찾을 수 없습니다. 제거되었거나 삭제되었을 수 있습니다.
+local_shell.error.program_not_found:
+  zh-CN: 找不到要运行的程序，可能已卸载或移动了位置。
+  en: The program to run can't be found. It may have been uninstalled or moved.
+  zh-TW: 找不到要執行的程式，可能已解除安裝或移動了位置。
+  ja: 実行するプログラムが見つかりません。アンインストールまたは移動された可能性があります。
+  ko: 실행할 프로그램을 찾을 수 없습니다. 제거되었거나 위치가 바뀌었을 수 있습니다.
+local_shell.error.wsl_unsupported:
+  zh-CN: 只有 Windows 支持 WSL。
+  en: WSL is only available on Windows.
+  zh-TW: 只有 Windows 支援 WSL。
+  ja: WSL は Windows でのみ使用できます。
+  ko: WSL은 Windows에서만 사용할 수 있습니다.
+local_shell.error.wsl_not_installed:
+  zh-CN: 这台电脑没有安装 WSL。
+  en: WSL isn't installed on this computer.
+  zh-TW: 這台電腦沒有安裝 WSL。
+  ja: このコンピューターには WSL がインストールされていません。
+  ko: 이 컴퓨터에 WSL이 설치되어 있지 않습니다.
+local_shell.error.invalid_distro:
+  zh-CN: WSL 发行版名称不合法。
+  en: The WSL distribution name is invalid.
+  zh-TW: WSL 發行版名稱無效。
+  ja: WSL のディストリビューション名が無効です。
+  ko: WSL 배포판 이름이 올바르지 않습니다.
+local_shell.error.invalid_user:
+  zh-CN: WSL 用户名不合法。
+  en: The WSL user name is invalid.
+  zh-TW: WSL 使用者名稱無效。
+  ja: WSL のユーザー名が無効です。
+  ko: WSL 사용자 이름이 올바르지 않습니다.
+local_shell.detecting:
+  zh-CN: 正在检测本机的 shell…
+  en: Looking for shells on this computer…
+  zh-TW: 正在偵測本機的 shell…
+  ja: このコンピューターのシェルを検出しています…
+  ko: 이 컴퓨터의 셸을 찾는 중…
+local_shell.none_detected:
+  zh-CN: 这台电脑上没有检测到可用的 shell，可以添加自定义的本地终端。
+  en: No shells were found on this computer. You can add a custom local terminal.
+  zh-TW: 這台電腦上沒有偵測到可用的 shell，可以新增自訂的本機終端機。
+  ja: このコンピューターで使用できるシェルが見つかりませんでした。カスタムのローカルターミナルを追加できます。
+  ko: 이 컴퓨터에서 사용할 수 있는 셸을 찾지 못했습니다. 사용자 지정 로컬 터미널을 추가할 수 있습니다.
+local_shell.default_label:
+  zh-CN: 默认打开
+  en: Open by default
+  zh-TW: 預設開啟
+  ja: デフォルトで開く
+  ko: 기본으로 열기
+local_shell.unavailable:
+  zh-CN: "%{name}（不可用）"
+  en: "%{name} (unavailable)"
+  zh-TW: "%{name}（無法使用）"
+  ja: "%{name}（使用不可）"
+  ko: "%{name}(사용할 수 없음)"
+local_shell.default_hint:
+  zh-CN: 按 %{key} 或点击标题栏的“+”时打开这一个。
+  en: Opens when you press %{key} or click + in the title bar.
+  zh-TW: 按 %{key} 或按一下標題列的「+」時開啟這一個。
+  ja: "%{key} を押すか、タイトルバーの「+」をクリックしたときにこれを開きます。"
+  ko: "%{key} 키를 누르거나 제목 표시줄의 '+'를 클릭하면 이 터미널이 열립니다."
+local_shell.default_hint_no_key:
+  zh-CN: 点击标题栏的“+”时打开这一个。
+  en: Opens when you click + in the title bar.
+  zh-TW: 按一下標題列的「+」時開啟這一個。
+  ja: タイトルバーの「+」をクリックしたときにこれを開きます。
+  ko: 제목 표시줄의 '+'를 클릭하면 이 터미널이 열립니다.
+local_shell.shown_label:
+  zh-CN: 在侧边栏“本机”中显示
+  en: Show under This Computer in the sidebar
+  zh-TW: 在側邊欄「本機」中顯示
+  ja: サイドバーの「このコンピューター」に表示
+  ko: 사이드바의 '이 컴퓨터'에 표시
+local_shell.shown_hint:
+  zh-CN: 默认的一项总是显示；其余的从标题栏“+”旁的菜单打开，在侧边栏中搜索时也会列出。
+  en: The default one is always shown. Open the others from the menu next to + in the title bar; they also appear when you search the sidebar.
+  zh-TW: 預設的一項一律顯示；其餘的從標題列「+」旁的選單開啟，在側邊欄中搜尋時也會列出。
+  ja: デフォルトのものは常に表示されます。ほかのものはタイトルバーの「+」の横にあるメニューから開けます。サイドバーで検索したときにも表示されます。
+  ko: 기본 항목은 항상 표시됩니다. 나머지는 제목 표시줄의 '+' 옆 메뉴에서 열 수 있으며, 사이드바에서 검색할 때도 표시됩니다.
+local_shell.new:
+  zh-CN: 添加本地终端
+  en: Add Local Terminal
+  zh-TW: 新增本機終端機
+  ja: ローカルターミナルを追加
+  ko: 로컬 터미널 추가
+local_shell.new_title:
+  zh-CN: 添加本地终端
+  en: Add Local Terminal
+  zh-TW: 新增本機終端機
+  ja: ローカルターミナルを追加
+  ko: 로컬 터미널 추가
+local_shell.edit_title:
+  zh-CN: 编辑本地终端
+  en: Edit Local Terminal
+  zh-TW: 編輯本機終端機
+  ja: ローカルターミナルを編集
+  ko: 로컬 터미널 편집
+local_shell.edit:
+  zh-CN: 编辑
+  en: Edit
+  zh-TW: 編輯
+  ja: 編集
+  ko: 편집
+local_shell.delete:
+  zh-CN: 删除
+  en: Delete
+  zh-TW: 刪除
+  ja: 削除
+  ko: 삭제
+local_shell.settings_hint:
+  zh-CN: 每次打开都读取系统最新的环境变量，修改 PATH 后不用重启 Termlet。关闭终端时，其中运行的命令行程序一并结束；从终端启动的窗口程序（例如 VS Code）不受影响。
+  en: The latest system environment variables are read every time a terminal opens, so you don't need to restart Termlet after changing PATH. Closing a terminal ends the command-line programs running in it; windowed programs started from it, such as VS Code, keep running.
+  zh-TW: 每次開啟都會讀取系統最新的環境變數，修改 PATH 後不用重新啟動 Termlet。關閉終端機時，其中執行的命令列程式會一併結束；從終端機啟動的視窗程式（例如 VS Code）不受影響。
+  ja: ターミナルを開くたびにシステムの最新の環境変数を読み込むため、PATH を変更しても Termlet を再起動する必要はありません。ターミナルを閉じると、その中で実行中のコマンドラインプログラムも終了します。ターミナルから起動したウィンドウプログラム（VS Code など）は影響を受けません。
+  ko: "터미널을 열 때마다 시스템의 최신 환경 변수를 읽으므로 PATH를 바꾼 후 Termlet을 다시 시작할 필요가 없습니다. 터미널을 닫으면 그 안에서 실행 중인 명령줄 프로그램도 함께 종료됩니다. 터미널에서 시작한 창 프로그램(예: VS Code)은 영향을 받지 않습니다."
+local_shell.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+local_shell.command:
+  zh-CN: 命令行
+  en: Command line
+  zh-TW: 命令列
+  ja: コマンドライン
+  ko: 명령줄
+local_shell.command_hint:
+  zh-CN: 第一项是程序（完整路径，或在 PATH 中查找），其余是参数。
+  en: The first item is the program (a full path, or a name looked up in PATH); the rest are arguments.
+  zh-TW: 第一項是程式（完整路徑，或在 PATH 中尋找），其餘是參數。
+  ja: 最初の項目はプログラム（フルパス、または PATH から検索する名前）、残りは引数です。
+  ko: 첫 번째 항목은 프로그램(전체 경로 또는 PATH에서 찾을 이름)이고, 나머지는 인수입니다.
+local_shell.pick_program:
+  zh-CN: 选择程序
+  en: Choose a program
+  zh-TW: 選擇程式
+  ja: プログラムを選択
+  ko: 프로그램 선택
+local_shell.dir:
+  zh-CN: 起始目录
+  en: Starting folder
+  zh-TW: 起始目錄
+  ja: 開始フォルダー
+  ko: 시작 폴더
+local_shell.dir_placeholder:
+  zh-CN: 默认为用户主目录；可以写 ~ 或环境变量
+  en: Your home folder by default; ~ and environment variables are allowed
+  zh-TW: 預設為使用者主目錄；可以寫 ~ 或環境變數
+  ja: デフォルトはユーザーのホームディレクトリ。~ や環境変数も使用できます
+  ko: 기본값은 사용자 홈 디렉터리입니다. ~ 또는 환경 변수를 쓸 수 있습니다
+local_shell.env:
+  zh-CN: 环境变量（每行一个 名称=值）
+  en: Environment variables (one NAME=value per line)
+  zh-TW: 環境變數（每行一個 名稱=值）
+  ja: 環境変数（1 行に 1 つ、名前=値）
+  ko: 환경 변수(한 줄에 하나씩 이름=값)
+local_shell.env_bad_line:
+  zh-CN: 环境变量第 %{line} 行格式不对，应为 名称=值。
+  en: Line %{line} of the environment variables should be NAME=value.
+  zh-TW: 環境變數第 %{line} 行格式不正確，應為 名稱=值。
+  ja: 環境変数の %{line} 行目の形式が正しくありません。名前=値 の形式で入力してください。
+  ko: 환경 변수 %{line}번째 줄의 형식이 올바르지 않습니다. 이름=값 형식이어야 합니다.
+local_shell.name_required:
+  zh-CN: 请填写名称。
+  en: Enter a name.
+  zh-TW: 請填寫名稱。
+  ja: 名前を入力してください。
+  ko: 이름을 입력하세요.
+local_shell.command_required:
+  zh-CN: 请填写命令行。
+  en: Enter a command line.
+  zh-TW: 請填寫命令列。
+  ja: コマンドラインを入力してください。
+  ko: 명령줄을 입력하세요.

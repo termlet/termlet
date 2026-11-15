@@ -1,0 +1,28 @@
+root = true
+
+# Rust、TOML、PowerShell、Python 用 4 个空格（Rust 与 rustfmt 的默认一致）
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# YAML（文案、测试数据）、JavaScript（发布与图标脚本）、NSIS、SQL、SVG 用 2 个空格
+[*.{yml,yaml,mjs,nsi,sql,svg}]
+indent_size = 2
+
+# Markdown：嵌套列表缩进 2 个空格；行尾两个空格是换行，不删
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false
+
+# 测试用的样例文件按原样保存（换行、编码都是测试的一部分，与 .gitattributes 一致）
+[crates/**/testdata/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset

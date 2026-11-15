@@ -1,0 +1,325 @@
+_version: 2
+palette.placeholder:
+  zh-CN: 搜索主机、Tab、操作，或输入 用户@地址 快速连接
+  en: Search hosts, tabs, and commands, or type user@host to quick connect
+  zh-TW: 搜尋主機、分頁、操作，或輸入 使用者@位址 快速連線
+  ja: ホスト、タブ、操作を検索、または ユーザー@アドレス を入力してクイック接続
+  ko: 호스트, 탭, 작업 검색 또는 사용자@주소를 입력하여 빠른 연결
+palette.hint:
+  zh-CN: "> 只搜操作 · @ 只搜已打开的 Tab · # 只搜主机 · Enter 执行 · Esc 关闭"
+  en: "> commands only · @ open tabs only · # hosts only · Enter to run · Esc to close"
+  zh-TW: "> 只搜尋操作 · @ 只搜尋已開啟的分頁 · # 只搜尋主機 · Enter 執行 · Esc 關閉"
+  ja: "> 操作のみ · @ 開いているタブのみ · # ホストのみ · Enter で実行 · Esc で閉じる"
+  ko: "> 작업만 · @ 열린 탭만 · # 호스트만 · Enter 실행 · Esc 닫기"
+palette.empty:
+  zh-CN: 没有匹配的内容
+  en: Nothing matches
+  zh-TW: 沒有符合的內容
+  ja: 一致する項目はありません
+  ko: 일치하는 항목이 없습니다
+palette.quick_connect:
+  zh-CN: 快速连接 %{target}
+  en: Quick connect %{target}
+  zh-TW: 快速連線 %{target}
+  ja: "%{target} にクイック接続"
+  ko: "%{target}에 빠른 연결"
+palette.tab_detail:
+  zh-CN: 终端
+  en: Terminal
+  zh-TW: 終端機
+  ja: ターミナル
+  ko: 터미널
+palette.tab_detail_sftp:
+  zh-CN: SFTP
+  en: SFTP
+  zh-TW: SFTP
+  ja: SFTP
+  ko: SFTP
+palette.tab_detail_editor:
+  zh-CN: 编辑器
+  en: Editor
+  zh-TW: 編輯器
+  ja: エディター
+  ko: 편집기
+palette.tab_detail_logs:
+  zh-CN: 日志查看器
+  en: Log viewer
+  zh-TW: 記錄檢視器
+  ja: ログビューアー
+  ko: 로그 뷰어
+palette.category.quick:
+  zh-CN: 快速连接
+  en: Quick connect
+  zh-TW: 快速連線
+  ja: クイック接続
+  ko: 빠른 연결
+palette.category.op:
+  zh-CN: 操作
+  en: Command
+  zh-TW: 操作
+  ja: 操作
+  ko: 작업
+palette.category.host:
+  zh-CN: 主机
+  en: Host
+  zh-TW: 主機
+  ja: ホスト
+  ko: 호스트
+palette.category.tab:
+  zh-CN: 已打开
+  en: Open
+  zh-TW: 已開啟
+  ja: 開いているタブ
+  ko: 열린 탭
+palette.op.duplicate:
+  zh-CN: 复制会话
+  en: Duplicate session
+  zh-TW: 複製工作階段
+  ja: セッションを複製
+  ko: 세션 복제
+palette.op.reconnect:
+  zh-CN: 重新连接
+  en: Reconnect
+  zh-TW: 重新連線
+  ja: 再接続
+  ko: 다시 연결
+palette.op.new_local_terminal:
+  zh-CN: 新建本地终端
+  en: New local terminal
+  zh-TW: 新增本機終端機
+  ja: 新しいローカルターミナル
+  ko: 새 로컬 터미널
+palette.op.new_host:
+  zh-CN: 新建主机…
+  en: New host…
+  zh-TW: 新增主機…
+  ja: 新しいホスト…
+  ko: 새 호스트…
+palette.op.new_group:
+  zh-CN: 新建分组…
+  en: New group…
+  zh-TW: 新增群組…
+  ja: 新しいグループ…
+  ko: 새 그룹…
+palette.op.hide_sidebar:
+  zh-CN: 隐藏侧边栏
+  en: Hide sidebar
+  zh-TW: 隱藏側邊欄
+  ja: サイドバーを隠す
+  ko: 사이드바 숨기기
+palette.op.show_sidebar:
+  zh-CN: 显示侧边栏
+  en: Show sidebar
+  zh-TW: 顯示側邊欄
+  ja: サイドバーを表示
+  ko: 사이드바 표시
+palette.op.ui_zoom_in:
+  zh-CN: 放大界面
+  en: Zoom In Interface
+  zh-TW: 放大介面
+  ja: 表示を拡大
+  ko: 화면 확대
+palette.op.ui_zoom_out:
+  zh-CN: 缩小界面
+  en: Zoom Out Interface
+  zh-TW: 縮小介面
+  ja: 表示を縮小
+  ko: 화면 축소
+palette.op.ui_zoom_reset:
+  zh-CN: 界面大小恢复默认
+  en: Reset Interface Size
+  zh-TW: 介面大小還原為預設
+  ja: 表示サイズをデフォルトに戻す
+  ko: 화면 크기를 기본값으로 복원
+palette.op.ui_scale_detail:
+  zh-CN: 现在 %{percent}%
+  en: Now %{percent}%
+  zh-TW: 目前 %{percent}%
+  ja: 現在 %{percent}%
+  ko: 현재 %{percent}%
+palette.op.toggle_fullscreen:
+  zh-CN: 全屏 / 退出全屏
+  en: Toggle full screen
+  zh-TW: 全螢幕 / 結束全螢幕
+  ja: フルスクリーン / フルスクリーンを解除
+  ko: 전체 화면 / 전체 화면 종료
+palette.op.new_window:
+  zh-CN: 新窗口
+  en: New window
+  zh-TW: 新視窗
+  ja: 新しいウィンドウ
+  ko: 새 창
+palette.op.move_to_new_window:
+  zh-CN: 把 Tab 移到新窗口
+  en: Move tab to new window
+  zh-TW: 將分頁移到新視窗
+  ja: タブを新しいウィンドウに移動
+  ko: 탭을 새 창으로 이동
+palette.op.focus_tab_list:
+  zh-CN: 焦点进 Tab 列表（用方向键选择）
+  en: Focus tab list (choose with the arrow keys)
+  zh-TW: 焦點移到分頁清單（用方向鍵選擇）
+  ja: タブ一覧にフォーカス（矢印キーで選択）
+  ko: 탭 목록으로 포커스 이동(화살표 키로 선택)
+palette.op.toggle_theme:
+  zh-CN: 切换浅色 / 深色
+  en: Switch light / dark
+  zh-TW: 切換淺色 / 深色
+  ja: ライト / ダークを切り替え
+  ko: 라이트 / 다크 전환
+palette.op.toggle_tab_position:
+  zh-CN: 切换 Tab 的位置（顶部 / 左侧）
+  en: Switch tab position (top / left)
+  zh-TW: 切換分頁的位置（頂部 / 左側）
+  ja: タブの位置を切り替え（上 / 左）
+  ko: 탭 위치 전환(위쪽 / 왼쪽)
+palette.op.tab_position_top:
+  zh-CN: 现在在顶部
+  en: Currently at the top
+  zh-TW: 目前在頂部
+  ja: 現在は上
+  ko: 현재 위쪽
+palette.op.tab_position_left:
+  zh-CN: 现在在左侧
+  en: Currently on the left
+  zh-TW: 目前在左側
+  ja: 現在は左
+  ko: 현재 왼쪽
+palette.category.workspace:
+  zh-CN: 工作区
+  en: Workspace
+  zh-TW: 工作區
+  ja: ワークスペース
+  ko: 작업 영역
+palette.op.command_picker:
+  zh-CN: 快捷命令…
+  en: Snippets…
+  zh-TW: 快速指令…
+  ja: スニペット…
+  ko: 스니펫…
+palette.op.save_workspace:
+  zh-CN: 保存为工作区…
+  en: Save as Workspace…
+  zh-TW: 儲存為工作區…
+  ja: ワークスペースとして保存…
+  ko: 작업 영역으로 저장…
+palette.op.sftp_beside:
+  zh-CN: 在右侧打开 SFTP
+  en: Open SFTP on the Right
+  zh-TW: 在右側開啟 SFTP
+  ja: 右側に SFTP を開く
+  ko: 오른쪽에 SFTP 열기
+palette.op.reveal_host:
+  zh-CN: 在侧边栏中显示当前主机
+  en: Reveal Current Host in Sidebar
+  zh-TW: 在側邊欄中顯示目前的主機
+  ja: 現在のホストをサイドバーで表示
+  ko: 사이드바에서 현재 호스트 표시
+palette.op.shortcuts:
+  zh-CN: 快捷键…
+  en: Keyboard Shortcuts…
+  zh-TW: 快速鍵…
+  ja: キーボードショートカット…
+  ko: 바로 가기 키…
+palette.op.multi_exec:
+  zh-CN: 开启同步输入
+  en: Start Sync Input
+  zh-TW: 開啟同步輸入
+  ja: 同時入力を開始
+  ko: 동시 입력 시작
+palette.op.multi_exec_off:
+  zh-CN: 退出同步输入
+  en: Exit Sync Input
+  zh-TW: 結束同步輸入
+  ja: 同時入力を終了
+  ko: 동시 입력 종료
+palette.op.compose:
+  zh-CN: 打开撰写栏
+  en: Open Compose Bar
+  zh-TW: 開啟撰寫列
+  ja: コンポーズバーを開く
+  ko: 작성 표시줄 열기
+palette.op.host_tools:
+  zh-CN: 打开主机工具
+  en: Show Host Tools
+  zh-TW: 開啟主機工具
+  ja: ホストツールを開く
+  ko: 호스트 도구 열기
+palette.op.host_tools_hide:
+  zh-CN: 收起主机工具
+  en: Hide Host Tools
+  zh-TW: 收合主機工具
+  ja: ホストツールを閉じる
+  ko: 호스트 도구 닫기
+palette.op.host_tools_overview:
+  zh-CN: 主机工具：概览
+  en: "Host Tools: Overview"
+  zh-TW: 主機工具：概覽
+  ja: ホストツール：概要
+  ko: "호스트 도구: 개요"
+palette.op.host_tools_popout:
+  zh-CN: 主机工具：在置顶小窗中显示概览
+  en: "Host Tools: Pop Out Overview"
+  zh-TW: 主機工具：在置頂小視窗中顯示概覽
+  ja: ホストツール：概要を常に手前に表示する小さなウィンドウで開く
+  ko: "호스트 도구: 개요를 항상 위에 표시되는 작은 창으로 열기"
+palette.op.snippet_bar:
+  zh-CN: 显示快捷命令栏
+  en: Show Snippet Bar
+  zh-TW: 顯示快速指令列
+  ja: スニペットバーを表示
+  ko: 스니펫 표시줄 표시
+palette.op.snippet_bar_hide:
+  zh-CN: 隐藏快捷命令栏
+  en: Hide Snippet Bar
+  zh-TW: 隱藏快速指令列
+  ja: スニペットバーを隠す
+  ko: 스니펫 표시줄 숨기기
+palette.op.audit:
+  zh-CN: 查看审计日志
+  en: View Audit Log
+  zh-TW: 檢視稽核記錄
+  ja: 監査ログを表示
+  ko: 감사 로그 보기
+palette.op.lock_now:
+  zh-CN: 立即锁定
+  en: Lock Now
+  zh-TW: 立即鎖定
+  ja: 今すぐロック
+  ko: 지금 잠금
+palette.op.forwards:
+  zh-CN: 显示端口转发
+  en: Show Port Forwards
+  zh-TW: 顯示連接埠轉送
+  ja: ポート転送を表示
+  ko: 포트 포워딩 표시
+palette.op.highlight:
+  zh-CN: 关键词高亮…
+  en: Keyword Highlighting…
+  zh-TW: 關鍵字醒目提示…
+  ja: キーワードの強調表示…
+  ko: 키워드 강조 표시…
+palette.op.start_record:
+  zh-CN: "开始录制"
+  en: "Start Recording"
+  zh-TW: "開始錄製"
+  ja: "録画を開始"
+  ko: "녹화 시작"
+palette.op.stop_record:
+  zh-CN: "停止录制"
+  en: "Stop Recording"
+  zh-TW: "停止錄製"
+  ja: "録画を停止"
+  ko: "녹화 중지"
+palette.op.open_recording:
+  zh-CN: "打开录制文件…"
+  en: "Open Recording…"
+  zh-TW: "開啟錄製檔…"
+  ja: "録画ファイルを開く…"
+  ko: "녹화 파일 열기…"
+palette.tab_detail_replay:
+  zh-CN: "回放"
+  en: "Playback"
+  zh-TW: "重播"
+  ja: "再生"
+  ko: "재생"

@@ -1,0 +1,62 @@
+# 连真实 sshd 的集成测试：在 Linux 上起 testing/sshd 的测试容器（SSH 2222、Telnet 2323），跑核心与命令行工具的测试
+# （没有设置地址时这些测试跳过，ci.yml 的 core job 中就是这样）。由 ci.yml 在推送到默认分支与合并请求时调用，由
+# release.yml 在打包之前调用（失败就不出包），也可以手动运行。测试镜像每次现建（其中编译 lrzsz、trzsz），连同编译、
+# 测试约 4 分钟。
+#
+# 只编译核心与命令行工具（不依赖 GPUI、不用装系统库）。缓存与 ci.yml 的 core job 共用（shared-key linux-core，
+# 编译设置的环境变量也要相同），这里只读不存。
+#
+# action 都固定到提交哈希（注释中是对应的版本）：不跟随会被改写的标签；.github/dependabot.yml 每周提议更新。
+name: sshd
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# 同一分支 / 标签同时只跑一次，后来的排队（组名不用 github.workflow：被调用时它是调用方的名字，会与 release.yml 的组相同）
+concurrency:
+  group: sshd-test-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_INCREMENTAL: '0'
+
+jobs:
+  test:
+    name: 连真实 sshd 的集成测试
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 启动测试容器
+        run: |
+          docker build -t termlet-e2e-sshd testing/sshd
+          docker run -d --name termlet-sshd -p 2222:22 -p 2323:23 termlet-e2e-sshd
+      - name: 安装 Rust（rust-toolchain.toml 指定的版本与组件）
+        run: |
+          rustup set profile minimal
+          rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: linux-core
+          save-if: false
+      # 预编译的二进制（校验发布页的 SHA-256），不从源码编译
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
+        with:
+          tool: cargo-nextest@0.9.150
+          fallback: none
+      - name: 测试
+        env:
+          TERMLET_TEST_SSH: 127.0.0.1:2222
+          TERMLET_TEST_TELNET: 127.0.0.1:2323
+        run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli
+      - name: 测试容器的日志
+        if: failure()
+        run: docker logs termlet-sshd

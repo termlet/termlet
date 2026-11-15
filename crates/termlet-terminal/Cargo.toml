@@ -1,0 +1,28 @@
+[package]
+name = "termlet-terminal"
+description = "Termlet 终端：终端引擎（内核为 alacritty_terminal）与 GPUI 终端视图"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+termlet-io.workspace = true
+alacritty_terminal.workspace = true
+regex.workspace = true
+unicode-width.workspace = true
+async-channel.workspace = true
+futures.workspace = true
+async-io.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }
+# 真实伪终端中的 kitty 键盘协议测试（tests/kitty_pty.rs）
+portable-pty.workspace = true
+
+[lints]
+workspace = true

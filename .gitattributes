@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.png binary
+*.webp binary
+*.bmp binary
+*.ico binary
+*.icns binary
+*.ppk binary
+*.ttf binary
+# 测试用的样例文件按原样保存（换行、编码都是测试的一部分）
+crates/**/testdata/** -text

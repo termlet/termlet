@@ -1,0 +1,49 @@
+_version: 2
+raw.error.not_raw:
+  zh-CN: 这台主机不是 Telnet 或串口主机
+  en: This host isn't a Telnet or serial host
+  zh-TW: 這台主機不是 Telnet 或序列埠主機
+  ja: このホストは Telnet またはシリアルポートのホストではありません
+  ko: 이 호스트는 Telnet 또는 직렬 포트 호스트가 아닙니다
+raw.serial.not_found:
+  zh-CN: 找不到串口 %{port}，请检查设备是否已连接
+  en: Serial port %{port} wasn't found. Check that the device is connected.
+  zh-TW: 找不到序列埠 %{port}，請檢查裝置是否已連接
+  ja: シリアルポート %{port} が見つかりません。デバイスが接続されているか確認してください
+  ko: 직렬 포트 %{port}을(를) 찾을 수 없습니다. 장치가 연결되어 있는지 확인하세요
+raw.serial.busy:
+  zh-CN: 串口 %{port} 被其他程序占用
+  en: Serial port %{port} is in use by another program
+  zh-TW: 序列埠 %{port} 被其他程式佔用
+  ja: シリアルポート %{port} は別のプログラムが使用中です
+  ko: 직렬 포트 %{port}을(를) 다른 프로그램에서 사용 중입니다
+raw.serial.permission:
+  zh-CN: 没有权限打开串口 %{port}（Linux 上需要把用户加入 dialout 组）
+  en: No permission to open serial port %{port} (on Linux, add the user to the dialout group)
+  zh-TW: 沒有權限開啟序列埠 %{port}（Linux 上需要把使用者加入 dialout 群組）
+  ja: シリアルポート %{port} を開く権限がありません（Linux ではユーザーを dialout グループに追加してください）
+  ko: 직렬 포트 %{port}을(를) 열 권한이 없습니다(Linux에서는 사용자를 dialout 그룹에 추가하세요)
+raw.serial.unsupported:
+  zh-CN: 串口 %{port} 不支持这组参数：%{reason}
+  en: "Serial port %{port} doesn't support these settings: %{reason}"
+  zh-TW: 序列埠 %{port} 不支援這組參數：%{reason}
+  ja: シリアルポート %{port} はこの設定に対応していません：%{reason}
+  ko: "직렬 포트 %{port}에서 이 설정을 지원하지 않습니다: %{reason}"
+raw.serial.disconnected:
+  zh-CN: 串口 %{port} 已断开
+  en: Serial port %{port} was disconnected
+  zh-TW: 序列埠 %{port} 已中斷連線
+  ja: シリアルポート %{port} が切断されました
+  ko: 직렬 포트 %{port}의 연결이 끊어졌습니다
+raw.serial.io:
+  zh-CN: 打开串口 %{port} 失败：%{reason}
+  en: "Opening serial port %{port} failed: %{reason}"
+  zh-TW: 開啟序列埠 %{port} 失敗：%{reason}
+  ja: シリアルポート %{port} を開けませんでした：%{reason}
+  ko: "직렬 포트 %{port}을(를) 열지 못했습니다: %{reason}"
+raw.serial.list:
+  zh-CN: 列出串口失败：%{reason}
+  en: "Listing serial ports failed: %{reason}"
+  zh-TW: 列出序列埠失敗：%{reason}
+  ja: シリアルポートを一覧表示できませんでした：%{reason}
+  ko: "직렬 포트 목록을 가져오지 못했습니다: %{reason}"

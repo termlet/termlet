@@ -1,0 +1,169 @@
+_version: 2
+vault.locked.title:
+  zh-CN: 输入主密码
+  en: Enter your master password
+  zh-TW: 輸入主密碼
+  ja: マスターパスワードを入力
+  ko: 마스터 비밀번호 입력
+vault.locked.description:
+  zh-CN: 这台电脑上没有可用的系统钥匙串，保存的密码与私钥用主密码加密。
+  en: No system keychain is available on this computer, so saved passwords and private keys are encrypted with your master password.
+  zh-TW: 這台電腦上沒有可用的系統鑰匙圈，儲存的密碼與私密金鑰用主密碼加密。
+  ja: このコンピューターでは使えるシステムのキーチェーンがないため、保存したパスワードと秘密鍵はマスターパスワードで暗号化されています。
+  ko: 이 컴퓨터에는 사용할 수 있는 시스템 키체인이 없어서, 저장된 비밀번호와 개인 키는 마스터 비밀번호로 암호화되어 있습니다.
+vault.new_password.title:
+  zh-CN: 设置主密码
+  en: Set a master password
+  zh-TW: 設定主密碼
+  ja: マスターパスワードの設定
+  ko: 마스터 비밀번호 설정
+vault.new_password.description:
+  zh-CN: 系统钥匙串不可用（%{reason}）。请设置主密码，用来加密保存的密码与私钥；忘记后无法找回，只能重置。
+  en: "The system keychain is unavailable (%{reason}). Set a master password to encrypt saved passwords and private keys. It can't be recovered if forgotten; you can only reset."
+  zh-TW: 系統鑰匙圈無法使用（%{reason}）。請設定主密碼，用來加密儲存的密碼與私密金鑰；忘記後無法找回，只能重設。
+  ja: システムのキーチェーンを使用できません（%{reason}）。保存するパスワードと秘密鍵を暗号化するマスターパスワードを設定してください。忘れた場合は取り戻せず、リセットするしかありません。
+  ko: 시스템 키체인을 사용할 수 없습니다(%{reason}). 저장하는 비밀번호와 개인 키를 암호화할 마스터 비밀번호를 설정하세요. 잊어버리면 되찾을 수 없고 초기화만 할 수 있습니다.
+vault.locked.description_portable:
+  zh-CN: 便携版保存的密码与私钥用主密码加密，带到别的电脑上也能用主密码解开。
+  en: The portable version encrypts saved passwords and private keys with your master password, so they can be unlocked on any computer.
+  zh-TW: 可攜版儲存的密碼與私密金鑰用主密碼加密，帶到別的電腦上也能用主密碼解開。
+  ja: ポータブル版で保存したパスワードと秘密鍵はマスターパスワードで暗号化されているため、ほかのコンピューターに持ち出してもマスターパスワードで復号できます。
+  ko: 포터블 버전에 저장된 비밀번호와 개인 키는 마스터 비밀번호로 암호화되어 있어, 다른 컴퓨터로 가져가도 마스터 비밀번호로 열 수 있습니다.
+vault.portable.title:
+  zh-CN: 保护便携版的数据
+  en: Protect your portable data
+  zh-TW: 保護可攜版的資料
+  ja: ポータブル版のデータの保護
+  ko: 포터블 버전 데이터 보호
+vault.portable.description:
+  zh-CN: 便携版可以带到别的电脑上用。设置主密码后，保存的密码与私钥在哪台电脑上都能用主密码解开，每次打开 Termlet 时输入一次；忘记后无法找回，只能重置。也可以只在这台电脑上用：主密钥放进这台电脑的凭据管理器，不用输入主密码，但带到别的电脑上时保存的密码与私钥无法解开。
+  en: "You can take the portable version to other computers. With a master password, saved passwords and private keys can be unlocked on any computer; you enter it each time you open Termlet, and it can't be recovered if forgotten (you can only reset). Or use it on this computer only: the master key goes into this computer's credential manager and you don't need a master password, but saved passwords and private keys can't be unlocked on other computers."
+  zh-TW: 可攜版可以帶到別的電腦上使用。設定主密碼後，儲存的密碼與私密金鑰在哪台電腦上都能用主密碼解開，每次開啟 Termlet 時輸入一次；忘記後無法找回，只能重設。也可以只在這台電腦上使用：主金鑰放進這台電腦的認證管理員，不用輸入主密碼，但帶到別的電腦上時儲存的密碼與私密金鑰無法解開。
+  ja: ポータブル版はほかのコンピューターに持ち出して使えます。マスターパスワードを設定すると、保存したパスワードと秘密鍵はどのコンピューターでもマスターパスワードで復号でき、Termlet を開くたびに一度入力します。忘れた場合は取り戻せず、リセットするしかありません。このコンピューターだけで使うこともできます。その場合、マスターキーはこのコンピューターの資格情報マネージャーに保存され、マスターパスワードの入力は不要ですが、ほかのコンピューターに持ち出すと保存したパスワードと秘密鍵は復号できません。
+  ko: 포터블 버전은 다른 컴퓨터로 가져가서 사용할 수 있습니다. 마스터 비밀번호를 설정하면 저장된 비밀번호와 개인 키를 어느 컴퓨터에서든 마스터 비밀번호로 열 수 있으며, Termlet을 열 때마다 한 번 입력합니다. 잊어버리면 되찾을 수 없고 초기화만 할 수 있습니다. 이 컴퓨터에서만 사용할 수도 있습니다. 이 경우 마스터 키는 이 컴퓨터의 자격 증명 관리자에 저장되어 마스터 비밀번호를 입력할 필요가 없지만, 다른 컴퓨터로 가져가면 저장된 비밀번호와 개인 키를 열 수 없습니다.
+vault.portable.this_computer:
+  zh-CN: 只在这台电脑上使用
+  en: This computer only
+  zh-TW: 只在這台電腦上使用
+  ja: このコンピューターでのみ使用
+  ko: 이 컴퓨터에서만 사용
+vault.key_missing.title:
+  zh-CN: 找不到主密钥
+  en: Master key not found
+  zh-TW: 找不到主金鑰
+  ja: マスターキーが見つかりません
+  ko: 마스터 키를 찾을 수 없음
+vault.key_missing.description:
+  zh-CN: 保存的密码与私钥是在另一台电脑或另一个用户账户中加密的，在这里无法解开。只是暂时不可用时，回到原来的环境即可；确认找不回时，可以重置保险库：主机、分组等数据保留，无法解开的密码与私钥清空。
+  en: Saved passwords and private keys were encrypted on another computer or user account and can't be decrypted here. If that's temporary, go back to the original environment. If the key is gone for good, reset the vault. Hosts, groups and other data are kept; passwords and private keys that can't be decrypted are cleared.
+  zh-TW: 儲存的密碼與私密金鑰是在另一台電腦或另一個使用者帳戶中加密的，在這裡無法解開。只是暫時無法使用時，回到原來的環境即可；確認找不回時，可以重設保險庫：主機、群組等資料保留，無法解開的密碼與私密金鑰會清除。
+  ja: 保存したパスワードと秘密鍵は別のコンピューターまたは別のユーザーアカウントで暗号化されたため、ここでは復号できません。一時的に使えないだけなら、元の環境に戻れば使えます。取り戻せないことが確かな場合は、保管庫をリセットできます。ホストやグループなどのデータは残り、復号できないパスワードと秘密鍵は消去されます。
+  ko: 저장된 비밀번호와 개인 키는 다른 컴퓨터나 다른 사용자 계정에서 암호화되어 여기서는 열 수 없습니다. 일시적으로 사용할 수 없는 경우라면 원래 환경으로 돌아가면 됩니다. 되찾을 수 없는 것이 확실하면 보관함을 초기화할 수 있습니다. 호스트, 그룹 등의 데이터는 유지되고, 열 수 없는 비밀번호와 개인 키는 지워집니다.
+vault.key_mismatch.title:
+  zh-CN: 主密钥与数据不符
+  en: Master key doesn't match the data
+  zh-TW: 主金鑰與資料不符
+  ja: マスターキーがデータと一致しません
+  ko: 마스터 키가 데이터와 일치하지 않음
+vault.key_mismatch.description:
+  zh-CN: 系统钥匙串中的主密钥解不开这里保存的密码与私钥，可能是钥匙串中的条目被替换了。确认找不回原来的主密钥时，可以重置保险库：主机、分组等数据保留，无法解开的密码与私钥清空。
+  en: The master key in the system keychain can't decrypt the passwords and private keys saved here. The keychain entry may have been replaced. If the original key is gone for good, reset the vault. Hosts, groups and other data are kept; passwords and private keys that can't be decrypted are cleared.
+  zh-TW: 系統鑰匙圈中的主金鑰解不開這裡儲存的密碼與私密金鑰，可能是鑰匙圈中的項目被取代了。確認找不回原來的主金鑰時，可以重設保險庫：主機、群組等資料保留，無法解開的密碼與私密金鑰會清除。
+  ja: システムのキーチェーンにあるマスターキーでは、ここに保存されたパスワードと秘密鍵を復号できません。キーチェーンの項目が置き換えられた可能性があります。元のマスターキーを取り戻せないことが確かな場合は、保管庫をリセットできます。ホストやグループなどのデータは残り、復号できないパスワードと秘密鍵は消去されます。
+  ko: 시스템 키체인에 있는 마스터 키로 여기에 저장된 비밀번호와 개인 키를 열 수 없습니다. 키체인 항목이 바뀌었을 수 있습니다. 원래 마스터 키를 되찾을 수 없는 것이 확실하면 보관함을 초기화할 수 있습니다. 호스트, 그룹 등의 데이터는 유지되고, 열 수 없는 비밀번호와 개인 키는 지워집니다.
+vault.keyring_error.title:
+  zh-CN: 无法读取系统钥匙串
+  en: Couldn't read the system keychain
+  zh-TW: 無法讀取系統鑰匙圈
+  ja: システムのキーチェーンを読み取れません
+  ko: 시스템 키체인을 읽을 수 없음
+vault.keyring_error.description:
+  zh-CN: 读取主密钥时出错：%{reason}。可以稍后重试。
+  en: "Reading the master key failed: %{reason}. You can try again."
+  zh-TW: 讀取主金鑰時出錯：%{reason}。可以稍後重試。
+  ja: マスターキーの読み取り中にエラーが発生しました：%{reason}。しばらくしてからやり直してください。
+  ko: "마스터 키를 읽는 중 오류가 발생했습니다: %{reason}. 잠시 후 다시 시도할 수 있습니다."
+vault.unlock:
+  zh-CN: 解锁
+  en: Unlock
+  zh-TW: 解鎖
+  ja: ロック解除
+  ko: 잠금 해제
+vault.password_placeholder:
+  zh-CN: 主密码
+  en: Master password
+  zh-TW: 主密碼
+  ja: マスターパスワード
+  ko: 마스터 비밀번호
+vault.confirm_placeholder:
+  zh-CN: 再输入一次主密码
+  en: Enter the master password again
+  zh-TW: 再輸入一次主密碼
+  ja: マスターパスワードをもう一度入力
+  ko: 마스터 비밀번호 다시 입력
+vault.set_password:
+  zh-CN: 设置主密码
+  en: Set password
+  zh-TW: 設定主密碼
+  ja: マスターパスワードを設定
+  ko: 마스터 비밀번호 설정
+vault.retry:
+  zh-CN: 重试
+  en: Try again
+  zh-TW: 重試
+  ja: 再試行
+  ko: 다시 시도
+vault.reset:
+  zh-CN: 重置保险库…
+  en: Reset vault…
+  zh-TW: 重設保險庫…
+  ja: 保管庫をリセット…
+  ko: 보관함 초기화…
+vault.quit:
+  zh-CN: 退出 Termlet
+  en: Quit Termlet
+  zh-TW: 結束 Termlet
+  ja: Termlet を終了
+  ko: Termlet 종료
+vault.reset_confirm.title:
+  zh-CN: 重置保险库？
+  en: Reset the vault?
+  zh-TW: 重設保險庫？
+  ja: 保管庫をリセットしますか？
+  ko: 보관함을 초기화하시겠습니까?
+vault.reset_confirm.description:
+  zh-CN: 保存的密码、私钥与验证码密钥将全部清空，主机、分组等数据保留。此操作无法撤销。
+  en: All saved passwords, private keys and verification code secrets will be cleared. Hosts, groups and other data are kept. This can't be undone.
+  zh-TW: 儲存的密碼、私密金鑰與驗證碼金鑰將全部清除，主機、群組等資料保留。此動作無法復原。
+  ja: 保存したパスワード、秘密鍵、確認コードのシークレットはすべて消去され、ホストやグループなどのデータは残ります。この操作は元に戻せません。
+  ko: 저장된 비밀번호, 개인 키, 인증 코드 비밀 키가 모두 지워지며 호스트, 그룹 등의 데이터는 유지됩니다. 이 작업은 되돌릴 수 없습니다.
+vault.reset_confirm.ok:
+  zh-CN: 重置
+  en: Reset
+  zh-TW: 重設
+  ja: リセット
+  ko: 초기화
+vault.error.wrong_password:
+  zh-CN: 主密码不正确
+  en: Incorrect master password
+  zh-TW: 主密碼不正確
+  ja: マスターパスワードが正しくありません
+  ko: 마스터 비밀번호가 올바르지 않습니다
+vault.error.mismatch:
+  zh-CN: 两次输入的密码不一致
+  en: The passwords don't match
+  zh-TW: 兩次輸入的密碼不一致
+  ja: 入力した 2 つのパスワードが一致しません
+  ko: 두 번 입력한 비밀번호가 일치하지 않습니다
+vault.error.too_short:
+  zh-CN: 主密码至少 %{min} 个字符
+  en: Use at least %{min} characters
+  zh-TW: 主密碼至少 %{min} 個字元
+  ja: マスターパスワードは %{min} 文字以上にしてください
+  ko: 마스터 비밀번호는 %{min}자 이상이어야 합니다
+vault.error.failed:
+  zh-CN: 操作失败：%{error}
+  en: "That didn't work: %{error}"
+  zh-TW: 操作失敗：%{error}
+  ja: 操作に失敗しました：%{error}
+  ko: "작업에 실패했습니다: %{error}"

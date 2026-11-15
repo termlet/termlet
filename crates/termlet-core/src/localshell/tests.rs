@@ -1,0 +1,462 @@
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, mpsc};
+
+use super::*;
+
+/// 运行命令，取标准输出与标准错误（最多等 60 秒）。
+pub(super) fn output_of(mut cmd: Command) -> String {
+    cmd.stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    cmd.creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW);
+    let child = cmd.spawn().expect("启动程序");
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(child.wait_with_output());
+    });
+    let out = rx
+        .recv_timeout(Duration::from_secs(60))
+        .expect("程序 60 秒内没有结束")
+        .expect("运行程序");
+    String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr)
+}
+
+/// 按启动描述的程序、环境变量与起始目录运行，参数另给（终端的参数是交互式的，测试中换成执行一条命令）。
+fn run_like(launch: &Launch, args: &[&str]) -> String {
+    let mut cmd = Command::new(&launch.program);
+    cmd.args(args)
+        .env_clear()
+        .envs(launch.env.iter().map(|(k, v)| (k, v)))
+        .current_dir(&launch.cwd);
+    output_of(cmd)
+}
+
+fn fake(id: &str, path: PathBuf) -> Profile {
+    Profile {
+        id: id.to_string(),
+        name: id.to_uppercase(),
+        kind: ShellKind::Cmd,
+        path,
+        args: Vec::new(),
+        command: String::new(),
+        dir: String::new(),
+        env: BTreeMap::new(),
+    }
+}
+
+fn custom_shell(id: &str, command: &str, dir: &str, env: &[(&str, &str)]) -> LocalShell {
+    LocalShell {
+        id: id.to_string(),
+        name: format!("{id} 自定义"),
+        command: command.to_string(),
+        dir: dir.to_string(),
+        env: env
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+    }
+}
+
+/// 用户主目录对应的环境变量名。
+const HOME_VAR: &str = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+
+#[test]
+fn detector_caches_and_finds() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let counter = calls.clone();
+    let real = std::env::current_exe().unwrap();
+    let d = Detector::with_detect(Duration::from_secs(3600), move |_| {
+        let n = counter.fetch_add(1, Ordering::SeqCst) + 1;
+        let mut list = vec![fake("a", real.clone()), fake("gone", PathBuf::new())];
+        if n > 1 {
+            list.push(fake("b", PathBuf::new()));
+        }
+        list
+    });
+    assert_eq!(d.list(false).len(), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    d.list(false);
+    assert_eq!(calls.load(Ordering::SeqCst), 1, "缓存未过期时不应重新检测");
+
+    // 缓存中有、程序也在：不重新检测
+    assert_eq!(d.find("a", &[]).unwrap().name, "A");
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    // 缓存中没有的（例如刚安装的）重新检测一次
+    assert_eq!(d.find("b", &[]).unwrap().name, "B");
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    // 程序已不在原来的位置：重新检测一次，仍以检测结果为准
+    assert_eq!(d.find("gone", &[]).unwrap().id, "gone");
+    assert_eq!(calls.load(Ordering::SeqCst), 3);
+
+    let custom = [custom_shell("custom-x", r#""C:\x y\a.exe" -v"#, "", &[])];
+    let p = d.find("custom-x", &custom).unwrap();
+    assert!(p.is_custom());
+    assert_eq!(p.kind.as_str(), "custom");
+    assert_eq!(p.path, PathBuf::from(r"C:\x y\a.exe"));
+    assert_eq!(p.command, r#""C:\x y\a.exe" -v"#);
+    assert_eq!(d.find("nope", &custom), Err(ShellError::UnknownShell));
+}
+
+/// 只读缓存的查找：不重新检测，过期了也用；强制刷新时同时的调用只检测一次。
+#[test]
+fn cached_lookups_never_detect_again() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let counter = calls.clone();
+    let d = Arc::new(Detector::with_detect(Duration::ZERO, move |_| {
+        counter.fetch_add(1, Ordering::SeqCst);
+        std::thread::sleep(Duration::from_millis(50));
+        vec![fake("gone", PathBuf::new())]
+    }));
+    assert!(d.is_stale());
+    // 还没有检测过：检测一次
+    assert_eq!(d.cached().len(), 1);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    // 已过期（缓存时间为 0）、程序也不在：只读缓存的查找都不重新检测
+    assert!(d.is_stale());
+    assert_eq!(d.find_cached("gone", &[]).unwrap().id, "gone");
+    assert_eq!(d.find_cached("nope", &[]), Err(ShellError::UnknownShell));
+    assert_eq!(d.cached().len(), 1);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+    // 同时强制刷新：后到的等先到的检测完，用它的结果
+    let threads: Vec<_> = (0..3)
+        .map(|_| {
+            let d = d.clone();
+            std::thread::spawn(move || d.list(true))
+        })
+        .collect();
+    for t in threads {
+        assert_eq!(t.join().unwrap().len(), 1);
+    }
+    let after = calls.load(Ordering::SeqCst);
+    assert!((2..=4).contains(&after), "检测了 {after} 次");
+}
+
+#[test]
+fn build_env_overrides_and_adds_terminal_vars() {
+    let base: Env = [("PATH", "/bin"), ("COLORTERM", "256"), ("KEEP", "1")]
+        .into_iter()
+        .collect();
+    let reference = if cfg!(windows) {
+        "%KEEP%-x"
+    } else {
+        "${KEEP}-x"
+    };
+    let extra: BTreeMap<String, String> = [
+        ("FOO", "bar"),
+        ("REF", reference),
+        ("", "empty-name"),
+        ("A=B", "bad-name"),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v.to_string()))
+    .collect();
+    let env = build_env(&base, &extra);
+    let pairs: Vec<_> = env.iter().collect();
+    for want in [
+        ("PATH", "/bin"),
+        ("KEEP", "1"),
+        ("COLORTERM", "truecolor"),
+        ("TERM_PROGRAM", "Termlet"),
+        ("FOO", "bar"),
+        ("REF", "1-x"),
+    ] {
+        assert!(pairs.contains(&want), "环境变量中应有 {want:?}：{env:?}");
+    }
+    assert_eq!(
+        pairs.iter().filter(|(k, _)| *k == "COLORTERM").count(),
+        1,
+        "同名变量应被覆盖而不是重复"
+    );
+    assert!(pairs.iter().all(|(k, _)| !k.is_empty() && !k.contains('=')));
+    assert_eq!(
+        env.get("TERM"),
+        (!cfg!(windows)).then_some("xterm-256color")
+    );
+
+    // 额外的变量可以覆盖终端相关的变量
+    let extra = BTreeMap::from([("COLORTERM".to_string(), "24bit".to_string())]);
+    assert_eq!(build_env(&base, &extra).get("COLORTERM"), Some("24bit"));
+}
+
+#[test]
+fn start_dir_expands_and_falls_back_to_home() {
+    let tmp = tempfile::tempdir().unwrap();
+    let home = tmp.path().join("home");
+    let work = home.join("work");
+    std::fs::create_dir_all(&work).unwrap();
+    let other = tmp.path().join("other");
+    std::fs::create_dir(&other).unwrap();
+    let env: Env = [
+        (HOME_VAR, home.to_string_lossy().into_owned()),
+        ("OTHER", other.to_string_lossy().into_owned()),
+    ]
+    .into_iter()
+    .collect();
+    let var = if cfg!(windows) { "%OTHER%" } else { "$OTHER" };
+    assert_eq!(start_dir("", &env), home);
+    assert_eq!(start_dir("~", &env), home);
+    assert_eq!(start_dir("~/work", &env), work);
+    assert_eq!(start_dir(&format!("~{MAIN_SEPARATOR}work"), &env), work);
+    assert_eq!(
+        start_dir("~/nope-dir", &env),
+        home,
+        "目录不存在时回到主目录"
+    );
+    assert_eq!(start_dir(&format!("  {var}  "), &env), other);
+    assert_eq!(start_dir(&other.to_string_lossy(), &env), other);
+    assert_eq!(start_dir("~work", &env), home, "~user 的写法不支持");
+}
+
+#[test]
+fn launch_fails_when_program_missing() {
+    let missing = std::env::temp_dir()
+        .join("termlet-no-such-dir")
+        .join("x.exe");
+    assert_eq!(
+        launch_in(&fake("cmd", missing), Env::new()).unwrap_err(),
+        ShellError::ProgramNotFound
+    );
+    let custom = Profile::custom(&custom_shell(
+        "custom-t2",
+        "no-such-shell-1a2b.exe",
+        "",
+        &[],
+    ));
+    assert_eq!(custom.launch().unwrap_err(), ShellError::ProgramNotFound);
+    let empty = Profile::custom(&custom_shell("custom-t3", "  ", "", &[]));
+    assert_eq!(empty.launch().unwrap_err(), ShellError::ProgramNotFound);
+}
+
+#[test]
+fn launch_debug_hides_env_values_and_composes_command_line() {
+    let launch = Launch {
+        program: PathBuf::from(r"C:\Program Files\Git\bin\bash.exe"),
+        args: vec!["-i".into(), "-l".into()],
+        raw_args: None,
+        cwd: PathBuf::from(r"C:\Users\ruan"),
+        env: vec![("API_TOKEN".into(), "secret-value-1".into())],
+    };
+    let debug = format!("{launch:?}");
+    assert!(
+        debug.contains("API_TOKEN") && !debug.contains("secret-value-1"),
+        "{debug}"
+    );
+    assert_eq!(
+        launch.command_line(),
+        r#""C:\Program Files\Git\bin\bash.exe" -i -l"#
+    );
+    assert_eq!(launch.argv().len(), 3);
+    assert_eq!(launch.env_var("API_TOKEN"), Some("secret-value-1"));
+
+    let raw = Launch {
+        raw_args: Some(r#" /k "echo a""#.into()),
+        program: PathBuf::from(r"C:\Windows\System32\cmd.exe"),
+        ..launch
+    };
+    assert_eq!(
+        raw.command_line(),
+        r#"C:\Windows\System32\cmd.exe /k "echo a""#
+    );
+}
+
+// 本机的 shell：至少有命令提示符，以及 Windows PowerShell 或 PowerShell 7；检测到的每一个都能按启动描述运行
+#[cfg(windows)]
+#[test]
+fn detect_and_run_windows() {
+    let list = Detector::new(Duration::ZERO).list(true);
+    for p in &list {
+        println!("检测到 {}：{} {:?} {:?}", p.id, p.name, p.path, p.args);
+    }
+    let find = |id: &str| list.iter().find(|p| p.id == id);
+    let cmd = find("cmd").expect("应检测到命令提示符");
+    assert!(
+        find("powershell").is_some() || find("pwsh").is_some(),
+        "应检测到 PowerShell"
+    );
+    let mut ids: Vec<_> = list.iter().map(|p| p.id.as_str()).collect();
+    ids.sort();
+    ids.dedup();
+    assert_eq!(ids.len(), list.len(), "ID 不应重复");
+    if let Some(git) = find("gitbash") {
+        let dir = git
+            .path
+            .parent()
+            .and_then(Path::file_name)
+            .unwrap_or_default();
+        assert!(
+            !dir.eq_ignore_ascii_case("System32"),
+            "不能把 WSL 的 bash.exe 当成 Git Bash"
+        );
+    }
+
+    // 不继承 Termlet 进程的环境变量（取的是用户最新的），起始目录是用户主目录
+    let launch = cmd.launch().unwrap();
+    let mut run = Command::new(&launch.program);
+    run.raw_arg("/d /c echo [%CARGO_MANIFEST_DIR%] %CD% %TERM_PROGRAM%")
+        .env_clear()
+        .envs(launch.env.iter().map(|(k, v)| (k, v)))
+        .current_dir(&launch.cwd);
+    let out = output_of(run);
+    assert!(
+        out.contains("[%CARGO_MANIFEST_DIR%]"),
+        "不应继承进程的变量：{out}"
+    );
+    // cmd 按控制台代码页输出，主目录含非 ASCII 字符时比较不了
+    let home = dirs::home_dir().unwrap().to_string_lossy().to_lowercase();
+    if home.is_ascii() {
+        assert!(
+            out.to_lowercase().contains(&home),
+            "应从用户主目录开始：{out}"
+        );
+    }
+    assert!(out.contains("Termlet"), "{out}");
+
+    let ps = |script: &str| -> Vec<String> {
+        [
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            script,
+        ]
+        .map(String::from)
+        .to_vec()
+    };
+    let bash = |script: &str| -> Vec<String> { ["-l", "-c", script].map(String::from).to_vec() };
+    for p in &list {
+        let (args, want) = match p.kind {
+            ShellKind::Pwsh => (ps("Write-Output ('pw' + 'sh-ok')"), "pwsh-ok".to_string()),
+            ShellKind::PowerShell => (
+                ps("Write-Output ('power' + 'shell-ok')"),
+                "powershell-ok".to_string(),
+            ),
+            ShellKind::GitBash => (bash("echo git$((1+1))bash-ok"), "git2bash-ok".to_string()),
+            ShellKind::Msys2 => (
+                bash("echo msys$((1+1))-ok-$MSYSTEM"),
+                format!("msys2-ok-{}", p.env["MSYSTEM"]),
+            ),
+            ShellKind::Cygwin => (bash("echo cyg$((1+1))-ok"), "cyg2-ok".to_string()),
+            // 开发者 PowerShell：导入模块后 VSINSTALLDIR 有值
+            ShellKind::VsDev => (
+                ps(&format!(
+                    "{}; Write-Output ('vs-' + [bool]$env:VSINSTALLDIR)",
+                    p.args[3]
+                )),
+                "vs-True".to_string(),
+            ),
+            _ => continue,
+        };
+        let launch = p.launch().unwrap();
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = run_like(&launch, &args);
+        assert!(
+            out.contains(&want),
+            "{} 的输出中没有 {want:?}：{out}",
+            p.name
+        );
+    }
+}
+
+// 自定义 shell：在用户的 PATH 中查找程序，参数原样传给程序，带额外的环境变量与起始目录
+#[cfg(windows)]
+#[test]
+fn custom_shell_windows() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("termlet-start-dir");
+    std::fs::create_dir(&dir).unwrap();
+    let shell = custom_shell(
+        "custom-t1",
+        r#"cmd.exe /d /c "echo custom-%MARKER%& cd""#,
+        &dir.to_string_lossy(),
+        &[("MARKER", "ok-42")],
+    );
+    let launch = Profile::custom(&shell).launch().unwrap();
+    assert!(launch.program.is_absolute());
+    assert!(
+        launch
+            .program
+            .file_name()
+            .is_some_and(|n| n.eq_ignore_ascii_case("cmd.exe"))
+    );
+    assert_eq!(
+        launch.raw_args.as_deref(),
+        Some(r#" /d /c "echo custom-%MARKER%& cd""#)
+    );
+    assert_eq!(launch.args, ["/d", "/c", "echo custom-%MARKER%& cd"]);
+    assert_eq!(launch.cwd, dir);
+    assert_eq!(launch.env_var("marker"), Some("ok-42"));
+    assert_eq!(
+        launch.command_line(),
+        format!(
+            r#"{} /d /c "echo custom-%MARKER%& cd""#,
+            launch.program.display()
+        )
+    );
+
+    let mut run = Command::new(&launch.program);
+    run.raw_arg(launch.raw_args.as_deref().unwrap())
+        .env_clear()
+        .envs(launch.env.iter().map(|(k, v)| (k, v)))
+        .current_dir(&launch.cwd);
+    let out = output_of(run);
+    assert!(
+        out.contains("custom-ok-42"),
+        "应带着参数与环境变量启动：{out}"
+    );
+    assert!(
+        out.contains("termlet-start-dir"),
+        "应从设置的目录开始：{out}"
+    );
+}
+
+// Unix：$SHELL 排在最前；自定义 shell 在 PATH 中查找程序，参数按 shell 规则拆分，带环境变量与起始目录，
+// 不带启动 Termlet 的程序（例如 VS Code 的终端）带来的 Electron 变量
+#[cfg(unix)]
+#[test]
+fn detect_and_run_unix() {
+    let mut base = unix::filter_inherited(
+        std::env::vars().chain([("ELECTRON_RUN_AS_NODE".to_string(), "1".to_string())]),
+    );
+    base.set("SHELL", "/bin/sh");
+    let list = unix::detect(&base);
+    assert_eq!(list[0].id, "sh");
+    assert_eq!(list[0].path, Path::new("/bin/sh"));
+    assert_eq!(list[0].args, ["-l"]);
+    let launch = launch_in(&list[0], base.clone()).unwrap();
+    let out = run_like(&launch, &["-c", "echo $((40+2))-$TERM-$COLORTERM"]);
+    assert!(out.contains("42-xterm-256color-truecolor"), "{out}");
+
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("termlet-start-dir");
+    std::fs::create_dir(&dir).unwrap();
+    let shell = custom_shell(
+        "custom-t1",
+        "sh -c 'echo custom-$MARKER-[$ELECTRON_RUN_AS_NODE]; pwd'",
+        &dir.to_string_lossy(),
+        &[("MARKER", "ok")],
+    );
+    let launch = launch_in(&Profile::custom(&shell), base).unwrap();
+    assert_eq!(
+        launch.args,
+        ["-c", "echo custom-$MARKER-[$ELECTRON_RUN_AS_NODE]; pwd"]
+    );
+    assert_eq!(launch.raw_args, None);
+    let args: Vec<&str> = launch.args.iter().map(String::as_str).collect();
+    let out = run_like(&launch, &args);
+    assert!(
+        out.contains("custom-ok-[]") && out.contains("termlet-start-dir"),
+        "应带着参数、环境变量与起始目录启动，不带 Electron 的变量：{out}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn start_dir_unix_home() {
+    let env: Env = [("HOME", "/home/ruan")].into_iter().collect();
+    assert_eq!(start_dir("~/nope-dir", &env), Path::new("/home/ruan"));
+}

@@ -1,0 +1,10 @@
+title = "termlet gitleaks 配置"
+
+[extend]
+useDefault = true
+
+# 导入私钥的输入框里提示格式的占位文字（“-----BEGIN OPENSSH PRIVATE KEY----- 或 …”，三种语言连着三行），
+# 不是私钥；连在一起时会被 private-key 规则当成一把私钥
+[[allowlists]]
+description = "文案中私钥格式的占位文字"
+paths = ['''termlet-desktop[/\\]locales[/\\]keys\.yml$''']

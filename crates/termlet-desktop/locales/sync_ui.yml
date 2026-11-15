@@ -1,0 +1,1225 @@
+_version: 2
+sync_ui.nav:
+  zh-CN: "同步"
+  en: "Sync"
+  zh-TW: "同步"
+  ja: 同期
+  ko: 동기화
+sync_ui.description:
+  zh-CN: "在多台电脑之间同步主机、分组、凭据、密钥库、凭据档案、快捷命令、端口转发、工作区、终端配色与设置。数据放在你自己的位置（本机文件夹、WebDAV、S3 兼容存储或 GitHub Gist），用同步密码加密后才写入，存放的地方看不到任何内容。本地终端、应用锁、自动快照、检查更新、ssh-agent 地址、被堡垒机调起、会话日志等本机的设置，以及命令历史、审计日志、主机指纹不同步。"
+  en: "Syncs hosts, groups, credentials, the key library, credential profiles, snippets, port forwards, workspaces, color schemes and settings between computers. The data stays in a place you choose (a local folder, WebDAV, S3-compatible storage or a GitHub Gist) and is encrypted with your sync password before it is written, so nothing can be read there. Settings that belong to this computer (local terminals, app lock, automatic snapshots, update checks, the ssh-agent address, launching from bastion hosts, session logs), command history, the audit log and host fingerprints are not synced."
+  zh-TW: "在多台電腦之間同步主機、群組、認證資訊、金鑰庫、認證資訊設定檔、快速指令、連接埠轉送、工作區、終端機配色與設定。資料放在你自己的位置（本機資料夾、WebDAV、S3 相容儲存空間或 GitHub Gist），用同步密碼加密後才寫入，存放的地方看不到任何內容。本機終端機、應用程式鎖定、自動快照、檢查更新、ssh-agent 位址、由堡壘主機啟動、工作階段記錄等本機的設定，以及指令歷史記錄、稽核記錄、主機指紋不同步。"
+  ja: ホスト、グループ、認証情報、鍵ライブラリ、認証プロファイル、スニペット、ポート転送、ワークスペース、ターミナルの配色、設定を複数のコンピューター間で同期します。データは自分で選んだ場所（ローカルフォルダー、WebDAV、S3 互換ストレージ、GitHub Gist）に置かれ、同期パスワードで暗号化してから書き込まれるため、保存先からは内容を一切読み取れません。ローカルターミナル、アプリロック、自動スナップショット、更新の確認、ssh-agent のアドレス、要塞ホストからの起動、セッションログなどこのコンピューター固有の設定と、コマンド履歴、監査ログ、ホストキーは同期されません。
+  ko: 호스트, 그룹, 자격 증명, 키 라이브러리, 자격 증명 프로필, 스니펫, 포트 포워딩, 작업 영역, 터미널 색 구성표, 설정을 여러 컴퓨터 간에 동기화합니다. 데이터는 직접 정한 위치(로컬 폴더, WebDAV, S3 호환 스토리지, GitHub Gist)에 두며, 동기화 비밀번호로 암호화한 뒤에 쓰므로 저장 위치에서는 어떤 내용도 볼 수 없습니다. 로컬 터미널, 앱 잠금, 자동 스냅샷, 업데이트 확인, ssh-agent 주소, 배스천 호스트에서 시작, 세션 로그 등 이 컴퓨터의 설정과 명령 기록, 감사 로그, 호스트 키는 동기화하지 않습니다.
+sync_ui.form.target:
+  zh-CN: "同步位置"
+  en: "Sync location"
+  zh-TW: "同步位置"
+  ja: 同期先
+  ko: 동기화 위치
+sync_ui.form.target_folder:
+  zh-CN: "本机文件夹"
+  en: "Local folder"
+  zh-TW: "本機資料夾"
+  ja: ローカルフォルダー
+  ko: 로컬 폴더
+sync_ui.form.target_webdav:
+  zh-CN: "WebDAV"
+  en: "WebDAV"
+  zh-TW: "WebDAV"
+  ja: WebDAV
+  ko: WebDAV
+sync_ui.form.target_s3:
+  zh-CN: "S3 兼容存储"
+  en: "S3-compatible storage"
+  zh-TW: "S3 相容儲存空間"
+  ja: S3 互換ストレージ
+  ko: S3 호환 스토리지
+sync_ui.form.target_gist:
+  zh-CN: "GitHub Gist"
+  en: "GitHub Gist"
+  zh-TW: "GitHub Gist"
+  ja: GitHub Gist
+  ko: GitHub Gist
+sync_ui.form.folder:
+  zh-CN: "文件夹"
+  en: "Folder"
+  zh-TW: "資料夾"
+  ja: フォルダー
+  ko: 폴더
+sync_ui.form.folder_hint:
+  zh-CN: "可以选 OneDrive、坚果云、iCloud 等网盘的同步目录，由网盘在电脑之间传送；也可以是 U 盘。"
+  en: "You can pick a folder synced by OneDrive, Nutstore, iCloud or another cloud drive, which carries it between computers, or a USB drive."
+  zh-TW: "可以選 OneDrive、堅果雲、iCloud 等雲端硬碟的同步目錄，由雲端硬碟在電腦之間傳送；也可以是 USB 隨身碟。"
+  ja: OneDrive、Nutstore、iCloud などのクラウドストレージの同期フォルダーを選ぶと、クラウドストレージがコンピューター間でデータを運びます。USB メモリも使えます。
+  ko: OneDrive, Nutstore, iCloud 등 클라우드 드라이브의 동기화 폴더를 선택하면 클라우드 드라이브가 컴퓨터 간에 전달합니다. USB 드라이브도 사용할 수 있습니다.
+sync_ui.form.folder_placeholder:
+  zh-CN: "选择或填写文件夹的完整路径"
+  en: "Choose a folder or enter its full path"
+  zh-TW: "選擇或填寫資料夾的完整路徑"
+  ja: フォルダーを選択するか、フルパスを入力
+  ko: 폴더를 선택하거나 전체 경로 입력
+sync_ui.form.browse:
+  zh-CN: "浏览…"
+  en: "Browse…"
+  zh-TW: "瀏覽…"
+  ja: 参照…
+  ko: 찾아보기…
+sync_ui.form.url:
+  zh-CN: "WebDAV 地址"
+  en: "WebDAV address"
+  zh-TW: "WebDAV 位址"
+  ja: WebDAV のアドレス
+  ko: WebDAV 주소
+sync_ui.form.url_hint:
+  zh-CN: "坚果云填 https://dav.jianguoyun.com/dav/ 加上目录名，Nextcloud、群晖等填对应的 WebDAV 目录。地址中不要带账号密码。"
+  en: "For Nutstore, use https://dav.jianguoyun.com/dav/ followed by a folder name; for Nextcloud, Synology and others, use their WebDAV folder. Do not put the account in the address."
+  zh-TW: "堅果雲請填 https://dav.jianguoyun.com/dav/ 加上目錄名稱，Nextcloud、群暉等請填對應的 WebDAV 目錄。位址中不要帶帳號密碼。"
+  ja: Nutstore の場合は https://dav.jianguoyun.com/dav/ の後にフォルダー名を付けます。Nextcloud、Synology などはそれぞれの WebDAV フォルダーを入力します。アドレスにアカウントやパスワードを含めないでください。
+  ko: Nutstore는 https://dav.jianguoyun.com/dav/ 뒤에 폴더 이름을 붙이고, Nextcloud, Synology 등은 해당 WebDAV 폴더를 입력하세요. 주소에 계정이나 비밀번호를 넣지 마세요.
+sync_ui.form.url_placeholder:
+  zh-CN: "https://dav.jianguoyun.com/dav/termlet/"
+  en: "https://dav.jianguoyun.com/dav/termlet/"
+  zh-TW: "https://dav.jianguoyun.com/dav/termlet/"
+  ja: https://dav.jianguoyun.com/dav/termlet/
+  ko: https://dav.jianguoyun.com/dav/termlet/
+sync_ui.form.username:
+  zh-CN: "用户名"
+  en: "User name"
+  zh-TW: "使用者名稱"
+  ja: ユーザー名
+  ko: 사용자 이름
+sync_ui.form.webdav_password:
+  zh-CN: "密码（坚果云等为应用密码）"
+  en: "Password (an app password for Nutstore and similar)"
+  zh-TW: "密碼（堅果雲等為應用程式密碼）"
+  ja: パスワード（Nutstore などではアプリパスワード）
+  ko: 비밀번호(Nutstore 등은 앱 비밀번호)
+sync_ui.form.allow_http:
+  zh-CN: "允许不安全的 HTTP（仅限可信的局域网）"
+  en: "Allow insecure HTTP (trusted local networks only)"
+  zh-TW: "允許不安全的 HTTP（僅限可信任的區域網路）"
+  ja: 安全でない HTTP を許可（信頼できる LAN のみ）
+  ko: 안전하지 않은 HTTP 허용(신뢰할 수 있는 LAN에서만)
+sync_ui.form.allow_http_hint_webdav:
+  zh-CN: "使用 HTTP 时，WebDAV 的账号密码会以明文经过网络，同一网络中的人可以看到或篡改请求；同步的数据本身仍是加密的。只在家里、公司的 NAS 等可信的局域网中勾选。"
+  en: "Over HTTP, the WebDAV user name and password cross the network in plain text, and anyone on the same network can read or tamper with the requests; the synced data itself stays encrypted. Only check this for a NAS or similar on a trusted local network."
+  zh-TW: "使用 HTTP 時，WebDAV 的帳號密碼會以明文經過網路，同一網路中的人可以看到或竄改要求；同步的資料本身仍是加密的。只在家裡、公司的 NAS 等可信任的區域網路中勾選。"
+  ja: HTTP を使うと、WebDAV のアカウントとパスワードが平文でネットワークを流れ、同じネットワーク上の人がリクエストを盗み見たり改ざんしたりできます。同期するデータ自体は暗号化されたままです。自宅や会社の NAS など、信頼できる LAN でのみオンにしてください。
+  ko: HTTP를 사용하면 WebDAV 계정과 비밀번호가 평문으로 네트워크를 지나가므로 같은 네트워크에 있는 사람이 요청을 보거나 변조할 수 있습니다. 동기화하는 데이터 자체는 계속 암호화되어 있습니다. 집이나 회사의 NAS 등 신뢰할 수 있는 LAN에서만 선택하세요.
+sync_ui.form.allow_http_hint_s3:
+  zh-CN: "使用 HTTP 时，同一网络中的人可以看到访问的时间与数据量，或在几分钟内重放、篡改请求（秘密访问密钥本身不会发出）；同步的数据本身仍是加密的。只在 MinIO 等部署在可信局域网中的服务上勾选。"
+  en: "Over HTTP, anyone on the same network can see when and how much you sync, or replay and tamper with requests for a few minutes (the secret access key itself is never sent); the synced data itself stays encrypted. Only check this for MinIO or similar running on a trusted local network."
+  zh-TW: "使用 HTTP 時，同一網路中的人可以看到存取的時間與資料量，或在幾分鐘內重送、竄改要求（秘密存取金鑰本身不會送出）；同步的資料本身仍是加密的。只在 MinIO 等部署在可信任區域網路中的服務上勾選。"
+  ja: HTTP を使うと、同じネットワーク上の人がアクセスの日時やデータ量を確認したり、数分以内にリクエストを再送・改ざんしたりできます（シークレットアクセスキー自体は送信されません）。同期するデータ自体は暗号化されたままです。信頼できる LAN 上で動いている MinIO などのサービスでのみオンにしてください。
+  ko: HTTP를 사용하면 같은 네트워크에 있는 사람이 접근 시간과 데이터 양을 보거나 몇 분 안에 요청을 재전송·변조할 수 있습니다(비밀 액세스 키 자체는 보내지 않음). 동기화하는 데이터 자체는 계속 암호화되어 있습니다. 신뢰할 수 있는 LAN에서 실행 중인 MinIO 등의 서비스에서만 선택하세요.
+sync_ui.form.endpoint:
+  zh-CN: "终端节点"
+  en: "Endpoint"
+  zh-TW: "端點"
+  ja: エンドポイント
+  ko: 엔드포인트
+sync_ui.form.endpoint_hint:
+  zh-CN: "例如 https://s3.amazonaws.com、https://<账户 ID>.r2.cloudflarestorage.com，或局域网中 MinIO 的 http://192.168.1.10:9000。"
+  en: "For example https://s3.amazonaws.com, https://<account ID>.r2.cloudflarestorage.com, or http://192.168.1.10:9000 for MinIO on your local network."
+  zh-TW: "例如 https://s3.amazonaws.com、https://<帳戶 ID>.r2.cloudflarestorage.com，或區域網路中 MinIO 的 http://192.168.1.10:9000。"
+  ja: 例：https://s3.amazonaws.com、https://<アカウント ID>.r2.cloudflarestorage.com、または LAN 上の MinIO なら http://192.168.1.10:9000。
+  ko: "예: https://s3.amazonaws.com, https://<계정 ID>.r2.cloudflarestorage.com, 또는 LAN의 MinIO라면 http://192.168.1.10:9000."
+sync_ui.form.endpoint_placeholder:
+  zh-CN: "https://s3.amazonaws.com"
+  en: "https://s3.amazonaws.com"
+  zh-TW: "https://s3.amazonaws.com"
+  ja: https://s3.amazonaws.com
+  ko: https://s3.amazonaws.com
+sync_ui.form.bucket:
+  zh-CN: "桶"
+  en: "Bucket"
+  zh-TW: "儲存貯體"
+  ja: バケット
+  ko: 버킷
+sync_ui.form.region:
+  zh-CN: "区域"
+  en: "Region"
+  zh-TW: "區域"
+  ja: リージョン
+  ko: 리전
+sync_ui.form.region_hint:
+  zh-CN: "留空为 us-east-1；Cloudflare R2 填 auto。"
+  en: "Leave empty for us-east-1; use auto for Cloudflare R2."
+  zh-TW: "留空為 us-east-1；Cloudflare R2 請填 auto。"
+  ja: 空欄にすると us-east-1 になります。Cloudflare R2 では auto を入力します。
+  ko: 비워 두면 us-east-1을 사용합니다. Cloudflare R2는 auto를 입력하세요.
+sync_ui.form.prefix:
+  zh-CN: "路径前缀"
+  en: "Path prefix"
+  zh-TW: "路徑前綴"
+  ja: パスのプレフィックス
+  ko: 경로 접두사
+sync_ui.form.prefix_hint:
+  zh-CN: "同步文件放在桶中的这个目录下；留空则放在桶的根上。只能用字母、数字与 - _ . /。"
+  en: "The sync file is stored under this folder in the bucket; leave empty to store it at the root. Use only letters, digits and - _ . /."
+  zh-TW: "同步檔案放在儲存貯體中的這個目錄下；留空則放在儲存貯體的根目錄。只能使用字母、數字與 - _ . /。"
+  ja: 同期ファイルはバケット内のこのフォルダーに置かれます。空欄にするとバケットのルートに置かれます。使えるのは英字、数字、- _ . / だけです。
+  ko: 동기화 파일은 버킷 안의 이 폴더에 저장됩니다. 비워 두면 버킷의 루트에 저장됩니다. 영문자, 숫자와 - _ . /만 사용할 수 있습니다.
+sync_ui.form.prefix_placeholder:
+  zh-CN: "可留空，例如 termlet"
+  en: "Optional, for example termlet"
+  zh-TW: "可留空，例如 termlet"
+  ja: 省略可（例：termlet）
+  ko: "선택 사항, 예: termlet"
+sync_ui.form.access_key:
+  zh-CN: "访问密钥 ID"
+  en: "Access key ID"
+  zh-TW: "存取金鑰 ID"
+  ja: アクセスキー ID
+  ko: 액세스 키 ID
+sync_ui.form.secret_key:
+  zh-CN: "秘密访问密钥"
+  en: "Secret access key"
+  zh-TW: "秘密存取金鑰"
+  ja: シークレットアクセスキー
+  ko: 비밀 액세스 키
+sync_ui.form.path_style:
+  zh-CN: "使用路径风格的地址（MinIO 等需要）"
+  en: "Use path-style addresses (needed by MinIO and similar)"
+  zh-TW: "使用路徑樣式的位址（MinIO 等需要）"
+  ja: パス形式のアドレスを使用（MinIO などで必要）
+  ko: 경로 스타일 주소 사용(MinIO 등에서 필요)
+sync_ui.form.path_style_hint:
+  zh-CN: "不勾选时桶名放在主机名中（https://桶.终端节点/）；终端节点是 IP 地址时总是用路径风格。"
+  en: "When unchecked, the bucket name goes into the host name (https://bucket.endpoint/); IP address endpoints always use path style."
+  zh-TW: "不勾選時儲存貯體名稱放在主機名稱中（https://儲存貯體.端點/）；端點是 IP 位址時一律使用路徑樣式。"
+  ja: オフのときはバケット名をホスト名に含めます（https://バケット.エンドポイント/）。エンドポイントが IP アドレスの場合は常にパス形式を使います。
+  ko: 선택하지 않으면 버킷 이름을 호스트 이름에 넣습니다(https://버킷.엔드포인트/). 엔드포인트가 IP 주소이면 항상 경로 스타일을 사용합니다.
+sync_ui.form.token:
+  zh-CN: "个人访问令牌"
+  en: "Personal access token"
+  zh-TW: "個人存取權杖"
+  ja: 個人用アクセストークン
+  ko: 개인용 액세스 토큰
+sync_ui.form.token_hint:
+  zh-CN: "在 GitHub 的 Settings → Developer settings → Personal access tokens 中创建：经典令牌勾选 gist 权限，细粒度令牌给 Gists 读写权限。令牌保存在本机的保险库中。"
+  en: "Create one on GitHub under Settings → Developer settings → Personal access tokens: give a classic token the gist scope, or a fine-grained token read and write access to Gists. The token is kept in this computer's vault."
+  zh-TW: "在 GitHub 的 Settings → Developer settings → Personal access tokens 中建立：傳統權杖勾選 gist 權限，細粒度權杖給予 Gists 讀寫權限。權杖儲存在本機的保險庫中。"
+  ja: GitHub の Settings → Developer settings → Personal access tokens で作成します。クラシックトークンなら gist スコープを、Fine-grained トークンなら Gists の読み取りと書き込みの権限を付けます。トークンはこのコンピューターの保管庫に保存されます。
+  ko: GitHub의 Settings → Developer settings → Personal access tokens에서 만드세요. 클래식 토큰은 gist 범위를, 세분화된(Fine-grained) 토큰은 Gists 읽기 및 쓰기 권한을 주세요. 토큰은 이 컴퓨터의 보관함에 저장됩니다.
+sync_ui.form.gist_id:
+  zh-CN: "Gist（可选）"
+  en: "Gist (optional)"
+  zh-TW: "Gist（選填）"
+  ja: Gist（省略可）
+  ko: Gist(선택 사항)
+sync_ui.form.gist_id_hint:
+  zh-CN: "留空时在这个账号中查找 Termlet 的 Gist，没有就在开始同步时新建一个私密 Gist。也可以填 Gist 的 ID 或网址。"
+  en: "Leave empty to find Termlet's Gist in this account, or create a secret Gist when you start syncing if there is none. You can also enter a Gist ID or address."
+  zh-TW: "留空時在這個帳號中尋找 Termlet 的 Gist，沒有就在開始同步時新增一個私密 Gist。也可以填 Gist 的 ID 或網址。"
+  ja: 空欄にすると、このアカウントで Termlet の Gist を探し、なければ同期の開始時にシークレット Gist を新しく作成します。Gist の ID や URL を入力することもできます。
+  ko: 비워 두면 이 계정에서 Termlet의 Gist를 찾고, 없으면 동기화를 시작할 때 비밀 Gist를 새로 만듭니다. Gist의 ID나 URL을 입력할 수도 있습니다.
+sync_ui.form.gist_id_placeholder:
+  zh-CN: "自动查找或新建"
+  en: "Find or create automatically"
+  zh-TW: "自動尋找或新增"
+  ja: 自動的に検索または作成
+  ko: 자동으로 찾거나 만들기
+sync_ui.form.gist_limit:
+  zh-CN: "Gist 适合数据不多的情况：加密后的同步文件不能超过 %{limit} MB。私密 Gist 不会公开列出，但知道网址的人能看到其中加密后的内容。"
+  en: "A Gist suits small amounts of data: the encrypted sync file cannot exceed %{limit} MB. A secret Gist is not listed publicly, but anyone with its address can see the encrypted content."
+  zh-TW: "Gist 適合資料不多的情況：加密後的同步檔案不能超過 %{limit} MB。私密 Gist 不會公開列出，但知道網址的人能看到其中加密後的內容。"
+  ja: Gist はデータが少ない場合に向いています。暗号化後の同期ファイルは %{limit} MB を超えられません。シークレット Gist は公開の一覧には載りませんが、URL を知っている人は暗号化された内容を見ることができます。
+  ko: Gist는 데이터가 많지 않을 때 적합합니다. 암호화한 동기화 파일은 %{limit} MB를 넘을 수 없습니다. 비밀 Gist는 공개 목록에 나타나지 않지만, URL을 아는 사람은 암호화된 내용을 볼 수 있습니다.
+sync_ui.form.password:
+  zh-CN: "同步密码"
+  en: "Sync password"
+  zh-TW: "同步密碼"
+  ja: 同期パスワード
+  ko: 동기화 비밀번호
+sync_ui.form.password_placeholder:
+  zh-CN: "至少 %{min} 个字符"
+  en: "At least %{min} characters"
+  zh-TW: "至少 %{min} 個字元"
+  ja: "%{min} 文字以上"
+  ko: "%{min}자 이상"
+sync_ui.form.password_hint:
+  zh-CN: "所有电脑使用同一个同步密码：第一台电脑设置时确定，其他电脑输入同一个。它用来加密同步的数据，忘记后无法解开，请牢记。"
+  en: "Every computer uses the same sync password: it is chosen on the first computer, and the others enter the same one. It encrypts the synced data and cannot be recovered if forgotten."
+  zh-TW: "所有電腦使用同一個同步密碼：第一台電腦設定時決定，其他電腦輸入同一個。它用來加密同步的資料，忘記後無法解開，請牢記。"
+  ja: すべてのコンピューターで同じ同期パスワードを使います。最初のコンピューターで設定時に決め、ほかのコンピューターでは同じものを入力します。同期するデータの暗号化に使われ、忘れると復号できないので、必ず覚えておいてください。
+  ko: 모든 컴퓨터가 같은 동기화 비밀번호를 사용합니다. 첫 번째 컴퓨터에서 설정할 때 정하고, 다른 컴퓨터에서는 같은 비밀번호를 입력합니다. 동기화하는 데이터를 암호화하는 데 쓰이며 잊어버리면 풀 수 없으니 꼭 기억해 두세요.
+sync_ui.form.confirm:
+  zh-CN: "再次输入同步密码"
+  en: "Enter the sync password again"
+  zh-TW: "再次輸入同步密碼"
+  ja: 同期パスワードを再入力
+  ko: 동기화 비밀번호 다시 입력
+sync_ui.form.device_name:
+  zh-CN: "本机名称"
+  en: "Name of this computer"
+  zh-TW: "本機名稱"
+  ja: このコンピューターの名前
+  ko: 이 컴퓨터의 이름
+sync_ui.form.device_name_hint:
+  zh-CN: "在设备列表中显示；留空则用计算机名。"
+  en: "Shown in the device list; leave empty to use the computer name."
+  zh-TW: "在裝置清單中顯示；留空則使用電腦名稱。"
+  ja: デバイスの一覧に表示されます。空欄にするとコンピューター名を使います。
+  ko: 장치 목록에 표시됩니다. 비워 두면 컴퓨터 이름을 사용합니다.
+sync_ui.form.device_name_placeholder:
+  zh-CN: "默认：%{name}"
+  en: "Default: %{name}"
+  zh-TW: "預設：%{name}"
+  ja: デフォルト：%{name}
+  ko: "기본값: %{name}"
+sync_ui.form.edit_hint:
+  zh-CN: "更改后按首次同步处理：本机与同步位置都有数据时，会请你选择怎样同步。"
+  en: "After the change, the next sync is treated as a first sync: if both this computer and the sync location have data, you will be asked how to sync them."
+  zh-TW: "變更後依首次同步處理：本機與同步位置都有資料時，會請你選擇如何同步。"
+  ja: 変更後は初回の同期として扱います。このコンピューターと同期先の両方にデータがある場合は、どのように同期するかを選択してください。
+  ko: 변경한 뒤에는 처음 동기화하는 것으로 처리합니다. 이 컴퓨터와 동기화 위치 모두에 데이터가 있으면 동기화 방법을 선택하라는 메시지가 표시됩니다.
+sync_ui.form.test:
+  zh-CN: "测试连接"
+  en: "Test connection"
+  zh-TW: "測試連線"
+  ja: 接続をテスト
+  ko: 연결 테스트
+sync_ui.form.start:
+  zh-CN: "开始同步"
+  en: "Start syncing"
+  zh-TW: "開始同步"
+  ja: 同期を開始
+  ko: 동기화 시작
+sync_ui.form.path_required:
+  zh-CN: "请选择同步文件夹。"
+  en: "Choose a sync folder."
+  zh-TW: "請選擇同步資料夾。"
+  ja: 同期フォルダーを選択してください。
+  ko: 동기화 폴더를 선택하세요.
+sync_ui.form.url_required:
+  zh-CN: "请填写 WebDAV 地址。"
+  en: "Enter the WebDAV address."
+  zh-TW: "請填寫 WebDAV 位址。"
+  ja: WebDAV のアドレスを入力してください。
+  ko: WebDAV 주소를 입력하세요.
+sync_ui.form.confirm_required:
+  zh-CN: "这是第一台设备，请再次输入同步密码确认。"
+  en: "This is the first computer. Enter the sync password again to confirm it."
+  zh-TW: "這是第一台裝置，請再次輸入同步密碼確認。"
+  ja: これは最初のデバイスです。確認のため同期パスワードをもう一度入力してください。
+  ko: 첫 번째 장치입니다. 확인을 위해 동기화 비밀번호를 다시 입력하세요.
+sync_ui.form.confirm_mismatch:
+  zh-CN: "两次输入的同步密码不一致。"
+  en: "The two sync passwords do not match."
+  zh-TW: "兩次輸入的同步密碼不一致。"
+  ja: 2 回入力した同期パスワードが一致しません。
+  ko: 두 번 입력한 동기화 비밀번호가 일치하지 않습니다.
+sync_ui.probe.first_device:
+  zh-CN: "同步位置中还没有同步文件，这台电脑是第一台设备。同步密码由你在这里确定，请再次输入确认。"
+  en: "There is no sync file at the sync location yet, so this is the first computer. The sync password is chosen here; enter it again to confirm."
+  zh-TW: "同步位置中還沒有同步檔案，這台電腦是第一台裝置。同步密碼由你在這裡決定，請再次輸入確認。"
+  ja: 同期先にはまだ同期ファイルがないため、このコンピューターが最初のデバイスになります。同期パスワードはここで決めます。確認のためもう一度入力してください。
+  ko: 동기화 위치에 아직 동기화 파일이 없으므로 이 컴퓨터가 첫 번째 장치입니다. 동기화 비밀번호는 여기에서 정합니다. 확인을 위해 다시 입력하세요.
+sync_ui.probe.first_device_gist:
+  zh-CN: "这个账号中还没有 Termlet 的 Gist，这台电脑是第一台设备：开始同步时会新建一个私密 Gist。同步密码由你在这里确定，请再次输入确认。"
+  en: "This account has no Termlet Gist yet, so this is the first computer: a secret Gist will be created when you start syncing. The sync password is chosen here; enter it again to confirm."
+  zh-TW: "這個帳號中還沒有 Termlet 的 Gist，這台電腦是第一台裝置：開始同步時會新增一個私密 Gist。同步密碼由你在這裡決定，請再次輸入確認。"
+  ja: このアカウントにはまだ Termlet の Gist がないため、このコンピューターが最初のデバイスになります。同期の開始時にシークレット Gist を新しく作成します。同期パスワードはここで決めます。確認のためもう一度入力してください。
+  ko: 이 계정에는 아직 Termlet의 Gist가 없으므로 이 컴퓨터가 첫 번째 장치입니다. 동기화를 시작할 때 비밀 Gist를 새로 만듭니다. 동기화 비밀번호는 여기에서 정합니다. 확인을 위해 다시 입력하세요.
+sync_ui.probe.existing:
+  zh-CN: "同步位置中已有同步文件，同步密码正确。"
+  en: "The sync location already has a sync file, and the sync password is correct."
+  zh-TW: "同步位置中已有同步檔案，同步密碼正確。"
+  ja: 同期先には同期ファイルがあり、同期パスワードは正しいです。
+  ko: 동기화 위치에 동기화 파일이 이미 있으며 동기화 비밀번호가 올바릅니다.
+sync_ui.probe.empty:
+  zh-CN: "同步文件中还没有数据。"
+  en: "The sync file has no data yet."
+  zh-TW: "同步檔案中還沒有資料。"
+  ja: 同期ファイルにはまだデータがありません。
+  ko: 동기화 파일에 아직 데이터가 없습니다.
+sync_ui.probe.devices:
+  zh-CN: "同步过的设备"
+  en: "Computers that have synced"
+  zh-TW: "同步過的裝置"
+  ja: 同期したことのあるデバイス
+  ko: 동기화한 적이 있는 장치
+sync_ui.status.this_device:
+  zh-CN: "本机：%{name}"
+  en: "This computer: %{name}"
+  zh-TW: "本機：%{name}"
+  ja: このコンピューター：%{name}
+  ko: "이 컴퓨터: %{name}"
+sync_ui.status.syncing:
+  zh-CN: "正在同步…"
+  en: "Syncing…"
+  zh-TW: "正在同步…"
+  ja: 同期しています…
+  ko: 동기화하는 중…
+sync_ui.status.last_sync:
+  zh-CN: "上次同步：%{time}"
+  en: "Last synced: %{time}"
+  zh-TW: "上次同步：%{time}"
+  ja: 前回の同期：%{time}
+  ko: "마지막 동기화: %{time}"
+sync_ui.status.never:
+  zh-CN: "还没有同步过"
+  en: "Not synced yet"
+  zh-TW: "還沒有同步過"
+  ja: まだ同期していません
+  ko: 아직 동기화하지 않았습니다
+sync_ui.status.report:
+  zh-CN: "收到 %{pulled} 项，上传 %{pushed} 项"
+  en: "%{pulled} received, %{pushed} sent"
+  zh-TW: "收到 %{pulled} 項，上傳 %{pushed} 項"
+  ja: 受信 %{pulled} 件、送信 %{pushed} 件
+  ko: "%{pulled}개 받음, %{pushed}개 보냄"
+sync_ui.status.no_changes:
+  zh-CN: "没有变化"
+  en: "No changes"
+  zh-TW: "沒有變更"
+  ja: 変更なし
+  ko: 변경 사항 없음
+sync_ui.status.failed:
+  zh-CN: "同步失败：%{error}"
+  en: "Sync failed: %{error}"
+  zh-TW: "同步失敗：%{error}"
+  ja: 同期に失敗しました：%{error}
+  ko: "동기화하지 못했습니다: %{error}"
+sync_ui.status.reuploaded:
+  zh-CN: "上次同步时同步位置中没有同步文件（被删除，或网盘还没有下载下来），没有删除本机的数据，已用本机的数据重新上传。"
+  en: "In the last sync there was no sync file at the sync location (it was deleted, or the cloud drive has not downloaded it yet). Nothing was deleted here; the data on this computer was uploaded again."
+  zh-TW: "上次同步時同步位置中沒有同步檔案（被刪除，或雲端硬碟還沒有下載下來），沒有刪除本機的資料，已用本機的資料重新上傳。"
+  ja: 前回の同期時、同期先に同期ファイルがありませんでした（削除されたか、クラウドストレージがまだダウンロードしていません）。このコンピューターのデータは削除せず、このコンピューターのデータを再アップロードしました。
+  ko: 지난 동기화 때 동기화 위치에 동기화 파일이 없었습니다(삭제되었거나 클라우드 드라이브가 아직 내려받지 않음). 이 컴퓨터의 데이터는 삭제하지 않았고, 이 컴퓨터의 데이터를 다시 업로드했습니다.
+sync_ui.status.lost_write:
+  zh-CN: "上次同步时发现本机之前上传的修改不在同步文件中（被其他电脑的旧文件覆盖，或同步文件被恢复到了较早的版本），没有采纳其中的删除，本机删除过的已重新删除，并已重新上传本机的修改。"
+  en: "In the last sync, changes uploaded earlier from this computer were missing from the sync file (it was overwritten by an older file from another computer, or restored to an earlier version). Deletions in it were not applied, items deleted on this computer were deleted again, and the changes from this computer were uploaded again."
+  zh-TW: "上次同步時發現本機之前上傳的變更不在同步檔案中（被其他電腦的舊檔案覆寫，或同步檔案被還原到了較早的版本），沒有採納其中的刪除，本機刪除過的已重新刪除，並已重新上傳本機的變更。"
+  ja: 前回の同期時、このコンピューターから以前アップロードした変更が同期ファイルにありませんでした（ほかのコンピューターの古いファイルで上書きされたか、同期ファイルが以前のバージョンに戻されました）。そこに含まれる削除は適用せず、このコンピューターで削除した項目を再度削除し、このコンピューターの変更を再アップロードしました。
+  ko: 지난 동기화 때 이 컴퓨터에서 전에 업로드한 변경 사항이 동기화 파일에 없었습니다(다른 컴퓨터의 오래된 파일로 덮어썼거나 동기화 파일이 이전 버전으로 복원됨). 그 안의 삭제는 적용하지 않았고, 이 컴퓨터에서 삭제한 항목은 다시 삭제했으며, 이 컴퓨터의 변경 사항을 다시 업로드했습니다.
+sync_ui.status.pending_first:
+  zh-CN: "本机与同步位置都有数据，同步已暂停，等你选择怎样同步。"
+  en: "Both this computer and the sync location have data. Syncing is paused until you choose how to sync them."
+  zh-TW: "本機與同步位置都有資料，同步已暫停，等你選擇如何同步。"
+  ja: このコンピューターと同期先の両方にデータがあるため、同期を一時停止しています。どのように同期するかを選択してください。
+  ko: 이 컴퓨터와 동기화 위치 모두에 데이터가 있어 동기화를 일시 중지했습니다. 동기화 방법을 선택하세요.
+sync_ui.status.pending_deletes:
+  zh-CN: "这次同步要删除较多数据，同步已暂停，等你确认。"
+  en: "This sync would delete a lot of data. Syncing is paused until you confirm."
+  zh-TW: "這次同步要刪除較多資料，同步已暫停，等你確認。"
+  ja: 今回の同期では多くのデータが削除されるため、同期を一時停止しています。確認してください。
+  ko: 이번 동기화에서 많은 데이터가 삭제되므로 동기화를 일시 중지했습니다. 확인해 주세요.
+sync_ui.status.answer:
+  zh-CN: "处理…"
+  en: "Review…"
+  zh-TW: "處理…"
+  ja: 確認…
+  ko: 검토…
+sync_ui.status.sync_now:
+  zh-CN: "立即同步"
+  en: "Sync now"
+  zh-TW: "立即同步"
+  ja: 今すぐ同期
+  ko: 지금 동기화
+sync_ui.status.edit:
+  zh-CN: "更改设置…"
+  en: "Change settings…"
+  zh-TW: "變更設定…"
+  ja: 設定を変更…
+  ko: 설정 변경…
+sync_ui.status.open_gist:
+  zh-CN: "在浏览器中打开"
+  en: "Open in browser"
+  zh-TW: "在瀏覽器中開啟"
+  ja: ブラウザーで開く
+  ko: 브라우저에서 열기
+sync_ui.status.disable:
+  zh-CN: "停止同步…"
+  en: "Stop syncing…"
+  zh-TW: "停止同步…"
+  ja: 同期を停止…
+  ko: 동기화 중지…
+sync_ui.status.auto:
+  zh-CN: "自动同步"
+  en: "Sync automatically"
+  zh-TW: "自動同步"
+  ja: 自動同期
+  ko: 자동 동기화
+sync_ui.status.every_minutes:
+  zh-CN: "每 %{count} 分钟"
+  en: "Every %{count} min"
+  zh-TW: "每 %{count} 分鐘"
+  ja: "%{count} 分ごと"
+  ko: "%{count}분마다"
+sync_ui.status.auto_hint:
+  zh-CN: "启动后、本机修改后约 20 秒，以及每隔一段时间自动同步。"
+  en: "Syncs after startup, about 20 seconds after changes on this computer, and periodically."
+  zh-TW: "啟動後、本機修改後約 20 秒，以及每隔一段時間自動同步。"
+  ja: 起動後、このコンピューターでの変更から約 20 秒後、および一定の間隔で自動的に同期します。
+  ko: 시작한 뒤, 이 컴퓨터에서 변경하고 약 20초 뒤, 그리고 일정한 간격으로 자동 동기화합니다.
+sync_ui.devices.title:
+  zh-CN: "同步过的设备"
+  en: "Synced computers"
+  zh-TW: "同步過的裝置"
+  ja: 同期したデバイス
+  ko: 동기화한 장치
+sync_ui.devices.this_device:
+  zh-CN: "（本机）"
+  en: "(this computer)"
+  zh-TW: "（本機）"
+  ja: （このコンピューター）
+  ko: (이 컴퓨터)
+sync_ui.devices.version:
+  zh-CN: "版本 %{version}"
+  en: "Version %{version}"
+  zh-TW: "版本 %{version}"
+  ja: バージョン %{version}
+  ko: 버전 %{version}
+sync_ui.conflict.title:
+  zh-CN: "上次同步中两边都修改了的数据"
+  en: "Changed on both sides in the last sync"
+  zh-TW: "上次同步中兩邊都修改了的資料"
+  ja: 前回の同期で両側で変更されたデータ
+  ko: 지난 동기화에서 양쪽 모두 변경된 데이터
+sync_ui.conflict.hint:
+  zh-CN: "已自动处理：较新的修改胜出；一边删除、一边修改时保留修改。被替换的修改可以从“备份”中同步前的快照找回；重启后不能再改用另一边。"
+  en: "These were resolved automatically: the newer change wins, and a change wins over a deletion. Replaced changes can be recovered from the snapshot taken before syncing, under “Backup”; after a restart the other side can no longer be used."
+  zh-TW: "已自動處理：較新的變更優先；一邊刪除、一邊修改時保留變更。被取代的變更可以從「備份」中同步前的快照找回；重新啟動後不能再改用另一邊。"
+  ja: 自動的に処理しました。新しいほうの変更を優先し、一方で削除、もう一方で変更された場合は変更を残します。置き換えられた変更は「バックアップ」の同期前のスナップショットから復元できます。再起動後はもう一方に切り替えることはできません。
+  ko: 자동으로 처리했습니다. 더 최근의 변경 사항을 우선하며, 한쪽에서 삭제하고 다른 쪽에서 변경했으면 변경 사항을 남깁니다. 대체된 변경 사항은 '백업'에서 동기화 전 스냅샷으로 되찾을 수 있습니다. 다시 시작한 뒤에는 다른 쪽으로 바꿀 수 없습니다.
+sync_ui.conflict.kept_local:
+  zh-CN: "两边都修改了，采用了本机较新的修改"
+  en: "Changed on both sides; kept the newer change from this computer"
+  zh-TW: "兩邊都修改了，採用了本機較新的變更"
+  ja: 両側で変更されたため、このコンピューターの新しいほうの変更を採用しました
+  ko: 양쪽 모두 변경되어 이 컴퓨터의 더 최근 변경 사항을 사용했습니다
+sync_ui.conflict.kept_remote:
+  zh-CN: "两边都修改了，采用了其他设备较新的修改"
+  en: "Changed on both sides; kept the newer change from another computer"
+  zh-TW: "兩邊都修改了，採用了其他裝置較新的變更"
+  ja: 両側で変更されたため、ほかのデバイスの新しいほうの変更を採用しました
+  ko: 양쪽 모두 변경되어 다른 장치의 더 최근 변경 사항을 사용했습니다
+sync_ui.conflict.remote_deleted:
+  zh-CN: "其他设备删除了它，保留了本机的修改"
+  en: "Deleted on another computer; kept the change from this computer"
+  zh-TW: "其他裝置刪除了它，保留了本機的變更"
+  ja: ほかのデバイスで削除されましたが、このコンピューターの変更を残しました
+  ko: 다른 장치에서 삭제했지만 이 컴퓨터의 변경 사항을 남겼습니다
+sync_ui.conflict.local_deleted:
+  zh-CN: "本机删除了它，保留了其他设备的修改"
+  en: "Deleted on this computer; kept the change from another computer"
+  zh-TW: "本機刪除了它，保留了其他裝置的變更"
+  ja: このコンピューターで削除されましたが、ほかのデバイスの変更を残しました
+  ko: 이 컴퓨터에서 삭제했지만 다른 장치의 변경 사항을 남겼습니다
+sync_ui.conflict.use_other:
+  zh-CN: "改用另一边"
+  en: "Use the other side"
+  zh-TW: "改用另一邊"
+  ja: もう一方を使用
+  ko: 다른 쪽 사용
+sync_ui.conflict.use_delete:
+  zh-CN: "改为删除…"
+  en: "Delete…"
+  zh-TW: "改為刪除…"
+  ja: 削除に変更…
+  ko: 삭제로 변경…
+sync_ui.conflict.dismiss:
+  zh-CN: "全部忽略"
+  en: "Dismiss all"
+  zh-TW: "全部忽略"
+  ja: すべて無視
+  ko: 모두 무시
+sync_ui.conflict.delete_title:
+  zh-CN: "删除“%{name}”？"
+  en: "Delete “%{name}”?"
+  zh-TW: "刪除「%{name}」？"
+  ja: 「%{name}」を削除しますか？
+  ko: "'%{name}'을(를) 삭제하시겠습니까?"
+sync_ui.conflict.delete_description:
+  zh-CN: "另一边删除了它。在这里删除后，下次同步时其他设备上的也会删除。"
+  en: "The other side deleted it. After you delete it here, it is also deleted on other computers at the next sync."
+  zh-TW: "另一邊刪除了它。在這裡刪除後，下次同步時其他裝置上的也會刪除。"
+  ja: もう一方では削除されています。ここで削除すると、次回の同期時にほかのデバイスでも削除されます。
+  ko: 다른 쪽에서 삭제했습니다. 여기에서 삭제하면 다음 동기화 때 다른 장치에서도 삭제됩니다.
+sync_ui.conflict.delete_ok:
+  zh-CN: "删除"
+  en: "Delete"
+  zh-TW: "刪除"
+  ja: 削除
+  ko: 삭제
+sync_ui.disable.title:
+  zh-CN: "停止同步？"
+  en: "Stop syncing?"
+  zh-TW: "停止同步？"
+  ja: 同期を停止しますか？
+  ko: 동기화를 중지하시겠습니까?
+sync_ui.disable.description:
+  zh-CN: "只删除本机的同步设置与密码，本机与同步位置中的数据都保留，其他电脑照常同步。"
+  en: "Only the sync settings and passwords on this computer are removed. The data here and at the sync location is kept, and other computers keep syncing."
+  zh-TW: "只刪除本機的同步設定與密碼，本機與同步位置中的資料都保留，其他電腦照常同步。"
+  ja: このコンピューターの同期設定とパスワードだけを削除します。このコンピューターと同期先のデータはどちらも残り、ほかのコンピューターはこれまでどおり同期します。
+  ko: 이 컴퓨터의 동기화 설정과 비밀번호만 삭제합니다. 이 컴퓨터와 동기화 위치의 데이터는 모두 남으며, 다른 컴퓨터는 계속 동기화합니다.
+sync_ui.disable.ok:
+  zh-CN: "停止同步"
+  en: "Stop syncing"
+  zh-TW: "停止同步"
+  ja: 同期を停止
+  ko: 동기화 중지
+sync_ui.pending.first_title:
+  zh-CN: "本机与同步位置都有数据"
+  en: "Both sides have data"
+  zh-TW: "本機與同步位置都有資料"
+  ja: このコンピューターと同期先の両方にデータがあります
+  ko: 이 컴퓨터와 동기화 위치 모두에 데이터가 있습니다
+sync_ui.pending.first_body:
+  zh-CN: "同步位置中已有其他设备的数据，本机也有数据。选择怎样同步："
+  en: "The sync location already has data from other computers, and this computer has data too. Choose how to sync them:"
+  zh-TW: "同步位置中已有其他裝置的資料，本機也有資料。選擇如何同步："
+  ja: 同期先にはすでにほかのデバイスのデータがあり、このコンピューターにもデータがあります。同期の方法を選択してください：
+  ko: "동기화 위치에 이미 다른 장치의 데이터가 있고 이 컴퓨터에도 데이터가 있습니다. 동기화 방법을 선택하세요:"
+sync_ui.pending.column_local:
+  zh-CN: "本机"
+  en: "This computer"
+  zh-TW: "本機"
+  ja: このコンピューター
+  ko: 이 컴퓨터
+sync_ui.pending.column_remote:
+  zh-CN: "同步位置"
+  en: "Sync location"
+  zh-TW: "同步位置"
+  ja: 同期先
+  ko: 동기화 위치
+sync_ui.pending.merge:
+  zh-CN: "合并两边"
+  en: "Merge both"
+  zh-TW: "合併兩邊"
+  ja: 両方を統合
+  ko: 양쪽 병합
+sync_ui.pending.merge_hint:
+  zh-CN: "两边的数据都保留；同一条数据两边不同时采用较新的修改。"
+  en: "Keeps the data from both sides; when the same item differs, the newer change wins."
+  zh-TW: "兩邊的資料都保留；同一筆資料兩邊不同時，採用較新的變更。"
+  ja: 両側のデータをすべて残します。同じデータが両側で異なる場合は、新しいほうの変更を採用します。
+  ko: 양쪽 데이터를 모두 남깁니다. 같은 데이터가 양쪽에서 다르면 더 최근의 변경 사항을 사용합니다.
+sync_ui.pending.use_remote:
+  zh-CN: "以同步位置为准"
+  en: "Use the sync location"
+  zh-TW: "以同步位置為準"
+  ja: 同期先に合わせる
+  ko: 동기화 위치 기준
+sync_ui.pending.use_remote_hint:
+  zh-CN: "本机改为与同步位置相同，只在本机的数据会被删除。"
+  en: "Makes this computer the same as the sync location; data that exists only on this computer is deleted."
+  zh-TW: "本機改為與同步位置相同，只在本機的資料會被刪除。"
+  ja: このコンピューターを同期先と同じ状態にします。このコンピューターにだけあるデータは削除されます。
+  ko: 이 컴퓨터를 동기화 위치와 같게 만듭니다. 이 컴퓨터에만 있는 데이터는 삭제됩니다.
+sync_ui.pending.use_local:
+  zh-CN: "以本机为准"
+  en: "Use this computer"
+  zh-TW: "以本機為準"
+  ja: このコンピューターに合わせる
+  ko: 이 컴퓨터 기준
+sync_ui.pending.use_local_hint:
+  zh-CN: "同步位置改为与本机相同，其他电脑下次同步时也改为与本机相同。"
+  en: "Makes the sync location the same as this computer; other computers follow at their next sync."
+  zh-TW: "同步位置改為與本機相同，其他電腦下次同步時也改為與本機相同。"
+  ja: 同期先をこのコンピューターと同じ状態にします。ほかのコンピューターも次回の同期時にこのコンピューターと同じ状態になります。
+  ko: 동기화 위치를 이 컴퓨터와 같게 만듭니다. 다른 컴퓨터도 다음 동기화 때 이 컴퓨터와 같아집니다.
+sync_ui.pending.duplicates:
+  zh-CN: "本机有 %{count} 台主机与同步位置中的地址、端口、用户名相同（在两台电脑上各自添加的），合并后这些主机会有两份。如果两边的数据基本相同，建议选“以同步位置为准”。"
+  en: "Hosts here with the same address, port and user as ones at the sync location: %{count}. They were added separately on each computer, so merging keeps two copies of each. If both sides hold mostly the same data, choose “Use the sync location”."
+  zh-TW: "本機有 %{count} 台主機與同步位置中的位址、連接埠、使用者名稱相同（在兩台電腦上各自新增的），合併後這些主機會有兩份。如果兩邊的資料大致相同，建議選「以同步位置為準」。"
+  ja: このコンピューターには、同期先のホストとアドレス、ポート、ユーザー名が同じホストが %{count} 台あります（それぞれのコンピューターで別々に追加したもの）。統合すると、これらのホストは 2 つずつになります。両側のデータがほぼ同じなら、「同期先に合わせる」を選ぶことをお勧めします。
+  ko: 이 컴퓨터에 동기화 위치의 호스트와 주소, 포트, 사용자 이름이 같은 호스트가 %{count}대 있습니다(각 컴퓨터에서 따로 추가한 것). 병합하면 이 호스트들이 두 개씩 생깁니다. 양쪽 데이터가 거의 같다면 '동기화 위치 기준'을 선택하는 것이 좋습니다.
+sync_ui.pending.snapshot_hint:
+  zh-CN: "写入其他设备的数据之前会保存本机的快照，可以在“备份”中回退。"
+  en: "A snapshot of this computer is saved before data from other computers is written, so you can roll back under “Backup”."
+  zh-TW: "寫入其他裝置的資料之前會儲存本機的快照，可以在「備份」中回復。"
+  ja: ほかのデバイスのデータを書き込む前にこのコンピューターのスナップショットを保存するので、「バックアップ」で元に戻せます。
+  ko: 다른 장치의 데이터를 쓰기 전에 이 컴퓨터의 스냅샷을 저장하므로 '백업'에서 되돌릴 수 있습니다.
+sync_ui.pending.deletes_title:
+  zh-CN: "这次同步要删除较多数据"
+  en: "This sync deletes a lot of data"
+  zh-TW: "這次同步要刪除較多資料"
+  ja: 今回の同期では多くのデータが削除されます
+  ko: 이번 동기화에서 많은 데이터가 삭제됩니다
+sync_ui.pending.deletes_body:
+  zh-CN: "将删除本机 %{local} 项、同步位置 %{remote} 项数据。"
+  en: "Items to delete: %{local} on this computer, %{remote} at the sync location."
+  zh-TW: "將刪除本機 %{local} 項、同步位置 %{remote} 項資料。"
+  ja: このコンピューターの %{local} 件、同期先の %{remote} 件のデータが削除されます。
+  ko: 이 컴퓨터에서 %{local}개, 동기화 위치에서 %{remote}개 항목이 삭제됩니다.
+sync_ui.pending.deletes_hint:
+  zh-CN: "例如在一台电脑上删除了很多主机，或从较早的备份恢复过。同步前会保存本机的快照，可以在“备份”中回退；继续之前自动同步保持暂停。"
+  en: "For example, many hosts were deleted on one computer, or an older backup was restored. A snapshot of this computer is saved before syncing, so you can roll back under “Backup”. Until you continue, automatic sync stays paused."
+  zh-TW: "例如在一台電腦上刪除了很多主機，或從較早的備份還原過。同步前會儲存本機的快照，可以在「備份」中回復；繼續之前，自動同步保持暫停。"
+  ja: たとえば、あるコンピューターで多くのホストを削除した場合や、古いバックアップから復元した場合などです。同期前にこのコンピューターのスナップショットを保存するので、「バックアップ」で元に戻せます。続行するまで自動同期は一時停止したままです。
+  ko: 예를 들어 한 컴퓨터에서 호스트를 많이 삭제했거나 오래된 백업에서 복원한 경우입니다. 동기화 전에 이 컴퓨터의 스냅샷을 저장하므로 '백업'에서 되돌릴 수 있습니다. 계속하기 전까지 자동 동기화는 일시 중지된 상태로 유지됩니다.
+sync_ui.pending.later:
+  zh-CN: "以后再说"
+  en: "Not now"
+  zh-TW: "稍後再說"
+  ja: 後で
+  ko: 나중에
+sync_ui.pending.continue:
+  zh-CN: "继续同步"
+  en: "Continue syncing"
+  zh-TW: "繼續同步"
+  ja: 同期を続行
+  ko: 동기화 계속
+sync_ui.indicator.syncing:
+  zh-CN: "正在同步…"
+  en: "Syncing…"
+  zh-TW: "正在同步…"
+  ja: 同期しています…
+  ko: 동기화하는 중…
+sync_ui.indicator.pending:
+  zh-CN: "同步需要你选择或确认"
+  en: "Sync needs your decision"
+  zh-TW: "同步需要你選擇或確認"
+  ja: 同期には選択または確認が必要です
+  ko: 동기화하려면 선택 또는 확인이 필요합니다
+sync_ui.indicator.failed:
+  zh-CN: "同步失败：%{error}"
+  en: "Sync failed: %{error}"
+  zh-TW: "同步失敗：%{error}"
+  ja: 同期に失敗しました：%{error}
+  ko: "동기화하지 못했습니다: %{error}"
+sync_ui.indicator.last_sync:
+  zh-CN: "已开启同步，上次同步：%{time}"
+  en: "Sync is on. Last synced: %{time}"
+  zh-TW: "已開啟同步，上次同步：%{time}"
+  ja: 同期はオンです。前回の同期：%{time}
+  ko: "동기화가 켜져 있습니다. 마지막 동기화: %{time}"
+sync_ui.indicator.never:
+  zh-CN: "已开启同步，还没有同步过"
+  en: "Sync is on but has not run yet"
+  zh-TW: "已開啟同步，還沒有同步過"
+  ja: 同期はオンですが、まだ同期していません
+  ko: 동기화가 켜져 있지만 아직 동기화하지 않았습니다
+sync_ui.kind.host:
+  zh-CN: "主机"
+  en: "Host"
+  zh-TW: "主機"
+  ja: ホスト
+  ko: 호스트
+sync_ui.kind.group:
+  zh-CN: "分组"
+  en: "Group"
+  zh-TW: "群組"
+  ja: グループ
+  ko: 그룹
+sync_ui.kind.profile:
+  zh-CN: "凭据档案"
+  en: "Credential profile"
+  zh-TW: "認證資訊設定檔"
+  ja: 認証プロファイル
+  ko: 자격 증명 프로필
+sync_ui.kind.key:
+  zh-CN: "密钥"
+  en: "Key"
+  zh-TW: "金鑰"
+  ja: 鍵
+  ko: 키
+sync_ui.kind.snippet:
+  zh-CN: "快捷命令"
+  en: "Snippet"
+  zh-TW: "快速指令"
+  ja: スニペット
+  ko: 스니펫
+sync_ui.kind.forward:
+  zh-CN: "端口转发"
+  en: "Port forward"
+  zh-TW: "連接埠轉送"
+  ja: ポート転送
+  ko: 포트 포워딩
+sync_ui.kind.workspace:
+  zh-CN: "工作区"
+  en: "Workspace"
+  zh-TW: "工作區"
+  ja: ワークスペース
+  ko: 작업 영역
+sync_ui.kind.scheme:
+  zh-CN: "终端配色"
+  en: "Color scheme"
+  zh-TW: "終端機配色"
+  ja: ターミナルの配色
+  ko: 터미널 색 구성표
+sync_ui.kind.settings:
+  zh-CN: "设置"
+  en: "Settings"
+  zh-TW: "設定"
+  ja: 設定
+  ko: 설정
+sync_ui.count.hosts:
+  zh-CN: "主机"
+  en: "Hosts"
+  zh-TW: "主機"
+  ja: ホスト
+  ko: 호스트
+sync_ui.count.groups:
+  zh-CN: "分组"
+  en: "Groups"
+  zh-TW: "群組"
+  ja: グループ
+  ko: 그룹
+sync_ui.count.profiles:
+  zh-CN: "凭据档案"
+  en: "Credential profiles"
+  zh-TW: "認證資訊設定檔"
+  ja: 認証プロファイル
+  ko: 자격 증명 프로필
+sync_ui.count.keys:
+  zh-CN: "密钥"
+  en: "Keys"
+  zh-TW: "金鑰"
+  ja: 鍵
+  ko: 키
+sync_ui.count.snippets:
+  zh-CN: "快捷命令"
+  en: "Snippets"
+  zh-TW: "快速指令"
+  ja: スニペット
+  ko: 스니펫
+sync_ui.count.forwards:
+  zh-CN: "端口转发"
+  en: "Port forwards"
+  zh-TW: "連接埠轉送"
+  ja: ポート転送
+  ko: 포트 포워딩
+sync_ui.count.workspaces:
+  zh-CN: "工作区"
+  en: "Workspaces"
+  zh-TW: "工作區"
+  ja: ワークスペース
+  ko: 작업 영역
+sync_ui.count.schemes:
+  zh-CN: "终端配色"
+  en: "Color schemes"
+  zh-TW: "終端機配色"
+  ja: ターミナルの配色
+  ko: 터미널 색 구성표
+sync_ui.settings_group.general:
+  zh-CN: "通用设置"
+  en: "General settings"
+  zh-TW: "一般設定"
+  ja: 一般設定
+  ko: 일반 설정
+sync_ui.settings_group.appearance:
+  zh-CN: "外观设置"
+  en: "Appearance settings"
+  zh-TW: "外觀設定"
+  ja: 外観の設定
+  ko: 모양 설정
+sync_ui.settings_group.terminal:
+  zh-CN: "终端设置"
+  en: "Terminal settings"
+  zh-TW: "終端機設定"
+  ja: ターミナルの設定
+  ko: 터미널 설정
+sync_ui.settings_group.highlight:
+  zh-CN: "关键词高亮"
+  en: "Keyword highlighting"
+  zh-TW: "關鍵字醒目提示"
+  ja: キーワードの強調表示
+  ko: 키워드 강조 표시
+sync_ui.settings_group.connection:
+  zh-CN: "连接设置"
+  en: "Connection settings"
+  zh-TW: "連線設定"
+  ja: 接続の設定
+  ko: 연결 설정
+sync_ui.settings_group.guard:
+  zh-CN: "危险命令规则"
+  en: "Dangerous command rules"
+  zh-TW: "危險指令規則"
+  ja: 危険なコマンドのルール
+  ko: 위험한 명령 규칙
+sync_ui.settings_group.keybindings:
+  zh-CN: "快捷键"
+  en: "Shortcuts"
+  zh-TW: "快速鍵"
+  ja: キーボードショートカット
+  ko: 바로 가기 키
+sync_ui.error.not_configured:
+  zh-CN: "还没有设置同步，或保险库重置后需要重新设置。"
+  en: "Sync is not set up, or it needs to be set up again after the vault was reset."
+  zh-TW: "還沒有設定同步，或保險庫重設後需要重新設定。"
+  ja: 同期が設定されていないか、保管庫のリセット後に設定し直す必要があります。
+  ko: 동기화가 설정되어 있지 않거나, 보관함을 초기화한 뒤 다시 설정해야 합니다.
+sync_ui.error.vault_locked:
+  zh-CN: "保险库已锁定，解锁后才能同步。"
+  en: "The vault is locked. Unlock it to sync."
+  zh-TW: "保險庫已鎖定，解鎖後才能同步。"
+  ja: 保管庫がロックされています。ロックを解除すると同期できます。
+  ko: 보관함이 잠겨 있습니다. 잠금을 해제해야 동기화할 수 있습니다.
+sync_ui.error.path_not_absolute:
+  zh-CN: "请填写同步文件夹的完整路径。"
+  en: "Enter the full path of the sync folder."
+  zh-TW: "請填寫同步資料夾的完整路徑。"
+  ja: 同期フォルダーのフルパスを入力してください。
+  ko: 동기화 폴더의 전체 경로를 입력하세요.
+sync_ui.error.url_invalid:
+  zh-CN: "WebDAV 地址不正确，应以 https:// 或 http:// 开头。"
+  en: "The WebDAV address is not valid. It should start with https:// or http://."
+  zh-TW: "WebDAV 位址不正確，應以 https:// 或 http:// 開頭。"
+  ja: WebDAV のアドレスが正しくありません。https:// または http:// で始まる必要があります。
+  ko: WebDAV 주소가 올바르지 않습니다. https:// 또는 http://로 시작해야 합니다.
+sync_ui.error.url_has_credentials:
+  zh-CN: "WebDAV 地址中不能带账号密码，请分别填在用户名与密码中。"
+  en: "The WebDAV address cannot contain the account. Enter it under User name and Password instead."
+  zh-TW: "WebDAV 位址中不能帶帳號密碼，請分別填在使用者名稱與密碼中。"
+  ja: WebDAV のアドレスにアカウントやパスワードを含めることはできません。ユーザー名とパスワードの欄にそれぞれ入力してください。
+  ko: WebDAV 주소에는 계정이나 비밀번호를 넣을 수 없습니다. 사용자 이름과 비밀번호 칸에 각각 입력하세요.
+sync_ui.error.password_too_short:
+  zh-CN: "同步密码至少 %{min} 个字符。"
+  en: "The sync password needs at least %{min} characters."
+  zh-TW: "同步密碼至少 %{min} 個字元。"
+  ja: 同期パスワードは %{min} 文字以上にしてください。
+  ko: 동기화 비밀번호는 %{min}자 이상이어야 합니다.
+sync_ui.error.device_name_too_long:
+  zh-CN: "本机名称最多 %{max} 个字符。"
+  en: "The computer name can have at most %{max} characters."
+  zh-TW: "本機名稱最多 %{max} 個字元。"
+  ja: このコンピューターの名前は %{max} 文字以内にしてください。
+  ko: 이 컴퓨터의 이름은 %{max}자 이하여야 합니다.
+sync_ui.error.interval_out_of_range:
+  zh-CN: "自动同步的间隔应在 %{min} 到 %{max} 分钟之间。"
+  en: "The automatic sync interval must be between %{min} and %{max} minutes."
+  zh-TW: "自動同步的間隔應在 %{min} 到 %{max} 分鐘之間。"
+  ja: 自動同期の間隔は %{min}～%{max} 分の範囲で指定してください。
+  ko: 자동 동기화 간격은 %{min}~%{max}분 사이여야 합니다.
+sync_ui.error.conflict_not_found:
+  zh-CN: "这条冲突已经处理过，或重启后不能再改用另一边。"
+  en: "This conflict was already handled, or the other side is no longer available after a restart."
+  zh-TW: "這項衝突已經處理過，或重新啟動後不能再改用另一邊。"
+  ja: この競合はすでに処理されたか、再起動後のためもう一方に切り替えられません。
+  ko: 이 충돌은 이미 처리되었거나, 다시 시작한 뒤라서 다른 쪽으로 바꿀 수 없습니다.
+sync_ui.error.conflict_stale:
+  zh-CN: "这条记录在冲突之后又改过，不能再改用另一边。"
+  en: "This item changed after the conflict, so the other side can no longer be used."
+  zh-TW: "這筆資料在衝突之後又修改過，不能再改用另一邊。"
+  ja: この項目は競合の後にさらに変更されたため、もう一方に切り替えられません。
+  ko: 이 항목은 충돌 뒤에 다시 변경되어 다른 쪽으로 바꿀 수 없습니다.
+sync_ui.error.conflict_not_applicable:
+  zh-CN: "另一边的内容来自其他版本的 Termlet，本机无法写入。升级 Termlet 后再试。"
+  en: "The other side comes from another version of Termlet and cannot be written here. Update Termlet and try again."
+  zh-TW: "另一邊的內容來自其他版本的 Termlet，本機無法寫入。升級 Termlet 後再試。"
+  ja: もう一方の内容は別のバージョンの Termlet からのもので、このコンピューターには書き込めません。Termlet を更新してからもう一度お試しください。
+  ko: 다른 쪽 내용은 다른 버전의 Termlet에서 온 것이라 이 컴퓨터에 쓸 수 없습니다. Termlet을 업데이트한 후 다시 시도하세요.
+sync_ui.error.profile_in_use:
+  zh-CN: "这个凭据档案仍有主机在用，不能删除。"
+  en: "This credential profile is still used by hosts, so it cannot be deleted."
+  zh-TW: "這個認證資訊設定檔仍有主機在使用，不能刪除。"
+  ja: この認証プロファイルはまだホストで使用されているため、削除できません。
+  ko: 이 자격 증명 프로필을 아직 사용하는 호스트가 있어 삭제할 수 없습니다.
+sync_ui.error.key_in_use:
+  zh-CN: "这把密钥仍有主机或凭据档案在用，不能删除。"
+  en: "This key is still used by hosts or credential profiles, so it cannot be deleted."
+  zh-TW: "這把金鑰仍有主機或認證資訊設定檔在使用，不能刪除。"
+  ja: この鍵はまだホストまたは認証プロファイルで使用されているため、削除できません。
+  ko: 이 키를 아직 사용하는 호스트나 자격 증명 프로필이 있어 삭제할 수 없습니다.
+sync_ui.error.invalid_other:
+  zh-CN: "同步设置不合法：%{field}（%{reason}）。"
+  en: "Invalid sync setting: %{field} (%{reason})."
+  zh-TW: "同步設定無效：%{field}（%{reason}）。"
+  ja: 同期の設定が正しくありません：%{field}（%{reason}）。
+  ko: "동기화 설정이 올바르지 않습니다: %{field}(%{reason})."
+sync_ui.error.folder_missing:
+  zh-CN: "同步文件夹不存在或无法访问：%{path}。在 U 盘或网盘中时，插上或挂载后再试。"
+  en: "The sync folder does not exist or cannot be accessed: %{path}. If it is on a USB drive or a cloud drive, connect it and try again."
+  zh-TW: "同步資料夾不存在或無法存取：%{path}。位於 USB 隨身碟或雲端硬碟時，請插上或掛接後再試。"
+  ja: 同期フォルダーが存在しないか、アクセスできません：%{path}。USB メモリやクラウドストレージ上にある場合は、接続またはマウントしてからもう一度お試しください。
+  ko: "동기화 폴더가 없거나 접근할 수 없습니다: %{path}. USB 드라이브나 클라우드 드라이브에 있다면 연결하거나 마운트한 후 다시 시도하세요."
+sync_ui.error.folder_not_writable:
+  zh-CN: "同步文件夹不可写：%{path}。"
+  en: "The sync folder is not writable: %{path}."
+  zh-TW: "同步資料夾無法寫入：%{path}。"
+  ja: 同期フォルダーに書き込めません：%{path}。
+  ko: "동기화 폴더에 쓸 수 없습니다: %{path}."
+sync_ui.error.network:
+  zh-CN: "无法连接 WebDAV 服务器：%{message}"
+  en: "Cannot reach the WebDAV server: %{message}"
+  zh-TW: "無法連線到 WebDAV 伺服器：%{message}"
+  ja: WebDAV サーバーに接続できません：%{message}
+  ko: "WebDAV 서버에 연결할 수 없습니다: %{message}"
+sync_ui.error.auth_failed:
+  zh-CN: "WebDAV 账号或密码不正确，或没有访问这个目录的权限。"
+  en: "The WebDAV user name or password is wrong, or you have no access to this folder."
+  zh-TW: "WebDAV 帳號或密碼不正確，或沒有存取這個目錄的權限。"
+  ja: WebDAV のアカウントまたはパスワードが正しくないか、このフォルダーへのアクセス権限がありません。
+  ko: WebDAV 계정 또는 비밀번호가 올바르지 않거나 이 폴더에 접근할 권한이 없습니다.
+sync_ui.error.redirected:
+  zh-CN: "WebDAV 服务器要求跳转（%{status}）到 %{location}，请把地址改为跳转后的地址。"
+  en: "The WebDAV server redirects (%{status}) to %{location}. Change the address to that one."
+  zh-TW: "WebDAV 伺服器要求重新導向（%{status}）到 %{location}，請把位址改為重新導向後的位址。"
+  ja: WebDAV サーバーが %{location} へのリダイレクト（%{status}）を要求しています。アドレスをリダイレクト先に変更してください。
+  ko: WebDAV 서버가 %{location}(으)로 리디렉션(%{status})을 요구합니다. 주소를 리디렉션된 주소로 바꾸세요.
+sync_ui.error.redirected_unknown:
+  zh-CN: "WebDAV 服务器要求跳转（%{status}），请检查地址，例如是否应以 https:// 开头。"
+  en: "The WebDAV server asks for a redirect (%{status}). Check the address, for example whether it should start with https://."
+  zh-TW: "WebDAV 伺服器要求重新導向（%{status}），請檢查位址，例如是否應以 https:// 開頭。"
+  ja: WebDAV サーバーがリダイレクト（%{status}）を要求しています。アドレスを確認してください（たとえば、https:// で始めるべきではないかなど）。
+  ko: WebDAV 서버가 리디렉션(%{status})을 요구합니다. 주소를 확인하세요. 예를 들어 https://로 시작해야 하는지 확인하세요.
+sync_ui.error.server:
+  zh-CN: "WebDAV 服务器返回错误 %{status}。"
+  en: "The WebDAV server returned error %{status}."
+  zh-TW: "WebDAV 伺服器傳回錯誤 %{status}。"
+  ja: WebDAV サーバーがエラー %{status} を返しました。
+  ko: WebDAV 서버가 오류 %{status}을(를) 반환했습니다.
+sync_ui.error.insufficient_storage:
+  zh-CN: "存储空间不足。"
+  en: "There is not enough storage space."
+  zh-TW: "儲存空間不足。"
+  ja: ストレージの空き容量が不足しています。
+  ko: 저장 공간이 부족합니다.
+sync_ui.error.wrong_password:
+  zh-CN: "同步密码错误，或同步文件已被改动。"
+  en: "The sync password is wrong, or the sync file has been altered."
+  zh-TW: "同步密碼錯誤，或同步檔案已被改動。"
+  ja: 同期パスワードが正しくないか、同期ファイルが改変されています。
+  ko: 동기화 비밀번호가 올바르지 않거나 동기화 파일이 변경되었습니다.
+sync_ui.error.corrupt:
+  zh-CN: "同步位置中的文件已损坏，或不是 Termlet 的同步文件。"
+  en: "The file at the sync location is damaged or is not a Termlet sync file."
+  zh-TW: "同步位置中的檔案已損毀，或不是 Termlet 的同步檔案。"
+  ja: 同期先のファイルが破損しているか、Termlet の同期ファイルではありません。
+  ko: 동기화 위치의 파일이 손상되었거나 Termlet의 동기화 파일이 아닙니다.
+sync_ui.error.too_large:
+  zh-CN: "同步文件或要同步的数据过大。"
+  en: "The sync file or the data to sync is too large."
+  zh-TW: "同步檔案或要同步的資料過大。"
+  ja: 同期ファイルまたは同期するデータが大きすぎます。
+  ko: 동기화 파일이나 동기화할 데이터가 너무 큽니다.
+sync_ui.error.too_new:
+  zh-CN: "同步位置中的数据来自更新版本的 Termlet，请先升级本机的 Termlet。"
+  en: "The data at the sync location comes from a newer version of Termlet. Update Termlet on this computer first."
+  zh-TW: "同步位置中的資料來自較新版本的 Termlet，請先升級本機的 Termlet。"
+  ja: 同期先のデータは新しいバージョンの Termlet で作成されています。先にこのコンピューターの Termlet を更新してください。
+  ko: 동기화 위치의 데이터는 더 새로운 버전의 Termlet에서 만들어졌습니다. 먼저 이 컴퓨터의 Termlet을 업데이트하세요.
+sync_ui.error.contended:
+  zh-CN: "同步文件被其他设备频繁修改，请稍后再试。"
+  en: "The sync file keeps being changed by other computers. Try again later."
+  zh-TW: "同步檔案被其他裝置頻繁修改，請稍後再試。"
+  ja: 同期ファイルがほかのデバイスによって頻繁に変更されています。しばらくしてからもう一度お試しください。
+  ko: 다른 장치가 동기화 파일을 계속 변경하고 있습니다. 잠시 후 다시 시도하세요.
+sync_ui.error.local_busy:
+  zh-CN: "本机的数据在同步期间一直在修改，请稍后再试。"
+  en: "The data on this computer kept changing during the sync. Try again later."
+  zh-TW: "本機的資料在同步期間一直在修改，請稍後再試。"
+  ja: 同期中にこのコンピューターのデータが変更され続けました。しばらくしてからもう一度お試しください。
+  ko: 동기화하는 동안 이 컴퓨터의 데이터가 계속 변경되었습니다. 잠시 후 다시 시도하세요.
+sync_ui.error.snapshot:
+  zh-CN: "同步前保存本机快照失败，没有写入任何数据：%{message}"
+  en: "Could not save a snapshot of this computer before syncing, so nothing was written: %{message}"
+  zh-TW: "同步前儲存本機快照失敗，沒有寫入任何資料：%{message}"
+  ja: 同期前にこのコンピューターのスナップショットを保存できなかったため、データは何も書き込んでいません：%{message}
+  ko: "동기화 전에 이 컴퓨터의 스냅샷을 저장하지 못해 아무 데이터도 쓰지 않았습니다: %{message}"
+sync_ui.error.io:
+  zh-CN: "读写同步文件失败：%{message}"
+  en: "Could not read or write the sync file: %{message}"
+  zh-TW: "讀寫同步檔案失敗：%{message}"
+  ja: 同期ファイルを読み書きできませんでした：%{message}
+  ko: "동기화 파일을 읽거나 쓰지 못했습니다: %{message}"
+sync_ui.error.local:
+  zh-CN: "本机数据出错：%{message}"
+  en: "Error in the data on this computer: %{message}"
+  zh-TW: "本機資料出錯：%{message}"
+  ja: このコンピューターのデータでエラーが発生しました：%{message}
+  ko: "이 컴퓨터의 데이터에 오류가 있습니다: %{message}"
+sync_ui.error.url_insecure:
+  zh-CN: "WebDAV 地址以 http:// 开头，账号密码会以明文经过网络。请改用 https://；只在可信的局域网中使用时，勾选“允许不安全的 HTTP”。"
+  en: "The WebDAV address starts with http://, so the user name and password would cross the network in plain text. Use https://, or check “Allow insecure HTTP” if you only use it on a trusted local network."
+  zh-TW: "WebDAV 位址以 http:// 開頭，帳號密碼會以明文經過網路。請改用 https://；只在可信任的區域網路中使用時，勾選「允許不安全的 HTTP」。"
+  ja: WebDAV のアドレスが http:// で始まっているため、アカウントとパスワードが平文でネットワークを流れます。https:// を使ってください。信頼できる LAN でのみ使う場合は、「安全でない HTTP を許可」をオンにしてください。
+  ko: WebDAV 주소가 http://로 시작하므로 계정과 비밀번호가 평문으로 네트워크를 지나갑니다. https://를 사용하세요. 신뢰할 수 있는 LAN에서만 사용한다면 '안전하지 않은 HTTP 허용'을 선택하세요.
+sync_ui.error.endpoint_required:
+  zh-CN: "请填写 S3 的终端节点。"
+  en: "Enter the S3 endpoint."
+  zh-TW: "請填寫 S3 的端點。"
+  ja: S3 のエンドポイントを入力してください。
+  ko: S3 엔드포인트를 입력하세요.
+sync_ui.error.endpoint_invalid:
+  zh-CN: "S3 的终端节点不正确，应是 https://s3.amazonaws.com 这样的地址。"
+  en: "The S3 endpoint is not valid. It should be an address like https://s3.amazonaws.com."
+  zh-TW: "S3 的端點不正確，應是 https://s3.amazonaws.com 這樣的位址。"
+  ja: S3 のエンドポイントが正しくありません。https://s3.amazonaws.com のようなアドレスを入力してください。
+  ko: S3 엔드포인트가 올바르지 않습니다. https://s3.amazonaws.com 같은 주소여야 합니다.
+sync_ui.error.endpoint_has_credentials:
+  zh-CN: "S3 的终端节点中不能带账号密码，请填在访问密钥中。"
+  en: "The S3 endpoint cannot contain an account. Enter the keys under Access key ID and Secret access key instead."
+  zh-TW: "S3 的端點中不能帶帳號密碼，請填在存取金鑰中。"
+  ja: S3 のエンドポイントにアカウントやパスワードを含めることはできません。アクセスキーの欄に入力してください。
+  ko: S3 엔드포인트에는 계정이나 비밀번호를 넣을 수 없습니다. 액세스 키 칸에 입력하세요.
+sync_ui.error.endpoint_insecure:
+  zh-CN: "S3 的终端节点以 http:// 开头，请求可能被截获或篡改。请改用 https://；只在可信的局域网中使用时，勾选“允许不安全的 HTTP”。"
+  en: "The S3 endpoint starts with http://, so requests could be intercepted or tampered with. Use https://, or check “Allow insecure HTTP” if you only use it on a trusted local network."
+  zh-TW: "S3 的端點以 http:// 開頭，要求可能被攔截或竄改。請改用 https://；只在可信任的區域網路中使用時，勾選「允許不安全的 HTTP」。"
+  ja: S3 のエンドポイントが http:// で始まっているため、リクエストを傍受されたり改ざんされたりするおそれがあります。https:// を使ってください。信頼できる LAN でのみ使う場合は、「安全でない HTTP を許可」をオンにしてください。
+  ko: S3 엔드포인트가 http://로 시작하므로 요청이 가로채이거나 변조될 수 있습니다. https://를 사용하세요. 신뢰할 수 있는 LAN에서만 사용한다면 '안전하지 않은 HTTP 허용'을 선택하세요.
+sync_ui.error.region_invalid:
+  zh-CN: "区域只能用字母、数字与连字符，例如 %{default}。"
+  en: "The region can only use letters, digits and hyphens, for example %{default}."
+  zh-TW: "區域只能使用字母、數字與連字號，例如 %{default}。"
+  ja: リージョンに使えるのは英字、数字、ハイフンだけです（例：%{default}）。
+  ko: "리전에는 영문자, 숫자, 하이픈만 사용할 수 있습니다(예: %{default})."
+sync_ui.error.region_mismatch:
+  zh-CN: "区域与桶所在的区域不一致，请填写桶所在的区域。"
+  en: "The region does not match the bucket's region. Enter the region the bucket is in."
+  zh-TW: "區域與儲存貯體所在的區域不一致，請填寫儲存貯體所在的區域。"
+  ja: リージョンがバケットのリージョンと一致しません。バケットがあるリージョンを入力してください。
+  ko: 리전이 버킷의 리전과 일치하지 않습니다. 버킷이 있는 리전을 입력하세요.
+sync_ui.error.bucket_required:
+  zh-CN: "请填写桶的名称。"
+  en: "Enter the bucket name."
+  zh-TW: "請填寫儲存貯體的名稱。"
+  ja: バケット名を入力してください。
+  ko: 버킷 이름을 입력하세요.
+sync_ui.error.bucket_invalid:
+  zh-CN: "桶的名称不正确，只能用字母、数字、点、连字符与下划线。"
+  en: "The bucket name is not valid. Use only letters, digits, dots, hyphens and underscores."
+  zh-TW: "儲存貯體的名稱不正確，只能使用字母、數字、點、連字號與底線。"
+  ja: バケット名が正しくありません。英字、数字、ドット、ハイフン、アンダースコアだけを使ってください。
+  ko: 버킷 이름이 올바르지 않습니다. 영문자, 숫자, 점, 하이픈, 밑줄만 사용하세요.
+sync_ui.error.bucket_not_found:
+  zh-CN: "桶不存在，请先在存储服务中建好，或检查名称与终端节点。"
+  en: "The bucket does not exist. Create it in the storage service first, or check the name and the endpoint."
+  zh-TW: "儲存貯體不存在，請先在儲存服務中建立，或檢查名稱與端點。"
+  ja: バケットが存在しません。先にストレージサービスで作成するか、名前とエンドポイントを確認してください。
+  ko: 버킷이 없습니다. 먼저 스토리지 서비스에서 만들거나 이름과 엔드포인트를 확인하세요.
+sync_ui.error.prefix_invalid:
+  zh-CN: "路径前缀只能用字母、数字与 - _ . /，不能有 . 或 .. 这样的一段。"
+  en: "The path prefix can only use letters, digits and - _ . /, and cannot contain a . or .. segment."
+  zh-TW: "路徑前綴只能使用字母、數字與 - _ . /，不能有 . 或 .. 這樣的一段。"
+  ja: パスのプレフィックスに使えるのは英字、数字、- _ . / だけで、. や .. だけの区切りは含められません。
+  ko: 경로 접두사에는 영문자, 숫자와 - _ . /만 사용할 수 있으며, . 또는 .. 같은 구간은 넣을 수 없습니다.
+sync_ui.error.access_key_required:
+  zh-CN: "请填写访问密钥 ID。"
+  en: "Enter the access key ID."
+  zh-TW: "請填寫存取金鑰 ID。"
+  ja: アクセスキー ID を入力してください。
+  ko: 액세스 키 ID를 입력하세요.
+sync_ui.error.access_key_invalid:
+  zh-CN: "访问密钥 ID 不正确，其中不能有空格或斜杠。"
+  en: "The access key ID is not valid. It cannot contain spaces or slashes."
+  zh-TW: "存取金鑰 ID 不正確，其中不能有空格或斜線。"
+  ja: アクセスキー ID が正しくありません。スペースやスラッシュは含められません。
+  ko: 액세스 키 ID가 올바르지 않습니다. 공백이나 슬래시를 넣을 수 없습니다.
+sync_ui.error.secret_key_required:
+  zh-CN: "请填写秘密访问密钥。"
+  en: "Enter the secret access key."
+  zh-TW: "請填寫秘密存取金鑰。"
+  ja: シークレットアクセスキーを入力してください。
+  ko: 비밀 액세스 키를 입력하세요.
+sync_ui.error.token_required:
+  zh-CN: "请填写 GitHub 的个人访问令牌。"
+  en: "Enter a GitHub personal access token."
+  zh-TW: "請填寫 GitHub 的個人存取權杖。"
+  ja: GitHub の個人用アクセストークンを入力してください。
+  ko: GitHub 개인용 액세스 토큰을 입력하세요.
+sync_ui.error.token_no_gist_scope:
+  zh-CN: "这个令牌没有 Gist 的权限：经典令牌请勾选 gist，细粒度令牌请给 Gists 读写权限。"
+  en: "This token has no access to Gists: give a classic token the gist scope, or a fine-grained token read and write access to Gists."
+  zh-TW: "這個權杖沒有 Gist 的權限：傳統權杖請勾選 gist，細粒度權杖請給予 Gists 讀寫權限。"
+  ja: このトークンには Gist の権限がありません。クラシックトークンなら gist スコープを、Fine-grained トークンなら Gists の読み取りと書き込みの権限を付けてください。
+  ko: 이 토큰에는 Gist 권한이 없습니다. 클래식 토큰은 gist 범위를 선택하고, 세분화된(Fine-grained) 토큰은 Gists 읽기 및 쓰기 권한을 주세요.
+sync_ui.error.gist_invalid:
+  zh-CN: "Gist 的 ID 不正确，请填 Gist 网址最后的那串字母数字，或留空。"
+  en: "The Gist ID is not valid. Enter the letters and digits at the end of the Gist's address, or leave it empty."
+  zh-TW: "Gist 的 ID 不正確，請填 Gist 網址最後的那串英數字，或留空。"
+  ja: Gist の ID が正しくありません。Gist の URL の末尾にある英数字を入力するか、空欄にしてください。
+  ko: Gist ID가 올바르지 않습니다. Gist URL 끝의 영문자와 숫자를 입력하거나 비워 두세요.
+sync_ui.error.gist_not_found:
+  zh-CN: "找不到这个 Gist，或令牌所属的账号无权修改它。请检查 ID，或清空后让 Termlet 自动查找、新建。"
+  en: "The Gist was not found, or the token's account cannot change it. Check the ID, or clear it to let Termlet find or create one."
+  zh-TW: "找不到這個 Gist，或權杖所屬的帳號無權修改它。請檢查 ID，或清除後讓 Termlet 自動尋找、新增。"
+  ja: この Gist が見つからないか、トークンのアカウントには変更する権限がありません。ID を確認するか、空欄にして Termlet に自動で検索・作成させてください。
+  ko: 이 Gist를 찾을 수 없거나 토큰 계정에 변경 권한이 없습니다. ID를 확인하거나, 비워 두고 Termlet이 자동으로 찾거나 만들게 하세요.
+sync_ui.error.gist_ambiguous:
+  zh-CN: "这个账号中有多个 Termlet 的 Gist（%{ids}），请在 Gist 一栏填写要用的那个。"
+  en: "This account has several Termlet Gists (%{ids}). Enter the one to use in the Gist field."
+  zh-TW: "這個帳號中有多個 Termlet 的 Gist（%{ids}），請在 Gist 一欄填寫要使用的那個。"
+  ja: このアカウントには Termlet の Gist が複数あります（%{ids}）。使用する Gist を「Gist」欄に入力してください。
+  ko: 이 계정에 Termlet의 Gist가 여러 개 있습니다(%{ids}). 사용할 Gist를 'Gist' 칸에 입력하세요.
+sync_ui.error.gist_too_large:
+  zh-CN: "加密后的同步文件有 %{size} MB，超过 Gist 能存放的 %{limit} MB。请改用 WebDAV、S3 兼容存储或本机文件夹。"
+  en: "The encrypted sync file is %{size} MB, more than the %{limit} MB a Gist can hold. Use WebDAV, S3-compatible storage or a local folder instead."
+  zh-TW: "加密後的同步檔案有 %{size} MB，超過 Gist 能存放的 %{limit} MB。請改用 WebDAV、S3 相容儲存空間或本機資料夾。"
+  ja: 暗号化後の同期ファイルは %{size} MB で、Gist に保存できる %{limit} MB を超えています。代わりに WebDAV、S3 互換ストレージ、ローカルフォルダーを使ってください。
+  ko: 암호화한 동기화 파일이 %{size} MB로, Gist에 저장할 수 있는 %{limit} MB를 넘습니다. 대신 WebDAV, S3 호환 스토리지 또는 로컬 폴더를 사용하세요.
+sync_ui.error.s3_network:
+  zh-CN: "无法连接 S3 服务：%{message}"
+  en: "Cannot reach the S3 service: %{message}"
+  zh-TW: "無法連線到 S3 服務：%{message}"
+  ja: S3 サービスに接続できません：%{message}
+  ko: "S3 서비스에 연결할 수 없습니다: %{message}"
+sync_ui.error.s3_auth_failed:
+  zh-CN: "访问密钥 ID 或秘密访问密钥不正确，或没有读写这个桶的权限。"
+  en: "The access key ID or secret access key is wrong, or the key cannot read and write this bucket."
+  zh-TW: "存取金鑰 ID 或秘密存取金鑰不正確，或沒有讀寫這個儲存貯體的權限。"
+  ja: アクセスキー ID またはシークレットアクセスキーが正しくないか、このバケットを読み書きする権限がありません。
+  ko: 액세스 키 ID 또는 비밀 액세스 키가 올바르지 않거나 이 버킷을 읽고 쓸 권한이 없습니다.
+sync_ui.error.s3_redirected:
+  zh-CN: "S3 服务要求改用终端节点 %{location}（%{status}），区域或终端节点可能不对。"
+  en: "The S3 service asks to use the endpoint %{location} (%{status}); the region or endpoint may be wrong."
+  zh-TW: "S3 服務要求改用端點 %{location}（%{status}），區域或端點可能不對。"
+  ja: S3 サービスがエンドポイント %{location} を使うよう求めています（%{status}）。リージョンまたはエンドポイントが正しくない可能性があります。
+  ko: S3 서비스가 엔드포인트 %{location}을(를) 사용하라고 요구합니다(%{status}). 리전이나 엔드포인트가 잘못되었을 수 있습니다.
+sync_ui.error.s3_redirected_unknown:
+  zh-CN: "S3 服务要求跳转（%{status}），请检查区域与终端节点。"
+  en: "The S3 service asks for a redirect (%{status}). Check the region and the endpoint."
+  zh-TW: "S3 服務要求重新導向（%{status}），請檢查區域與端點。"
+  ja: S3 サービスがリダイレクト（%{status}）を要求しています。リージョンとエンドポイントを確認してください。
+  ko: S3 서비스가 리디렉션(%{status})을 요구합니다. 리전과 엔드포인트를 확인하세요.
+sync_ui.error.s3_server:
+  zh-CN: "S3 服务返回错误 %{status}。"
+  en: "The S3 service returned error %{status}."
+  zh-TW: "S3 服務傳回錯誤 %{status}。"
+  ja: S3 サービスがエラー %{status} を返しました。
+  ko: S3 서비스가 오류 %{status}을(를) 반환했습니다.
+sync_ui.error.s3_code:
+  zh-CN: "S3 服务返回错误 %{code}（%{status}）。"
+  en: "The S3 service returned the error %{code} (%{status})."
+  zh-TW: "S3 服務傳回錯誤 %{code}（%{status}）。"
+  ja: S3 サービスがエラー %{code}（%{status}）を返しました。
+  ko: S3 서비스가 오류 %{code}(%{status})을(를) 반환했습니다.
+sync_ui.error.clock_skew:
+  zh-CN: "本机时间与服务器相差太多，请求的签名无效。请校准系统时间后再试。"
+  en: "This computer's clock is too far off from the server's, so the request signature is not accepted. Correct the system time and try again."
+  zh-TW: "本機時間與伺服器相差太多，要求的簽章無效。請校正系統時間後再試。"
+  ja: このコンピューターの時刻がサーバーと大きくずれているため、リクエストの署名が無効です。システムの時刻を合わせてから、もう一度お試しください。
+  ko: 이 컴퓨터의 시간이 서버와 너무 많이 달라 요청 서명이 유효하지 않습니다. 시스템 시간을 맞춘 후 다시 시도하세요.
+sync_ui.error.rate_limited:
+  zh-CN: "请求太频繁，被服务暂时限制了，请稍后再试。"
+  en: "Too many requests; the service is limiting them for now. Try again later."
+  zh-TW: "要求太頻繁，暫時被服務限制了，請稍後再試。"
+  ja: リクエストが多すぎるため、サービスによって一時的に制限されています。しばらくしてからもう一度お試しください。
+  ko: 요청이 너무 많아 서비스에서 일시적으로 제한했습니다. 잠시 후 다시 시도하세요.
+sync_ui.error.rate_limited_retry:
+  zh-CN: "请求太频繁，被服务暂时限制了，请约 %{minutes} 分钟后再试。"
+  en: "Too many requests; the service is limiting them for now. Try again in about %{minutes} min."
+  zh-TW: "要求太頻繁，暫時被服務限制了，請約 %{minutes} 分鐘後再試。"
+  ja: リクエストが多すぎるため、サービスによって一時的に制限されています。約 %{minutes} 分後にもう一度お試しください。
+  ko: 요청이 너무 많아 서비스에서 일시적으로 제한했습니다. 약 %{minutes}분 후에 다시 시도하세요.
+sync_ui.error.gist_network:
+  zh-CN: "无法连接 GitHub：%{message}"
+  en: "Cannot reach GitHub: %{message}"
+  zh-TW: "無法連線到 GitHub：%{message}"
+  ja: GitHub に接続できません：%{message}
+  ko: "GitHub에 연결할 수 없습니다: %{message}"
+sync_ui.error.gist_auth_failed:
+  zh-CN: "GitHub 的个人访问令牌无效或已过期。"
+  en: "The GitHub personal access token is not valid or has expired."
+  zh-TW: "GitHub 的個人存取權杖無效或已過期。"
+  ja: GitHub の個人用アクセストークンが無効か、期限切れです。
+  ko: GitHub 개인용 액세스 토큰이 유효하지 않거나 만료되었습니다.
+sync_ui.error.gist_redirected:
+  zh-CN: "GitHub 要求跳转（%{status}），请稍后再试。"
+  en: "GitHub asks for a redirect (%{status}). Try again later."
+  zh-TW: "GitHub 要求重新導向（%{status}），請稍後再試。"
+  ja: GitHub がリダイレクト（%{status}）を要求しています。しばらくしてからもう一度お試しください。
+  ko: GitHub가 리디렉션(%{status})을 요구합니다. 잠시 후 다시 시도하세요.
+sync_ui.error.gist_server:
+  zh-CN: "GitHub 返回错误 %{status}。"
+  en: "GitHub returned error %{status}."
+  zh-TW: "GitHub 傳回錯誤 %{status}。"
+  ja: GitHub がエラー %{status} を返しました。
+  ko: GitHub가 오류 %{status}을(를) 반환했습니다.

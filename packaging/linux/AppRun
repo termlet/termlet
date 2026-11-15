@@ -1,0 +1,20 @@
+#!/bin/sh
+# Termlet 的 AppImage 入口：按调用的名字选程序。AppImage 运行时把调用时的路径放在 ARGV0 中，整个 AppImage 的路径
+# 放在 APPIMAGE 中。
+# - 以 termlet 的名字调用（例如 ln -s ~/Applications/termlet-1.2.3-linux-x64.AppImage ~/.local/bin/termlet）时运行
+#   命令行工具；它要在后台拉起 Termlet 时运行这个 AppImage 本身（TERMLET_APP），不用挂载点里的程序：命令行工具
+#   退出后挂载点就卸掉了。
+# - 其他名字运行 Termlet。
+here=$(dirname "$(readlink -f "$0")")
+case $(basename "${ARGV0:-$0}") in
+    termlet)
+        if [ -n "${APPIMAGE:-}" ] && [ -z "${TERMLET_APP+set}" ]; then
+            TERMLET_APP=$APPIMAGE
+            export TERMLET_APP
+        fi
+        exec "$here/usr/lib/termlet/bin/termlet" "$@"
+        ;;
+    *)
+        exec "$here/usr/lib/termlet/Termlet" "$@"
+        ;;
+esac

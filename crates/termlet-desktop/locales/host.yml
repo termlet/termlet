@@ -1,0 +1,997 @@
+_version: 2
+host.new.title:
+  zh-CN: 新建主机
+  en: New host
+  zh-TW: 新增主機
+  ja: 新しいホスト
+  ko: 새 호스트
+host.edit.title:
+  zh-CN: 编辑主机
+  en: Edit host
+  zh-TW: 編輯主機
+  ja: ホストの編集
+  ko: 호스트 편집
+host.delete.title:
+  zh-CN: 删除主机“%{name}”？
+  en: Delete host "%{name}"?
+  zh-TW: 刪除主機「%{name}」？
+  ja: ホスト「%{name}」を削除しますか？
+  ko: "'%{name}' 호스트를 삭제하시겠습니까?"
+host.delete.description:
+  zh-CN: 它保存的密码、私钥等凭据与端口转发规则也会删除。
+  en: Its saved passwords, private keys, and port forwarding rules are deleted too.
+  zh-TW: 它儲存的密碼、私密金鑰等認證資訊與連接埠轉送規則也會刪除。
+  ja: 保存されているパスワードや秘密鍵などの認証情報、ポート転送ルールも削除されます。
+  ko: 저장된 비밀번호, 개인 키 등의 자격 증명과 포트 포워딩 규칙도 삭제됩니다.
+host.page.general:
+  zh-CN: 常规
+  en: General
+  zh-TW: 一般
+  ja: 一般
+  ko: 일반
+host.page.connection:
+  zh-CN: 连接
+  en: Connection
+  zh-TW: 連線
+  ja: 接続
+  ko: 연결
+host.page.totp:
+  zh-CN: 验证码
+  en: Verification code
+  zh-TW: 驗證碼
+  ja: 確認コード
+  ko: 인증 코드
+host.page.terminal:
+  zh-CN: 终端
+  en: Terminal
+  zh-TW: 終端機
+  ja: ターミナル
+  ko: 터미널
+host.page.cli:
+  zh-CN: 命令行工具
+  en: Command-line tool
+  zh-TW: 命令列工具
+  ja: コマンドラインツール
+  ko: 명령줄 도구
+host.page.tags:
+  zh-CN: 标签与备注
+  en: Tags and notes
+  zh-TW: 標籤與備註
+  ja: タグとメモ
+  ko: 태그 및 메모
+host.field.name:
+  zh-CN: 名称
+  en: Name
+  zh-TW: 名稱
+  ja: 名前
+  ko: 이름
+host.field.name_placeholder:
+  zh-CN: 留空则使用地址
+  en: Defaults to the address
+  zh-TW: 留空則使用位址
+  ja: 空欄の場合はアドレスを使用
+  ko: 비워 두면 주소 사용
+host.field.address:
+  zh-CN: 地址
+  en: Address
+  zh-TW: 位址
+  ja: アドレス
+  ko: 주소
+host.field.port:
+  zh-CN: 端口
+  en: Port
+  zh-TW: 連接埠
+  ja: ポート
+  ko: 포트
+host.field.username:
+  zh-CN: 用户名
+  en: User name
+  zh-TW: 使用者名稱
+  ja: ユーザー名
+  ko: 사용자 이름
+host.field.username_inherit:
+  zh-CN: 不填时用 %{name}
+  en: Defaults to %{name}
+  zh-TW: 不填時使用 %{name}
+  ja: 空欄の場合は %{name}
+  ko: 비워 두면 %{name}
+host.field.auth:
+  zh-CN: 认证方式
+  en: Authentication
+  zh-TW: 驗證方式
+  ja: 認証方式
+  ko: 인증 방식
+host.field.password:
+  zh-CN: 密码
+  en: Password
+  zh-TW: 密碼
+  ja: パスワード
+  ko: 비밀번호
+host.field.profile:
+  zh-CN: 凭据档案
+  en: Credential profile
+  zh-TW: 認證資訊設定檔
+  ja: 認証プロファイル
+  ko: 자격 증명 프로필
+host.field.group:
+  zh-CN: 分组
+  en: Group
+  zh-TW: 群組
+  ja: グループ
+  ko: 그룹
+host.field.no_group:
+  zh-CN: 不分组
+  en: No group
+  zh-TW: 不分群組
+  ja: グループなし
+  ko: 그룹 없음
+host.field.jump:
+  zh-CN: 跳板机
+  en: Jump host
+  zh-TW: 跳板機
+  ja: 踏み台ホスト
+  ko: 점프 호스트
+host.field.proxy:
+  zh-CN: 代理
+  en: Proxy
+  zh-TW: 代理伺服器
+  ja: プロキシ
+  ko: 프록시
+host.secret.keep:
+  zh-CN: 已保存，留空则不修改
+  en: Saved. Leave empty to keep it
+  zh-TW: 已儲存，留空則不修改
+  ja: 保存済み。空欄のままにすると変更しません
+  ko: 저장됨. 비워 두면 변경하지 않음
+host.auth.password:
+  zh-CN: 密码
+  en: Password
+  zh-TW: 密碼
+  ja: パスワード
+  ko: 비밀번호
+host.auth.key:
+  zh-CN: 私钥
+  en: Private key
+  zh-TW: 私密金鑰
+  ja: 秘密鍵
+  ko: 개인 키
+host.auth.agent:
+  zh-CN: SSH Agent
+  en: SSH agent
+  zh-TW: SSH Agent
+  ja: SSH エージェント
+  ko: SSH 에이전트
+host.auth.profile:
+  zh-CN: 凭据档案
+  en: Credential profile
+  zh-TW: 認證資訊設定檔
+  ja: 認証プロファイル
+  ko: 자격 증명 프로필
+host.auth.inherit:
+  zh-CN: 沿用分组
+  en: Use the group's
+  zh-TW: 沿用群組
+  ja: グループの設定を使用
+  ko: 그룹 설정 사용
+host.auth.agent_hint:
+  zh-CN: 使用 ssh-agent 中的密钥。Windows 上先使用 OpenSSH Authentication Agent 服务（或 SSH_AUTH_SOCK 指定的管道），不可用或其中没有密钥时使用 Pageant；其他平台为 SSH_AUTH_SOCK。
+  en: Uses keys from ssh-agent. On Windows, the OpenSSH Authentication Agent service (or the pipe in SSH_AUTH_SOCK) is used first, and Pageant when it isn't available or holds no keys. Elsewhere, SSH_AUTH_SOCK is used.
+  zh-TW: 使用 ssh-agent 中的金鑰。Windows 上先使用 OpenSSH Authentication Agent 服務（或 SSH_AUTH_SOCK 指定的管道），無法使用或其中沒有金鑰時使用 Pageant；其他平台為 SSH_AUTH_SOCK。
+  ja: ssh-agent の鍵を使用します。Windows では OpenSSH Authentication Agent サービス（または SSH_AUTH_SOCK で指定したパイプ）を優先し、使用できないか鍵がない場合は Pageant を使用します。その他のプラットフォームでは SSH_AUTH_SOCK を使用します。
+  ko: ssh-agent의 키를 사용합니다. Windows에서는 OpenSSH Authentication Agent 서비스(또는 SSH_AUTH_SOCK에 지정된 파이프)를 먼저 사용하고, 사용할 수 없거나 키가 없으면 Pageant를 사용합니다. 다른 플랫폼에서는 SSH_AUTH_SOCK을 사용합니다.
+host.auth.no_profiles:
+  zh-CN: 还没有凭据档案，请先在侧边栏“密钥”页的“凭据档案”中添加。
+  en: There are no credential profiles yet. Add one under Credential Profiles on the Keys page of the sidebar first.
+  zh-TW: 還沒有認證資訊設定檔，請先在側邊欄「金鑰」頁的「認證資訊設定檔」中新增。
+  ja: 認証プロファイルがまだありません。先にサイドバーの「鍵」ページにある「認証プロファイル」で追加してください。
+  ko: 아직 자격 증명 프로필이 없습니다. 먼저 사이드바 '키' 페이지의 '자격 증명 프로필'에서 추가하세요.
+host.auth.inherit_hint:
+  zh-CN: 沿用分组“%{group}”默认的凭据档案“%{profile}”。
+  en: Uses "%{profile}", the default credential profile of group "%{group}".
+  zh-TW: 沿用群組「%{group}」預設的認證資訊設定檔「%{profile}」。
+  ja: グループ「%{group}」のデフォルトの認証プロファイル「%{profile}」を使用します。
+  ko: "'%{group}' 그룹의 기본 자격 증명 프로필 '%{profile}'을(를) 사용합니다."
+host.key.library:
+  zh-CN: 密钥库
+  en: Key library
+  zh-TW: 金鑰庫
+  ja: 鍵ライブラリ
+  ko: 키 라이브러리
+host.key.file:
+  zh-CN: 私钥文件
+  en: Key file
+  zh-TW: 私密金鑰檔案
+  ja: 秘密鍵ファイル
+  ko: 개인 키 파일
+host.key.pasted:
+  zh-CN: 粘贴私钥内容
+  en: Paste key
+  zh-TW: 貼上私密金鑰內容
+  ja: 秘密鍵を貼り付け
+  ko: 개인 키 붙여넣기
+host.key.library_empty:
+  zh-CN: 密钥库中还没有密钥，请先在侧边栏“密钥”中生成或导入。
+  en: The key library is empty. Generate or import a key under “Keys” in the sidebar first.
+  zh-TW: 金鑰庫中還沒有金鑰，請先在側邊欄「金鑰」中產生或匯入。
+  ja: 鍵ライブラリに鍵がまだありません。先にサイドバーの「鍵」で生成またはインポートしてください。
+  ko: 키 라이브러리에 아직 키가 없습니다. 먼저 사이드바의 '키'에서 생성하거나 가져오세요.
+host.key.file_placeholder:
+  zh-CN: 私钥文件路径
+  en: Path to the private key file
+  zh-TW: 私密金鑰檔案路徑
+  ja: 秘密鍵ファイルのパス
+  ko: 개인 키 파일 경로
+host.key.passphrase_placeholder:
+  zh-CN: 私钥密码（没有可留空）
+  en: Key passphrase (leave empty if none)
+  zh-TW: 私密金鑰密碼（沒有可留空）
+  ja: 秘密鍵のパスフレーズ（ない場合は空欄）
+  ko: 개인 키 암호 문구(없으면 비워 둠)
+host.key.passphrase_keep:
+  zh-CN: 私钥密码（留空则不修改）
+  en: Key passphrase (leave empty to keep it)
+  zh-TW: 私密金鑰密碼（留空則不修改）
+  ja: 秘密鍵のパスフレーズ（空欄のままにすると変更しません）
+  ko: 개인 키 암호 문구(비워 두면 변경하지 않음)
+host.key.certificate_placeholder:
+  zh-CN: 证书文件（可选，留空时自动使用同名的 -cert.pub）
+  en: Certificate file (optional; leave empty to use the matching -cert.pub)
+  zh-TW: 憑證檔案（選填，留空時自動使用同名的 -cert.pub）
+  ja: 証明書ファイル（省略可。空欄の場合は同名の -cert.pub を自動で使用）
+  ko: 인증서 파일(선택 사항, 비워 두면 같은 이름의 -cert.pub 파일을 자동으로 사용)
+host.key.pasted_certificate_placeholder:
+  zh-CN: 证书（可选）：粘贴 -cert.pub 的内容，或从文件读入
+  en: "Certificate (optional): paste the contents of the -cert.pub file, or load it from a file"
+  zh-TW: 憑證（選填）：貼上 -cert.pub 的內容，或從檔案讀入
+  ja: 証明書（省略可）：-cert.pub の内容を貼り付けるか、ファイルから読み込みます
+  ko: "인증서(선택 사항): -cert.pub 파일의 내용을 붙여 넣거나 파일에서 불러오기"
+host.key.pasted_certificate:
+  zh-CN: 附带这张证书，登录时先出示证书。
+  en: This certificate is attached and presented first when logging in.
+  zh-TW: 附帶這張憑證，登入時先出示憑證。
+  ja: この証明書を添付し、ログイン時に先に提示します。
+  ko: 이 인증서를 첨부하며 로그인할 때 먼저 제시합니다.
+host.key.pasted_certificate_expired:
+  zh-CN: 这张证书已过期，请换成新签发的。
+  en: This certificate has expired. Replace it with a newly issued one.
+  zh-TW: 這張憑證已過期，請換成新簽發的憑證。
+  ja: この証明書は期限切れです。新しく発行された証明書に置き換えてください。
+  ko: 이 인증서는 만료되었습니다. 새로 발급받은 인증서로 교체하세요.
+host.key.library_certificate:
+  zh-CN: 这把密钥附带证书，登录时先出示证书。
+  en: This key has a certificate attached; it's presented first when logging in.
+  zh-TW: 這把金鑰附帶憑證，登入時先出示憑證。
+  ja: この鍵には証明書が添付されており、ログイン時に先に提示されます。
+  ko: 이 키에는 인증서가 첨부되어 있으며 로그인할 때 먼저 제시합니다.
+host.key.library_certificate_expired:
+  zh-CN: 这把密钥附带的证书已过期，请在密钥库中替换。
+  en: The certificate attached to this key has expired. Replace it in the key library.
+  zh-TW: 這把金鑰附帶的憑證已過期，請在金鑰庫中取代。
+  ja: この鍵に添付された証明書は期限切れです。鍵ライブラリで置き換えてください。
+  ko: 이 키에 첨부된 인증서가 만료되었습니다. 키 라이브러리에서 교체하세요.
+host.jump.none:
+  zh-CN: 不使用（直连）
+  en: None (connect directly)
+  zh-TW: 不使用（直接連線）
+  ja: 使用しない（直接接続）
+  ko: 사용 안 함(직접 연결)
+host.jump.inherit:
+  zh-CN: 沿用分组“%{group}”的默认值：%{name}
+  en: "Group \"%{group}\" default: %{name}"
+  zh-TW: 沿用群組「%{group}」的預設值：%{name}
+  ja: グループ「%{group}」のデフォルトを使用：%{name}
+  ko: "'%{group}' 그룹의 기본값 사용: %{name}"
+host.jump.direct_override:
+  zh-CN: 直连（不使用跳板机）
+  en: Connect directly (no jump host)
+  zh-TW: 直接連線（不使用跳板機）
+  ja: 直接接続（踏み台ホストを使用しない）
+  ko: 직접 연결(점프 호스트 사용 안 함)
+host.jump.hint:
+  zh-CN: 经另一台主机连接（相当于 ssh 的 ProxyJump），跳板机使用它自己的凭据，也可以再经跳板机连接。
+  en: Connect through another host (like ssh ProxyJump). The jump host uses its own credentials and can itself use a jump host.
+  zh-TW: 經由另一台主機連線（相當於 ssh 的 ProxyJump），跳板機使用它自己的認證資訊，也可以再經由跳板機連線。
+  ja: 別のホストを経由して接続します（ssh の ProxyJump に相当）。踏み台ホストは自身の認証情報を使用し、さらに別の踏み台ホストを経由することもできます。
+  ko: 다른 호스트를 거쳐 연결합니다(ssh의 ProxyJump와 같음). 점프 호스트는 자체 자격 증명을 사용하며, 다시 다른 점프 호스트를 거쳐 연결할 수도 있습니다.
+host.proxy.none:
+  zh-CN: 不使用代理（直连）
+  en: No proxy (connect directly)
+  zh-TW: 不使用代理伺服器（直接連線）
+  ja: プロキシを使用しない（直接接続）
+  ko: 프록시 사용 안 함(직접 연결)
+host.proxy.inherit:
+  zh-CN: 沿用分组“%{group}”的代理命令
+  en: Group "%{group}" proxy command
+  zh-TW: 沿用群組「%{group}」的代理指令
+  ja: グループ「%{group}」のプロキシコマンドを使用
+  ko: "'%{group}' 그룹의 프록시 명령 사용"
+host.proxy.off_override:
+  zh-CN: 不使用代理（不沿用分组的代理命令）
+  en: No proxy (don't use the group's proxy command)
+  zh-TW: 不使用代理伺服器（不沿用群組的代理指令）
+  ja: プロキシを使用しない（グループのプロキシコマンドを使用しない）
+  ko: 프록시 사용 안 함(그룹의 프록시 명령 사용 안 함)
+host.proxy.http:
+  zh-CN: HTTP（CONNECT）
+  en: HTTP (CONNECT)
+  zh-TW: HTTP（CONNECT）
+  ja: HTTP（CONNECT）
+  ko: HTTP(CONNECT)
+host.proxy.https:
+  zh-CN: HTTPS（与代理之间用 TLS）
+  en: HTTPS (TLS to the proxy)
+  zh-TW: HTTPS（與代理伺服器之間使用 TLS）
+  ja: HTTPS（プロキシとの間を TLS で接続）
+  ko: HTTPS(프록시와 TLS로 연결)
+host.proxy.command_kind:
+  zh-CN: 代理命令（ProxyCommand）
+  en: Proxy command (ProxyCommand)
+  zh-TW: 代理指令（ProxyCommand）
+  ja: プロキシコマンド（ProxyCommand）
+  ko: 프록시 명령(ProxyCommand)
+host.proxy.address:
+  zh-CN: 代理地址
+  en: Proxy address
+  zh-TW: 代理伺服器位址
+  ja: プロキシのアドレス
+  ko: 프록시 주소
+host.proxy.username:
+  zh-CN: 代理用户名（可选）
+  en: Proxy user name (optional)
+  zh-TW: 代理伺服器使用者名稱（選用）
+  ja: プロキシのユーザー名（省略可）
+  ko: 프록시 사용자 이름(선택 사항)
+host.proxy.password:
+  zh-CN: 代理密码
+  en: Proxy password
+  zh-TW: 代理伺服器密碼
+  ja: プロキシのパスワード
+  ko: 프록시 비밀번호
+host.proxy.command:
+  zh-CN: 代理命令
+  en: Proxy command
+  zh-TW: 代理指令
+  ja: プロキシコマンド
+  ko: 프록시 명령
+host.proxy.command_placeholder:
+  zh-CN: 例如 cloudflared access ssh --hostname %h
+  en: For example, cloudflared access ssh --hostname %h
+  zh-TW: 例如 cloudflared access ssh --hostname %h
+  ja: 例：cloudflared access ssh --hostname %h
+  ko: "예: cloudflared access ssh --hostname %h"
+host.proxy.command_hint_windows:
+  zh-CN: 在本机运行这条命令，用它的输入输出连接服务器，与 ssh 的 ProxyCommand 相同。占位符：%h 主机、%p 端口、%r 用户名、%n 主机名称、%% 百分号。与 Windows 上的 OpenSSH 一样不经过 cmd：第一个词是程序（含空格的路径用双引号括起），其余原样交给程序；需要管道、环境变量等功能时写成 cmd /c …。在这台电脑上第一次执行前会先请你确认。
+  en: "Runs this command on this computer and connects through its input and output, like ssh ProxyCommand. Placeholders: %h host, %p port, %r user, %n host name, %% percent sign. Like OpenSSH on Windows, it doesn't go through cmd: the first word is the program (quote paths that contain spaces) and the rest is passed to it as is. Use cmd /c … for pipes, environment variables and similar features. You're asked to confirm before it first runs on this computer."
+  zh-TW: 在本機執行這條指令，用它的輸入輸出連線到伺服器，與 ssh 的 ProxyCommand 相同。佔位符：%h 主機、%p 連接埠、%r 使用者名稱、%n 主機名稱、%% 百分比符號。與 Windows 上的 OpenSSH 一樣不經過 cmd：第一個字是程式（含空格的路徑用雙引號括起），其餘原樣交給程式；需要管道、環境變數等功能時寫成 cmd /c …。在這台電腦上第一次執行前會先請你確認。
+  ja: このコンピューターでこのコマンドを実行し、その入出力を通じてサーバーに接続します（ssh の ProxyCommand と同じ）。プレースホルダー：%h ホスト、%p ポート、%r ユーザー名、%n ホスト名、%% パーセント記号。Windows 版 OpenSSH と同様に cmd を経由しません。最初の語がプログラム（スペースを含むパスは二重引用符で囲む）で、残りはそのままプログラムに渡されます。パイプや環境変数などを使う場合は cmd /c … と書いてください。このコンピューターで初めて実行する前に確認を求めます。
+  ko: "이 컴퓨터에서 이 명령을 실행하고 그 입출력을 통해 서버에 연결합니다(ssh의 ProxyCommand와 같음). 자리 표시자: %h 호스트, %p 포트, %r 사용자 이름, %n 호스트 이름, %% 퍼센트 기호. Windows의 OpenSSH처럼 cmd를 거치지 않습니다. 첫 단어가 프로그램이고(공백이 있는 경로는 큰따옴표로 묶음) 나머지는 그대로 프로그램에 전달됩니다. 파이프, 환경 변수 등이 필요하면 cmd /c …로 쓰세요. 이 컴퓨터에서 처음 실행하기 전에 확인을 요청합니다."
+host.proxy.command_hint_unix:
+  zh-CN: 在本机运行这条命令，用它的输入输出连接服务器，与 ssh 的 ProxyCommand 相同。占位符：%h 主机、%p 端口、%r 用户名、%n 主机名称、%% 百分号。与 OpenSSH 一样交给 shell 执行（$SHELL -c "exec 命令"），引号、管道、环境变量按 shell 的规则。在这台电脑上第一次执行前会先请你确认。
+  en: "Runs this command on this computer and connects through its input and output, like ssh ProxyCommand. Placeholders: %h host, %p port, %r user, %n host name, %% percent sign. Like OpenSSH, it runs through your shell ($SHELL -c \"exec command\"), so quotes, pipes and environment variables follow shell rules. You're asked to confirm before it first runs on this computer."
+  zh-TW: 在本機執行這條指令，用它的輸入輸出連線到伺服器，與 ssh 的 ProxyCommand 相同。佔位符：%h 主機、%p 連接埠、%r 使用者名稱、%n 主機名稱、%% 百分比符號。與 OpenSSH 一樣交給 shell 執行（$SHELL -c "exec 指令"），引號、管道、環境變數依 shell 的規則。在這台電腦上第一次執行前會先請你確認。
+  ja: このコンピューターでこのコマンドを実行し、その入出力を通じてサーバーに接続します（ssh の ProxyCommand と同じ）。プレースホルダー：%h ホスト、%p ポート、%r ユーザー名、%n ホスト名、%% パーセント記号。OpenSSH と同様にシェルで実行される（$SHELL -c "exec コマンド"）ため、引用符、パイプ、環境変数はシェルの規則に従います。このコンピューターで初めて実行する前に確認を求めます。
+  ko: "이 컴퓨터에서 이 명령을 실행하고 그 입출력을 통해 서버에 연결합니다(ssh의 ProxyCommand와 같음). 자리 표시자: %h 호스트, %p 포트, %r 사용자 이름, %n 호스트 이름, %% 퍼센트 기호. OpenSSH처럼 셸에서 실행되므로($SHELL -c \"exec 명령\") 따옴표, 파이프, 환경 변수는 셸의 규칙을 따릅니다. 이 컴퓨터에서 처음 실행하기 전에 확인을 요청합니다."
+host.proxy.with_jump:
+  zh-CN: 已选择跳板机：连接这台主机时不使用这里的代理（跳板机自己的代理设置仍然有效）。
+  en: A jump host is selected, so this proxy isn't used for this host. The jump host's own proxy still applies.
+  zh-TW: 已選擇跳板機：連線這台主機時不使用這裡的代理伺服器（跳板機自己的代理伺服器設定仍然有效）。
+  ja: 踏み台ホストが選択されているため、このホストへの接続にはここのプロキシを使用しません（踏み台ホスト自身のプロキシ設定は引き続き有効です）。
+  ko: 점프 호스트가 선택되어 있어 이 호스트에 연결할 때 여기의 프록시를 사용하지 않습니다(점프 호스트 자체의 프록시 설정은 계속 적용됨).
+host.ssh.agent_forward:
+  zh-CN: 转发本机的 ssh-agent
+  en: Forward the local ssh-agent
+  zh-TW: 轉送本機的 ssh-agent
+  ja: ローカルの ssh-agent を転送
+  ko: 로컬 ssh-agent 전달
+host.ssh.agent_forward_hint:
+  zh-CN: 终端中的 ssh、git 可以用本机 agent 里的密钥登录其他服务器，私钥不离开本机；但这台服务器上的 root 也能借用它，只对信任的服务器开启。
+  en: ssh and git in the terminal can sign in to other servers with keys from your local agent. The private keys never leave this computer, but root on this server can use the agent too. Only turn this on for trusted servers.
+  zh-TW: 終端機中的 ssh、git 可以用本機 agent 裡的金鑰登入其他伺服器，私密金鑰不離開本機；但這台伺服器上的 root 也能借用它，只對信任的伺服器開啟。
+  ja: ターミナル内の ssh や git が、ローカルのエージェントにある鍵で他のサーバーにログインできます。秘密鍵がこのコンピューターから出ることはありませんが、このサーバーの root もエージェントを利用できます。信頼できるサーバーでのみオンにしてください。
+  ko: 터미널의 ssh, git이 로컬 에이전트의 키로 다른 서버에 로그인할 수 있습니다. 개인 키는 이 컴퓨터 밖으로 나가지 않지만 이 서버의 root도 에이전트를 사용할 수 있으므로, 신뢰하는 서버에서만 켜세요.
+host.ssh.x11:
+  zh-CN: 转发 X11（在本机显示服务器上的图形程序）
+  en: Forward X11 (show the server's graphical programs on this computer)
+  zh-TW: 轉送 X11（在本機顯示伺服器上的圖形程式）
+  ja: X11 を転送（サーバー上のグラフィカルなプログラムをこのコンピューターに表示）
+  ko: X11 전달(서버의 그래픽 프로그램을 이 컴퓨터에 표시)
+host.ssh.x11_hint:
+  zh-CN: 需要本机运行 X 服务器（Windows 上可用 VcXsrv、X410），服务器的 sshd 要开启 X11Forwarding。本机的 X 显示在设置的“连接”页中设置，默认 localhost:0。
+  en: Needs an X server running on this computer (VcXsrv or X410 on Windows), and X11Forwarding turned on in the server's sshd. Set this computer's X display on the Connection page in Settings; the default is localhost:0.
+  zh-TW: 需要本機執行 X 伺服器（Windows 上可用 VcXsrv、X410），伺服器的 sshd 要開啟 X11Forwarding。本機的 X 顯示在設定的「連線」頁中設定，預設為 localhost:0。
+  ja: このコンピューターで X サーバーが動いている必要があり（Windows では VcXsrv、X410 など）、サーバーの sshd で X11Forwarding を有効にしておく必要があります。このコンピューターの X ディスプレイは設定の「接続」ページで指定します（デフォルトは localhost:0）。
+  ko: 이 컴퓨터에서 X 서버가 실행 중이어야 하고(Windows에서는 VcXsrv, X410 등), 서버의 sshd에서 X11Forwarding이 켜져 있어야 합니다. 이 컴퓨터의 X 디스플레이는 설정의 '연결' 페이지에서 지정하며 기본값은 localhost:0입니다.
+host.ssh.x11_trusted:
+  zh-CN: 受信任（与 ssh -Y 相同）
+  en: Trusted (like ssh -Y)
+  zh-TW: 受信任（與 ssh -Y 相同）
+  ja: 信頼する（ssh -Y と同じ）
+  ko: 신뢰함(ssh -Y와 같음)
+host.ssh.x11_trusted_hint:
+  zh-CN: 默认不受信任（与 ssh -X 相同）：用本机的 xauth 申请受限的权限，服务器上的程序读不到其他窗口的内容与按键。Windows 上的 X 服务器通常没有 xauth，这时要勾选这一项。受信任时服务器上的程序可以读取本机 X 服务器上所有窗口的内容与按键，只对信任的服务器开启。
+  en: "Untrusted by default (like ssh -X): the local xauth requests restricted access, so programs on the server can't read other windows or keystrokes. X servers on Windows usually have no xauth; turn this on there. When trusted, programs on the server can read every window and keystroke on your local X server. Only turn this on for trusted servers."
+  zh-TW: 預設不受信任（與 ssh -X 相同）：用本機的 xauth 申請受限的權限，伺服器上的程式讀不到其他視窗的內容與按鍵。Windows 上的 X 伺服器通常沒有 xauth，這時要勾選這一項。受信任時伺服器上的程式可以讀取本機 X 伺服器上所有視窗的內容與按鍵，只對信任的伺服器開啟。
+  ja: デフォルトでは信頼しません（ssh -X と同じ）。ローカルの xauth で制限付きの権限を要求するため、サーバー上のプログラムは他のウィンドウの内容やキー入力を読み取れません。Windows の X サーバーには通常 xauth がないため、その場合はこれをオンにしてください。信頼する場合、サーバー上のプログラムはローカルの X サーバー上のすべてのウィンドウの内容とキー入力を読み取れます。信頼できるサーバーでのみオンにしてください。
+  ko: 기본적으로 신뢰하지 않습니다(ssh -X와 같음). 로컬 xauth로 제한된 권한을 요청하므로 서버의 프로그램은 다른 창의 내용과 키 입력을 읽을 수 없습니다. Windows의 X 서버에는 대개 xauth가 없으므로 이때는 이 항목을 켜야 합니다. 신뢰하면 서버의 프로그램이 로컬 X 서버에 있는 모든 창의 내용과 키 입력을 읽을 수 있으므로, 신뢰하는 서버에서만 켜세요.
+host.ssh.legacy:
+  zh-CN: 兼容旧设备（启用旧的加密算法）
+  en: Legacy devices (enable old algorithms)
+  zh-TW: 相容舊裝置（啟用舊的加密演算法）
+  ja: 旧型デバイスとの互換性（古い暗号化アルゴリズムを有効にする）
+  ko: 구형 장치 호환(이전 암호화 알고리즘 사용)
+host.ssh.legacy_hint:
+  zh-CN: 只支持 aes128-cbc、3des-cbc、diffie-hellman-group1-sha1 等旧算法的老堡垒机、交换机需要开启。这些算法不安全，只对这台主机生效，跳板机按各自的设置。
+  en: Needed for old bastion hosts and switches that only offer aes128-cbc, 3des-cbc, diffie-hellman-group1-sha1, and similar algorithms. They're insecure; this only applies to this host, and jump hosts use their own setting.
+  zh-TW: 只支援 aes128-cbc、3des-cbc、diffie-hellman-group1-sha1 等舊演算法的老舊堡壘主機、交換器需要開啟。這些演算法不安全，只對這台主機生效，跳板機依各自的設定。
+  ja: aes128-cbc、3des-cbc、diffie-hellman-group1-sha1 などの古いアルゴリズムにしか対応していない古い要塞ホストやスイッチで必要です。これらのアルゴリズムは安全ではありません。このホストにのみ適用され、踏み台ホストはそれぞれの設定に従います。
+  ko: aes128-cbc, 3des-cbc, diffie-hellman-group1-sha1 등 이전 알고리즘만 지원하는 오래된 배스천 호스트나 스위치에 필요합니다. 이 알고리즘은 안전하지 않습니다. 이 호스트에만 적용되며, 점프 호스트는 각자의 설정을 따릅니다.
+host.ssh.single_channel:
+  zh-CN: 只用一个通道（堡垒机）
+  en: Use a single channel (bastion host)
+  zh-TW: 只用一個通道（堡壘主機）
+  ja: チャネルを 1 つだけ使用（要塞ホスト）
+  ko: 채널 하나만 사용(배스천 호스트)
+host.ssh.single_channel_hint:
+  zh-CN: 终端的连接上不再另开通道：不能在终端旁打开 SFTP，不检测 tmux，复制会话时新建连接（要重新认证）。直接登录堡垒机（例如 JumpServer）再选资产时开启：很多堡垒机在同一连接上另开通道会结束整个会话。
+  en: "No other channels are opened on the terminal's connection: no SFTP beside the terminal, no tmux detection, and Duplicate opens a new connection (signs in again). Turn this on for bastion hosts where you sign in and then pick a server (such as JumpServer): many of them end the whole session when another channel is opened."
+  zh-TW: 終端機的連線上不再另開通道：不能在終端機旁開啟 SFTP，不偵測 tmux，複製工作階段時建立新連線（要重新驗證）。直接登入堡壘主機（例如 JumpServer）再選資產時開啟：很多堡壘主機在同一連線上另開通道會結束整個工作階段。
+  ja: ターミナルの接続で別のチャネルを開きません。ターミナルの横で SFTP を開けず、tmux を検出せず、セッションを複製すると新しい接続になります（再認証が必要）。要塞ホスト（JumpServer など）に直接ログインしてから接続先を選ぶ場合にオンにしてください。多くの要塞ホストでは、同じ接続で別のチャネルを開くとセッション全体が終了します。
+  ko: "터미널 연결에서 다른 채널을 열지 않습니다. 터미널 옆에서 SFTP를 열 수 없고, tmux를 감지하지 않으며, 세션을 복제하면 새로 연결합니다(다시 인증 필요). 배스천 호스트(예: JumpServer)에 직접 로그인한 다음 자산을 선택하는 경우에 켜세요. 많은 배스천 호스트는 같은 연결에서 다른 채널을 열면 세션 전체를 종료합니다."
+host.totp.enable:
+  zh-CN: 自动填写验证码（TOTP）
+  en: Fill in verification codes automatically (TOTP)
+  zh-TW: 自動填寫驗證碼（TOTP）
+  ja: 確認コードを自動入力（TOTP）
+  ko: 인증 코드 자동 입력(TOTP)
+host.totp.hint:
+  zh-CN: 服务器要求输入验证码时由 Termlet 计算并填写，断线重连、端口转发也能用于这台主机。命令行工具不使用。
+  en: Termlet computes and enters the code when the server asks for one, so reconnecting and port forwarding work for this host too. Not used by the command-line tool.
+  zh-TW: 伺服器要求輸入驗證碼時由 Termlet 計算並填寫，斷線重連、連接埠轉送也能用於這台主機。命令列工具不使用。
+  ja: サーバーが確認コードを求めたときに Termlet が計算して入力します。切断後の再接続やポート転送でもこのホストに使用できます。コマンドラインツールでは使用しません。
+  ko: 서버가 인증 코드를 요청하면 Termlet이 계산해서 입력합니다. 연결이 끊긴 뒤 다시 연결할 때나 포트 포워딩에서도 이 호스트에 사용할 수 있습니다. 명령줄 도구에서는 사용하지 않습니다.
+host.totp.placeholder:
+  zh-CN: TOTP 密钥：Base32 字符串或 otpauth:// 链接
+  en: "TOTP secret: a Base32 string or an otpauth:// link"
+  zh-TW: TOTP 金鑰：Base32 字串或 otpauth:// 連結
+  ja: TOTP シークレット：Base32 文字列または otpauth:// リンク
+  ko: "TOTP 비밀 키: Base32 문자열 또는 otpauth:// 링크"
+host.totp.keep:
+  zh-CN: 已设置，留空保持不变
+  en: Set. Leave empty to keep it
+  zh-TW: 已設定，留空則保持不變
+  ja: 設定済み。空欄のままにすると変更しません
+  ko: 설정됨. 비워 두면 변경하지 않음
+host.totp.current:
+  zh-CN: 当前验证码
+  en: Current code
+  zh-TW: 目前驗證碼
+  ja: 現在の確認コード
+  ko: 현재 인증 코드
+host.totp.remaining:
+  zh-CN: （%{seconds} 秒后更新，可与手机上的验证器对照）
+  en: (changes in %{seconds} s; compare it with your authenticator app)
+  zh-TW: （%{seconds} 秒後更新，可與手機上的驗證器對照）
+  ja: （%{seconds} 秒後に更新。スマートフォンの認証アプリと照合できます）
+  ko: (%{seconds}초 후 갱신, 휴대폰의 인증 앱과 비교할 수 있음)
+host.totp.risk:
+  zh-CN: 密钥与密码都保存在这台电脑上，双重验证实际上变成了一重。请在接受这一点时开启。
+  en: The secret is stored on this computer together with the password, which reduces two-factor authentication to one factor. Turn this on only if that's acceptable.
+  zh-TW: 金鑰與密碼都儲存在這台電腦上，雙重驗證實際上只剩一重。請在接受這一點時開啟。
+  ja: シークレットとパスワードがどちらもこのコンピューターに保存されるため、2 要素認証が実質 1 要素になります。これを受け入れられる場合にのみオンにしてください。
+  ko: 비밀 키와 비밀번호가 모두 이 컴퓨터에 저장되므로 2단계 인증이 사실상 1단계가 됩니다. 이 점을 받아들일 수 있을 때만 켜세요.
+host.totp.error.bad_link:
+  zh-CN: TOTP 密钥无效：链接格式不正确。
+  en: "Invalid TOTP secret: the link is malformed."
+  zh-TW: TOTP 金鑰無效：連結格式不正確。
+  ja: TOTP シークレットが無効です：リンクの形式が正しくありません。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 링크 형식이 올바르지 않습니다."
+host.totp.error.not_time_based:
+  zh-CN: TOTP 密钥无效：只支持基于时间的验证码（otpauth://totp/）。
+  en: "Invalid TOTP secret: only time-based codes (otpauth://totp/) are supported."
+  zh-TW: TOTP 金鑰無效：只支援以時間為基礎的驗證碼（otpauth://totp/）。
+  ja: TOTP シークレットが無効です：時間ベースのコード（otpauth://totp/）のみに対応しています。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 시간 기반 코드(otpauth://totp/)만 지원합니다."
+host.totp.error.bad_digits:
+  zh-CN: TOTP 密钥无效：位数只能是 6 或 8。
+  en: "Invalid TOTP secret: the number of digits must be 6 or 8."
+  zh-TW: TOTP 金鑰無效：位數只能是 6 或 8。
+  ja: TOTP シークレットが無効です：桁数は 6 または 8 のみです。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 자릿수는 6 또는 8이어야 합니다."
+host.totp.error.bad_period:
+  zh-CN: TOTP 密钥无效：周期需在 1 到 300 秒之间。
+  en: "Invalid TOTP secret: the period must be between 1 and 300 seconds."
+  zh-TW: TOTP 金鑰無效：週期須介於 1 到 300 秒之間。
+  ja: TOTP シークレットが無効です：周期は 1～300 秒の範囲で指定してください。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 주기는 1~300초 사이여야 합니다."
+host.totp.error.bad_algorithm:
+  zh-CN: TOTP 密钥无效：不支持这种算法。
+  en: "Invalid TOTP secret: the algorithm isn't supported."
+  zh-TW: TOTP 金鑰無效：不支援這種演算法。
+  ja: TOTP シークレットが無効です：このアルゴリズムには対応していません。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 지원하지 않는 알고리즘입니다."
+host.totp.error.missing_secret:
+  zh-CN: TOTP 密钥无效：链接中缺少密钥。
+  en: "Invalid TOTP secret: the link has no secret."
+  zh-TW: TOTP 金鑰無效：連結中缺少金鑰。
+  ja: TOTP シークレットが無効です：リンクにシークレットが含まれていません。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 링크에 비밀 키가 없습니다."
+host.totp.error.bad_base32:
+  zh-CN: TOTP 密钥无效：不是有效的 Base32 字符串。
+  en: "Invalid TOTP secret: it isn't a valid Base32 string."
+  zh-TW: TOTP 金鑰無效：不是有效的 Base32 字串。
+  ja: TOTP シークレットが無効です：有効な Base32 文字列ではありません。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 올바른 Base32 문자열이 아닙니다."
+host.totp.error.too_short:
+  zh-CN: TOTP 密钥无效：密钥过短。
+  en: "Invalid TOTP secret: the secret is too short."
+  zh-TW: TOTP 金鑰無效：金鑰過短。
+  ja: TOTP シークレットが無効です：シークレットが短すぎます。
+  ko: "TOTP 비밀 키가 잘못되었습니다: 비밀 키가 너무 짧습니다."
+host.totp.error.invalid:
+  zh-CN: TOTP 密钥无效。
+  en: Invalid TOTP secret.
+  zh-TW: TOTP 金鑰無效。
+  ja: TOTP シークレットが無効です。
+  ko: TOTP 비밀 키가 잘못되었습니다.
+host.terminal.scheme:
+  zh-CN: 终端配色
+  en: Terminal color scheme
+  zh-TW: 終端機配色
+  ja: ターミナルの配色
+  ko: 터미널 색 구성표
+host.terminal.scheme_hint:
+  zh-CN: 固定使用一套配色，不随界面深浅切换，例如给生产环境用醒目的配色。
+  en: A fixed color scheme that doesn't follow light or dark mode, for example a striking one for production.
+  zh-TW: 固定使用一套配色，不隨介面深淺切換，例如為正式環境使用醒目的配色。
+  ja: ライト／ダークの切り替えに関係なく固定の配色を使います。たとえば本番環境に目立つ配色を設定できます。
+  ko: 라이트/다크 모드와 관계없이 고정된 색 구성표를 사용합니다. 예를 들어 프로덕션 환경에 눈에 띄는 색 구성표를 지정할 수 있습니다.
+host.terminal.scheme_inherit:
+  zh-CN: 沿用分组“%{group}”：%{name}
+  en: "From group \"%{group}\": %{name}"
+  zh-TW: 沿用群組「%{group}」：%{name}
+  ja: グループ「%{group}」の設定を使用：%{name}
+  ko: "'%{group}' 그룹 설정 사용: %{name}"
+host.terminal.encoding:
+  zh-CN: 编码
+  en: Encoding
+  zh-TW: 編碼
+  ja: エンコード
+  ko: 인코딩
+host.terminal.encoding_hint:
+  zh-CN: 服务器或设备使用的编码，老的网络设备多为 GBK。
+  en: The encoding the server or device uses. Older network devices often use GBK.
+  zh-TW: 伺服器或裝置使用的編碼，老舊的網路裝置多為 GBK。
+  ja: サーバーやデバイスが使うエンコードです。古いネットワーク機器では GBK が多く使われています。
+  ko: 서버나 장치에서 사용하는 인코딩입니다. 오래된 네트워크 장비는 GBK를 많이 사용합니다.
+host.sftp.encoding:
+  zh-CN: SFTP 文件名编码
+  en: SFTP file name encoding
+  zh-TW: SFTP 檔名編碼
+  ja: SFTP のファイル名のエンコード
+  ko: SFTP 파일 이름 인코딩
+host.sftp.encoding_hint:
+  zh-CN: 服务器上文件名的编码，老服务器上的中文文件名常是 GBK。解码不了的字节显示为 <0xNN>，照样能打开、改名、删除。
+  en: The encoding of file names on the server. Chinese names on older servers are often GBK. Bytes that can't be decoded show as <0xNN> and can still be opened, renamed, and deleted.
+  zh-TW: 伺服器上檔名的編碼，老舊伺服器上的中文檔名常是 GBK。無法解碼的位元組顯示為 <0xNN>，照樣能開啟、重新命名、刪除。
+  ja: サーバー上のファイル名のエンコードです。古いサーバーの中国語ファイル名は GBK であることがよくあります。デコードできないバイトは <0xNN> と表示されますが、そのまま開く、名前を変更する、削除することができます。
+  ko: 서버에 있는 파일 이름의 인코딩입니다. 오래된 서버의 중국어 파일 이름은 GBK인 경우가 많습니다. 디코딩할 수 없는 바이트는 <0xNN>으로 표시되지만 그대로 열기, 이름 바꾸기, 삭제를 할 수 있습니다.
+host.terminal.startup:
+  zh-CN: 登录后执行的命令
+  en: Commands to run after login
+  zh-TW: 登入後執行的指令
+  ja: ログイン後に実行するコマンド
+  ko: 로그인 후 실행할 명령
+host.terminal.startup_placeholder:
+  zh-CN: 例如 cd /srv/app
+  en: For example, cd /srv/app
+  zh-TW: 例如 cd /srv/app
+  ja: 例：cd /srv/app
+  ko: "예: cd /srv/app"
+host.terminal.startup_hint:
+  zh-CN: 每行一条。打开终端（以及断线重连到新的 shell）后，等提示符出现再依次发送；在 tmux 中重连回到原来的会话时不执行。
+  en: One per line. Sent once the prompt appears after the terminal opens (and after reconnecting to a new shell). Not sent when reattaching to an existing tmux session.
+  zh-TW: 每行一條。開啟終端機（以及斷線重連到新的 shell）後，等提示字元出現再依序傳送；在 tmux 中重連回到原來的工作階段時不執行。
+  ja: 1 行に 1 つ。ターミナルを開いたとき（および切断後に新しいシェルへ再接続したとき）、プロンプトが表示されるのを待って順に送信します。tmux で元のセッションに再接続した場合は実行しません。
+  ko: 한 줄에 하나씩 씁니다. 터미널을 열거나 연결이 끊긴 뒤 새 셸로 다시 연결하면 프롬프트가 나타나기를 기다렸다가 차례로 보냅니다. tmux에서 원래 세션으로 다시 연결할 때는 실행하지 않습니다.
+host.terminal.tmux:
+  zh-CN: 在 tmux 中打开终端
+  en: Open terminals in tmux
+  zh-TW: 在 tmux 中開啟終端機
+  ja: tmux でターミナルを開く
+  ko: tmux에서 터미널 열기
+host.terminal.tmux_hint:
+  zh-CN: 断线重连后回到原来的会话，正在运行的程序不会中断；关闭 Tab 时结束该 tmux 会话。远端需要安装 tmux。
+  en: After a reconnect you return to the same session and running programs keep going. Closing the tab ends the tmux session. Requires tmux on the server.
+  zh-TW: 斷線重連後回到原來的工作階段，正在執行的程式不會中斷；關閉分頁時結束該 tmux 工作階段。遠端需要安裝 tmux。
+  ja: 切断後に再接続すると元のセッションに戻り、実行中のプログラムは中断されません。タブを閉じるとその tmux セッションを終了します。リモートに tmux がインストールされている必要があります。
+  ko: 연결이 끊긴 뒤 다시 연결하면 원래 세션으로 돌아가며 실행 중인 프로그램은 중단되지 않습니다. 탭을 닫으면 해당 tmux 세션을 종료합니다. 원격에 tmux가 설치되어 있어야 합니다.
+host.cli.allow:
+  zh-CN: 允许 Termlet 命令行访问
+  en: Allow Termlet command-line access
+  zh-TW: 允許 Termlet 命令列存取
+  ja: Termlet のコマンドラインアクセスを許可
+  ko: Termlet 명령줄 액세스 허용
+host.cli.allow_hint:
+  zh-CN: Claude Code 等 AI 工具可以通过 termlet 命令在这台主机上执行命令，所有调用都会记录。
+  en: AI tools such as Claude Code can run commands on this host through the termlet command. Every call is logged.
+  zh-TW: Claude Code 等 AI 工具可以透過 termlet 指令在這台主機上執行指令，所有呼叫都會記錄。
+  ja: Claude Code などの AI ツールが termlet コマンドを通じてこのホストでコマンドを実行できます。すべての呼び出しが記録されます。
+  ko: Claude Code 등의 AI 도구가 termlet 명령을 통해 이 호스트에서 명령을 실행할 수 있습니다. 모든 호출이 기록됩니다.
+host.cli.separate:
+  zh-CN: 命令行工具使用单独的凭据
+  en: Use a separate credential for the command-line tool
+  zh-TW: 命令列工具使用單獨的認證資訊
+  ja: コマンドラインツールには別の認証情報を使用
+  ko: 명령줄 도구에 별도의 자격 증명 사용
+host.cli.separate_hint:
+  zh-CN: 推荐使用服务器上的低权限账号，真正限制 AI 工具能做什么的是服务器端的权限。
+  en: A low-privilege server account is recommended. Server-side permissions are what really limit AI tools.
+  zh-TW: 建議使用伺服器上的低權限帳號，真正限制 AI 工具能做什麼的是伺服器端的權限。
+  ja: サーバー上の権限の低いアカウントをおすすめします。AI ツールにできることを実際に制限するのはサーバー側の権限です。
+  ko: 서버의 권한이 낮은 계정을 사용하는 것이 좋습니다. AI 도구가 할 수 있는 일을 실제로 제한하는 것은 서버 측 권한입니다.
+host.cli.username_placeholder:
+  zh-CN: 留空则使用主机的用户名
+  en: Defaults to the host's user name
+  zh-TW: 留空則使用主機的使用者名稱
+  ja: 空欄の場合はホストのユーザー名を使用
+  ko: 비워 두면 호스트의 사용자 이름 사용
+host.tags.label:
+  zh-CN: 标签
+  en: Tags
+  zh-TW: 標籤
+  ja: タグ
+  ko: 태그
+host.tags.placeholder:
+  zh-CN: 用逗号分隔，例如：生产, web
+  en: Comma separated, for example prod, web
+  zh-TW: 以逗號分隔，例如：正式, web
+  ja: コンマ区切り。例：本番, web
+  ko: "쉼표로 구분. 예: 운영, web"
+host.tags.note:
+  zh-CN: 备注
+  en: Note
+  zh-TW: 備註
+  ja: メモ
+  ko: 메모
+host.tags.favorite:
+  zh-CN: 收藏
+  en: Favorite
+  zh-TW: 我的最愛
+  ja: お気に入り
+  ko: 즐겨찾기
+host.test.button:
+  zh-CN: 测试连接
+  en: Test connection
+  zh-TW: 測試連線
+  ja: 接続テスト
+  ko: 연결 테스트
+host.test.running:
+  zh-CN: 正在连接…
+  en: Connecting…
+  zh-TW: 正在連線…
+  ja: 接続しています…
+  ko: 연결하는 중…
+host.test.passed:
+  zh-CN: 连接成功，耗时 %{ms} ms（%{version}）
+  en: Connected in %{ms} ms (%{version})
+  zh-TW: 連線成功，耗時 %{ms} ms（%{version}）
+  ja: 接続に成功しました。所要時間 %{ms} ms（%{version}）
+  ko: 연결에 성공했습니다. %{ms} ms 걸림(%{version})
+host.error.address_required:
+  zh-CN: 请填写地址。
+  en: Enter the address.
+  zh-TW: 請填寫位址。
+  ja: アドレスを入力してください。
+  ko: 주소를 입력하세요.
+host.error.port:
+  zh-CN: 端口需在 1 到 65535 之间。
+  en: The port must be between 1 and 65535.
+  zh-TW: 連接埠須介於 1 到 65535 之間。
+  ja: ポートは 1～65535 の範囲で指定してください。
+  ko: 포트는 1~65535 사이여야 합니다.
+host.error.username_required:
+  zh-CN: 请填写用户名（也可以在凭据档案或分组的默认值中设置）。
+  en: Enter a user name (or set one in a credential profile or a group default).
+  zh-TW: 請填寫使用者名稱（也可以在認證資訊設定檔或群組的預設值中設定）。
+  ja: ユーザー名を入力してください（認証プロファイルやグループのデフォルトで設定することもできます）。
+  ko: 사용자 이름을 입력하세요(자격 증명 프로필이나 그룹 기본값에서 설정할 수도 있습니다).
+host.error.profile_required:
+  zh-CN: 请选择凭据档案。
+  en: Choose a credential profile.
+  zh-TW: 請選擇認證資訊設定檔。
+  ja: 認証プロファイルを選択してください。
+  ko: 자격 증명 프로필을 선택하세요.
+host.error.key_library_required:
+  zh-CN: 请选择密钥库中的密钥。
+  en: Choose a key from the key library.
+  zh-TW: 請選擇金鑰庫中的金鑰。
+  ja: 鍵ライブラリから鍵を選択してください。
+  ko: 키 라이브러리에서 키를 선택하세요.
+host.error.key_file_required:
+  zh-CN: 请填写私钥文件的路径。
+  en: Enter the path to the private key file.
+  zh-TW: 請填寫私密金鑰檔案的路徑。
+  ja: 秘密鍵ファイルのパスを入力してください。
+  ko: 개인 키 파일 경로를 입력하세요.
+host.error.key_pasted_required:
+  zh-CN: 请粘贴私钥的内容。
+  en: Paste the private key.
+  zh-TW: 請貼上私密金鑰的內容。
+  ja: 秘密鍵の内容を貼り付けてください。
+  ko: 개인 키 내용을 붙여넣으세요.
+host.error.key_wrong_passphrase:
+  zh-CN: 私钥密码不正确。
+  en: The key passphrase is wrong.
+  zh-TW: 私密金鑰密碼不正確。
+  ja: 秘密鍵のパスフレーズが正しくありません。
+  ko: 개인 키 암호 문구가 올바르지 않습니다.
+host.error.key_unsupported:
+  zh-CN: 不支持这种私钥（DSA、Ed448、FIDO 安全密钥、加密的 PKCS#8 等）。
+  en: This kind of private key isn't supported (DSA, Ed448, FIDO security keys, encrypted PKCS#8, and so on).
+  zh-TW: 不支援這種私密金鑰（DSA、Ed448、FIDO 安全性金鑰、加密的 PKCS#8 等）。
+  ja: この種類の秘密鍵には対応していません（DSA、Ed448、FIDO セキュリティキー、暗号化された PKCS#8 など）。
+  ko: 이 유형의 개인 키는 지원하지 않습니다(DSA, Ed448, FIDO 보안 키, 암호화된 PKCS#8 등).
+host.error.key_invalid:
+  zh-CN: 认不出这段私钥，请确认粘贴的是完整的私钥。
+  en: The private key isn't recognized. Make sure you pasted the whole key.
+  zh-TW: 無法辨識這段私密金鑰，請確認貼上的是完整的私密金鑰。
+  ja: この秘密鍵を認識できません。秘密鍵全体を貼り付けたか確認してください。
+  ko: 이 개인 키를 인식할 수 없습니다. 키 전체를 붙여넣었는지 확인하세요.
+host.error.totp_required:
+  zh-CN: 请填写 TOTP 密钥。
+  en: Enter the TOTP secret.
+  zh-TW: 請填寫 TOTP 金鑰。
+  ja: TOTP シークレットを入力してください。
+  ko: TOTP 비밀 키를 입력하세요.
+host.error.cli_credential_required:
+  zh-CN: 请填写命令行工具专用的密码，或选择私钥。
+  en: Enter a password for the command-line tool, or choose a private key.
+  zh-TW: 請填寫命令列工具專用的密碼，或選擇私密金鑰。
+  ja: コマンドラインツール専用のパスワードを入力するか、秘密鍵を選択してください。
+  ko: 명령줄 도구 전용 비밀번호를 입력하거나 개인 키를 선택하세요.
+host.field.protocol:
+  zh-CN: 协议
+  en: Protocol
+  zh-TW: 通訊協定
+  ja: プロトコル
+  ko: 프로토콜
+host.protocol.serial:
+  zh-CN: 串口
+  en: Serial
+  zh-TW: 序列埠
+  ja: シリアル
+  ko: 직렬
+host.telnet.login_hint:
+  zh-CN: 填写后，看到登录提示时自动填写用户名与密码（可不填）
+  en: If filled in, the user name and password are entered automatically at the login prompt (optional)
+  zh-TW: 填寫後，出現登入提示時自動填寫使用者名稱與密碼（可不填）
+  ja: 入力しておくと、ログインプロンプトが表示されたときにユーザー名とパスワードを自動入力します（省略可）
+  ko: 입력해 두면 로그인 프롬프트가 나타날 때 사용자 이름과 비밀번호를 자동으로 입력합니다(선택 사항)
+host.telnet.password_placeholder:
+  zh-CN: 密码（自动登录用，可不填）
+  en: Password (for automatic login, optional)
+  zh-TW: 密碼（自動登入用，可不填）
+  ja: パスワード（自動ログイン用、省略可）
+  ko: 비밀번호(자동 로그인용, 선택 사항)
+host.telnet.term_type:
+  zh-CN: 终端类型
+  en: Terminal type
+  zh-TW: 終端機類型
+  ja: 端末タイプ
+  ko: 터미널 유형
+host.telnet.term_type_hint:
+  zh-CN: 协商时告诉服务器的终端类型，留空为 xterm-256color
+  en: The terminal type reported to the server. Leave empty for xterm-256color.
+  zh-TW: 協商時告知伺服器的終端機類型，留空為 xterm-256color
+  ja: ネゴシエーション時にサーバーへ伝える端末タイプ。空欄の場合は xterm-256color
+  ko: 협상할 때 서버에 알리는 터미널 유형. 비워 두면 xterm-256color
+host.serial.port:
+  zh-CN: 串口
+  en: Serial port
+  zh-TW: 序列埠
+  ja: シリアルポート
+  ko: 직렬 포트
+host.serial.port_placeholder:
+  zh-CN: COM3 或 /dev/ttyUSB0
+  en: COM3 or /dev/ttyUSB0
+  zh-TW: COM3 或 /dev/ttyUSB0
+  ja: COM3 または /dev/ttyUSB0
+  ko: COM3 또는 /dev/ttyUSB0
+host.serial.refresh:
+  zh-CN: 重新检测串口
+  en: Detect serial ports again
+  zh-TW: 重新偵測序列埠
+  ja: シリアルポートを再検出
+  ko: 직렬 포트 다시 검색
+host.serial.none:
+  zh-CN: 没有检测到串口，可以手动填写
+  en: No serial ports were detected. You can type one in.
+  zh-TW: 沒有偵測到序列埠，可以手動填寫
+  ja: シリアルポートが検出されませんでした。手動で入力できます
+  ko: 직렬 포트를 찾지 못했습니다. 직접 입력할 수 있습니다
+host.serial.baud:
+  zh-CN: 波特率
+  en: Baud rate
+  zh-TW: 鮑率
+  ja: ボーレート
+  ko: 보드 레이트
+host.serial.baud_presets:
+  zh-CN: 常用的波特率
+  en: Common baud rates
+  zh-TW: 常用的鮑率
+  ja: よく使うボーレート
+  ko: 자주 쓰는 보드 레이트
+host.serial.data_bits:
+  zh-CN: 数据位
+  en: Data bits
+  zh-TW: 資料位元
+  ja: データビット
+  ko: 데이터 비트
+host.serial.parity:
+  zh-CN: 校验
+  en: Parity
+  zh-TW: 同位檢查
+  ja: パリティ
+  ko: 패리티
+host.serial.stop_bits:
+  zh-CN: 停止位
+  en: Stop bits
+  zh-TW: 停止位元
+  ja: ストップビット
+  ko: 정지 비트
+host.serial.parity_none:
+  zh-CN: 无
+  en: None
+  zh-TW: 無
+  ja: なし
+  ko: 없음
+host.serial.parity_odd:
+  zh-CN: 奇
+  en: Odd
+  zh-TW: 奇數
+  ja: 奇数
+  ko: 홀수
+host.serial.parity_even:
+  zh-CN: 偶
+  en: Even
+  zh-TW: 偶數
+  ja: 偶数
+  ko: 짝수
+host.serial.parity_mark:
+  zh-CN: 标记
+  en: Mark
+  zh-TW: 標記
+  ja: マーク
+  ko: 마크
+host.serial.parity_space:
+  zh-CN: 空格
+  en: Space
+  zh-TW: 空格
+  ja: スペース
+  ko: 공백
+host.serial.flow_control:
+  zh-CN: 流控
+  en: Flow control
+  zh-TW: 流量控制
+  ja: フロー制御
+  ko: 흐름 제어
+host.serial.flow_control_hint:
+  zh-CN: 大多数设备的控制台口不用流控
+  en: Most device console ports don't use flow control.
+  zh-TW: 大多數裝置的主控台連接埠不使用流量控制
+  ja: ほとんどの機器のコンソールポートはフロー制御を使いません
+  ko: 대부분의 장치 콘솔 포트는 흐름 제어를 사용하지 않습니다
+host.serial.flow_none:
+  zh-CN: 无
+  en: None
+  zh-TW: 無
+  ja: なし
+  ko: 없음
+host.serial.flow_rts_cts:
+  zh-CN: 硬件（RTS / CTS）
+  en: Hardware (RTS / CTS)
+  zh-TW: 硬體（RTS / CTS）
+  ja: ハードウェア（RTS / CTS）
+  ko: 하드웨어(RTS / CTS)
+host.serial.flow_xon_xoff:
+  zh-CN: 软件（XON / XOFF）
+  en: Software (XON / XOFF)
+  zh-TW: 軟體（XON / XOFF）
+  ja: ソフトウェア（XON / XOFF）
+  ko: 소프트웨어(XON / XOFF)
+host.line.enter:
+  zh-CN: 回车键发送
+  en: Enter key sends
+  zh-TW: Enter 鍵傳送
+  ja: Enter キーで送信する文字
+  ko: Enter 키로 보낼 문자
+host.line.enter_hint:
+  zh-CN: Telnet 通常为 CR LF，串口设备通常为 CR
+  en: Telnet usually uses CR LF; serial devices usually use CR.
+  zh-TW: Telnet 通常為 CR LF，序列埠裝置通常為 CR
+  ja: Telnet では通常 CR LF、シリアル機器では通常 CR
+  ko: Telnet은 보통 CR LF, 직렬 장치는 보통 CR
+host.line.local_echo:
+  zh-CN: 本地回显
+  en: Local echo
+  zh-TW: 本機回應
+  ja: ローカルエコー
+  ko: 로컬 에코
+host.line.local_echo_hint_telnet:
+  zh-CN: 自动：服务器不回显时在本地显示输入
+  en: "Auto: show what you type locally when the server doesn't echo it"
+  zh-TW: 自動：伺服器不回應輸入內容時在本機顯示
+  ja: 自動：サーバーがエコーしない場合に入力をローカルに表示
+  ko: "자동: 서버가 에코하지 않으면 입력 내용을 로컬에 표시"
+host.line.local_echo_hint_serial:
+  zh-CN: 设备不回显输入时打开
+  en: Turn this on when the device doesn't echo what you type.
+  zh-TW: 裝置不回應輸入內容時開啟
+  ja: 機器が入力をエコーしない場合にオンにします
+  ko: 장치가 입력 내용을 에코하지 않으면 켜세요
+host.line.echo_auto:
+  zh-CN: 自动
+  en: Auto
+  zh-TW: 自動
+  ja: 自動
+  ko: 자동
+host.line.echo_on:
+  zh-CN: 开
+  en: "On"
+  zh-TW: 開
+  ja: オン
+  ko: 켜기
+host.line.echo_off:
+  zh-CN: 关
+  en: "Off"
+  zh-TW: 關
+  ja: オフ
+  ko: 끄기
+host.line.backspace:
+  zh-CN: 退格键发送
+  en: Backspace sends
+  zh-TW: Backspace 鍵傳送
+  ja: Backspace キーで送信する文字
+  ko: Backspace 키로 보낼 문자
+host.line.backspace_hint:
+  zh-CN: 部分老设备只认 Ctrl+H（BS）
+  en: Some older devices only accept Ctrl+H (BS).
+  zh-TW: 部分老舊裝置只接受 Ctrl+H（BS）
+  ja: 一部の古い機器は Ctrl+H（BS）しか受け付けません
+  ko: 일부 오래된 장치는 Ctrl+H(BS)만 인식합니다
+host.test.passed_telnet:
+  zh-CN: 连接成功，耗时 %{ms} ms（只测网络，不登录）
+  en: Connected in %{ms} ms (network only; didn't log in)
+  zh-TW: 連線成功，耗時 %{ms} ms（只測試網路，不登入）
+  ja: 接続に成功しました。所要時間 %{ms} ms（ネットワークのみテスト、ログインはしません）
+  ko: 연결에 성공했습니다. %{ms} ms 걸림(네트워크만 테스트, 로그인하지 않음)
+host.test.passed_serial:
+  zh-CN: 串口可以正常打开
+  en: The serial port opens normally
+  zh-TW: 序列埠可以正常開啟
+  ja: シリアルポートを正常に開けます
+  ko: 직렬 포트를 정상적으로 열 수 있습니다
+host.error.serial_port_required:
+  zh-CN: 请选择或填写串口（例如 COM3、/dev/ttyUSB0）。
+  en: Choose or enter a serial port (for example COM3 or /dev/ttyUSB0).
+  zh-TW: 請選擇或填寫序列埠（例如 COM3、/dev/ttyUSB0）。
+  ja: シリアルポートを選択または入力してください（例：COM3、/dev/ttyUSB0）。
+  ko: "직렬 포트를 선택하거나 입력하세요(예: COM3, /dev/ttyUSB0)."
+host.error.baud:
+  zh-CN: 波特率需在 50 到 20000000 之间。
+  en: The baud rate must be between 50 and 20000000.
+  zh-TW: 鮑率須介於 50 到 20000000 之間。
+  ja: ボーレートは 50～20000000 の範囲で指定してください。
+  ko: 보드 레이트는 50~20000000 사이여야 합니다.
+host.terminal.record:
+  zh-CN: "连接后自动录制"
+  en: "Record sessions automatically"
+  zh-TW: "連線後自動錄製"
+  ja: "接続後に自動で録画"
+  ko: "연결 후 자동 녹화"
+host.terminal.record_hint:
+  zh-CN: "每次连上（含断线重连）都开始一个新的会话录制，保存在设置中录制文件的目录下。"
+  en: "Starts a new session recording every time you connect, including reconnects. Recordings are saved in the recordings folder set in Settings."
+  zh-TW: "每次連上（含斷線重連）都開始一個新的工作階段錄製，儲存在設定中錄製檔的目錄下。"
+  ja: "接続するたび（切断後の再接続を含む）に新しいセッションの録画を開始し、設定の録画ファイルのフォルダーに保存します。"
+  ko: "연결할 때마다(끊긴 뒤 다시 연결 포함) 새 세션 녹화를 시작하며, 설정의 녹화 파일 폴더에 저장합니다."

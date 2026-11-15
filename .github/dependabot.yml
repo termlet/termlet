@@ -1,0 +1,17 @@
+# Dependabot：只更新 GitHub Actions（工作流中固定到提交哈希的 action，更新时连同后面的版本注释一起改）。
+# 不开 cargo 生态：GPUI 一族互相精确固定版本（见 CLAUDE.md），依赖由人按步骤升级、逐项核对锁文件，不能让它随手改。
+# 仓库的漏洞提醒（Dependabot alerts）另在设置中开着；自动安全修复关掉了。
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # 新版本发布 7 天后才提议升级：被篡改的版本通常几天内就会被发现、撤下
+    cooldown:
+      default-days: 7
+    # 所有 action 的更新合成一个合并请求
+    groups:
+      actions:
+        patterns: ['*']
+    open-pull-requests-limit: 2

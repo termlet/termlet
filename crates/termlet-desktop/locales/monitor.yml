@@ -1,0 +1,223 @@
+_version: 2
+monitor.latency_good:
+  zh-CN: 网络延迟 %{ms} ms，良好
+  en: Network latency %{ms} ms, good
+  zh-TW: 網路延遲 %{ms} ms，良好
+  ja: ネットワーク遅延 %{ms} ms、良好
+  ko: 네트워크 지연 시간 %{ms} ms, 양호
+monitor.latency_warning:
+  zh-CN: 网络延迟 %{ms} ms，偏高
+  en: Network latency %{ms} ms, high
+  zh-TW: 網路延遲 %{ms} ms，偏高
+  ja: ネットワーク遅延 %{ms} ms、やや高め
+  ko: 네트워크 지연 시간 %{ms} ms, 다소 높음
+monitor.latency_poor:
+  zh-CN: 网络延迟 %{ms} ms，很高
+  en: Network latency %{ms} ms, very high
+  zh-TW: 網路延遲 %{ms} ms，很高
+  ja: ネットワーク遅延 %{ms} ms、非常に高い
+  ko: 네트워크 지연 시간 %{ms} ms, 매우 높음
+monitor.latency_unknown:
+  zh-CN: 还没有测到网络延迟
+  en: Network latency not measured yet
+  zh-TW: 尚未測得網路延遲
+  ja: ネットワーク遅延はまだ測定されていません
+  ko: 네트워크 지연 시간을 아직 측정하지 못했습니다
+monitor.single_channel:
+  zh-CN: 单通道连接，不显示资源
+  en: Single-channel connection; resources aren't shown
+  zh-TW: 單一通道連線，不顯示資源
+  ja: シングルチャネル接続のため、リソースは表示されません
+  ko: 단일 채널 연결이므로 리소스를 표시하지 않습니다
+monitor.loading:
+  zh-CN: 正在读取…
+  en: Loading…
+  zh-TW: 正在讀取…
+  ja: 読み込み中…
+  ko: 읽는 중…
+monitor.bar.latency:
+  zh-CN: 延迟
+  en: Ping
+  zh-TW: 延遲
+  ja: 遅延
+  ko: 지연
+monitor.bar.cpu:
+  zh-CN: CPU
+  en: CPU
+  zh-TW: CPU
+  ja: CPU
+  ko: CPU
+monitor.bar.memory:
+  zh-CN: 内存
+  en: Mem
+  zh-TW: 記憶體
+  ja: メモリ
+  ko: 메모리
+monitor.bar.disk:
+  zh-CN: 磁盘
+  en: Disk
+  zh-TW: 磁碟
+  ja: ディスク
+  ko: 디스크
+monitor.bar.load:
+  zh-CN: 负载
+  en: Load
+  zh-TW: 負載
+  ja: 負荷
+  ko: 부하
+monitor.bar.open:
+  zh-CN: 在主机工具中查看概览（右键状态条可切换完整 / 精简）
+  en: Show the overview in host tools (right-click the status bar to switch between full and compact)
+  zh-TW: 在主機工具中檢視概覽（在狀態列上按右鍵可切換完整 / 精簡）
+  ja: ホストツールで概要を表示（ステータスバーを右クリックすると詳細 / 簡易を切り替えられます）
+  ko: 호스트 도구에서 개요 보기(상태 표시줄을 오른쪽 클릭하면 전체 / 간단히를 전환할 수 있습니다)
+monitor.bar.overview:
+  zh-CN: 查看概览
+  en: Show overview
+  zh-TW: 檢視概覽
+  ja: 概要を表示
+  ko: 개요 보기
+monitor.bar.style_full:
+  zh-CN: 完整
+  en: Full
+  zh-TW: 完整
+  ja: 詳細
+  ko: 전체
+monitor.bar.style_compact:
+  zh-CN: 精简
+  en: Compact
+  zh-TW: 精簡
+  ja: 簡易
+  ko: 간단히
+monitor.tip.cpu:
+  zh-CN: CPU 使用率 %{value}%，%{cores} 核
+  en: CPU usage %{value}% on %{cores} cores
+  zh-TW: CPU 使用率 %{value}%，%{cores} 核心
+  ja: CPU 使用率 %{value}%、%{cores} コア
+  ko: CPU 사용률 %{value}%, %{cores}코어
+monitor.tip.cpu_one_core:
+  zh-CN: CPU 使用率 %{value}%，1 核
+  en: CPU usage %{value}% on 1 core
+  zh-TW: CPU 使用率 %{value}%，1 核心
+  ja: CPU 使用率 %{value}%、1 コア
+  ko: CPU 사용률 %{value}%, 1코어
+monitor.tip.cpu_unknown:
+  zh-CN: CPU 使用率要等下一次采样，%{cores} 核
+  en: CPU usage appears after the next sample, %{cores} cores
+  zh-TW: CPU 使用率要等下一次取樣，%{cores} 核心
+  ja: CPU 使用率は次回のサンプリング後に表示されます、%{cores} コア
+  ko: CPU 사용률은 다음 샘플링 후에 표시됩니다, %{cores}코어
+monitor.tip.cpu_unknown_one_core:
+  zh-CN: CPU 使用率要等下一次采样，1 核
+  en: CPU usage appears after the next sample, 1 core
+  zh-TW: CPU 使用率要等下一次取樣，1 核心
+  ja: CPU 使用率は次回のサンプリング後に表示されます、1 コア
+  ko: CPU 사용률은 다음 샘플링 후에 표시됩니다, 1코어
+monitor.tip.cpu_wait:
+  zh-CN: 等待 I/O（iowait）%{iowait}%，被虚拟化平台占用（steal）%{steal}%
+  en: Waiting for I/O (iowait) %{iowait}%, taken by the hypervisor (steal) %{steal}%
+  zh-TW: 等待 I/O（iowait）%{iowait}%，被虛擬化平台佔用（steal）%{steal}%
+  ja: I/O 待ち（iowait）%{iowait}%、仮想化基盤による使用（steal）%{steal}%
+  ko: I/O 대기(iowait) %{iowait}%, 하이퍼바이저 점유(steal) %{steal}%
+monitor.tip.memory:
+  zh-CN: 内存已用 %{used} / %{total}（%{percent}%）
+  en: Memory used %{used} / %{total} (%{percent}%)
+  zh-TW: 記憶體已用 %{used} / %{total}（%{percent}%）
+  ja: メモリ使用量 %{used} / %{total}（%{percent}%）
+  ko: 메모리 사용량 %{used} / %{total}(%{percent}%)
+monitor.tip.disk:
+  zh-CN: 最满的磁盘 %{mount}：已用 %{used} / %{total}（%{percent}%）
+  en: "Fullest disk %{mount}: %{used} / %{total} used (%{percent}%)"
+  zh-TW: 最滿的磁碟 %{mount}：已用 %{used} / %{total}（%{percent}%）
+  ja: 最も使用率の高いディスク %{mount}：%{used} / %{total} 使用（%{percent}%）
+  ko: "가장 많이 찬 디스크 %{mount}: %{used} / %{total} 사용(%{percent}%)"
+monitor.tip.net:
+  zh-CN: 下载 %{rx}，上传 %{tx}
+  en: Download %{rx}, upload %{tx}
+  zh-TW: 下載 %{rx}，上傳 %{tx}
+  ja: ダウンロード %{rx}、アップロード %{tx}
+  ko: 다운로드 %{rx}, 업로드 %{tx}
+monitor.tip.net_note:
+  zh-CN: 不含 veth、网桥等虚拟网卡；旁边的小柱是最近 30 秒
+  en: Virtual interfaces such as veth and bridges aren't counted; the small bars show the last 30 seconds
+  zh-TW: 不含 veth、橋接器等虛擬網路介面；旁邊的小長條是最近 30 秒
+  ja: veth やブリッジなどの仮想ネットワークインターフェイスは含みません。横の小さなバーは直近 30 秒です
+  ko: veth, 브리지 등 가상 네트워크 인터페이스는 포함하지 않습니다. 옆의 작은 막대는 최근 30초입니다
+monitor.tip.load:
+  zh-CN: 1、5、15 分钟平均负载 %{a}、%{b}、%{c}，%{cores} 核
+  en: Load average over 1, 5 and 15 minutes %{a}, %{b}, %{c} on %{cores} cores
+  zh-TW: 1、5、15 分鐘平均負載 %{a}、%{b}、%{c}，%{cores} 核心
+  ja: 1・5・15 分間の平均負荷 %{a}、%{b}、%{c}、%{cores} コア
+  ko: 1분, 5분, 15분 평균 부하 %{a}, %{b}, %{c}, %{cores}코어
+monitor.tip.load_one_core:
+  zh-CN: 1、5、15 分钟平均负载 %{a}、%{b}、%{c}，1 核
+  en: Load average over 1, 5 and 15 minutes %{a}, %{b}, %{c} on 1 core
+  zh-TW: 1、5、15 分鐘平均負載 %{a}、%{b}、%{c}，1 核心
+  ja: 1・5・15 分間の平均負荷 %{a}、%{b}、%{c}、1 コア
+  ko: 1분, 5분, 15분 평균 부하 %{a}, %{b}, %{c}, 1코어
+monitor.tip.warning:
+  zh-CN: 偏高
+  en: High
+  zh-TW: 偏高
+  ja: やや高め
+  ko: 다소 높음
+monitor.tip.danger:
+  zh-CN: 过高
+  en: Very high
+  zh-TW: 過高
+  ja: 高すぎ
+  ko: 너무 높음
+monitor.detail_memory:
+  zh-CN: 内存
+  en: Memory
+  zh-TW: 記憶體
+  ja: メモリ
+  ko: 메모리
+monitor.detail_used:
+  zh-CN: "%{used} / %{total}（%{percent}%）"
+  en: "%{used} / %{total} (%{percent}%)"
+  zh-TW: "%{used} / %{total}（%{percent}%）"
+  ja: "%{used} / %{total}（%{percent}%）"
+  ko: "%{used} / %{total}(%{percent}%)"
+monitor.detail_swap:
+  zh-CN: 交换分区 %{used} / %{total}
+  en: Swap %{used} / %{total}
+  zh-TW: 交換空間 %{used} / %{total}
+  ja: スワップ %{used} / %{total}
+  ko: 스왑 %{used} / %{total}
+monitor.detail_disks:
+  zh-CN: 磁盘
+  en: Disks
+  zh-TW: 磁碟
+  ja: ディスク
+  ko: 디스크
+monitor.detail_net:
+  zh-CN: 网络
+  en: Network
+  zh-TW: 網路
+  ja: ネットワーク
+  ko: 네트워크
+monitor.net:
+  zh-CN: ↓ %{rx}  ↑ %{tx}
+  en: ↓ %{rx}  ↑ %{tx}
+  zh-TW: ↓ %{rx}  ↑ %{tx}
+  ja: ↓ %{rx}  ↑ %{tx}
+  ko: ↓ %{rx}  ↑ %{tx}
+monitor.uptime_days:
+  zh-CN: 已运行 %{days} 天 %{hours} 小时
+  en: Up %{days} d %{hours} h
+  zh-TW: 已執行 %{days} 天 %{hours} 小時
+  ja: 稼働 %{days} 日 %{hours} 時間
+  ko: 가동 %{days}일 %{hours}시간
+monitor.uptime_hours:
+  zh-CN: 已运行 %{hours} 小时 %{minutes} 分钟
+  en: Up %{hours} h %{minutes} min
+  zh-TW: 已執行 %{hours} 小時 %{minutes} 分鐘
+  ja: 稼働 %{hours} 時間 %{minutes} 分
+  ko: 가동 %{hours}시간 %{minutes}분
+monitor.uptime_minutes:
+  zh-CN: 已运行 %{minutes} 分钟
+  en: Up %{minutes} min
+  zh-TW: 已執行 %{minutes} 分鐘
+  ja: 稼働 %{minutes} 分
+  ko: 가동 %{minutes}분

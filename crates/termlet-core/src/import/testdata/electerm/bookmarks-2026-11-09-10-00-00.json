@@ -1,0 +1,238 @@
+{
+  "bookmarkGroups": [
+    {
+      "id": "default",
+      "title": "default",
+      "bookmarkIds": [
+        "web1",
+        "switch1",
+        "bastion1"
+      ],
+      "bookmarkGroupIds": [
+        "g-prod"
+      ],
+      "color": "#0088cc"
+    },
+    {
+      "id": "g-prod",
+      "title": "生产",
+      "level": 2,
+      "bookmarkIds": [
+        "app1",
+        "db1"
+      ],
+      "bookmarkGroupIds": [
+        "g-sub"
+      ]
+    },
+    {
+      "id": "g-sub",
+      "title": "子组",
+      "level": 2,
+      "bookmarkIds": [
+        "legacy1",
+        "keyfile1",
+        "profiled1",
+        "old1"
+      ],
+      "bookmarkGroupIds": [
+        "g-prod"
+      ]
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "web1",
+      "type": "ssh",
+      "title": "web1",
+      "host": "10.0.0.5",
+      "port": 22,
+      "username": "root",
+      "authType": "password",
+      "password": "secret",
+      "enableSsh": true,
+      "enableSftp": true,
+      "useSshAgent": true,
+      "agentForward": true,
+      "x11": true,
+      "term": "xterm-256color",
+      "encode": "gbk",
+      "envLang": "en_US.UTF-8",
+      "description": "主站",
+      "startDirectory": "/var/www/it's",
+      "proxy": "socks5://u:pw@127.0.0.1:1080",
+      "runScripts": [
+        {
+          "delay": 500,
+          "script": "uptime\n\n  df -h  "
+        }
+      ],
+      "sshTunnels": [
+        {
+          "id": "t1",
+          "sshTunnel": "forwardLocalToRemote",
+          "sshTunnelLocalHost": "127.0.0.1",
+          "sshTunnelLocalPort": 13306,
+          "sshTunnelRemoteHost": "db.internal",
+          "sshTunnelRemotePort": 3306,
+          "name": "mysql"
+        },
+        {
+          "id": "t2",
+          "sshTunnel": "forwardRemoteToLocal",
+          "sshTunnelLocalPort": 8080,
+          "sshTunnelRemotePort": "9090"
+        },
+        {
+          "id": "t3",
+          "sshTunnel": "dynamicForward",
+          "sshTunnelLocalHost": "127.0.0.1",
+          "sshTunnelLocalPort": 1080
+        },
+        {
+          "id": "t4",
+          "sshTunnel": "remoteDynamicForward",
+          "sshTunnelRemotePort": 1081
+        }
+      ],
+      "color": "#0088cc"
+    },
+    {
+      "id": "switch1",
+      "type": "telnet",
+      "title": "switch",
+      "host": "10.0.0.1",
+      "port": 23,
+      "username": "admin",
+      "password": "sw"
+    },
+    {
+      "id": "bastion1",
+      "title": "bastion",
+      "host": "bastion.example.com",
+      "port": "2222",
+      "username": "ops"
+    },
+    {
+      "id": "app1",
+      "type": "ssh",
+      "title": "app",
+      "host": "10.1.0.8",
+      "port": 22,
+      "username": "deploy",
+      "hasHopping": true,
+      "connectionHoppings": [
+        {
+          "id": "h1",
+          "host": "bastion.example.com",
+          "port": 2222,
+          "username": "ops",
+          "bookmarkId": "bastion1"
+        },
+        {
+          "id": "h2",
+          "host": "jump.internal",
+          "port": 22,
+          "username": "hop",
+          "password": "hop-pw"
+        }
+      ]
+    },
+    {
+      "id": "db1",
+      "type": "ssh",
+      "title": "db",
+      "host": "10.1.0.9",
+      "username": "deploy",
+      "proxy": "http://proxy.lan",
+      "proxyCommand": "nc %h %p",
+      "hasHopping": true,
+      "connectionHoppings": [
+        {
+          "id": "h3",
+          "host": "jump.internal",
+          "port": 22,
+          "username": "hop"
+        }
+      ]
+    },
+    {
+      "id": "legacy1",
+      "type": "ssh",
+      "title": "legacy",
+      "host": "10.2.0.1",
+      "username": "u",
+      "connectionHoppings": [
+        {
+          "id": "h4",
+          "host": "10.2.0.2",
+          "port": 22,
+          "username": "u"
+        }
+      ]
+    },
+    {
+      "id": "keyfile1",
+      "type": "ssh",
+      "title": "keyfile",
+      "host": "10.2.0.3",
+      "username": "k",
+      "authType": "privateKey",
+      "privateKey": "",
+      "privateKeyPath": "~/.ssh/id_rsa",
+      "passphrase": "kp"
+    },
+    {
+      "id": "profiled1",
+      "type": "ssh",
+      "title": "profiled",
+      "host": "10.2.0.4",
+      "authType": "profiles",
+      "profile": "p1"
+    },
+    {
+      "id": "old1",
+      "title": "old",
+      "host": "10.2.0.5",
+      "username": "o",
+      "password": "tgfvjz",
+      "passwordEncrypted": true,
+      "proxy": {
+        "proxyType": "0",
+        "proxyIp": "10.9.9.9",
+        "proxyPort": 3128,
+        "proxyUsername": "pu",
+        "proxyPassword": "pp"
+      }
+    },
+    {
+      "id": "serial1",
+      "type": "serial",
+      "title": "console",
+      "path": "COM3",
+      "baudRate": 9600,
+      "dataBits": 7,
+      "stopBits": 2,
+      "parity": "even",
+      "rtscts": true
+    },
+    {
+      "id": "rdp1",
+      "type": "rdp",
+      "title": "win",
+      "host": "10.3.0.1",
+      "port": 3389
+    },
+    {
+      "id": "web2",
+      "type": "web",
+      "title": "site",
+      "url": "https://example.com"
+    },
+    {
+      "id": "nohost",
+      "type": "ssh",
+      "title": "empty"
+    }
+  ]
+}

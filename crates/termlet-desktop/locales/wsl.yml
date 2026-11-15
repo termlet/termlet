@@ -1,0 +1,49 @@
+_version: 2
+wsl.error.distro_not_found:
+  zh-CN: 没有名为 %{distro} 的 WSL 发行版
+  en: There's no WSL distribution named %{distro}
+  zh-TW: 沒有名為 %{distro} 的 WSL 發行版
+  ja: "%{distro} という名前の WSL ディストリビューションはありません"
+  ko: "%{distro}(이)라는 이름의 WSL 배포판이 없습니다"
+wsl.error.spawn:
+  zh-CN: 无法运行 wsl.exe：%{reason}
+  en: "Couldn't run wsl.exe: %{reason}"
+  zh-TW: 無法執行 wsl.exe：%{reason}
+  ja: wsl.exe を実行できません：%{reason}
+  ko: "wsl.exe를 실행할 수 없습니다: %{reason}"
+wsl.error.failed:
+  zh-CN: WSL 出错：%{reason}
+  en: "WSL reported an error: %{reason}"
+  zh-TW: WSL 出錯：%{reason}
+  ja: WSL でエラーが発生しました：%{reason}
+  ko: "WSL에서 오류가 발생했습니다: %{reason}"
+wsl.error.timeout:
+  zh-CN: WSL 中的命令在 %{seconds} 秒内没有结束
+  en: The command in WSL didn't finish within %{seconds} seconds
+  zh-TW: WSL 中的指令在 %{seconds} 秒內沒有結束
+  ja: WSL 内のコマンドが %{seconds} 秒以内に終了しませんでした
+  ko: WSL의 명령이 %{seconds}초 안에 끝나지 않았습니다
+wsl.error.sftp_missing:
+  zh-CN: 发行版 %{distro} 中没有安装 OpenSSH 的 sftp-server，文件管理需要它
+  en: OpenSSH's sftp-server isn't installed in %{distro}; file management needs it
+  zh-TW: 發行版 %{distro} 中沒有安裝 OpenSSH 的 sftp-server，檔案管理需要它
+  ja: ディストリビューション %{distro} に OpenSSH の sftp-server がインストールされていません。ファイル管理に必要です
+  ko: 배포판 %{distro}에 OpenSSH의 sftp-server가 설치되어 있지 않습니다. 파일 관리에 필요합니다
+wsl.error.sftp_missing_install:
+  zh-CN: 发行版 %{distro} 中没有安装 OpenSSH 的 sftp-server，文件管理需要它。可以在这个发行版的终端中运行：%{command}
+  en: "OpenSSH's sftp-server isn't installed in %{distro}; file management needs it. Run this in the distribution's terminal: %{command}"
+  zh-TW: 發行版 %{distro} 中沒有安裝 OpenSSH 的 sftp-server，檔案管理需要它。可以在這個發行版的終端機中執行：%{command}
+  ja: ディストリビューション %{distro} に OpenSSH の sftp-server がインストールされていません。ファイル管理に必要です。このディストリビューションのターミナルで次を実行してください：%{command}
+  ko: "배포판 %{distro}에 OpenSSH의 sftp-server가 설치되어 있지 않습니다. 파일 관리에 필요합니다. 이 배포판의 터미널에서 다음을 실행하세요: %{command}"
+wsl.title:
+  zh-CN: "%{distro} (WSL)"
+  en: "%{distro} (WSL)"
+  zh-TW: "%{distro} (WSL)"
+  ja: "%{distro} (WSL)"
+  ko: "%{distro} (WSL)"
+wsl.title_with_user:
+  zh-CN: "%{distro} (WSL, %{user})"
+  en: "%{distro} (WSL, %{user})"
+  zh-TW: "%{distro} (WSL, %{user})"
+  ja: "%{distro} (WSL, %{user})"
+  ko: "%{distro} (WSL, %{user})"
