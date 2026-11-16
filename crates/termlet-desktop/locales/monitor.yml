@@ -65,12 +65,6 @@ monitor.bar.load:
   zh-TW: 負載
   ja: 負荷
   ko: 부하
-monitor.bar.open:
-  zh-CN: 在主机工具中查看概览（右键状态条可切换完整 / 精简）
-  en: Show the overview in host tools (right-click the status bar to switch between full and compact)
-  zh-TW: 在主機工具中檢視概覽（在狀態列上按右鍵可切換完整 / 精簡）
-  ja: ホストツールで概要を表示（ステータスバーを右クリックすると詳細 / 簡易を切り替えられます）
-  ko: 호스트 도구에서 개요 보기(상태 표시줄을 오른쪽 클릭하면 전체 / 간단히를 전환할 수 있습니다)
 monitor.bar.overview:
   zh-CN: 查看概览
   en: Show overview

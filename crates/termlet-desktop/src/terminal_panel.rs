@@ -2521,7 +2521,7 @@ impl TerminalPanel {
         )
     }
 
-    /// 状态条上延迟与资源的区域：按量出的宽度显示前几项（[`BarFit`]），右端是打开概览的按钮（不在收起的范围内）。
+    /// 状态条上延迟与资源的区域：按量出的宽度显示前几项（[`BarFit`]）；点它打开主机工具的概览，右键切换样式。
     fn render_monitor_summary(
         &self,
         show_latency: bool,
@@ -2600,24 +2600,7 @@ impl TerminalPanel {
                         }),
                 )
             });
-        h_flex()
-            .flex_1()
-            .min_w_0()
-            .h_full()
-            .child(area)
-            .child(
-                div().flex_none().px_1().child(
-                    Button::new(("monitor-open", id))
-                        .ghost()
-                        .xsmall()
-                        .icon(IconName::PanelRightOpen)
-                        .tooltip(t!("monitor.bar.open"))
-                        .on_click(
-                            cx.listener(|_, _, _, cx| cx.emit(TerminalPanelEvent::OpenOverview)),
-                        ),
-                ),
-            )
-            .into_any_element()
+        area.into_any_element()
     }
 
     /// 状态条的样式（完整、精简）：与设置中的是同一项，改了就保存（各终端随设置的变化重画）。
@@ -4154,7 +4137,7 @@ mod tests {
     }
 
     /// 状态条：各项的数字在固定宽度的槽中，数值变了各项不左右漂移；偏高时记下级别；窄时先收起进度条、再从优先级低的
-    /// 一项起收起，打开概览的按钮始终在状态条内。
+    /// 一项起收起，显示的各项都在状态条内、不被裁。
     #[gpui_kit::test]
     fn status_bar_keeps_slots_and_folds_by_width(cx: &mut gpui_kit::TestAppContext) {
         use gpui_kit::test::TestWindowExt as _;
@@ -4202,17 +4185,17 @@ mod tests {
             (Level::Warning, Level::Danger, Level::Danger, Level::Warning)
         );
 
-        // 窄：收起进度条，可能再收起后面的几项；显示的总是优先级高的前几项，都不被裁，打开概览的按钮在终端内
+        // 窄：收起进度条，可能再收起后面的几项；显示的总是优先级高的前几项，都不被裁，状态条在终端内
         cx.simulate_window_resize(handle, size(px(720.), px(640.)));
         render(cx, handle);
         let fit = cx.update(|cx| panel.read(cx).bar_fit.current());
         assert!(!fit.meters, "{fit:?}");
         cx.update_window(handle, |_, window, cx| {
             let area = panel.read(cx).bounds.get();
-            let open = window.find(("monitor-open", id)).bounds();
+            let bar = window.find(("monitor-bar", id)).bounds();
             assert!(
-                open.right() <= area.right() && open.left() >= area.left(),
-                "{open:?} {area:?}"
+                bar.right() <= area.right() && bar.left() >= area.left(),
+                "{bar:?} {area:?}"
             );
             let shown: Vec<bool> = items
                 .iter()
@@ -4228,13 +4211,13 @@ mod tests {
                 .filter(|item| window.try_find((**item, id)).is_some())
             {
                 let bounds = window.find((*item, id)).bounds();
-                assert!(bounds.right() <= open.left(), "{item} 不被裁、不压住按钮");
+                assert!(bounds.right() <= bar.right(), "{item} 不被裁");
             }
         })
         .unwrap();
     }
 
-    /// 点状态条（或右端的按钮）：这个终端获得焦点，主机工具打开并切到概览页。本地终端用不了主机工具：面板显示不可用
+    /// 点状态条：这个终端获得焦点，主机工具打开并切到概览页。本地终端用不了主机工具：面板显示不可用
     /// 的空状态（页签置灰、不能切换），切到别的页只能由程序做（工作区的状态条、命令面板就是这样做的）。
     #[gpui_kit::test]
     fn clicking_the_status_bar_opens_the_overview(cx: &mut gpui_kit::TestAppContext) {
@@ -4250,54 +4233,53 @@ mod tests {
                 (state.host_tools_open, state.host_tools_page.clone())
             })
         };
-        for target in ["monitor-bar", "monitor-open"] {
-            // 先在主机工具中切到进程页，再收起；焦点不在终端上
-            if !ui_state(cx).0 {
-                cx.update_window(handle, |_, window, cx| {
-                    window.click("toggle-host-tools", cx)
-                })
-                .unwrap();
-                render(cx, handle);
-            }
-            cx.update(|cx| {
-                workspace
-                    .read(cx)
-                    .host_tools_panel()
-                    .update(cx, |tools, cx| {
-                        tools.show_page(HostToolsPage::Processes, cx)
-                    })
-            });
+        let target = "monitor-bar";
+        // 先在主机工具中切到进程页，再收起；焦点不在终端上
+        if !ui_state(cx).0 {
             cx.update_window(handle, |_, window, cx| {
                 window.click("toggle-host-tools", cx)
             })
             .unwrap();
             render(cx, handle);
-            cx.update_window(handle, |_, window, cx| window.blur(cx))
-                .unwrap();
-            render(cx, handle);
-            assert_eq!(ui_state(cx), (false, Some("processes".to_string())));
-            cx.update_window(handle, |_, window, cx| {
-                window.click((target, id), cx);
-            })
-            .unwrap();
-            render(cx, handle);
-            assert_eq!(
-                ui_state(cx),
-                (true, Some("overview".to_string())),
-                "点 {target} 打开概览"
-            );
-            cx.update_window(handle, |_, window, cx| {
-                assert!(
-                    panel.read(cx).focus_handle(cx).is_focused(window),
-                    "点 {target} 后终端获得焦点"
-                );
-                assert!(
-                    window.try_find("host-tools-empty-unsupported").is_some(),
-                    "本地终端：面板说明不可用"
-                );
-            })
-            .unwrap();
         }
+        cx.update(|cx| {
+            workspace
+                .read(cx)
+                .host_tools_panel()
+                .update(cx, |tools, cx| {
+                    tools.show_page(HostToolsPage::Processes, cx)
+                })
+        });
+        cx.update_window(handle, |_, window, cx| {
+            window.click("toggle-host-tools", cx)
+        })
+        .unwrap();
+        render(cx, handle);
+        cx.update_window(handle, |_, window, cx| window.blur(cx))
+            .unwrap();
+        render(cx, handle);
+        assert_eq!(ui_state(cx), (false, Some("processes".to_string())));
+        cx.update_window(handle, |_, window, cx| {
+            window.click((target, id), cx);
+        })
+        .unwrap();
+        render(cx, handle);
+        assert_eq!(
+            ui_state(cx),
+            (true, Some("overview".to_string())),
+            "点 {target} 打开概览"
+        );
+        cx.update_window(handle, |_, window, cx| {
+            assert!(
+                panel.read(cx).focus_handle(cx).is_focused(window),
+                "点 {target} 后终端获得焦点"
+            );
+            assert!(
+                window.try_find("host-tools-empty-unsupported").is_some(),
+                "本地终端：面板说明不可用"
+            );
+        })
+        .unwrap();
     }
 
     /// 精简：平时只有 CPU、内存（本地终端没有延迟）；最满的磁盘、负载偏高时才出现（带回差，回落后隐藏）。右键状态条切回
