@@ -934,7 +934,8 @@ fn keyboard_moves_switches_and_closes(cx: &mut TestAppContext) {
     let (handle, workspace) = open(cx, 1024., 640.);
     set_position(cx, TabPosition::Left);
     let ids = open_terminals(cx, handle, &workspace, 4);
-    dispatch(cx, handle, FocusTabList);
+    // 默认快捷键（Windows、Linux 上是 Ctrl+Shift+J；焦点在终端里也能用）
+    press(cx, handle, "ctrl-shift-j");
     assert_eq!(
         list_focus(cx, handle, &workspace),
         (true, Some(Ok(ids[3]))),

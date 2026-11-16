@@ -364,7 +364,14 @@ impl KeyAction {
             Self::Tab8 => ("tab8", G::Tabs, S::Workspace, &["ctrl-alt-8"], &["cmd-8"]),
             Self::Tab9 => ("tab9", G::Tabs, S::Workspace, &["ctrl-alt-9"], &["cmd-9"]),
             Self::MoveToNewWindow => ("moveToNewWindow", G::Tabs, S::Workspace, &[], &[]),
-            Self::FocusTabList => ("focusTabList", G::Tabs, S::Workspace, &[], &[]),
+            // J：跳到（jump）Tab 列表；Ctrl+Shift+J、⇧⌘J 在系统、gpui-kit 与常见终端里都没有占用
+            Self::FocusTabList => (
+                "focusTabList",
+                G::Tabs,
+                S::Workspace,
+                &["ctrl-shift-j"],
+                &["cmd-shift-j"],
+            ),
             Self::SplitRight => (
                 "splitRight",
                 G::Panes,
@@ -1033,14 +1040,13 @@ mod tests {
         combos.iter().map(KeyCombo::to_string).collect()
     }
 
-    /// 默认没有快捷键的动作：在旁边打开 SFTP（留给键位方案）、把 Tab 移到新窗口、焦点进 Tab 列表、界面大小的三个
+    /// 默认没有快捷键的动作：在旁边打开 SFTP（留给键位方案）、把 Tab 移到新窗口、界面大小的三个
     /// （见 [`KeyAction::UiZoomIn`]）。
     fn without_default(action: KeyAction) -> bool {
         matches!(
             action,
             KeyAction::SftpBeside
                 | KeyAction::MoveToNewWindow
-                | KeyAction::FocusTabList
                 | KeyAction::UiZoomIn
                 | KeyAction::UiZoomOut
                 | KeyAction::UiZoomReset

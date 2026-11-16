@@ -667,7 +667,7 @@ Default shortcuts:
   - Hovering the icons brings up the full list beside them, over the terminal, without resizing it.
   - The width and the collapsed state are remembered, and a window too narrow for the list uses the icons by itself.
 - "Group tabs by host in the side list" (off by default; also in the right-click menu of the list's heading) puts tabs in the same pane that connect to the same host (terminals, SFTP, editors, logs) under a collapsible host heading with a count. It only changes the display, and collapsed hosts stay collapsed after a restart.
-- Keyboard: after "Focus tab list" in the command palette (you can also give it a shortcut under Settings → Shortcuts; it has none by default) or clicking an empty part of the list:
+- Keyboard: after pressing Ctrl+Shift+J (⇧⌘J on macOS; this is "Focus tab list", changeable under Settings → Shortcuts), choosing "Focus tab list" in the command palette, or clicking an empty part of the list:
   - ↑ ↓, Home and End move;
   - Enter switches to the tab (or collapses / expands a host heading);
   - Delete closes it (asking first as usual);

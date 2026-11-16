@@ -9,6 +9,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Changed
 
 - On Windows, "Restart and install" now shows an "Updating Termlet" progress window that closes and reopens Termlet when it's done; before, nothing was visible for those few seconds and it was easy to think nothing had happened. This already applies when updating from 0.3.0.
+- Vertical tabs: "Focus tab list" now has a default shortcut, Ctrl+Shift+J (⇧⌘J on macOS); then choose a tab with the arrow keys. If you've already given that combination to another action in Settings, your setting wins.
 
 ## 0.3.0 (2026-11-15)
 
