@@ -4,6 +4,12 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
+## 0.3.1 (unreleased)
+
+### Changed
+
+- On Windows, "Restart and install" now shows an "Updating Termlet" progress window that closes and reopens Termlet when it's done; before, nothing was visible for those few seconds and it was easy to think nothing had happened. This already applies when updating from 0.3.0.
+
 ## 0.3.0 (2026-11-15)
 
 ### Added

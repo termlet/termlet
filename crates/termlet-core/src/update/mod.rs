@@ -289,7 +289,8 @@ pub fn trusted_keys(feed: &str, builtin: &[String], test_key: Option<&str>) -> V
     keys
 }
 
-/// 静默安装的参数（与 electron-updater 启动 NSIS 安装程序的参数相同；`/D=` 另加在最后）。
+/// 启动安装程序的参数（与 electron-updater 启动 NSIS 安装程序的参数相同；`/D=` 另加在最后）。都带 /S：退出时安装照旧静默；
+/// 带 `--force-run`（“重启并安装”）时，安装程序在 `.onInit` 中改回显示，只出一个进度窗口（见 `packaging/windows/installer.nsi`）。
 pub fn installer_args(run_after: bool) -> Vec<&'static str> {
     let mut args = vec!["/S", "--updated"];
     if run_after {
@@ -661,7 +662,7 @@ impl Updater {
         Ok(release)
     }
 
-    /// “重启并安装”：核对后启动安装程序（静默安装，装完启动 Termlet），调用方随后退出应用。
+    /// “重启并安装”：核对后启动安装程序（只显示进度窗口，装完启动 Termlet），调用方随后退出应用。
     /// 调用前先请有未保存的文件、未完成的传输的窗口确认（安装程序启动后再取消退出就来不及了）。
     pub fn install_now(&self) -> Result<(), UpdateError> {
         self.launch(true)

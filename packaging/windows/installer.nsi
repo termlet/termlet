@@ -15,12 +15,17 @@
 ;   只能装在 arm64 的 Windows 上（x64 的安装包在 arm64 的 Windows 11 上经仿真也能用）；
 ; - 安装目录根部放 Termlet.exe，命令行工具放 bin\termlet.exe（文件名不分大小写，二者不能放在同一目录）；
 ; - 开始菜单与桌面快捷方式；自动更新时（--updated）只刷新已有的，用户删掉的不再创建；
-; - 自动更新：Termlet 下载并核对安装包后以 /S --updated [--force-run] /D=<安装目录> 静默运行，--force-run 时装完启动 Termlet；
+; - 自动更新：Termlet 下载并核对安装包后以 /S --updated [--force-run] /D=<安装目录> 运行，--force-run 时装完启动 Termlet。
+;   “重启并安装”（--updated --force-run）时用户在等 Termlet 重新打开：不再静默，只显示一个进度窗口（“正在更新 Termlet”，
+;   跳过许可、位置与完成页，没有要点的按钮，装完自动关闭）；Termlet 传的仍是 /S（已发布的版本也这样传），由 .onInit
+;   改回显示。退出 Termlet 时顺带安装（只有 --updated）照旧静默；
 ; - 安装、卸载前处理运行中的 Termlet（helper.ps1）：只剩后台实例（没有窗口，例如为命令行工具服务的）或命令行工具时
 ;   直接结束；有窗口时询问（静默运行时等它退出，最多 30 秒，之后结束）；
 ; - 卸载：从当前用户的 PATH 中移除 bin、删除快捷方式与更新缓存；用户数据目录（%APPDATA%\termlet）保留。
 ;
 ; 在 Git Bash 中运行安装程序时要设 MSYS_NO_PATHCONV=1，否则 /S 会被转换成路径。
+; 本机试验安装程序时可加 /DPRODUCT=TermletTest 另起一个名字：注册表项、快捷方式都用这个名字，不碰正式安装的 Termlet
+; （试完删掉 HKCU\Software\TermletTest 与卸载项 TermletTest、安装目录；不要运行它的卸载程序，它会清掉正式的更新缓存）。
 
 Unicode true
 ManifestDPIAware true
@@ -40,11 +45,13 @@ SetCompressorDictSize 32
 !endif
 !endif
 
-!define PRODUCT "Termlet"
+!ifndef PRODUCT
+  !define PRODUCT "Termlet"
+!endif
 !define PUBLISHER "ruan"
-!define APP_KEY "Software\Termlet"
-!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Termlet"
-!define UNINSTALLER "Uninstall Termlet.exe"
+!define APP_KEY "Software\${PRODUCT}"
+!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}"
+!define UNINSTALLER "Uninstall ${PRODUCT}.exe"
 !define ICON "..\..\crates\termlet-desktop\resources\windows\termlet.ico"
 !define POWERSHELL "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe"
 
@@ -75,11 +82,17 @@ Var ForceRun
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "installer-sidebar.bmp"
 !define MUI_ABORTWARNING
 
+; 自动更新时（显示进度窗口的“重启并安装”）只剩安装进度这一页：许可、位置、完成页都跳过（SkipWhenUpdating）
+
 ; 许可页上方的说明：日文、韩文写明许可说明是英文版，其余语言用 NSIS 自带的（按 Page Down 阅读）
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !define MUI_LICENSEPAGE_TEXT_TOP "$(TermletLicenseTop)"
 !insertmacro MUI_PAGE_LICENSE "$(TermletLicense)"
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !insertmacro MUI_PAGE_DIRECTORY
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ShowUpdating
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION RunTermlet
 !insertmacro MUI_PAGE_FINISH
@@ -128,6 +141,27 @@ LangString MsgRunning ${LANG_SIMPCHINESE} "Termlet 正在运行。请保存工�
 LangString MsgRunning ${LANG_TRADCHINESE} "Termlet 正在執行。請儲存工作並關閉 Termlet 的所有視窗，然後按「重試」；按「取消」結束。"
 LangString MsgRunning ${LANG_JAPANESE} "Termlet が実行中です。作業内容を保存して Termlet のウィンドウをすべて閉じてから、「再試行」をクリックしてください。終了するには「キャンセル」をクリックしてください。"
 LangString MsgRunning ${LANG_KOREAN} "Termlet이 실행 중입니다. 작업을 저장하고 Termlet 창을 모두 닫은 다음 '다시 시도'를 클릭하세요. 종료하려면 '취소'를 클릭하세요."
+; “重启并安装”的进度窗口：标题栏与页头
+LangString UpdatingTitle ${LANG_ENGLISH} "Updating Termlet"
+LangString UpdatingTitle ${LANG_SIMPCHINESE} "正在更新 Termlet"
+LangString UpdatingTitle ${LANG_TRADCHINESE} "正在更新 Termlet"
+LangString UpdatingTitle ${LANG_JAPANESE} "Termlet を更新しています"
+LangString UpdatingTitle ${LANG_KOREAN} "Termlet 업데이트 중"
+LangString UpdatingText ${LANG_ENGLISH} "Installing version ${VERSION}. Termlet will open again when it's done."
+LangString UpdatingText ${LANG_SIMPCHINESE} "正在安装 ${VERSION} 版，完成后会自动重新打开 Termlet。"
+LangString UpdatingText ${LANG_TRADCHINESE} "正在安裝 ${VERSION} 版，完成後會自動重新開啟 Termlet。"
+LangString UpdatingText ${LANG_JAPANESE} "バージョン ${VERSION} をインストールしています。完了すると Termlet が自動的に開きます。"
+LangString UpdatingText ${LANG_KOREAN} "${VERSION} 버전을 설치하는 중입니다. 완료되면 Termlet이 자동으로 다시 열립니다."
+LangString Preparing ${LANG_ENGLISH} "Preparing to install..."
+LangString Preparing ${LANG_SIMPCHINESE} "正在准备安装…"
+LangString Preparing ${LANG_TRADCHINESE} "正在準備安裝…"
+LangString Preparing ${LANG_JAPANESE} "インストールの準備をしています…"
+LangString Preparing ${LANG_KOREAN} "설치를 준비하는 중입니다..."
+LangString WaitingToClose ${LANG_ENGLISH} "Waiting for Termlet to close..."
+LangString WaitingToClose ${LANG_SIMPCHINESE} "正在等待 Termlet 退出…"
+LangString WaitingToClose ${LANG_TRADCHINESE} "正在等待 Termlet 結束…"
+LangString WaitingToClose ${LANG_JAPANESE} "Termlet の終了を待っています…"
+LangString WaitingToClose ${LANG_KOREAN} "Termlet이 종료되기를 기다리는 중입니다..."
 
 VIProductVersion "${VERSION_NUMERIC}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${PRODUCT}"
@@ -160,6 +194,11 @@ Function ${PREFIX}StopRunning
   File "${STAGE}\helper.ps1"
   ; 不把工作目录留在安装目录中（卸载时要删除它）
   SetOutPath "$TEMP"
+  ; 自动更新的进度窗口：检查运行中的 Termlet 要启动 PowerShell（约 1 秒），这期间状态行写“正在准备”，
+  ; 不停在上面一步的“输出目录：…\Temp”
+  ${If} $Updated == 1
+    DetailPrint "$(Preparing)"
+  ${EndIf}
   StrCpy $R9 0
   check:
     nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action Check -Dir "$INSTDIR"'
@@ -170,8 +209,12 @@ Function ${PREFIX}StopRunning
       Pop $0
       Goto check
     ${ElseIf} $0 == 2
+      ; 自动更新（静默，或“重启并安装”的进度窗口）：Termlet 启动安装程序后正在退出，等它退出；30 秒后仍在运行就结束它
       ${If} ${Silent}
-        ; 自动更新：Termlet 启动安装程序后正在退出，等它退出；30 秒后仍在运行就结束它
+      ${OrIf} $Updated == 1
+        ${If} $R9 == 0
+          DetailPrint "$(WaitingToClose)"
+        ${EndIf}
         ${If} $R9 >= 30
           nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action StopAll -Dir "$INSTDIR"'
           Pop $0
@@ -228,10 +271,40 @@ Function .onInit
   ${IfNot} ${Errors}
     StrCpy $ForceRun 1
   ${EndIf}
+  ; “重启并安装”：用户在等 Termlet 重新打开，显示进度窗口，免得以为没反应、又去打开 Termlet（会被当成没退出的
+  ; 那个结束掉）。Termlet 传的是 /S，在这里改回显示；退出时顺带的安装（没有 --force-run）照旧静默
+  ${If} $Updated == 1
+  ${AndIf} $ForceRun == 1
+    SetSilent normal
+  ${EndIf}
 FunctionEnd
 
 Function RunTermlet
   Exec '"$INSTDIR\Termlet.exe"'
+FunctionEnd
+
+; 自动更新时跳过许可、位置与完成页
+Function SkipWhenUpdating
+  ${If} $Updated == 1
+    Abort
+  ${EndIf}
+FunctionEnd
+
+; 自动更新时的进度页：标题栏与页头写“正在更新”，藏起“显示详情”与“上一步”“下一步”（“取消”在安装中本来就不可用），
+; 只留进度条与一行状态；装完自动关闭
+Function ShowUpdating
+  ${If} $Updated == 1
+    SendMessage $HWNDPARENT ${WM_SETTEXT} 0 "STR:$(UpdatingTitle)"
+    !insertmacro MUI_HEADER_TEXT "$(UpdatingTitle)" "$(UpdatingText)"
+    FindWindow $0 "#32770" "" $HWNDPARENT
+    GetDlgItem $1 $0 1027
+    ShowWindow $1 ${SW_HIDE}
+    GetDlgItem $1 $HWNDPARENT 1
+    ShowWindow $1 ${SW_HIDE}
+    GetDlgItem $1 $HWNDPARENT 3
+    ShowWindow $1 ${SW_HIDE}
+    SetAutoClose true
+  ${EndIf}
 FunctionEnd
 
 ; 快捷方式：首次安装时创建；自动更新时只刷新已有的（用户删掉的不再创建）

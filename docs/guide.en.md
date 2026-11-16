@@ -1521,7 +1521,7 @@ Default shortcuts:
 - With "Check for updates automatically" on under Settings → About, Termlet checks at startup; you can also click "Check for updates".
 - **Installed version**: it downloads the new installer in the background.
   - While it downloads, the title bar shows a download icon with the progress: hover for the version and size, click for the progress, downloaded / total size, speed and time left (About shows the size and speed next to its progress bar too).
-  - Then the title bar says a new version has been downloaded. Click it (or "Restart and install" under About) to restart and install; otherwise it installs when you quit.
+  - Then the title bar says a new version has been downloaded. Click it (or "Restart and install" under About) to restart and install: once Termlet closes, an "Updating Termlet" progress window appears, then closes and reopens Termlet by itself (usually within a few seconds), so there's no need to open it again; otherwise it installs quietly when you quit.
   - The x64 and arm64 installed versions on Windows each download the installer for their own architecture (each has its own signed version file: `latest.yml` for x64, `latest-arm64.yml` for arm64).
 - **Announce only**: development builds, the portable version and other copies run without installing, and the macOS and Linux versions only announce the new version.
   - The title bar shows "Version X available". Clicking it or "Download" under About opens the download page of the website at the section for your kind of package and architecture (portable, macOS, or the Linux deb, rpm, AppImage or tar.gz, with separate sections for arm64; the Linux section when Termlet can't tell).
