@@ -996,7 +996,7 @@ impl ServicePage {
             })
             .test_support()
             .size_full()
-            .px_2()
+            .px_1()
             .gap_1p5()
             .text_xs()
             .bg(theme.muted.opacity(0.4))
@@ -1136,7 +1136,7 @@ impl ServicePage {
             .test_support()
             .size_full()
             .justify_center()
-            .px_2()
+            .px_1()
             .text_xs()
             .cursor_default()
             .when(selected, |el| el.bg(theme.list_active))
@@ -1303,7 +1303,7 @@ impl ServicePage {
             .test_support()
             .size_full()
             .justify_center()
-            .px_2()
+            .px_1()
             .text_xs()
             .cursor_default()
             .when(selected, |el| el.bg(theme.list_active))
@@ -2099,7 +2099,6 @@ impl Render for ServicePage {
         let measured = self.width.clone();
         let entity = cx.entity().downgrade();
         let threshold = rems(WIDE_FROM).to_pixels(window.rem_size());
-        let border = cx.theme().border;
         let marker = shared::privilege_marker(
             RootScope::Services,
             self.feed.privilege.filter(|_| data.uid != Some(0)),
@@ -2119,8 +2118,7 @@ impl Render for ServicePage {
                 cx,
             )
         });
-        v_flex()
-            .size_full()
+        shared::list_page()
             .on_drag_move(shared::on_detail_drag)
             .child(shared::toolbar_with(
                 "tools-service",
@@ -2160,7 +2158,7 @@ impl Render for ServicePage {
             ))
             .children(note)
             .child(
-                div()
+                shared::list_card(div(), false, cx)
                     .id("tools-service-list")
                     .test_support()
                     .key_context(LIST_CONTEXT)
@@ -2200,8 +2198,6 @@ impl Render for ServicePage {
                     .relative()
                     .flex_1()
                     .min_h(rems(shared::LIST_MIN))
-                    .border_t_1()
-                    .border_color(border)
                     .child(
                         // 宽度跨过每个服务一行的界限时重新渲染
                         canvas(

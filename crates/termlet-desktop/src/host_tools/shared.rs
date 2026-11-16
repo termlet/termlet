@@ -1,5 +1,6 @@
-//! 各页共用的部分：页所跟随的终端、带缓存与暂停的读取、不可用时的说明、可复制的命令、“更新于”、工具条，以及跳到
-//! 别的页（[`go`]）、筛选条件的小标签、跳过来的目标不在时的说明、列表的焦点框与键盘打开的右键菜单（[`KeyMenu`]），
+//! 各页共用的部分：页所跟随的终端、带缓存与暂停的读取、不可用时的说明、可复制的命令、“更新于”、工具条、卡片（概览的
+//! 各节，列表页的列表与详情：[`card`]、[`list_card`]、[`detail_pane`]），以及跳到别的页（[`go`]）、筛选条件的
+//! 小标签、跳过来的目标不在时的说明、列表的焦点框与键盘打开的右键菜单（[`KeyMenu`]），
 //! 以及行右端浮出的操作（[`row_actions`]）、行上进行中、刚完成、失败的写操作（[`RowOps`]）与信息行下失败的原因
 //! （[`failure_banner`]），没有免密码 sudo 时确认框以“在终端中执行”为主按钮（[`root_first_body`]、[`root_first_footer`]）。
 //!
@@ -523,6 +524,53 @@ pub(super) fn on_menu_dismiss(
 }
 
 // ------------------------------------------------------------ 界面
+
+/// 卡片之间、卡片与面板左右下边缘之间的距离（rem）：与页签、工具条、信息行离面板边缘的距离相同，卡片的边与它们对齐。
+pub(super) const CARD_GAP: f32 = 0.5;
+
+/// 卡片（概览的各节，各页的列表与详情）：1px 的边框、大圆角，底色是正文的底色——浅色主题中是浮在面板底色上的白卡片，
+/// 深色主题中与面板同色、靠边框分开。圆角不裁剪里面的内容：贴着边框的底色（表头）自己画圆角（[`card_inner_radius`]），
+/// 列表离卡片的上下边框留出一点（[`list_card`]）。
+pub(super) fn card<E: Styled>(el: E, cx: &App) -> E {
+    let theme = cx.theme();
+    el.bg(theme.background)
+        .border_1()
+        .border_color(theme.border)
+        .rounded(theme.radius_lg)
+}
+
+/// 卡片里贴着边框的底色（表头）的圆角：卡片的圆角减去 1px 的边框，与边框的内缘同心。
+pub(super) fn card_inner_radius(cx: &App) -> Pixels {
+    (cx.theme().radius_lg - px(1.)).max(px(0.))
+}
+
+/// 列表页中的列表：一张卡片，左右离面板边缘 [`CARD_GAP`]（页的下边缘另留 [`CARD_GAP`]，见 [`list_page`]）。列表离卡片的
+/// 下边框（`header` 为假时还有上边框）留出 0.25rem：选中、悬停的行是直角的，贴着边框时会从圆角里露出来；有表头时
+/// 表头贴着上边框（自己画圆角，[`list_header`]）。行的左右各留 0.25rem（比面板上的 0.5rem 窄，补回卡片占去的宽度），
+/// 详情的卡片相同（[`detail_pane`]）。
+pub(super) fn list_card<E: Styled>(el: E, header: bool, cx: &App) -> E {
+    let el = card(el.mx(rems(CARD_GAP)).pb_1(), cx);
+    if header { el } else { el.pt_1() }
+}
+
+/// 列表页的根：下边留出 [`CARD_GAP`]（列表或详情的卡片不贴着面板的下边缘）。
+pub(super) fn list_page() -> gpui_kit::Div {
+    v_flex().size_full().pb(rems(CARD_GAP))
+}
+
+/// 列表的表头：一行列名，底色用表头的颜色，贴着卡片的上边框（上边的两个角跟着卡片的圆角），下面一条线。
+pub(super) fn list_header(cx: &App) -> gpui_kit::Div {
+    let theme = cx.theme();
+    h_flex()
+        .flex_none()
+        .h(rems(1.75))
+        .text_xs()
+        .text_color(theme.muted_foreground)
+        .bg(theme.list_head)
+        .rounded_t(card_inner_radius(cx))
+        .border_b_1()
+        .border_color(theme.border)
+}
 
 /// 搜索框（打开页时建好，切换语言后提示文字跟着换）。Esc、Enter 回到列表、保留搜索的内容（见 [`super::keys`]），
 /// 清空用框里的 ×。
@@ -1451,7 +1499,7 @@ pub(super) fn note_line(
 /// 详情的最小高度与列表至少留下的高度（rem，表头与四五行）：拖动、这一页放不下时都不越过（各页的列表以它为最小高度）。
 const DETAIL_MIN: f32 = 4.;
 pub(super) const LIST_MIN: f32 = 8.;
-/// 列表上方的工具条、页签、信息行大约占的高度（rem）：拖动时给它们留出位置。
+/// 列表上方的工具条、页签、信息行大约占的高度（rem）：拖动时给它们留出位置（另有两张卡片之间与页底的 [`CARD_GAP`]）。
 const PAGE_HEAD: f32 = 5.;
 /// 没有拖过时详情按内容的高度，最高占这一页的这么多。
 const DETAIL_AUTO_MAX: f32 = 0.45;
@@ -1492,21 +1540,28 @@ fn set_detail_height(height: Option<f32>, window: &Window, cx: &mut App) {
     });
 }
 
-/// 拖动分隔条（各页的根元素上调用）：详情的高度为页的下边缘到指针的距离，不小于 [`DETAIL_MIN`]，给列表留出
-/// [`LIST_MIN`]。
+/// 拖动分隔条（各页的根元素上调用）：指针在两张卡片之间空隙的中间，详情卡片的上边缘在指针下面半个空隙，下边缘离页的
+/// 下边缘一个空隙；高度不小于 [`DETAIL_MIN`]，给列表留出 [`LIST_MIN`]。
 pub(super) fn on_detail_drag(event: &DragMoveEvent<DetailDrag>, window: &mut Window, cx: &mut App) {
     let rem = window.rem_size();
     let bounds = event.bounds;
     let min = f32::from(rems(DETAIL_MIN).to_pixels(rem));
-    let max = f32::from(bounds.size.height - rems(LIST_MIN + PAGE_HEAD).to_pixels(rem)).max(min);
-    let height = f32::from(bounds.origin.y + bounds.size.height - event.event.position.y);
+    let max =
+        f32::from(bounds.size.height - rems(LIST_MIN + PAGE_HEAD + 2. * CARD_GAP).to_pixels(rem))
+            .max(min);
+    let height = f32::from(
+        bounds.origin.y + bounds.size.height
+            - event.event.position.y
+            - rems(1.5 * CARD_GAP).to_pixels(rem),
+    );
     set_detail_height(Some(height.clamp(min, max)), window, cx);
 }
 
-/// 列表下方的详情区：顶上是可拖动的分隔条（骑在边框上、比线宽、不占布局；双击恢复按内容的高度，获得焦点后 ↑ ↓
-/// 调整），一行头部（[`detail_header`]，不随属性滚动），下面是属性（超出时滚动）。拖过时用记下的高度（各页共用，
-/// 记在本机的界面状态中，按 100% 界面大小记、随界面大小缩放；这一页放不下时先收详情，列表至少留 [`LIST_MIN`]），
-/// 没有拖过时按内容的高度，最高占这一页的 45%。`measured` 记下这一帧的高度（键盘调整从它开始）。
+/// 列表下方的详情：另一张卡片，与列表的卡片之间隔着 [`CARD_GAP`]。这道空隙是可拖动的分隔条（不占布局；双击恢复按
+/// 内容的高度，获得焦点后 ↑ ↓ 调整），卡片里是一行头部（[`detail_header`]，下面一条线，不随属性滚动），下面是属性
+/// （超出时滚动）。拖过时用记下的高度（各页共用，记在本机的界面状态中，按 100% 界面大小记、随界面大小缩放；这一页
+/// 放不下时先收详情，列表至少留 [`LIST_MIN`]），没有拖过时按内容的高度，最高占这一页的 45%。`measured` 记下这一帧的
+/// 高度（键盘调整从它开始）。
 pub(super) fn detail_pane(
     id: &'static str,
     splitter: &FocusHandle,
@@ -1516,11 +1571,11 @@ pub(super) fn detail_pane(
     window: &Window,
     cx: &App,
 ) -> AnyElement {
-    let theme = cx.theme();
-    let (border, drag) = (theme.border, theme.drag_border);
+    let drag = cx.theme().drag_border;
     let height = detail_height(window, cx);
     let record = measured.clone();
     let start = measured.clone();
+    // 占满两张卡片之间的空隙
     let handle = div()
         .id(SharedString::from(format!("{id}-splitter")))
         .test_support()
@@ -1528,8 +1583,8 @@ pub(super) fn detail_pane(
         .absolute()
         .left_0()
         .right_0()
-        .top(-rems(0.25))
-        .h_2()
+        .top(-rems(CARD_GAP))
+        .h(rems(CARD_GAP))
         .cursor_row_resize()
         .hover(|s| s.bg(drag.opacity(0.5)))
         .focus(|s| s.bg(drag))
@@ -1557,10 +1612,10 @@ pub(super) fn detail_pane(
                 }
             }
         });
-    v_flex()
+    card(v_flex(), cx)
         .relative()
-        .border_t_1()
-        .border_color(border)
+        .mx(rems(CARD_GAP))
+        .mt(rems(CARD_GAP))
         .map(|this| match height {
             Some(height) => this.h(px(height)).flex_shrink(1.).min_h(rems(DETAIL_MIN)),
             None => this.flex_none().max_h(relative(DETAIL_AUTO_MAX)),
@@ -1581,8 +1636,8 @@ pub(super) fn detail_pane(
                 .flex_1()
                 .min_h_0()
                 .overflow_y_scroll()
-                .px_2()
-                .pb_1p5()
+                .px_1()
+                .py_1p5()
                 .gap_0p5()
                 .text_xs()
                 .children(body),
@@ -1591,8 +1646,8 @@ pub(super) fn detail_pane(
         .into_any_element()
 }
 
-/// 详情的头部一行：名称 ● 状态 · 主要操作 · ⋯（次要操作的菜单，与行的右键菜单相同）。窄的时候先截短状态、再截短
-/// 名称，按钮总看得到。
+/// 详情的头部一行：名称 ● 状态 · 主要操作 · ⋯（次要操作的菜单，与行的右键菜单相同），下面一条线与属性分开（与列表的
+/// 表头同高）。窄的时候先截短状态、再截短名称，按钮总看得到。
 pub(super) fn detail_header(
     name: SharedString,
     status: Option<(SharedString, Tone)>,
@@ -1602,10 +1657,11 @@ pub(super) fn detail_header(
 ) -> AnyElement {
     h_flex()
         .flex_none()
-        .px_2()
-        .pt_1p5()
-        .pb_1()
+        .px_1()
+        .py_1()
         .gap_1p5()
+        .border_b_1()
+        .border_color(cx.theme().border)
         .text_xs()
         .child(
             div()
@@ -2072,7 +2128,7 @@ pub(super) fn failure_banner<V: 'static, K: Eq + Hash + Clone + 'static>(
 
 /// 行右端浮出的操作：主要操作与 ⋯（与右键菜单、详情头部的 ⋯ 是同一个菜单）。鼠标停在行上、键盘焦点在这一行、这一行的
 /// 菜单打开着时出现，盖在状态文字上（底色与行的底色相同），不改变行高与布局；在上面按下不选中这一行（选中会让详情出现、
-/// 把列表挤矮，⋯ 的菜单就没有了着落）。`row_bg` 是行此时的底色（可能是半透明的，叠在面板的底色上）。
+/// 把列表挤矮，⋯ 的菜单就没有了着落）。`row_bg` 是行此时的底色（可能是半透明的，叠在列表卡片的底色上）。
 pub(super) fn row_actions(
     id: impl Into<ElementId>,
     row_bg: Hsla,
@@ -2089,7 +2145,7 @@ pub(super) fn row_actions(
         .pl_1()
         .pr_1()
         .gap_0p5()
-        .bg(cx.theme().sidebar.blend(row_bg))
+        .bg(cx.theme().background.blend(row_bg))
         .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
         .children(buttons)
         .into_any_element()

@@ -11,6 +11,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 - On Windows, "Restart and install" now shows an "Updating Termlet" progress window that closes and reopens Termlet when it's done; before, nothing was visible for those few seconds and it was easy to think nothing had happened. This already applies when updating from 0.3.0.
 - Vertical tabs: "Focus tab list" now has a default shortcut, Ctrl+Shift+J (⇧⌘J on macOS); then choose a tab with the arrow keys. If you've already given that combination to another action in Settings, your setting wins.
 - The host tools icon at the right end of the terminal's status bar is gone: click the status bar itself, right-click it and choose "Show overview", or press Ctrl+Shift+O (⇧⌘O on macOS) to open the overview as before.
+- The host tools panel's sections are easier to tell apart: each Overview section, and the lists and details on the Processes, Services, Docker and Network pages, now sit on their own bordered cards; the process list still shows the User column at the default width.
 
 ## 0.3.0 (2026-11-15)
 

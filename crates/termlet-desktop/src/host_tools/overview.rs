@@ -12,10 +12,11 @@
 //!   一样没有 CPU，稍后补读一次（与进程页相同）。
 //! - 设置中关闭了资源监控、服务器不是 Linux、服务器不让另开通道时说明原因。
 //! - 键盘（见 [`super::keys`]）：这一页有焦点时 ↑ ↓ 等在 CPU 最高的进程之间移动（页滚到它们那里），Enter 跳到进程页。
+//! - 面板中每一节是一张卡片（[`section`]）。
 //! - 右上角的按钮把这台主机的概览弹出成置顶的小窗（[`super::popout`]）。小窗中是同一个页（[`Layout::Window`]）的
-//!   紧凑版式：CPU、内存、网速的矮曲线与当前值，最满的磁盘，CPU 最高的 3 个进程；窗口够高时另显示系统与运行时间、
-//!   CPU 的核数与负载、每核的竖条、交换区、网速的图例、全部磁盘与 5 个进程，够宽时进程行另显示 PID 与内存
-//!   （[`Fit`]）。小窗中的进程不能点、没有键盘操作；只在采样变了时重画（终端每次输出都会通知）。
+//!   紧凑版式（不分卡片，只用间距）：CPU、内存、网速的矮曲线与当前值，最满的磁盘，CPU 最高的 3 个进程；窗口够高时
+//!   另显示系统与运行时间、CPU 的核数与负载、每核的竖条、交换区、网速的图例、全部磁盘与 5 个进程，够宽时进程行另显示
+//!   PID 与内存（[`Fit`]）。小窗中的进程不能点、没有键盘操作；只在采样变了时重画（终端每次输出都会通知）。
 
 use std::mem::{Discriminant, discriminant};
 use std::rc::Rc;
@@ -1017,21 +1018,36 @@ impl OverviewPage {
         let data = self.feed.data();
         let details = data.as_ref().and_then(|d| d.details.as_ref());
         let content = match self.layout {
-            // 各节是滚动区域的直接子元素：键盘移到 CPU 最高的进程时滚到那一节（[`TOP_SECTION`]）
-            Layout::Panel => v_flex()
-                .pt_1()
-                .pb_4()
-                .gap_5()
-                .child(self.render_system(&sample, details, cx))
-                .child(self.render_cpu(&sample, levels, &history, None, cx))
-                .child(self.render_top(window, None, cx))
-                .child(self.render_memory(&sample, levels, &history, None, cx))
-                .child(self.render_net(&sample, &history, None, cx))
-                .children(self.render_disks(&sample, details, None, cx)),
+            // 各节是一张卡片，是滚动区域的直接子元素：键盘移到 CPU 最高的进程时滚到那一节（[`TOP_SECTION`]）
+            Layout::Panel => {
+                let sections = [
+                    self.render_system(&sample, details, cx).into_any_element(),
+                    self.render_cpu(&sample, levels, &history, None, cx)
+                        .into_any_element(),
+                    self.render_top(window, None, cx).into_any_element(),
+                    self.render_memory(&sample, levels, &history, None, cx)
+                        .into_any_element(),
+                    self.render_net(&sample, &history, None, cx)
+                        .into_any_element(),
+                ]
+                .into_iter()
+                .chain(
+                    self.render_disks(&sample, details, None, cx)
+                        .map(IntoElement::into_any_element),
+                )
+                .collect::<Vec<_>>();
+                v_flex()
+                    .px(rems(shared::CARD_GAP))
+                    .pt_1()
+                    .pb(rems(shared::CARD_GAP))
+                    .gap(rems(shared::CARD_GAP))
+                    .children(sections.into_iter().map(|content| section(content, cx)))
+            }
             // 小窗：曲线在前，进程在最后；窗口放不下时整个滚动
             Layout::Window => {
                 let fit = Fit::of(window);
                 v_flex()
+                    .px_3()
                     .pt_2()
                     .pb_3()
                     .gap_3()
@@ -1056,7 +1072,6 @@ impl OverviewPage {
                     .size_full()
                     .track_scroll(&self.scroll)
                     .overflow_y_scroll()
-                    .px_3()
                     .text_xs(),
             )
             .vertical_scrollbar(&self.scroll)
@@ -1075,6 +1090,11 @@ fn chart_height(fit: Option<Fit>) -> f32 {
 /// 等宽数字（OpenType `tnum`）。
 fn tabular() -> FontFeatures {
     FontFeatures(std::sync::Arc::new(vec![("tnum".into(), 1)]))
+}
+
+/// 面板中的一节：一张卡片（[`shared::card`]），内容离边框 0.75rem。
+fn section(content: AnyElement, cx: &App) -> Div {
+    shared::card(div().p_3(), cx).child(content)
 }
 
 /// 一节的标题：左边是名称，右边是读数。

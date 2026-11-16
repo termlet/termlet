@@ -1240,7 +1240,7 @@ impl DockerPage {
             .id(SharedString::from(format!("tools-container-group-{key}")))
             .test_support()
             .size_full()
-            .px_2()
+            .px_1()
             .gap_1()
             .text_xs()
             .bg(theme.muted.opacity(0.4))
@@ -1560,8 +1560,8 @@ impl DockerPage {
             .test_support()
             .size_full()
             .justify_center()
-            .pl_4()
-            .pr_2()
+            .pl_3()
+            .pr_1()
             .text_xs()
             .cursor_default()
             .when(selected, |el| el.bg(theme.list_active))
@@ -1702,19 +1702,12 @@ impl DockerPage {
 
     /// 列表够宽时容器表格的表头（与 [`Self::render_container`] 一行的各列对齐）。
     fn render_table_header(&self, cx: &App) -> AnyElement {
-        let theme = cx.theme();
-        h_flex()
+        shared::list_header(cx)
             .id("tools-container-table-header")
             .test_support()
-            .flex_none()
-            .h(rems(1.75))
-            .pl_4()
-            .pr_2()
+            .pl_3()
+            .pr_1()
             .gap_2()
-            .text_xs()
-            .text_color(theme.muted_foreground)
-            .border_b_1()
-            .border_color(theme.border)
             .child(
                 h_flex()
                     .flex_1()
@@ -2376,7 +2369,7 @@ impl DockerPage {
             .test_support()
             .size_full()
             .justify_center()
-            .px_2()
+            .px_1()
             .text_xs()
             .cursor_default()
             .when(cursor, |el| el.bg(theme.list_active))
@@ -2727,9 +2720,9 @@ impl Render for DockerPage {
             };
             return shared::focus_body(&self.focus, body);
         };
-        let (muted, border, danger) = {
+        let (muted, danger) = {
             let theme = cx.theme();
-            (theme.muted_foreground, theme.border, theme.danger)
+            (theme.muted_foreground, theme.danger)
         };
         let problems = self.problems.get(&info, (), |info, _| {
             info.containers
@@ -2808,8 +2801,8 @@ impl Render for DockerPage {
             .into_any_element();
         let loading = self.feed.loading;
         let this = cx.entity().downgrade();
-        v_flex()
-            .size_full()
+        let has_header = table_header.is_some();
+        shared::list_page()
             .on_drag_move(shared::on_detail_drag)
             .child(shared::toolbar_with(
                 "tools-docker",
@@ -2855,7 +2848,7 @@ impl Render for DockerPage {
             .children(stats_error)
             .children(note)
             .child(
-                div()
+                shared::list_card(div(), has_header, cx)
                     .id("tools-docker-list")
                     .test_support()
                     .key_context(LIST_CONTEXT)
@@ -2900,8 +2893,6 @@ impl Render for DockerPage {
                     .flex_col()
                     .flex_1()
                     .min_h(rems(shared::LIST_MIN))
-                    .border_t_1()
-                    .border_color(border)
                     .child(
                         // 宽度跨过容器表格的界限时重新渲染
                         canvas(

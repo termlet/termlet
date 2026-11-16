@@ -53,8 +53,8 @@ use super::shared::{
 use crate::sftp::list_model::visible_name;
 use crate::t;
 
-/// 对端地址的列在列表宽度够时才显示（这时本地端口也单独成列）。
-const PEER_COLUMN_FROM: f32 = 30.;
+/// 对端地址的列在列表宽度够时才显示（这时本地端口也单独成列；rem，量的是卡片里列表的宽度，行的左右各留 0.25rem）。
+const PEER_COLUMN_FROM: f32 = 29.5;
 /// 本地端口一列的宽度（rem）。
 const PORT_WIDTH: f32 = 3.25;
 /// 行高（rem）。
@@ -532,16 +532,7 @@ impl NetworkPage {
     // ------------------------------------------------------------ 渲染
 
     fn render_header(&self, peer: bool, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let header = h_flex()
-            .flex_none()
-            .h(rems(1.75))
-            .px_2()
-            .gap_2()
-            .text_xs()
-            .text_color(theme.muted_foreground)
-            .border_b_1()
-            .border_color(theme.border);
+        let header = shared::list_header(cx).px_1().gap_2();
         if self.listening_view() {
             return header
                 .child(
@@ -740,7 +731,7 @@ impl NetworkPage {
             .id(SharedString::from(format!("tools-conn-{key}")))
             .test_support()
             .size_full()
-            .px_2()
+            .px_1()
             .gap_2()
             .text_xs()
             .cursor_default()
@@ -909,7 +900,7 @@ impl NetworkPage {
             .id(SharedString::from(format!("tools-listen-{key}")))
             .test_support()
             .size_full()
-            .px_2()
+            .px_1()
             .gap_2()
             .text_xs()
             .cursor_default()
@@ -1118,7 +1109,7 @@ impl Render for NetworkPage {
             return shared::focus_body(&self.focus, body);
         };
         let theme = cx.theme();
-        let (muted, border, warning) = (theme.muted_foreground, theme.border, theme.warning);
+        let (muted, warning) = (theme.muted_foreground, theme.warning);
         let rem = window.rem_size();
         let peer = self.width.get() >= rems(PEER_COLUMN_FROM).to_pixels(rem);
         let sum = conn_summary(&data);
@@ -1168,8 +1159,7 @@ impl Render for NetworkPage {
         let threshold = rems(PEER_COLUMN_FROM).to_pixels(rem);
         let loading = self.feed.loading;
         let this = cx.entity().downgrade();
-        v_flex()
-            .size_full()
+        shared::list_page()
             .child(toolbar(
                 "tools-conn",
                 &self.search,
@@ -1202,7 +1192,7 @@ impl Render for NetworkPage {
             .children(hint.map(|hint| hint_line(hint, warning)))
             .children(error_line(self.feed.error.as_ref(), cx))
             .child(
-                v_flex()
+                shared::list_card(v_flex(), true, cx)
                     .id("tools-conn-list")
                     .test_support()
                     .key_context(LIST_CONTEXT)
@@ -1236,8 +1226,6 @@ impl Render for NetworkPage {
                     .relative()
                     .flex_1()
                     .min_h_0()
-                    .border_t_1()
-                    .border_color(border)
                     .child(
                         // 宽度跨过显示 / 隐藏对端地址的界限时重新渲染
                         canvas(

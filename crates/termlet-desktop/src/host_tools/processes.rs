@@ -80,13 +80,14 @@ const KEY_DETAIL_DELAY: Duration = Duration::from_millis(250);
 /// 行高（rem）。
 const ROW_HEIGHT: f32 = 1.5;
 
-/// 次要的列在列表宽度够时才显示。
-const USER_COLUMN_FROM: f32 = 24.;
-const STATE_COLUMN_FROM: f32 = 28.;
+/// 次要的列在列表宽度够时才显示（rem，量的是卡片里列表的宽度：行的左右各留 0.25rem，列之间 0.375rem）。各个界限
+/// 让名称一列在这一列出现时与列表放进卡片之前一样宽（用户一列出现时 5rem）：默认宽度的面板中照样有用户一列。
+const USER_COLUMN_FROM: f32 = 23.;
+const STATE_COLUMN_FROM: f32 = 27.;
 /// 列表宽度够时归属标签写出容器名、服务名，否则只留图标。
-const TAG_TEXT_FROM: f32 = 30.;
+const TAG_TEXT_FROM: f32 = 29.;
 /// 列表宽度够时另有命令行一列（rem；服务页、Docker 页的“宽面板”也按它）。
-pub(super) const WIDE_FROM: f32 = 36.;
+pub(super) const WIDE_FROM: f32 = 35.5;
 /// CPU 一列的宽度（rem）：放得下“100.0%”。
 const CPU_WIDTH: f32 = 3.5;
 /// 树形中每一层缩进的宽度（rem；列表窄、不显示用户一列时用小的），最多缩进这么多层（再深的与它对齐，名称不被挤掉）。
@@ -1436,7 +1437,6 @@ impl ProcessPage {
     // ------------------------------------------------------------ 渲染
 
     fn render_header(&self, columns: Columns, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
         let sort = self.sort;
         let cell = |key: ProcSort, label: SharedString, cx: &mut Context<Self>| {
             let active = sort.key == key;
@@ -1456,16 +1456,9 @@ impl ProcessPage {
                 .on_click(cx.listener(move |this, _, _, cx| this.on_sort(key, cx)))
                 .child(prose(text))
         };
-        h_flex()
-            .flex_none()
-            .h(rems(1.75))
-            .px_2()
-            .gap_2()
-            .text_xs()
-            .text_color(theme.muted_foreground)
-            .bg(theme.sidebar)
-            .border_b_1()
-            .border_color(theme.border)
+        shared::list_header(cx)
+            .px_1()
+            .gap_1p5()
             .child(div().flex_1().min_w_0().child(cell(
                 ProcSort::Name,
                 t!("tools.process.col_name"),
@@ -1694,8 +1687,8 @@ impl ProcessPage {
             .id(("tools-process-row", pid as usize))
             .test_support()
             .size_full()
-            .px_2()
-            .gap_2()
+            .px_1()
+            .gap_1p5()
             .text_xs()
             .cursor_default()
             // 只为看出位置而列出的父进程：整行用次要文字色
@@ -1848,8 +1841,8 @@ impl ProcessPage {
             )))
             .test_support()
             .size_full()
-            .px_2()
-            .gap_2()
+            .px_1()
+            .gap_1p5()
             .text_xs()
             .cursor_default()
             .when(cursor, |el| el.bg(theme.list_active))
@@ -2059,7 +2052,7 @@ impl ProcessPage {
         };
         let measured = self.width.clone();
         let entity = cx.entity().downgrade();
-        v_flex()
+        shared::list_card(v_flex(), true, cx)
             .id("tools-process-list")
             .test_support()
             .key_context(LIST_CONTEXT)
@@ -2601,8 +2594,7 @@ impl Render for ProcessPage {
                 cx,
             )
         });
-        v_flex()
-            .size_full()
+        shared::list_page()
             .on_drag_move(shared::on_detail_drag)
             .child(shared::toolbar_with(
                 "tools-process",

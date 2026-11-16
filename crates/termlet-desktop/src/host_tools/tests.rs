@@ -2715,6 +2715,40 @@ fn process_rows_keep_names_and_mark_the_terminal_with_an_icon(cx: &mut TestAppCo
     .unwrap();
 }
 
+/// 默认宽度下进程列表（卡片里）照样显示用户一列，名称一列不被明显挤窄：放进卡片之前约 5.9rem，现在约 5.8rem。
+#[gpui_kit::test]
+fn default_width_keeps_the_user_column(cx: &mut TestAppContext) {
+    default_width_keeps_the_user_column_at(cx, termlet_core::ui_scale::DEFAULT);
+}
+
+// 界面放大到 125% 时同样（面板的默认宽度随界面一起放大）
+#[gpui_kit::test]
+fn default_width_keeps_the_user_column_at_125_percent(cx: &mut TestAppContext) {
+    default_width_keeps_the_user_column_at(cx, 125);
+}
+
+fn default_width_keeps_the_user_column_at(cx: &mut TestAppContext, percent: u16) {
+    let (handle, _panel, _, _ids) = open_with_everything(cx);
+    // 窗口够宽：面板是默认宽度，不因为给终端留位置而变窄
+    cx.simulate_window_resize(handle, size(px(1600.), px(800.)));
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_local_settings(|s| s.window.ui_scale = percent)
+            .unwrap()
+    });
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        // 列表的宽度上一帧量出
+        window.render_frame(cx);
+        window.render_frame(cx);
+        let rem = window.rem_size();
+        let name = window.find("tools-sort-name").bounds();
+        assert!(window.try_find("tools-sort-user").is_some(), "用户一列");
+        assert!(name.size.width >= rem * 5.75, "名称一列 {name:?}");
+    })
+    .unwrap();
+}
+
 /// Docker：健康状态是状态前面的小标签；鼠标停在列表上时暂停自动刷新。
 #[gpui_kit::test]
 fn docker_rows_mark_health_and_pause_on_hover(cx: &mut TestAppContext) {
@@ -4711,21 +4745,23 @@ fn detail_height_scales_with_the_ui(cx: &mut TestAppContext) {
     })
     .unwrap();
     let saved = height(cx).expect("拖动后记下高度");
-    let shown = cx
-        .update_window(handle, |_, window, cx| {
-            window.render_frame(cx);
-            f32::from(
+    // 详情卡片显示的高度：分隔条在两张卡片之间空隙的中间，卡片的下边离面板的下边一个空隙
+    let shown = |window: &mut Window| {
+        let gaps = gpui_kit::rems(1.5 * super::shared::CARD_GAP).to_pixels(window.rem_size());
+        f32::from(window.find("host-tools").bounds().bottom())
+            - f32::from(
                 window
                     .find("tools-process-detail-splitter")
                     .bounds()
                     .center()
                     .y,
             )
-        })
-        .unwrap();
+            - f32::from(gaps)
+    };
     let detail_150 = cx
-        .update_window(handle, |_, window, _| {
-            f32::from(window.find("host-tools").bounds().bottom()) - shown
+        .update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            shown(window)
         })
         .unwrap();
     assert!(
@@ -4738,14 +4774,7 @@ fn detail_height_scales_with_the_ui(cx: &mut TestAppContext) {
         .update_window(handle, |_, window, cx| {
             window.render_frame(cx);
             window.render_frame(cx);
-            f32::from(window.find("host-tools").bounds().bottom())
-                - f32::from(
-                    window
-                        .find("tools-process-detail-splitter")
-                        .bounds()
-                        .center()
-                        .y,
-                )
+            shown(window)
         })
         .unwrap();
     assert!(
