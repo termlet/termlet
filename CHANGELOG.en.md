@@ -4,6 +4,13 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
+## 0.3.2 (unreleased)
+
+### Security
+
+- Updated the pageant dependency to 0.2.5: with agent forwarding on for a host and Pageant as the local agent (Windows), a malicious or compromised server could send a message claiming a huge size over the forwarding channel and make Termlet use memory until it crashed (denial of service, GHSA-662x-8wvj-2276). Agent forwarding is off by default.
+- Updated the russh dependency to 0.65.1, which fixes two low-severity issues (GHSA-9264-jvgf-6w2f, GHSA-736f-c93q-9fwx) in a key-exchange callback and the agent server that Termlet doesn't use; Termlet isn't affected by them.
+
 ## 0.3.1 (2026-11-17)
 
 ### Changed
