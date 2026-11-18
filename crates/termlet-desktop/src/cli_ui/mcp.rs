@@ -7,9 +7,8 @@ use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::tab::{Tab, TabBar};
-use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     ClipboardItem, Context, InteractiveElement as _, IntoElement, ParentElement as _, Render,
     SharedString, Styled as _, TestSupportExt as _, Window, div, prelude::FluentBuilder as _,
@@ -174,11 +173,12 @@ impl Render for McpSection {
                             .label(t!("cli_ui.mcp.copy"))
                             .on_click(move |_, window, cx| {
                                 cx.write_to_clipboard(ClipboardItem::new_string(snippet.clone()));
-                                window.push_notification(
-                                    Notification::success(t!(
+                                crate::notify::show(
+                                    crate::notify::Notice::success(t!(
                                         "cli_ui.mcp.copied",
                                         tool = selected.name()
                                     )),
+                                    window,
                                     cx,
                                 );
                             }),

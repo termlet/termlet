@@ -1076,7 +1076,7 @@ pub(super) fn notice(
             },
             v_flex()
                 .gap_1p5()
-                .child(errors::sudo_text(*sudo))
+                .child(prose(errors::sudo_text(*sudo)))
                 .when(docker, |this| {
                     this.child(bullet(
                         v_flex()
@@ -1089,8 +1089,8 @@ pub(super) fn notice(
                             )),
                     ))
                 })
-                .child(bullet(t!("tools.root.login")))
-                .child(bullet(t!("tools.root.sudoers")))
+                .child(bullet(prose(t!("tools.root.login"))))
+                .child(bullet(prose(t!("tools.root.sudoers"))))
                 .into_any_element(),
         ),
         ToolsError::Exec(ExecError::SingleChannel) => (
@@ -1105,7 +1105,7 @@ pub(super) fn notice(
             t!("tools.load_failed"),
             div()
                 .text_color(theme.danger)
-                .child(errors::describe(other))
+                .child(prose(errors::describe(other)))
                 .into_any_element(),
         ),
     };

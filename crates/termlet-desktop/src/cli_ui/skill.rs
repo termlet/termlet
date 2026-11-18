@@ -1,15 +1,12 @@
 //! 「命令行工具」页的 Agent Skill：通用目录、Claude Code、WorkBuddy 中的安装状态，安装、更新、删除
-//! （立即执行，结果用通知说明）；以前装在 Codex 旧位置的可以移到通用目录。“复制 Skill”给其他 AI 工具用。
+//! （立即执行，结果写在设置对话框底部）；以前装在 Codex 旧位置的可以移到通用目录。“复制 Skill”给其他 AI 工具用。
 
 use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::tooltip::Tooltip;
-use gpui_kit::component::{
-    ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _, h_flex, v_flex,
-};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     AppContext as _, ClipboardItem, Context, ElementId, Hsla, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _, Task,
@@ -18,6 +15,7 @@ use gpui_kit::{
 use termlet_core::proto::skill::{self, Agent, Status, Target};
 
 use super::CliEnv;
+use crate::notify::{self, Notice};
 use crate::prose::prose;
 use crate::t;
 
@@ -138,7 +136,7 @@ impl SkillSection {
         }));
     }
 
-    /// 执行操作，完成后重新列出（删除 Codex 旧位置的文件后，这一项不再列出）并用通知说明结果。
+    /// 执行操作，完成后重新列出（删除 Codex 旧位置的文件后，这一项不再列出）并说明结果（`notify::show`）。
     pub(super) fn apply(&mut self, op: SkillOp, window: &mut Window, cx: &mut Context<Self>) {
         let Some(Some(targets)) = &self.targets else {
             return;
@@ -162,17 +160,17 @@ impl SkillSection {
             let _ = this.update_in(cx, |this, window, cx| {
                 this.busy = None;
                 this.targets = Some(targets);
-                let note = match result {
+                let notice = match result {
                     Ok(()) => {
                         tracing::info!(op = ?op, "Agent Skill：操作完成");
-                        Notification::success(done_text(op, was))
+                        Notice::success(done_text(op, was))
                     }
                     Err(e) => {
                         tracing::warn!("修改 Agent Skill 失败：{e}");
-                        Notification::error(t!("cli_ui.skill.failed", error = e.to_string()))
+                        Notice::error(t!("cli_ui.skill.failed", error = e.to_string()))
                     }
                 };
-                window.push_notification(note, cx);
+                notify::show(notice, window, cx);
                 cx.notify();
             });
         }));
@@ -354,10 +352,7 @@ impl Render for SkillSection {
                             cx.write_to_clipboard(ClipboardItem::new_string(
                                 skill::CONTENT.to_string(),
                             ));
-                            window.push_notification(
-                                Notification::success(t!("cli_ui.skill.copied")),
-                                cx,
-                            );
+                            notify::show(Notice::success(t!("cli_ui.skill.copied")), window, cx);
                         }),
                 ),
         )

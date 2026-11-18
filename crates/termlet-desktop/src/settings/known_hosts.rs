@@ -105,7 +105,11 @@ impl KnownHostsPage {
                         entry.port,
                         &entry.algorithm,
                     ) {
-                        crate::notify::error(store_errors::describe(&e), window, cx);
+                        crate::notify::show(
+                            crate::notify::Notice::error(store_errors::describe(&e)),
+                            window,
+                            cx,
+                        );
                     }
                     let _ = this.update(cx, |this, cx| this.reload(cx));
                     true

@@ -2983,16 +2983,17 @@ impl TerminalPanel {
                         .gap_3()
                         .max_w_128()
                         .child(Icon::new(IconName::CircleX).text_color(cx.theme().danger))
+                        .child(div().text_base().child(prose(t!(
+                            "terminal.connect_failed",
+                            name = self.name.clone()
+                        ))))
                         .child(
                             div()
-                                .text_base()
-                                .child(t!("terminal.connect_failed", name = self.name.clone())),
-                        )
-                        .child(
-                            div()
+                                .id("terminal-failure-reason")
+                                .test_support()
                                 .text_sm()
                                 .text_color(cx.theme().muted_foreground)
-                                .child(failure.describe()),
+                                .child(prose(failure.describe())),
                         )
                         .child(
                             h_flex()
@@ -3894,6 +3895,52 @@ mod tests {
         cx.run_until_parked();
         assert_eq!(rem(cx), gpui_kit::px(24.));
         assert_eq!(font_size(cx), before);
+    }
+
+    // 第一次连接就失败的整页：原因照避头尾规则换行，句末的“。”不会单独落到行首。原因是 N 个“甲”、“。”与 N - 1 个
+    // “乙”（一行正好放 N 个字）时，GPUI 自己换行是“甲…甲”“。乙…乙”两行；避头尾把最后一个“甲”带到下一行，要三行
+    #[gpui_kit::test]
+    fn failure_reason_keeps_punctuation_off_line_starts(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        let handle = crate::testkit::open_workspace(cx);
+        let panel = cx
+            .update_window(handle, |_, window, cx| {
+                let workspace = Workspace::in_window(window, cx).expect("主窗口");
+                workspace.update(cx, |w, cx| w.open_local_terminal(window, cx));
+                let panel = workspace.read(cx).live_terminals().pop().expect("终端");
+                // 不真的启动本地 shell：停在还没有终端画面的状态
+                panel.update(cx, |panel, _| panel._connect = None);
+                panel
+            })
+            .unwrap();
+        // 整页宽 32rem，原因的字号 0.875rem；测试的文字系统每个字宽 0.6em
+        let n = cx
+            .update_window(handle, |_, window, _| {
+                let rem = f32::from(window.rem_size());
+                (32. * rem / (0.875 * rem * 0.6)).floor() as usize
+            })
+            .unwrap();
+        let mut reason_height = |reason: String| {
+            cx.update(|cx| {
+                panel.update(cx, |panel, cx| {
+                    panel.state = State::Failed(Failure::Local(reason.into()));
+                    cx.notify();
+                })
+            });
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                window.find("terminal-failure-reason").bounds().size.height
+            })
+            .unwrap()
+        };
+        let line = reason_height("甲".repeat(n));
+        assert_eq!(
+            reason_height("甲".repeat(n + 1)),
+            line * 2.,
+            "一行放 {n} 个字"
+        );
+        let reason = format!("{}。{}", "甲".repeat(n), "乙".repeat(n - 1));
+        assert_eq!(reason_height(reason), line * 3.);
     }
 
     // 设置中改了历史行数：已经打开的终端立即按新的行数保留历史，不必重新打开

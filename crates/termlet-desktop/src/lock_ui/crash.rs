@@ -7,9 +7,9 @@ use gpui_kit::component::{
     ActiveTheme as _, Sizable as _, StyledExt as _, WindowExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
-    App, AppContext as _, ClipboardItem, Context, ElementId, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _, Task,
-    TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
+    App, AppContext as _, ClipboardItem, Context, ElementId, Entity, InteractiveElement as _,
+    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
+    Styled as _, Task, TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::crash::{CrashLog, CrashRecord, MAX_RECORDS, Upload};
 
@@ -64,6 +64,7 @@ pub(crate) fn open_crash_log(window: &mut Window, cx: &mut App) {
     };
     let crash = services.crash.clone();
     let view = cx.new(|cx| CrashLogView::new(crash, window, cx));
+    let notice = view.read(cx).notice.clone();
     let width = rems(44.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, _| {
         dialog
@@ -71,6 +72,7 @@ pub(crate) fn open_crash_log(window: &mut Window, cx: &mut App) {
             .w(width)
             .child(view.clone())
     });
+    crate::notify::attach(&notice, window, cx);
 }
 
 /// 崩溃记录的列表。
@@ -79,6 +81,8 @@ struct CrashLogView {
     /// `None` 为还在读取
     records: Option<Vec<CrashRecord>>,
     error: Option<SharedString>,
+    /// 复制的结果（写在底部，见 [`crate::notify::show`]）
+    notice: Entity<crate::notify::NoticeLine>,
     _load: Task<()>,
     _delete: Option<Task<()>>,
 }
@@ -90,6 +94,7 @@ impl CrashLogView {
             crash,
             records: None,
             error: None,
+            notice: crate::notify::NoticeLine::new(cx),
             _load: load,
             _delete: None,
         }
@@ -115,7 +120,11 @@ impl CrashLogView {
             return;
         };
         cx.write_to_clipboard(ClipboardItem::new_string(record.to_text()));
-        window.push_notification(Notification::success(t!("lock_ui.crash.copied")), cx);
+        crate::notify::show(
+            crate::notify::Notice::success(t!("lock_ui.crash.copied")),
+            window,
+            cx,
+        );
     }
 
     /// 删除一份（`id` 为 `None` 时全部删除），然后重新读取。
@@ -320,12 +329,15 @@ impl Render for CrashLogView {
                     .border_t_1()
                     .border_color(border)
                     .child(
-                        div()
+                        v_flex()
                             .flex_1()
                             .min_w_0()
+                            .gap_1()
                             .text_xs()
-                            .text_color(danger)
-                            .when_some(self.error.clone(), |this, error| this.child(prose(error))),
+                            .when_some(self.error.clone(), |this, error| {
+                                this.child(div().text_color(danger).child(prose(error)))
+                            })
+                            .child(self.notice.clone()),
                     )
                     .when(has_records, |this| {
                         this.child(

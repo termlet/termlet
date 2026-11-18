@@ -471,7 +471,7 @@ impl TransferList {
                 this.child(
                     div()
                         .text_color(theme.danger)
-                        .child(errors::describe(&error)),
+                        .child(prose(errors::describe(&error))),
                 )
             })
             .when_some(skipped, |this, (text, paths)| {

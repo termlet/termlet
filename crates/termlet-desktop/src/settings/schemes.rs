@@ -14,15 +14,13 @@ use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::form::field;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::{Select, SelectEvent};
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::tag::Tag;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{
-    ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
-    v_flex,
+    ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     AnyElement, App, AppContext as _, Context, Entity, InteractiveElement as _, IntoElement,
@@ -455,8 +453,9 @@ impl SchemesPage {
             self.push_new(scheme);
         }
         self.refresh_selects(window, cx);
-        window.push_notification(
-            Notification::success(t!("schemes.imported", count = count)),
+        crate::notify::show(
+            crate::notify::Notice::success(t!("schemes.imported", count = count)),
+            window,
             cx,
         );
     }

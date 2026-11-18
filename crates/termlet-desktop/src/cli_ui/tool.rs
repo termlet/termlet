@@ -8,10 +8,7 @@ use std::path::{Path, PathBuf};
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::notification::Notification;
-use gpui_kit::component::{
-    ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _, h_flex, v_flex,
-};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     AppContext as _, ClipboardItem, Context, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, Styled as _, Task, TestSupportExt as _, Window, div,
@@ -22,6 +19,7 @@ use termlet_core::userpath;
 use super::CliEnv;
 use crate::app_state::AppState;
 use crate::install_kind::{LinuxInstall, SYSTEM_CLI, linux_install};
+use crate::notify::{self, Notice};
 use crate::prose::prose;
 use crate::t;
 
@@ -152,11 +150,11 @@ impl ToolSection {
                 .await;
             let _ = this.update_in(cx, |this, window, cx| {
                 this.busy = false;
-                let note = match result {
+                let notice = match result {
                     Ok(contains) => {
                         tracing::info!(add, in_path = contains, "命令行工具：已修改 PATH");
                         this.state = PathState::InPath(contains);
-                        Notification::success(if add {
+                        Notice::success(if add {
                             t!("cli_ui.tool.added")
                         } else {
                             t!("cli_ui.tool.removed")
@@ -164,10 +162,10 @@ impl ToolSection {
                     }
                     Err(e) => {
                         tracing::warn!("修改 PATH 失败：{e}");
-                        Notification::error(t!("cli_ui.tool.change_failed", error = e.to_string()))
+                        Notice::error(t!("cli_ui.tool.change_failed", error = e.to_string()))
                     }
                 };
-                window.push_notification(note, cx);
+                notify::show(notice, window, cx);
                 cx.notify();
             });
         }));
@@ -202,10 +200,7 @@ impl ToolSection {
                     .tooltip(t!("cli_ui.tool.copy_path"))
                     .on_click(move |_, window, cx| {
                         cx.write_to_clipboard(ClipboardItem::new_string(copied.clone()));
-                        window.push_notification(
-                            Notification::success(t!("cli_ui.tool.path_copied")),
-                            cx,
-                        );
+                        notify::show(Notice::success(t!("cli_ui.tool.path_copied")), window, cx);
                     }),
             )
     }

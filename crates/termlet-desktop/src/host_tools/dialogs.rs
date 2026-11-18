@@ -69,7 +69,7 @@ pub(super) fn open_root_info(
                         div()
                             .text_xs()
                             .text_color(muted)
-                            .child(errors::sudo_text(sudo)),
+                            .child(prose(errors::sudo_text(sudo))),
                     )
                     .child(
                         v_flex()
@@ -158,7 +158,7 @@ pub(super) fn open_root(
                         div()
                             .text_xs()
                             .text_color(muted)
-                            .child(errors::sudo_text(sudo)),
+                            .child(prose(errors::sudo_text(sudo))),
                     )
                     .children(primary.as_deref().map(|command| {
                         confirm_command(

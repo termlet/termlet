@@ -15,7 +15,6 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::input::{Input, InputEvent, InputState, Textarea, TextareaState};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::{Select, SelectEvent};
@@ -34,6 +33,7 @@ use termlet_core::audit::{
 };
 
 use crate::choice::{Choice, ChoiceState, choice_state};
+use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::sftp::list_model::format_size;
 use crate::t;
@@ -71,11 +71,12 @@ struct OpenAudits(Vec<WeakEntity<AuditView>>);
 
 impl Global for OpenAudits {}
 
-/// 打开审计日志对话框（设置中的“查看审计日志…”、命令面板）。审计日志没能打开时只给出通知。
+/// 打开审计日志对话框（设置中的“查看审计日志…”、命令面板）。审计日志没能打开时只说明原因（`notify::show`：
+/// 从设置中打开时写在设置底部）。
 pub(crate) fn open_audit(window: &mut Window, cx: &mut App) {
     match crate::cli_bridge::audit(cx) {
         Some(log) => open_audit_with(log, window, cx),
-        None => crate::notify::error(t!("cli_ui.audit.unavailable"), window, cx),
+        None => notify::show(Notice::error(t!("cli_ui.audit.unavailable")), window, cx),
     }
 }
 
@@ -85,6 +86,7 @@ pub(super) fn open_audit_with(log: Arc<AuditLog>, window: &mut Window, cx: &mut 
     let open = &mut cx.default_global::<OpenAudits>().0;
     open.retain(|w| w.upgrade().is_some());
     open.push(view.downgrade());
+    let notice = view.read(cx).notice.clone();
     let width = rems(64.).to_pixels(window.rem_size());
     let first = std::cell::Cell::new(true);
     window.open_dialog(cx, move |dialog, window, cx| {
@@ -98,6 +100,7 @@ pub(super) fn open_audit_with(log: Arc<AuditLog>, window: &mut Window, cx: &mut 
             .on_ok(|_, _, _| false)
             .child(view.clone())
     });
+    notify::attach(&notice, window, cx);
 }
 
 /// 写入了新的审计记录（命令行服务的 `CliEvent::Audited`、主机工具面板的写操作）：打开着的审计对话框补上新记录。
@@ -265,6 +268,8 @@ pub(super) struct AuditView {
     /// 导出、清空进行中
     busy: bool,
     error: Option<SharedString>,
+    /// 导出、清空、复制的结果（写在底部，见 [`notify::show`]）
+    notice: Entity<NoticeLine>,
     /// 选中的记录；列表中的只有开头部分（`partial`），选中后再取完整内容
     pub(super) selected: Option<AuditEntry>,
     detail: Entity<TextareaState>,
@@ -348,6 +353,7 @@ impl AuditView {
             newer_again: false,
             busy: false,
             error: None,
+            notice: NoticeLine::new(cx),
             selected: None,
             detail,
             revision: 0,
@@ -608,18 +614,18 @@ impl AuditView {
                 .await;
             let _ = this.update_in(cx, |this, window, cx| {
                 this.busy = false;
-                let note = match result {
-                    Ok(count) => Notification::success(t!(
+                let notice = match result {
+                    Ok(count) => Notice::success(t!(
                         "cli_ui.audit.exported",
                         count = count,
                         path = path.display().to_string()
                     )),
                     Err(error) => {
                         tracing::warn!("导出审计日志失败：{error}");
-                        Notification::error(t!("cli_ui.audit.export_failed", error = error))
+                        Notice::error(t!("cli_ui.audit.export_failed", error = error))
                     }
                 };
-                window.push_notification(note, cx);
+                notify::show(notice, window, cx);
                 cx.notify();
             });
         }));
@@ -661,8 +667,8 @@ impl AuditView {
                     }
                     Err(e) => {
                         tracing::warn!("清空审计日志失败：{e}");
-                        crate::notify::error(
-                            t!("cli_ui.audit.clear_failed", error = e.to_string()),
+                        notify::show(
+                            Notice::error(t!("cli_ui.audit.clear_failed", error = e.to_string())),
                             window,
                             cx,
                         );
@@ -938,9 +944,10 @@ impl AuditView {
                 div()
                     .id("audit-count")
                     .test_support()
-                    .flex_1()
+                    .flex_none()
                     .child(t!("cli_ui.audit.count", count = self.entries.len())),
             )
+            .child(div().flex_1().min_w_0().child(self.notice.clone()))
             .when(self.more, |this| {
                 this.child(
                     Button::new("audit-load-more")
@@ -1050,8 +1057,9 @@ impl AuditView {
                                     cx.write_to_clipboard(ClipboardItem::new_string(
                                         copied.clone(),
                                     ));
-                                    window.push_notification(
-                                        Notification::success(t!("cli_ui.audit.detail_copied")),
+                                    notify::show(
+                                        Notice::success(t!("cli_ui.audit.detail_copied")),
+                                        window,
                                         cx,
                                     );
                                 }),

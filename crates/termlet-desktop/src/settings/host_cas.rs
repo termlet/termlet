@@ -3,13 +3,13 @@
 //! 不再信任（立即生效，与“保存”无关）。只在这台电脑上，不同步。
 
 use std::cell::Cell;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::input::{Input, InputEvent, InputState, Textarea, TextareaState};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
     v_flex,
@@ -24,6 +24,7 @@ use termlet_core::ssh::host_ca::{self, HostCaError, KnownHostsReadError};
 
 use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
+use crate::notify::{self, Notice};
 use crate::prose::prose;
 use crate::{store_errors, t};
 
@@ -50,7 +51,6 @@ impl HostCasSection {
             multiple: false,
             prompt: None,
         });
-        let store = AppState::store(cx);
         cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(paths))) = picked.await else {
                 return;
@@ -58,30 +58,36 @@ impl HostCasSection {
             let Some(path) = paths.into_iter().next() else {
                 return;
             };
+            let _ = this.update_in(cx, |this, window, cx| this.import_file(path, window, cx));
+        })
+        .detach();
+    }
+
+    /// 从选好的 known_hosts 文件导入。结果写在设置对话框底部（[`notify::show`]：弹出的通知会被对话框盖住）。
+    fn import_file(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
+        let store = AppState::store(cx);
+        cx.spawn_in(window, async move |this, cx| {
             let result = cx
                 .background_spawn(async move { host_ca::import_known_hosts(&store, &path) })
                 .await;
             let _ = this.update_in(cx, |this, window, cx| {
                 this.reload(cx);
-                match result {
+                let notice = match result {
                     Ok(report) if report.added + report.existing + report.invalid == 0 => {
-                        crate::notify::warning(t!("known_hosts.ca_import_none"), window, cx)
+                        Notice::warning(t!("known_hosts.ca_import_none"))
                     }
-                    Ok(report) => window.push_notification(
-                        Notification::success(t!(
-                            "known_hosts.ca_imported",
-                            added = report.added,
-                            existing = report.existing,
-                            invalid = report.invalid
-                        )),
-                        cx,
-                    ),
-                    Err(error) => crate::notify::error(
-                        t!("known_hosts.ca_import_failed", error = read_error(&error)),
-                        window,
-                        cx,
-                    ),
-                }
+                    Ok(report) => Notice::success(t!(
+                        "known_hosts.ca_imported",
+                        added = report.added,
+                        existing = report.existing,
+                        invalid = report.invalid
+                    )),
+                    Err(error) => Notice::error(t!(
+                        "known_hosts.ca_import_failed",
+                        error = read_error(&error)
+                    )),
+                };
+                notify::show(notice, window, cx);
             });
         })
         .detach();
@@ -101,7 +107,7 @@ impl HostCasSection {
                 .cancel_text(t!("common.cancel"))
                 .on_ok(move |_, window, cx| {
                     if let Err(e) = host_ca::remove(&AppState::store(cx), &ca) {
-                        crate::notify::error(store_errors::describe(&e), window, cx);
+                        notify::show(Notice::error(store_errors::describe(&e)), window, cx);
                     }
                     let _ = this.update(cx, |this, cx| this.reload(cx));
                     true
@@ -375,5 +381,81 @@ impl Render for AddForm {
                             .on_click(cx.listener(|this, _, window, cx| this.submit(window, cx))),
                     ),
             )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui_kit::TestAppContext;
+    use gpui_kit::test::TestWindowExt as _;
+
+    use super::*;
+    use crate::i18n::{Language, set_language};
+    use crate::notify::shown;
+    use crate::settings::Page;
+    use crate::testkit::{open_workspace, poll_until};
+
+    // 设置开着时从 known_hosts 导入：结果写在设置对话框底部，在对话框之内，不弹出通知（通知画在对话框之下，
+    // 前半句“导入了 1 个 CA”会被盖住）
+    #[gpui_kit::test]
+    fn import_result_shows_inside_the_settings_dialog(cx: &mut TestAppContext) {
+        let handle = open_workspace(cx);
+        set_language(Language::ZhCn);
+        let dir = std::env::temp_dir().join(format!(
+            "termlet-host-ca-{}",
+            termlet_core::id::random_token(8)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("known_hosts");
+        let ca =
+            termlet_core::sshkey::generate(termlet_core::sshkey::KeyKind::Ed25519, "").unwrap();
+        std::fs::write(
+            &path,
+            format!("@cert-authority *.corp {}\n", ca.public_key()),
+        )
+        .unwrap();
+        // 导入完成前一直拿着这一节（丢弃后导入的结果不再处理）
+        let (toasts, _section) = cx
+            .update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                window.click("open-settings", cx);
+                window.render_frame(cx);
+                window.click(Page::KnownHosts.nav_id(), cx);
+                window.render_frame(cx);
+                let toasts = window.notifications(cx).len();
+                // 页上的那一节与它做的相同：选好文件后导入
+                let section = cx.new(HostCasSection::new);
+                section.update(cx, |section, cx| {
+                    section.import_file(path.clone(), window, cx)
+                });
+                (toasts, section)
+            })
+            .unwrap();
+        let expected = Notice::success(t!(
+            "known_hosts.ca_imported",
+            added = 1,
+            existing = 0,
+            invalid = 0
+        ));
+        poll_until(cx, "导入完成", |cx| {
+            cx.update_window(handle, |_, window, cx| shown(window, cx).is_some())
+                .unwrap()
+        });
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert_eq!(shown(window, cx), Some(expected));
+            assert_eq!(window.notifications(cx).len(), toasts, "不弹出通知");
+            let dialog = window.find("settings-dialog").bounds();
+            let notice = window.find("dialog-notice").bounds();
+            assert!(
+                notice.left() >= dialog.left()
+                    && notice.right() <= dialog.right()
+                    && notice.top() >= dialog.top()
+                    && notice.bottom() <= dialog.bottom(),
+                "提示在设置对话框之内：{notice:?} / {dialog:?}"
+            );
+        })
+        .unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

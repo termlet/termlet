@@ -38,7 +38,12 @@ impl DialogToken {
 
     /// 这个对话框还开着并且在最上面。
     pub fn is_top(&self, window: &mut Window, cx: &mut App) -> bool {
-        window.has_active_dialog(cx) && self.0.contains_focused(window, cx)
+        window.has_active_dialog(cx) && self.contains_focus(window, cx)
+    }
+
+    /// 焦点在这个对话框里（它自己或其中的输入框等）。
+    pub fn contains_focus(&self, window: &Window, cx: &App) -> bool {
+        self.0.contains_focused(window, cx)
     }
 
     /// 仍在最上面时关闭它，返回是否关闭了。

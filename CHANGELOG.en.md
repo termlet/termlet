@@ -10,6 +10,11 @@ This file lists the changes you will notice in each version, newest first. Versi
 
 - The Agent Skill now lists Pi: Pi reads the shared folder `~/.agents/skills`, so Settings → Command-line tool names it and detects it when Pi is installed; from the command line, `termlet skill install --agent pi` works too (same as `--agent agents`).
 
+### Fixed
+
+- After actions in Settings that run right away (importing host CAs from known_hosts, copying the version info, installing the Agent Skill, changing PATH and so on), the pop-up message was hidden behind the Settings dialog, leaving only its end or nothing visible; the result now appears at the bottom of the dialog. Export and copy results in the audit log and crash report dialogs now appear inside those dialogs too.
+- In Chinese and Japanese text, when the reason on a failed-connection page wrapped, a closing "。" could end up alone at the start of a line; the explanations shown when host tools are unavailable or need root, and the reasons for failed SFTP transfers, had the same problem.
+
 ### Security
 
 - Updated the pageant dependency to 0.2.5: with agent forwarding on for a host and Pageant as the local agent (Windows), a malicious or compromised server could send a message claiming a huge size over the forwarding channel and make Termlet use memory until it crashed (denial of service, GHSA-662x-8wvj-2276). Agent forwarding is off by default.

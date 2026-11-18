@@ -12,13 +12,11 @@ use std::path::PathBuf;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::progress::Progress;
 use gpui_kit::component::select::Select;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{
-    ActiveTheme as _, Disableable as _, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
-    v_flex,
+    ActiveTheme as _, Disableable as _, Sizable as _, StyledExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     App, ClipboardItem, Context, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
@@ -102,10 +100,11 @@ pub(crate) fn app_info(cx: &App) -> impl IntoElement + use<> {
                                                 termlet_core::diag::system_info(),
                                             );
                                             cx.write_to_clipboard(ClipboardItem::new_string(info));
-                                            window.push_notification(
-                                                Notification::success(t!(
+                                            crate::notify::show(
+                                                crate::notify::Notice::success(t!(
                                                     "settings.about.version_copied"
                                                 )),
+                                                window,
                                                 cx,
                                             );
                                         }),
@@ -325,7 +324,11 @@ impl AboutExtras {
             let _ = this.update_in(cx, |this, window, cx| {
                 this.diag_busy = false;
                 cx.write_to_clipboard(ClipboardItem::new_string(text));
-                window.push_notification(Notification::success(t!("lock_ui.diag.copied")), cx);
+                crate::notify::show(
+                    crate::notify::Notice::success(t!("lock_ui.diag.copied")),
+                    window,
+                    cx,
+                );
                 cx.notify();
             });
         }));

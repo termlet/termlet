@@ -2,6 +2,9 @@
 //!
 //! 点击对话框外部不关闭（避免丢失修改）。保存时只写入与打开时不同的设置组：打开期间别处（云同步、另一个窗口）
 //! 改了别的组不会被这里的旧值覆盖。
+//!
+//! 立即执行的操作（导入、清除、复制、安装等，与“保存”无关）的结果写在底部的提示行里，换分类时清掉：弹出的通知
+//! 会被对话框盖住（见 [`crate::notify`]）。
 
 mod fonts;
 mod highlight;
@@ -45,6 +48,7 @@ use termlet_core::store::Store;
 use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::dialog_token::{DialogToken, close_own};
+use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::{store_errors, t};
 
@@ -205,7 +209,11 @@ pub fn open(page: Page, window: &mut Window, cx: &mut App) {
             .on_ok(save)
     });
     let token = DialogToken::take(window, cx);
-    owner.update(cx, |form, _| form.dialog = token);
+    let notice = owner.update(cx, |form, _| {
+        form.dialog = token;
+        form.notice.clone()
+    });
+    notify::attach(&notice, window, cx);
 }
 
 pub(crate) struct SettingsForm {
@@ -262,6 +270,8 @@ pub(crate) struct SettingsForm {
     schemes: Entity<SchemesPage>,
     shell_snippets_open: bool,
     error: Option<SharedString>,
+    /// 底部的提示行：立即执行的操作（导入、清除、复制等）的结果写在这里（见 [`crate::notify::show`]），换分类时清掉
+    notice: Entity<NoticeLine>,
     /// 设置所在的对话框（恢复备份完成后只关它）
     dialog: Option<DialogToken>,
     _tasks: Vec<Task<()>>,
@@ -496,6 +506,7 @@ impl SettingsForm {
             schemes,
             shell_snippets_open: false,
             error: None,
+            notice: NoticeLine::new(cx),
             dialog: None,
             _tasks: Vec::new(),
             _subscriptions: subscriptions,
@@ -533,6 +544,9 @@ impl SettingsForm {
             // 离开快捷键页：结束录入（否则在别的页上按的键会被录成快捷键）
             self.shortcuts.update(cx, |p, cx| p.stop_recording(cx));
         }
+        if page != self.page {
+            self.notice.update(cx, |line, cx| line.clear(cx));
+        }
         self.page = page;
         if page == Page::Highlight {
             // 预览用“终端配色”分类中（尚未保存的）当前深浅的配色
@@ -566,6 +580,7 @@ impl SettingsForm {
             return false;
         }
         self.error = None;
+        self.notice.update(cx, |line, cx| line.clear(cx));
         // 先校验各分类，有错误时什么也不写
         if let Err((page, error)) = self.collect(cx) {
             self.page = page;
@@ -829,12 +844,13 @@ impl SettingsForm {
                     "已清除确认过的代理命令"
                 );
                 self.allowed_proxy_commands = 0;
-                window.push_notification(
-                    Notification::success(t!("settings.proxy_commands_forgotten")),
+                notify::show(
+                    Notice::success(t!("settings.proxy_commands_forgotten")),
+                    window,
                     cx,
                 );
             }
-            Err(e) => crate::notify::error(store_errors::describe(&e), window, cx),
+            Err(e) => notify::show(Notice::error(store_errors::describe(&e)), window, cx),
         }
         cx.notify();
     }
@@ -854,12 +870,15 @@ impl SettingsForm {
                     match history::clear(&store, None) {
                         Ok(()) => {
                             tracing::info!("已清空全部命令历史");
-                            window.push_notification(
-                                Notification::success(t!("settings.history_cleared")),
+                            notify::show(
+                                Notice::success(t!("settings.history_cleared")),
+                                window,
                                 cx,
                             );
                         }
-                        Err(e) => crate::notify::error(store_errors::describe(&e), window, cx),
+                        Err(e) => {
+                            notify::show(Notice::error(store_errors::describe(&e)), window, cx)
+                        }
                     }
                     true
                 })
@@ -1467,11 +1486,12 @@ impl SettingsForm {
                                             cx.write_to_clipboard(ClipboardItem::new_string(
                                                 code.to_string(),
                                             ));
-                                            window.push_notification(
-                                                Notification::success(t!(
+                                            notify::show(
+                                                Notice::success(t!(
                                                     "settings.snippet_copied",
                                                     shell = shell
                                                 )),
+                                                window,
                                                 cx,
                                             );
                                         },
@@ -1717,12 +1737,15 @@ impl SettingsForm {
             .border_t_1()
             .border_color(theme.border)
             .child(
-                div()
+                v_flex()
                     .flex_1()
                     .min_w_0()
+                    .gap_1()
                     .text_sm()
-                    .text_color(theme.danger)
-                    .when_some(self.error.clone(), |this, error| this.child(prose(error))),
+                    .when_some(self.error.clone(), |this, error| {
+                        this.child(div().text_color(theme.danger).child(prose(error)))
+                    })
+                    .child(self.notice.clone()),
             )
             .child(
                 Button::new("settings-cancel")
@@ -1768,6 +1791,7 @@ impl Render for SettingsForm {
             .min(window.viewport_size().height - rems(8.).to_pixels(window.rem_size()));
         v_flex()
             .id("settings-dialog")
+            .test_support()
             .h(height)
             .child(
                 h_flex()
@@ -1948,6 +1972,48 @@ mod tests {
             .and_then(|item| item.text())
             .unwrap_or_default();
         assert!(copied.starts_with(&format!("Termlet {}\n", termlet_core::VERSION)));
+    }
+
+    // 立即执行的操作（复制版本信息）的结果写在对话框底部的提示行里、在对话框之内，不弹出会被对话框盖住的通知；
+    // 换到别的分类后清掉
+    #[gpui_kit::test]
+    fn results_show_at_the_bottom_of_the_dialog(cx: &mut TestAppContext) {
+        use crate::notify::{Notice, shown};
+        use gpui_kit::component::WindowExt as _;
+        let handle = open_workspace(cx);
+        set_language(Language::ZhCn);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.click("open-settings", cx);
+            window.render_frame(cx);
+            window.click(Page::About.nav_id(), cx);
+            window.render_frame(cx);
+            let toasts = window.notifications(cx).len();
+            assert!(window.try_find("dialog-notice").is_none());
+            window.click("about-copy-version", cx);
+            window.render_frame(cx);
+            assert_eq!(
+                shown(window, cx),
+                Some(Notice::success(crate::t!("settings.about.version_copied")))
+            );
+            assert_eq!(window.notifications(cx).len(), toasts, "不弹出通知");
+            let dialog = window.find("settings-dialog").bounds();
+            let notice = window.find("dialog-notice").bounds();
+            let cancel = window.find("settings-cancel").bounds();
+            assert!(
+                notice.left() >= dialog.left()
+                    && notice.right() <= cancel.left()
+                    && notice.top() >= dialog.top()
+                    && notice.bottom() <= dialog.bottom(),
+                "在对话框底部、按钮的左边：{notice:?} / {dialog:?}"
+            );
+
+            window.click(Page::General.nav_id(), cx);
+            window.render_frame(cx);
+            assert_eq!(shown(window, cx), None);
+            assert!(window.try_find("dialog-notice").is_none());
+        })
+        .unwrap();
     }
 
     // 便携版：“关于”页的版本旁注明便携版，数据目录下说明数据在程序旁边；复制的版本信息也注明

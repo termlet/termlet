@@ -6,7 +6,6 @@ use std::path::PathBuf;
 
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::radio::{Radio, RadioGroup};
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
@@ -123,12 +122,13 @@ impl SchemeExport {
             let _ = this.update_in(cx, |this, window, cx| match written {
                 Ok(()) => {
                     tracing::info!(count, path = %path.display(), "已导出终端配色");
-                    window.push_notification(
-                        Notification::success(t!(
+                    crate::notify::show(
+                        crate::notify::Notice::success(t!(
                             "schemes.export.done",
                             count = count,
                             path = path.display().to_string()
                         )),
+                        window,
                         cx,
                     );
                     window.close_dialog(cx);

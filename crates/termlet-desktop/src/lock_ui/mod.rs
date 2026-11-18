@@ -620,7 +620,11 @@ pub(crate) fn restart_and_install(window: &mut Window, cx: &mut App) {
                     Ok(()) => crate::cli_bridge::quit_now(cx),
                     Err(e) => {
                         tracing::warn!("启动安装程序失败：{e}");
-                        crate::notify::error(t!("lock_ui.update.install_failed"), window, cx);
+                        crate::notify::show(
+                            crate::notify::Notice::error(t!("lock_ui.update.install_failed")),
+                            window,
+                            cx,
+                        );
                     }
                 });
             })
