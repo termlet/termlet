@@ -1611,9 +1611,10 @@ termlet version
 ### Agent Skill
 
 - Under Settings → Command-line tool, install it with one click to:
-  - the shared folder (`~/.agents/skills`, read by Codex, Gemini CLI, Cursor, GitHub Copilot and others);
+  - the shared folder (`~/.agents/skills`, read by Codex, Gemini CLI, Cursor, GitHub Copilot, Pi and others);
   - Claude Code (`~/.claude/skills`);
   - or WorkBuddy.
+- Or install it from the command line: `termlet skill install --agent agents` installs into the shared folder (`--agent codex` and `--agent pi` do the same).
 - You can update or remove it there; "Copy skill" copies the whole file for other AI tools.
 - AI tools then use termlet instead of calling ssh directly.
 

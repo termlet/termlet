@@ -186,11 +186,11 @@ cli_ui.skill.label:
   ja: Agent Skill
   ko: Agent Skill
 cli_ui.skill.hint:
-  zh-CN: 安装后，AI 工具在需要操作服务器时会使用 termlet，而不是直接 ssh。通用目录由 Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi 等读取；Claude Code 不读通用目录，需要单独安装。其他 AI 工具可以复制 Skill，粘贴到它的规则或提示中。
-  en: With the skill installed, AI tools use termlet instead of plain ssh when they need to work on your servers. The shared folder is read by Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Qwen Code, Kimi and others; Claude Code doesn't read it and needs its own copy. For other AI tools, copy the skill and paste it into their rules or prompt.
-  zh-TW: 安裝後，AI 工具在需要操作伺服器時會使用 termlet，而不是直接 ssh。通用目錄由 Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi 等讀取；Claude Code 不讀通用目錄，需要另外安裝。其他 AI 工具可以複製 Skill，貼到它的規則或提示詞中。
-  ja: インストールすると、AI ツールはサーバーを操作する必要があるときに、ssh を直接使う代わりに termlet を使うようになります。共通フォルダーは Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi などが読み込みます。Claude Code は共通フォルダーを読み込まないため、別途インストールが必要です。ほかの AI ツールでは、Skill をコピーしてそのツールのルールやプロンプトに貼り付けてください。
-  ko: 설치하면 AI 도구가 서버 작업이 필요할 때 ssh를 직접 쓰는 대신 termlet을 사용합니다. 공용 폴더는 Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Qwen Code, Kimi 등이 읽습니다. Claude Code는 공용 폴더를 읽지 않으므로 따로 설치해야 합니다. 다른 AI 도구에서는 Skill을 복사해 해당 도구의 규칙이나 프롬프트에 붙여넣으세요.
+  zh-CN: 安装后，AI 工具在需要操作服务器时会使用 termlet，而不是直接 ssh。通用目录由 Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi、Pi 等读取；Claude Code 不读通用目录，需要单独安装。其他 AI 工具可以复制 Skill，粘贴到它的规则或提示中。
+  en: With the skill installed, AI tools use termlet instead of plain ssh when they need to work on your servers. The shared folder is read by Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Qwen Code, Kimi, Pi and others; Claude Code doesn't read it and needs its own copy. For other AI tools, copy the skill and paste it into their rules or prompt.
+  zh-TW: 安裝後，AI 工具在需要操作伺服器時會使用 termlet，而不是直接 ssh。通用目錄由 Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi、Pi 等讀取；Claude Code 不讀通用目錄，需要另外安裝。其他 AI 工具可以複製 Skill，貼到它的規則或提示詞中。
+  ja: インストールすると、AI ツールはサーバーを操作する必要があるときに、ssh を直接使う代わりに termlet を使うようになります。共通フォルダーは Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi、Pi などが読み込みます。Claude Code は共通フォルダーを読み込まないため、別途インストールが必要です。ほかの AI ツールでは、Skill をコピーしてそのツールのルールやプロンプトに貼り付けてください。
+  ko: 설치하면 AI 도구가 서버 작업이 필요할 때 ssh를 직접 쓰는 대신 termlet을 사용합니다. 공용 폴더는 Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Qwen Code, Kimi, Pi 등이 읽습니다. Claude Code는 공용 폴더를 읽지 않으므로 따로 설치해야 합니다. 다른 AI 도구에서는 Skill을 복사해 해당 도구의 규칙이나 프롬프트에 붙여넣으세요.
 cli_ui.skill.copy:
   zh-CN: 复制 Skill
   en: Copy skill
@@ -234,11 +234,11 @@ cli_ui.skill.readers:
   ja: ここを読み込むツールを検出しました：%{names}
   ko: "여기를 읽는 도구를 찾았습니다: %{names}"
 cli_ui.skill.readers_none:
-  zh-CN: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode 等读取这里
-  en: Read by Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode and others
-  zh-TW: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode 等讀取這裡
-  ja: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode などがここを読み込みます
-  ko: Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode 등이 여기를 읽습니다
+  zh-CN: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Pi 等读取这里
+  en: Read by Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Pi and others
+  zh-TW: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Pi 等讀取這裡
+  ja: Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Pi などがここを読み込みます
+  ko: Codex, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Pi 등이 여기를 읽습니다
 cli_ui.skill.not_detected:
   zh-CN: 这台电脑上还没有 %{tool}，也可以先安装
   en: "%{tool} isn't on this computer yet; you can still install"

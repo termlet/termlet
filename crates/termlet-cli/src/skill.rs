@@ -78,13 +78,14 @@ fn home_dir() -> Option<PathBuf> {
 
 /// 解析 `install [--agent claude|agents|workbuddy | --dir <目录>]`，默认 Claude Code。
 /// `codex` 等同 `agents`：Codex 已改为读取通用目录 `~/.agents/skills`，不再安装到它的旧位置。
+/// `pi` 也等同 `agents`：Pi 除了自己的 `~/.pi/agent/skills`，也读取通用目录。
 pub fn parse_install(args: &[String], lang: Lang) -> Result<Where, String> {
     let usage = || messages::USAGE_SKILL.get(lang).to_string();
     match args {
         [install] if install == "install" => Ok(Where::Agent(Agent::ClaudeCode)),
         [install, flag, value] if install == "install" => match (flag.as_str(), value.as_str()) {
             ("--dir", dir) if !dir.is_empty() => Ok(Where::Dir(PathBuf::from(dir))),
-            ("--agent", "codex") => Ok(Where::Agent(Agent::Generic)),
+            ("--agent", "codex" | "pi") => Ok(Where::Agent(Agent::Generic)),
             ("--agent", name) => Agent::parse(name)
                 .filter(|a| Agent::ALL.contains(a))
                 .map(Where::Agent)
@@ -126,6 +127,7 @@ mod tests {
             ("agents", Agent::Generic),
             ("workbuddy", Agent::WorkBuddy),
             ("codex", Agent::Generic),
+            ("pi", Agent::Generic),
         ] {
             assert_eq!(
                 parse_install(&args(&["install", "--agent", value]), Lang::Zh),

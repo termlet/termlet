@@ -6,6 +6,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 
 ## 0.3.2 (unreleased)
 
+### Changed
+
+- The Agent Skill now lists Pi: Pi reads the shared folder `~/.agents/skills`, so Settings → Command-line tool names it and detects it when Pi is installed; from the command line, `termlet skill install --agent pi` works too (same as `--agent agents`).
+
 ### Security
 
 - Updated the pageant dependency to 0.2.5: with agent forwarding on for a host and Pageant as the local agent (Windows), a malicious or compromised server could send a message claiming a huge size over the forwarding channel and make Termlet use memory until it crashed (denial of service, GHSA-662x-8wvj-2276). Agent forwarding is off by default.

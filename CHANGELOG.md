@@ -6,6 +6,10 @@
 
 ## 0.3.2（未发布）
 
+### 改进
+
+- Agent Skill 写明支持 Pi：Pi 读取通用目录 `~/.agents/skills`，设置“命令行工具”页的说明中列出了它，装了 Pi 的电脑上也检测得到；命令行可以用 `termlet skill install --agent pi`（与 `--agent agents` 相同）。
+
 ### 安全
 
 - 依赖 pageant 升到 0.2.5：主机开了 agent 转发、本机的 agent 是 Pageant 时（Windows），恶意或被入侵的服务器可以经转发通道发来声称极大的消息，让 Termlet 占用大量内存直至崩溃（拒绝服务，GHSA-662x-8wvj-2276）。agent 转发默认关闭。

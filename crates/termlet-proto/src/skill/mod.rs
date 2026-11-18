@@ -1,5 +1,5 @@
 //! `termlet` 命令的 Agent Skill（SKILL.md）：随应用与命令行工具一起发布，可安装到通用目录 `~/.agents/skills`
-//! （Agent Skills 约定，Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi 等都读取）、
+//! （Agent Skills 约定，Codex、Gemini CLI、Cursor、GitHub Copilot、OpenCode、Qwen Code、Kimi、Pi 等都读取）、
 //! Claude Code 与 WorkBuddy 的 skills 目录（`<skills 目录>/termlet/SKILL.md`）。
 //!
 //! 是否已安装按文件内容与内置版本逐字比较：相同为已安装，不同为有更新，不存在为未安装。
@@ -135,6 +135,7 @@ const GENERIC_READERS: &[(&str, &[&str])] = &[
     ("OpenCode", &[".config", "opencode"]),
     ("Qwen Code", &[".qwen"]),
     ("Kimi", &[".kimi"]),
+    ("Pi", &[".pi", "agent"]),
 ];
 
 /// 这台电脑上检测到的、会读取通用目录的 AI 工具（Codex 按 `CODEX_HOME` 判断）。
@@ -321,6 +322,7 @@ mod tests {
             &[".codex"],
             &[".cursor"],
             &[".config", "opencode"],
+            &[".pi", "agent"],
         ] {
             let dir = parts
                 .iter()
@@ -329,7 +331,7 @@ mod tests {
         }
         let list = targets(home, &no_env);
         assert!(list[0].detected);
-        assert_eq!(list[0].readers, ["Codex", "Cursor", "OpenCode"]);
+        assert_eq!(list[0].readers, ["Codex", "Cursor", "OpenCode", "Pi"]);
         assert!(
             list[1].detected && !list[2].detected,
             "应检测到 Claude Code、未检测到 WorkBuddy"

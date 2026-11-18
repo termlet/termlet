@@ -24,7 +24,7 @@ pub const USAGE: Msg = Msg {
                                                   上传、下载用 SFTP，服务器没有 SFTP 时改用 SCP
   termlet skill                                   打印 Agent Skill 文件（SKILL.md）
   termlet skill install [--agent <位置>]          安装到 claude（Claude Code，默认）、agents（通用目录 ~/.agents/skills，
-                                                  Codex、Cursor、Gemini CLI 等读取；codex 等同 agents）或 workbuddy
+                                                  Codex、Cursor、Gemini CLI、Pi 等读取；codex、pi 等同 agents）或 workbuddy
   termlet skill install --dir <目录>              安装到指定的 skills 目录
   termlet mcp                                     在标准输入输出上提供 MCP 服务（由 Claude Code、Claude Desktop 等 AI 工具启动，
                                                   配置方法见 Termlet 设置中的「命令行工具」）
@@ -62,7 +62,8 @@ Usage:
                                                   Transfers use SFTP, or SCP when the server has no SFTP
   termlet skill                                   Print the Agent Skill file (SKILL.md)
   termlet skill install [--agent <target>]        Install for claude (Claude Code, default), agents (shared ~/.agents/skills,
-                                                  read by Codex, Cursor, Gemini CLI and others; codex is an alias) or workbuddy
+                                                  read by Codex, Cursor, Gemini CLI, Pi and others; codex and pi are aliases)
+                                                  or workbuddy
   termlet skill install --dir <dir>               Install into the given skills directory
   termlet mcp                                     Serve MCP over stdin/stdout (started by AI tools such as Claude Code and Claude
                                                   Desktop; see Settings → Command-line tool in Termlet for the setup)

@@ -1611,9 +1611,10 @@ termlet version
 ### Agent Skill
 
 - 在设置的"命令行工具"中一键安装到：
-  - 通用目录（`~/.agents/skills`，Codex、Gemini CLI、Cursor、GitHub Copilot 等读取）；
+  - 通用目录（`~/.agents/skills`，Codex、Gemini CLI、Cursor、GitHub Copilot、Pi 等读取）；
   - Claude Code（`~/.claude/skills`）；
   - 或 WorkBuddy。
+- 也可以用命令行安装：`termlet skill install --agent agents` 装到通用目录（`--agent codex`、`--agent pi` 同样装到这里）。
 - 可更新、删除；"复制 Skill"把完整内容复制到剪贴板给其他 AI 工具用。
 - 之后 AI 会用 termlet 而不是直接 ssh 操作服务器。
 
