@@ -65,7 +65,7 @@ python scripts/brand-icons.py                      # 重新生成系统与品牌
 - ShellRS、OxideTerm、Zed 的 terminal_view 是 GPL：只看思路，不复制代码。贡献按 CLA 可由维护者另行授权，代码只能是自己写的或宽松许可的；依赖同样只用宽松许可（`deny.toml`）。
 - 终端内核（现在是 alacritty_terminal）只经 `termlet-terminal` 的 `engine/kernel.rs`（`trait Kernel`）使用，它的类型只出现在 `engine/alacritty.rs` 与 `engine/alacritty/` 下；视图、查找、高亮、shell 集成、按键与鼠标编码只认 `grid.rs` 等引擎自己的类型，绘制读 `TerminalEngine::snapshot` 的快照（为以后换 libghostty-vt 留的接口）。内核只在引擎线程（`engine/worker.rs`）上创建与使用，不需要 `Send`（测试构建中特意是 `!Send`）：界面要读内核时加命令或 `TerminalEngine::call` 的闭包，不要让内核跨线程。
 - 含反斜杠、引号嵌套的文件内容用 Write / Edit 工具写，不用 heredoc；批量修改时把 Python 脚本写成文件再执行（Python 普通字符串里的 `\x00` 会变成真的控制字符，用原始字符串或 `chr(92)`）。
-- UI 测试（`tests/ui.rs`）按文案查找、输入时先 `i18n::set_language(...)`：界面语言是进程全局的，测试之间会互相影响。桌面端的单元测试中 Termlet 的文案按本线程设定的语言（默认简体中文），切换不影响并行的其他测试；gpui-kit 自己的文案仍是进程全局的，不要按它们查找。
+- UI 测试（`tests/ui.rs`）按文案查找、输入时先 `i18n::set_language(Language::ZhCn)`：那里界面语言是进程全局的，测试之间会互相影响，所以其中不切换到别的语言（会让并行的测试按中文找不到要点的项）；切换语言的测试写成桌面端的单元测试（如 `sidebar/mod.rs` 中的）。桌面端的单元测试中 Termlet 的文案按本线程设定的语言（默认简体中文），切换不影响并行的其他测试；gpui-kit 自己的文案仍是进程全局的，不要按它们查找。
 - UI 测试中等网络（SFTP 等在核心运行时上的操作）用 `tests/ui.rs` 的 `wait_until` 轮询，`run_until_parked` 不等后台线程；右键菜单、对话框在下一帧才建好，点击前先 `run_until_parked`。
 - UI 测试中用到真实的伪终端或终端解析线程时，先调用 `cx.executor().allow_parking()`，否则会被测试调度器判为不确定。
 - 测试容器（`testing/sshd`，镜像 `termlet-e2e-sshd`，端口 2222 / 2323）：改了 Dockerfile 要重建镜像并重新创建容器（`docker build -t termlet-e2e-sshd testing/sshd`，再删掉旧的 termlet-sshd 容器按相同端口重建）。其中有 SFTP 以 root 打开的测试用户 sudo-nopw、sudo-pw、sudo-srv、sudo-deny（密码与 termlet 相同）；termlet 自己没有 sudo（主机工具的测试依赖这一点）。没有重建过的旧镜像不带 `MaxStartups`，全量并行跑 SSH 测试时偶发 `Connect(Disconnected)`，加 `-- --test-threads=4`。

@@ -185,3 +185,101 @@ impl Render for Sidebar {
             .child(div().flex_1().min_h_0().child(content))
     }
 }
+
+// 下面的测试切换界面语言：写成单元测试，Termlet 的文案按本线程的语言，不影响并行的其他测试。放在集成测试
+// （`tests/ui.rs`）中时界面语言是进程全局的，会让同时运行、按中文文案查找或输入的测试偶发失败。
+#[cfg(test)]
+mod tests {
+    use gpui_kit::test::TestWindowExt as _;
+    use gpui_kit::{AppContext as _, TestAppContext, px};
+    use termlet_core::model::LanguageSetting;
+
+    use crate::app_state::AppState;
+    use crate::i18n::{self, Language};
+    use crate::testkit::open_workspace;
+
+    // 顶部的四个页签在每种语言下都完整显示：英文的文案比中文长，侧边栏按页签实际排开的宽度放宽
+    #[gpui_kit::test]
+    fn tabs_fit_in_every_language(cx: &mut TestAppContext) {
+        let original = i18n::language();
+        let handle = open_workspace(cx);
+        for language in Language::ALL {
+            i18n::set_language(language);
+            cx.update_window(handle, |_, window, cx| {
+                // 第一帧量出页签排开的宽度，下一帧按它放宽侧边栏
+                window.render_frame(cx);
+                window.render_frame(cx);
+                // 拖动条骑在侧边栏的右边缘上；侧边栏从窗口左边开始，页签的可见区域左右留白相同
+                let right = window.find("sidebar-resize").bounds().center().x;
+                let tabs = window.within("sidebar-pages");
+                let first = tabs.find(0usize).bounds();
+                let last = tabs.find(3usize).bounds();
+                assert!(
+                    last.right() <= right - first.left() + px(0.5),
+                    "{language:?}：最后一个页签到 {:?}，可见区域只到 {:?}",
+                    last.right(),
+                    right - first.left()
+                );
+            })
+            .unwrap();
+        }
+        i18n::set_language(original);
+    }
+
+    // 切换界面语言后，一直开着的输入框（侧边栏的搜索框）的占位文字跟着换，不用重启
+    #[gpui_kit::test]
+    fn search_placeholders_follow_the_language(cx: &mut TestAppContext) {
+        i18n::set_language(Language::ZhCn);
+        let handle = open_workspace(cx);
+        let placeholder = |cx: &mut TestAppContext, id: &'static str| {
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                window.find(id).placeholder().map(str::to_string)
+            })
+            .unwrap()
+        };
+        let switch = |cx: &mut TestAppContext, language: LanguageSetting| {
+            // 与在设置中保存相同的路径：存储发出变更事件，工作区应用外观设置
+            cx.update(|cx| {
+                AppState::store(cx).update_settings(|s| s.appearance.language = language)
+            })
+            .unwrap();
+            cx.run_until_parked();
+        };
+        assert_eq!(placeholder(cx, "host-search").as_deref(), Some("搜索主机"));
+        switch(cx, LanguageSetting::En);
+        assert_eq!(
+            placeholder(cx, "host-search").as_deref(),
+            Some("Search hosts")
+        );
+        // 快捷命令页的搜索框在打开窗口时就建好了
+        cx.update_window(handle, |_, window, cx| {
+            window.within("sidebar-pages").click(1usize, cx);
+        })
+        .unwrap();
+        assert_eq!(
+            placeholder(cx, "snippet-search").as_deref(),
+            Some("Search snippets")
+        );
+        switch(cx, LanguageSetting::ZhTw);
+        assert_eq!(
+            placeholder(cx, "snippet-search").as_deref(),
+            Some("搜尋快速指令")
+        );
+        switch(cx, LanguageSetting::Ja);
+        assert_eq!(
+            placeholder(cx, "snippet-search").as_deref(),
+            Some("スニペットを検索")
+        );
+        switch(cx, LanguageSetting::Ko);
+        assert_eq!(
+            placeholder(cx, "snippet-search").as_deref(),
+            Some("스니펫 검색")
+        );
+        switch(cx, LanguageSetting::ZhCn);
+        assert_eq!(
+            placeholder(cx, "snippet-search").as_deref(),
+            Some("搜索快捷命令")
+        );
+    }
+}
