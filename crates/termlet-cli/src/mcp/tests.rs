@@ -47,6 +47,7 @@ impl Fake {
                     stderr: String::new(),
                     truncated: false,
                     duration_ms: 20,
+                    approval_wait_ms: None,
                 }),
                 _ => Response::Ok,
             })

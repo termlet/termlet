@@ -660,6 +660,63 @@ fn audit_dialog_lists_filters_pages_and_refreshes(cx: &mut TestAppContext) {
     assert!(cx.read(|cx| view.read(cx).entries.is_empty()));
 }
 
+// MCP 的调用：来源显示 MCP 与客户端名（旧记录同样认得出），可以单独筛选；详情中等待批准的时长与耗时分开写
+#[gpui_kit::test]
+fn audit_dialog_tells_mcp_apart_and_shows_the_approval_wait(cx: &mut TestAppContext) {
+    use termlet_core::audit::AuditSource;
+    let (handle, _) = open(cx, None);
+    crate::i18n::set_language(crate::i18n::Language::ZhCn);
+    let log = Arc::new(cx.update(|cx| AuditLog::new(AppState::store(cx))).unwrap());
+    let mut cli = audit_entry("web", AuditAction::Exec, "uptime", AuditStatus::Ok);
+    cli.caller = "bash < node".into();
+    log.add(cli).unwrap();
+    let mut mcp = audit_entry(
+        "web",
+        AuditAction::Exec,
+        "rm -rf /tmp/x",
+        AuditStatus::Approved,
+    );
+    mcp.caller = "mcp:claude-code < claude.exe".into();
+    mcp.duration_ms = 40;
+    mcp.approval_wait_ms = Some(31_353);
+    let mcp_id = log.add(mcp).unwrap();
+
+    cx.update_window(handle, |_, window, cx| {
+        audit::open_audit_with(log.clone(), window, cx)
+    })
+    .unwrap();
+    frame(cx, handle);
+    let view = audit_view(cx);
+    cx.read(|cx| {
+        let entries = &view.read(cx).entries;
+        assert_eq!(entries[0].source, AuditSource::Mcp);
+        assert_eq!(audit::entry_source(&entries[0]), "MCP（claude-code）");
+        assert_eq!(entries[1].source, AuditSource::Cli);
+    });
+    cx.update_window(handle, |_, window, cx| {
+        window.click(("audit-row", mcp_id as u64), cx)
+    })
+    .unwrap();
+    frame(cx, handle);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("audit-approval-wait").is_some());
+    })
+    .unwrap();
+
+    cx.update(|cx| view.update(cx, |v, cx| v.set_source(Some(AuditSource::Mcp), cx)));
+    frame(cx, handle);
+    cx.read(|cx| {
+        let entries = &view.read(cx).entries;
+        assert!(entries.len() == 1 && entries[0].id == mcp_id, "{entries:?}");
+    });
+    cx.update(|cx| view.update(cx, |v, cx| v.set_source(Some(AuditSource::Cli), cx)));
+    frame(cx, handle);
+    cx.read(|cx| {
+        let entries = &view.read(cx).entries;
+        assert!(entries.len() == 1 && entries[0].detail == "uptime");
+    });
+}
+
 #[gpui_kit::test]
 fn audit_export_writes_the_filtered_entries(cx: &mut TestAppContext) {
     setup(cx);

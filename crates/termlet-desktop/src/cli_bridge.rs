@@ -15,12 +15,13 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::button::ButtonVariant;
 use gpui_kit::component::dialog::AlertDialog;
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use gpui_kit::{
-    AnyWindowHandle, App, AppContext as _, AsyncApp, Entity, Global, OperatingSystem, QuitMode,
-    Styled as _, WeakEntity,
+    AnyWindowHandle, App, AppContext as _, AsyncApp, Entity, Global, InteractiveElement as _,
+    OperatingSystem, ParentElement as _, QuitMode, StatefulInteractiveElement as _, Styled as _,
+    TestSupportExt as _, WeakEntity, div,
 };
 use termlet_core::audit::AuditLog;
 use termlet_core::cli::{ApprovalRequest, CliConfig, CliEvent, CliService, TerminalRequest};
@@ -599,10 +600,7 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
     } else {
         rule.to_string()
     };
-    let seconds = request
-        .deadline
-        .saturating_duration_since(Instant::now())
-        .as_secs();
+    let deadline = request.deadline;
     let title = t!("cli.approval.title", host = request.host_name.clone());
     let description = t!(
         "cli.approval.description",
@@ -612,8 +610,7 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
         } else {
             request.caller.clone()
         },
-        rule = rule,
-        seconds = seconds
+        rule = rule
     );
     // 发起请求的是认识的 AI 编程工具（Claude Code、Gemini CLI）时，标题前配上它的标志
     let caller_brand = crate::brand_icons::for_caller(&request.caller);
@@ -646,10 +643,26 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
                 }
                 None => alert,
             };
+            // 倒计时每次绘制时按截止时间重新算（下面的任务每秒刷新窗口）
+            let countdown = t!(
+                "cli.approval.countdown",
+                seconds = seconds_left(deadline, Instant::now())
+            );
             alert
                 .confirm()
                 .title(title.clone())
-                .description(prose(description.clone()))
+                .description(
+                    v_flex()
+                        .gap_2()
+                        .child(prose(description.clone()))
+                        .child(
+                            div()
+                                .id("approval-countdown")
+                                .test_support()
+                                .aria_label(countdown.clone())
+                                .child(prose(countdown)),
+                        ),
+                )
                 .ok_text(t!("cli.approval.allow"))
                 .ok_variant(ButtonVariant::Danger)
                 .cancel_text(t!("cli.approval.deny"))
@@ -676,6 +689,19 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
                 })
         });
         let token = crate::dialog_token::DialogToken::take(window, cx);
+        // 倒计时：剩余的秒数每变一次刷新一次窗口，回答了、不再等待（请求被取走）后停止
+        let ticking = request.clone();
+        window
+            .spawn(cx, async move |cx| {
+                while let Some(wait) = until_next_second(deadline, Instant::now()) {
+                    cx.background_executor().timer(wait).await;
+                    if ticking.borrow().is_none() || cx.update(|window, _| window.refresh()).is_err()
+                    {
+                        break;
+                    }
+                }
+            })
+            .detach();
         // 超时、命令行退出、被锁定：它在最上面时关闭；上面叠了别的对话框时不能关（会关错），改为说明已拦截
         let pending = request.clone();
         window
@@ -695,6 +721,24 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
             })
             .detach();
     });
+}
+
+/// 批准框中距离超时拦截还剩几秒：向上取整（刚打开时是完整的秒数，最后不到一秒时是 1）。
+fn seconds_left(deadline: Instant, now: Instant) -> u64 {
+    let left = deadline.saturating_duration_since(now);
+    left.as_secs() + u64::from(left.subsec_nanos() > 0)
+}
+
+/// 剩余的秒数（[`seconds_left`]）下一次变化前要等多久；已到期时为 `None`。
+fn until_next_second(deadline: Instant, now: Instant) -> Option<Duration> {
+    let left = deadline.saturating_duration_since(now);
+    if left.is_zero() {
+        return None;
+    }
+    Some(match left.subsec_nanos() {
+        0 => Duration::from_secs(1),
+        nanos => Duration::from_nanos(nanos.into()),
+    })
 }
 
 /// `termlet exec --terminal`：在这台主机最近打开、连接着的 SSH 终端中执行。
@@ -975,6 +1019,130 @@ mod tests {
             );
         })
         .unwrap();
+    }
+
+    // 剩余秒数向上取整：刚打开时是完整的秒数、最后不到一秒时是 1；正好在整秒上时等一整秒再变
+    #[test]
+    fn countdown_rounds_up_and_ticks_on_whole_seconds() {
+        let now = Instant::now();
+        let at = |ms: u64| now + Duration::from_millis(ms);
+        assert_eq!(seconds_left(at(60_000), now), 60);
+        assert_eq!(seconds_left(at(59_400), now), 60);
+        assert_eq!(seconds_left(at(59_000), now), 59);
+        assert_eq!(seconds_left(at(300), now), 1);
+        assert_eq!(seconds_left(now, now), 0);
+        assert_eq!(seconds_left(now, at(500)), 0, "已过期");
+        assert_eq!(
+            until_next_second(at(59_400), now),
+            Some(Duration::from_millis(400))
+        );
+        assert_eq!(
+            until_next_second(at(59_000), now),
+            Some(Duration::from_secs(1))
+        );
+        assert_eq!(until_next_second(now, now), None);
+        assert_eq!(until_next_second(now, at(1)), None);
+    }
+
+    // 批准危险命令的对话框倒计时：剩余的秒数随时间减少（不是打开时算好的静态文字）；拒绝后命令行得到 command_denied
+    #[gpui_kit::test]
+    fn approval_dialog_counts_down(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        use termlet_core::model::{CliAccess, Host};
+        use termlet_core::proto::client::Client;
+        use termlet_core::proto::{ClientHello, ExecRequest, Lang, Request};
+        use termlet_core::store::Position;
+
+        setup(cx, OperatingSystem::Windows);
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        cx.update(open_main_window);
+        let handle = cx.update(|cx| live_windows(cx)[0].0);
+        let store = cx.update(|cx| AppState::store(cx));
+        store
+            .update_local_settings(|s| s.cli.enabled = true)
+            .unwrap();
+        store
+            .create(
+                Host {
+                    name: "web".into(),
+                    address: "127.0.0.1".into(),
+                    username: "u".into(),
+                    cli: CliAccess {
+                        allowed: true,
+                        credential: None,
+                    },
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "termlet-approval-{}",
+            termlet_core::id::random_token(8)
+        ));
+        let data_dir = DataDir::at(dir.join("data"));
+        data_dir.prepare().unwrap();
+        let audit = Arc::new(AuditLog::new(store.clone()).unwrap());
+        let mut config = CliConfig::new(data_dir, store, audit);
+        config.approval_timeout = Duration::from_secs(30);
+        let (service, events) = CliService::start(config).unwrap();
+        let endpoint = service.endpoint().clone();
+        let client = std::thread::spawn(move || {
+            Client::connect(
+                &endpoint,
+                &ClientHello {
+                    protocol: termlet_core::proto::PROTOCOL_VERSION,
+                    client: "test".into(),
+                    lang: Lang::Zh,
+                },
+            )
+            .unwrap()
+            .call(&Request::Exec(ExecRequest {
+                host: "web".into(),
+                command: "reboot".into(),
+                terminal: true,
+                caller: Vec::new(),
+            }))
+            .unwrap()
+        });
+        let Ok(CliEvent::Approval(request)) = events.recv_blocking() else {
+            panic!("应收到批准请求");
+        };
+        cx.update(|cx| ask_approval(request, cx));
+        cx.run_until_parked();
+        let seconds = |cx: &mut gpui_kit::TestAppContext| -> u64 {
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                let text = window
+                    .find("approval-countdown")
+                    .label()
+                    .unwrap()
+                    .to_string();
+                let number: String = text.chars().take_while(char::is_ascii_digit).collect();
+                assert!(text.ends_with("秒后仍没有回应时拦截。"), "{text}");
+                number.parse().unwrap()
+            })
+            .unwrap()
+        };
+        let first = seconds(cx);
+        assert!((25..=30).contains(&first), "{first}");
+        // 真实的时间过去一秒多，测试的时钟也拨过去（刷新窗口的定时器按它走）
+        std::thread::sleep(Duration::from_millis(1100));
+        cx.executor().advance_clock(Duration::from_millis(1100));
+        cx.run_until_parked();
+        let later = seconds(cx);
+        assert!(later < first, "倒计时：{first} → {later}");
+
+        cx.update_window(handle, |_, window, cx| window.click("cancel", cx))
+            .unwrap();
+        cx.run_until_parked();
+        match client.join().unwrap() {
+            termlet_core::proto::Response::Error(body) => assert_eq!(body.code, "command_denied"),
+            other => panic!("应被拒绝：{other:?}"),
+        }
+        drop(service);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     // 系统请求退出（程序坞的“退出”、关机、注销）：有运行中的本地终端时先不退出、弹出“退出 Termlet”的确认；

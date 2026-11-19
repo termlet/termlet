@@ -406,7 +406,8 @@ Notes:
   - On Linux and macOS you can also use `:0`.
 - As in OpenSSH, the server gets a fake random cookie. When a remote program connects, Termlet checks that cookie and then swaps in the real local cookie to connect to your X server, so the real cookie never leaves this computer.
 - Untrusted by default (`ssh -X`, OpenSSH's upstream default): the local xauth asks the X server for a restricted cookie, so programs on the server can't read other windows or keystrokes.
-- Without a local xauth (X servers on Windows usually have none), nothing is forwarded, as in OpenSSH, and you need to select "Trusted" (`ssh -Y`):
+  - xauth is looked up in `PATH`, and on Windows also in VcXsrv's install folder (`Program Files\VcXsrv`): VcXsrv comes with xauth, so the default works with it.
+- Without a local xauth (X410, for example), nothing is forwarded, as in OpenSSH, and you need to select "Trusted" (`ssh -Y`):
   - the cookie comes from your local Xauthority, or no authentication when there is none;
   - programs on the server can read every window and keystroke on the X server, so only turn this on for servers you trust.
 - If no X server is running on this computer, the connection works as usual and the terminal explains it when the first X program tries to open a window.
@@ -1634,7 +1635,7 @@ termlet version
 
 - Local paths for `upload_file` and `download_file` must be absolute.
 - Every call goes through Termlet as usual: the external CLI switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
-- The caller in the audit log and approval dialog starts with `mcp:<client name>`.
+- The caller in the audit log and approval dialog starts with `mcp:<client name>`; the audit log's Source column shows "MCP (client name)", and you can filter for these calls.
 - When the external CLI is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
 - Commands return at most 32 KB of stdout and stderr together to the AI (the beginning and end are kept, with a note on how to get the full output).
 - When the AI tool cancels a call, Termlet stops the request (the remote command gets SIGTERM).
@@ -1691,13 +1692,14 @@ termlet version
 - 15 built-in rules (`rm -rf /`, `mkfs`, `shutdown` and more, each of which can be turned off) plus your own regular expressions.
 - Multi-line scripts are checked line by line (lines inside multi-line strings and heredocs are checked too and may be flagged by mistake).
 - The settings page can test a command against the rules as you type.
-- On a match, Termlet asks you in a dialog by default (with the logo of Claude Code or Gemini CLI before the title when one of them is making the request). Rejecting or leaving it for 60 seconds returns exit code 4.
+- On a match, Termlet asks you in a dialog by default (with the logo of Claude Code or Gemini CLI before the title when one of them is making the request, and a countdown of the seconds left). Rejecting or leaving it for 60 seconds returns exit code 4.
+- When you approve a command, its duration covers only running it, and the time spent waiting for you is reported separately: in JSON, `durationMs` is how long it ran and `approvalWaitMs` how long it waited for approval; MCP results and the audit log show them separately too.
 - With no Termlet window open, or with the handling set to "Block it", it returns exit code 4 right away.
 - This prevents mistakes; it can be bypassed and is not a security boundary.
 
 ### Audit
 
-- Every `exec`, `upload` and `download` (including failed, blocked, approved and rejected ones) goes into the local audit log (command, result, exit code, duration, calling process chain), up to 100,000 entries.
+- Every `exec`, `upload` and `download` (including failed, blocked, approved and rejected ones) goes into the local audit log (command, result, exit code, duration, time waiting for approval, calling process chain), up to 100,000 entries.
 - Click "View audit log…" under Settings → Command-line tool (or "View Audit Log" in the command palette) to view, search, filter, export to CSV / JSON or clear it.
 
 ### PATH

@@ -210,13 +210,6 @@ fn third_party_licenses() -> Option<PathBuf> {
     .clone()
 }
 
-/// 诊断的一节下方的说明（导出的结果）。
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum DiagNotice {
-    Saved(PathBuf),
-    Failed(String),
-}
-
 pub(crate) struct AboutExtras {
     auto_check_update: bool,
     log_level: Entity<ChoiceState<LogLevel>>,
@@ -225,9 +218,8 @@ pub(crate) struct AboutExtras {
     crash_report: bool,
     /// 打开时已经开启：没有接收地址也显示开关，便于关闭
     initial_crash_report: bool,
-    /// 正在生成诊断信息
+    /// 正在生成诊断信息（复制、导出的结果与其他操作的一样写在设置底部，见 [`crate::notify::show`]）
     diag_busy: bool,
-    diag_notice: Option<DiagNotice>,
     _diag: Option<Task<()>>,
     _subscriptions: Vec<Subscription>,
 }
@@ -263,7 +255,6 @@ impl AboutExtras {
             crash_report: local.logs.crash_report,
             initial_crash_report: local.logs.crash_report,
             diag_busy: false,
-            diag_notice: None,
             _diag: None,
             _subscriptions: subscriptions,
         }
@@ -317,7 +308,6 @@ impl AboutExtras {
             return;
         };
         self.diag_busy = true;
-        self.diag_notice = None;
         cx.notify();
         self._diag = Some(cx.spawn_in(window, async move |this, cx| {
             let text = diag.text(Scope::Copy).await;
@@ -342,7 +332,6 @@ impl AboutExtras {
         let name = termlet_core::diag::default_file_name(termlet_core::time::now_ms());
         let picked = cx.prompt_for_new_path(&dir, Some(&name));
         self.diag_busy = true;
-        self.diag_notice = None;
         cx.notify();
         self._diag = Some(cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(path))) = picked.await else {
@@ -353,15 +342,22 @@ impl AboutExtras {
                 return;
             };
             let result = diag.export(path.clone()).await;
-            let _ = this.update(cx, |this, cx| {
+            let _ = this.update_in(cx, |this, window, cx| {
                 this.diag_busy = false;
-                this.diag_notice = Some(match result {
-                    Ok(()) => DiagNotice::Saved(path),
+                let notice = match result {
+                    Ok(()) => crate::notify::Notice::success(t!(
+                        "lock_ui.diag.saved",
+                        path = path.display().to_string()
+                    )),
                     Err(e) => {
                         tracing::warn!("导出诊断信息失败：{e}");
-                        DiagNotice::Failed(e.to_string())
+                        crate::notify::Notice::error(t!(
+                            "lock_ui.diag.export_failed",
+                            error = e.to_string()
+                        ))
                     }
-                });
+                };
+                crate::notify::show(notice, window, cx);
                 cx.notify();
             });
         }));
@@ -625,17 +621,9 @@ impl AboutExtras {
     }
 
     fn render_diagnostics(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let (muted, danger) = (theme.muted_foreground, theme.danger);
+        let muted = cx.theme().muted_foreground;
         let available = super::services(cx).is_some();
         let logs_dir = super::services(cx).map(|s| s.logs_dir.clone());
-        let notice = self.diag_notice.as_ref().map(|notice| match notice {
-            DiagNotice::Saved(path) => (
-                t!("lock_ui.diag.saved", path = path.display().to_string()),
-                muted,
-            ),
-            DiagNotice::Failed(error) => (t!("lock_ui.diag.export_failed", error = error), danger),
-        });
         v_flex()
             .gap_2()
             .child(
@@ -701,16 +689,6 @@ impl AboutExtras {
                     .child(prose(t!("lock_ui.diag.hint"))),
             )
             .child(self.render_log_level(cx))
-            .when_some(notice, |this, (text, color)| {
-                this.child(
-                    div()
-                        .id("diag-notice")
-                        .test_support()
-                        .text_xs()
-                        .text_color(color)
-                        .child(prose(text)),
-                )
-            })
     }
 }
 

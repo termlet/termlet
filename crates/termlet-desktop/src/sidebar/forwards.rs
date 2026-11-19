@@ -316,7 +316,7 @@ impl Render for ForwardList {
                             .flex_1()
                             .text_xs()
                             .text_color(muted)
-                            .child(t!("forward.hint")),
+                            .child(prose(t!("forward.hint"))),
                     )
                     .child(
                         Button::new("forward-new")

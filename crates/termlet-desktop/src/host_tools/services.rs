@@ -1067,6 +1067,7 @@ impl ServicePage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-service-row-more-{unit}")),
                     self.menu_builder(service, locked, cx),
+                    cx,
                 );
                 Some(vec![primary, more])
             }
@@ -1237,6 +1238,7 @@ impl ServicePage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-timer-row-more-{unit}")),
                     self.timer_menu_builder(timer, locked, cx),
+                    cx,
                 );
                 Some(vec![primary, more])
             }
@@ -1549,6 +1551,7 @@ impl ServicePage {
         let more = shared::more_button(
             "tools-timer-detail-more",
             self.timer_menu_builder(timer, locked, cx),
+            cx,
         );
         let header = shared::detail_header(
             timer.unit.clone().into(),
@@ -1729,6 +1732,7 @@ impl ServicePage {
         let more = shared::more_button(
             "tools-service-detail-more",
             self.menu_builder(&service, locked, cx),
+            cx,
         );
         let header = shared::detail_header(
             service.unit.clone().into(),

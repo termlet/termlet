@@ -246,7 +246,8 @@ impl TerminalPanel {
         }
     }
 
-    /// Tab 上的录制标记：红点与时长（文件还在建时只有红点）。
+    /// Tab 上的录制标记：红点与时长（文件还在建时只有红点）。悬停的说明在 Tab 的右键菜单开着时不显示
+    /// （[`crate::menu_tooltip::quiet`]：标记也放在竖排 Tab 的行里，那里拿不到窗口）。
     pub(super) fn render_record_badge(&self, cx: &Context<Self>) -> Option<AnyElement> {
         if !self.is_recording() {
             return None;
@@ -258,10 +259,10 @@ impl TerminalPanel {
                 .gap_0p5()
                 .text_xs()
                 .text_color(cx.theme().danger)
-                .tooltip(|window, cx| {
+                .tooltip(crate::menu_tooltip::quiet(|window, cx| {
                     gpui_kit::component::tooltip::Tooltip::new(t!("terminal.record.badge"))
                         .build(window, cx)
-                })
+                }))
                 .child(div().size_2().rounded_full().bg(cx.theme().danger))
                 .children(elapsed.map(clock_text))
                 .into_any_element(),

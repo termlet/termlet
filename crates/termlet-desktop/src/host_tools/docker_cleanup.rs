@@ -33,6 +33,7 @@ use super::docker::DockerPage;
 use super::shared::{self, PageContext};
 use super::target::HostLabel;
 use super::{audit, errors};
+use crate::notify::{Notice, NoticeLine};
 use crate::prose::prose;
 use crate::sftp::list_model::{format_size, visible_name};
 use crate::t;
@@ -69,6 +70,8 @@ pub(super) fn open(
             .child(dialog_view.clone())
     });
     dialogs.opened(window, cx);
+    let notice = view.read(cx).notice.clone();
+    crate::notify::attach(&notice, window, cx);
     view
 }
 
@@ -101,6 +104,8 @@ pub(super) struct CleanupDialog {
     /// 执行中与执行完的各类（按执行的先后）；没有开始时为空
     steps: Vec<(PruneKind, StepState)>,
     running: bool,
+    /// 执行不了时的说明（如已断开；弹出的通知会被对话框盖住，见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
     _load: Option<gpui_kit::Task<()>>,
 }
 
@@ -120,6 +125,7 @@ impl CleanupDialog {
             expanded: BTreeSet::new(),
             steps: Vec::new(),
             running: false,
+            notice: NoticeLine::new(cx),
             _load: None,
         };
         dialog.load(cx);
@@ -209,7 +215,7 @@ impl CleanupDialog {
             return;
         }
         let Some(target) = self.context.target.clone() else {
-            crate::notify::error(t!("tools.error.disconnected"), window, cx);
+            crate::notify::show(Notice::error(t!("tools.error.disconnected")), window, cx);
             return;
         };
         let engine = plan.engine;
@@ -641,6 +647,9 @@ impl Render for CleanupDialog {
             .gap_3()
             .children(host)
             .child(body)
+            .when(self.notice.read(cx).is_shown(), |this| {
+                this.child(div().text_sm().child(self.notice.clone()))
+            })
             .child(self.render_footer(plan.as_deref(), cx))
     }
 }

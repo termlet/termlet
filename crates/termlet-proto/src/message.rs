@@ -154,7 +154,11 @@ pub struct ExecResponse {
     pub stderr: String,
     /// 标准输出或标准错误超过 [`crate::OUTPUT_LIMIT`] 被截断
     pub truncated: bool,
+    /// 用时，不含等待用户批准的时间（较早版本的应用含）
     pub duration_ms: u64,
+    /// 命中危险命令规则、在 Termlet 中等用户批准了多久；没有询问用户（较早版本的应用不发送）时没有
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_wait_ms: Option<u64>,
 }
 
 /// `upload` / `download` 的请求。语义与 scp 相同：上传时 `remote` 是已存在的目录（或以 `/` 结尾）则放入该目录，
@@ -280,12 +284,27 @@ mod tests {
             stderr: String::new(),
             truncated: false,
             duration_ms: 12,
+            approval_wait_ms: None,
         })
         .unwrap();
         assert_eq!(
             exec,
             serde_json::json!({"exitCode": 3, "stdout": "hi\n", "stderr": "", "truncated": false, "durationMs": 12})
         );
+        // 等用户批准过的另有等待的时长；较早版本的应用不发送
+        let approved = ExecResponse {
+            approval_wait_ms: Some(31_000),
+            ..Default::default()
+        };
+        assert_eq!(
+            serde_json::to_value(&approved).unwrap()["approvalWaitMs"],
+            31_000
+        );
+        let old: ExecResponse = serde_json::from_str(
+            r#"{"exitCode":0,"stdout":"","stderr":"","truncated":false,"durationMs":9}"#,
+        )
+        .unwrap();
+        assert_eq!(old.approval_wait_ms, None);
         let transfer = serde_json::to_value(TransferResponse {
             local: "D:\\a".into(),
             remote: "/tmp/a".into(),

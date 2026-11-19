@@ -6,11 +6,17 @@ cli.approval.title:
   ja: コマンドラインツールが「%{host}」で危険なコマンドを実行しようとしています
   ko: 명령줄 도구가 '%{host}'에서 위험한 명령을 실행하려고 합니다
 cli.approval.description:
-  zh-CN: 调用方：%{caller}。命令“%{command}”命中了危险命令规则：%{rule}。%{seconds} 秒内没有回应时拦截。
-  en: "Caller: %{caller}. The command “%{command}” matches a dangerous-command rule: %{rule}. It's blocked if there's no answer within %{seconds} seconds."
-  zh-TW: 呼叫端：%{caller}。指令「%{command}」符合危險指令規則：%{rule}。%{seconds} 秒內沒有回應時阻擋。
-  ja: 呼び出し元：%{caller}。コマンド「%{command}」が危険なコマンドのルールに一致しました：%{rule}。%{seconds} 秒以内に応答がない場合はブロックされます。
-  ko: "호출자: %{caller}. 명령 \"%{command}\"이(가) 위험한 명령 규칙에 해당합니다: %{rule}. %{seconds}초 안에 응답이 없으면 차단됩니다."
+  zh-CN: 调用方：%{caller}。命令“%{command}”命中了危险命令规则：%{rule}。
+  en: "Caller: %{caller}. The command “%{command}” matches a dangerous-command rule: %{rule}."
+  zh-TW: 呼叫端：%{caller}。指令「%{command}」符合危險指令規則：%{rule}。
+  ja: 呼び出し元：%{caller}。コマンド「%{command}」が危険なコマンドのルールに一致しました：%{rule}。
+  ko: "호출자: %{caller}. 명령 \"%{command}\"이(가) 위험한 명령 규칙에 해당합니다: %{rule}."
+cli.approval.countdown:
+  zh-CN: "%{seconds} 秒后仍没有回应时拦截。"
+  en: It's blocked if there's still no answer in %{seconds}s.
+  zh-TW: "%{seconds} 秒後仍沒有回應時阻擋。"
+  ja: "%{seconds} 秒後までに応答がない場合はブロックされます。"
+  ko: "%{seconds}초 후에도 응답이 없으면 차단됩니다."
 cli.approval.unknown_caller:
   zh-CN: 未知程序
   en: Unknown program

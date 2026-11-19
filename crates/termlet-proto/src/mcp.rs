@@ -7,6 +7,10 @@ pub const SERVER_NAME: &str = "termlet";
 /// 启动 MCP 服务的子命令。
 pub const SUBCOMMAND: &str = "mcp";
 
+/// MCP 服务写在请求的调用方最前面的一项：`mcp:<客户端名>`（客户端自报的名字），客户端没有报名字时只有 `mcp`。
+/// 审计日志据此把 MCP 的调用与命令行分开。
+pub const CALLER_MARKER: &str = "mcp";
+
 /// Codex 中工具调用的超时（秒）：默认 60 秒，等用户批准危险命令（最多 60 秒）再执行时会超时。
 pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 300;
 

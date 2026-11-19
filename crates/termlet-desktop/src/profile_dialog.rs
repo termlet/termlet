@@ -23,6 +23,7 @@ use termlet_core::store::{Owner, Position, Store};
 use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
 use crate::key_fields::{self, KeyFields};
+use crate::notify::{self, NoticeLine};
 use crate::prose::prose;
 use crate::{store_errors, t};
 
@@ -49,6 +50,8 @@ struct ProfileForm {
     saving: bool,
     /// 所在的对话框（后台检查完私钥、保存后只关它）
     dialog: Option<DialogToken>,
+    /// 读入证书文件失败等立即执行的操作的说明（见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
     _save: Option<Task<()>>,
 }
 
@@ -103,7 +106,11 @@ fn open(id: Option<ProfileId>, window: &mut Window, cx: &mut App) {
             )
     });
     let token = DialogToken::take(window, cx);
-    owner.update(cx, |form, _| form.dialog = token);
+    let notice = owner.update(cx, |form, _| {
+        form.dialog = token;
+        form.notice.clone()
+    });
+    notify::attach(&notice, window, cx);
 }
 
 impl ProfileForm {
@@ -164,6 +171,7 @@ impl ProfileForm {
             error: None,
             saving: false,
             dialog: None,
+            notice: NoticeLine::new(cx),
             _save: None,
         }
     }
@@ -368,6 +376,9 @@ impl Render for ProfileForm {
                         .text_color(cx.theme().danger)
                         .child(prose(error)),
                 )
+            })
+            .when(self.notice.read(cx).is_shown(), |this| {
+                this.child(div().text_sm().child(self.notice.clone()))
             })
     }
 }

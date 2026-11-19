@@ -177,7 +177,7 @@ pub fn section(id: &KeyId, certificate: &str, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
-/// 去掉证书（不确认：可以重新附带）。
+/// 去掉证书（不确认：可以重新附带）。出错时说明写在查看公钥的对话框底部（[`crate::notify::show`]）。
 fn detach(id: KeyId, window: &mut Window, cx: &mut App) {
     let store = AppState::store(cx);
     tracing::info!(id = %id, "去掉密钥附带的证书");
@@ -187,8 +187,14 @@ fn detach(id: KeyId, window: &mut Window, cx: &mut App) {
             let result = job.await;
             let _ = cx.update(|window, cx| match result {
                 Ok(Ok(())) => {}
-                Ok(Err(error)) => crate::notify::error(errors::describe(&error), window, cx),
-                Err(error) => crate::notify::error(error.to_string(), window, cx),
+                Ok(Err(error)) => crate::notify::show(
+                    crate::notify::Notice::error(errors::describe(&error)),
+                    window,
+                    cx,
+                ),
+                Err(error) => {
+                    crate::notify::show(crate::notify::Notice::error(error.to_string()), window, cx)
+                }
             });
         })
         .detach();

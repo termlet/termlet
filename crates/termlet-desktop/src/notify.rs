@@ -4,8 +4,10 @@
 //!   对上用户当时看到了什么。成功的提示不写日志。提示的文字本来就是给用户看的，不含秘密。
 //! - 在对话框中做的操作，结果用 [`show`]：gpui-kit 0.8 的对话框画在延迟绘制的一层（`deferred`，优先级 10 起），
 //!   通知列表画在普通的一层，对话框开着时弹出的通知被它盖住（设置对话框盖住右上角通知的左半边，短的提示整条看不见）。
-//!   设置、审计日志、崩溃记录这些对话框在自己里面放一条提示行（[`NoticeLine`]），打开后登记在窗口上（[`attach`]），
-//!   开着时结果写在其中一条里（选哪条见 `top_line`）；窗口中没有开着的对话框或没有登记的提示行时照常弹出通知。
+//!   开着时会产生结果的对话框（设置、审计日志、崩溃记录、查看公钥、命令历史、通过本机代理、Docker 清理、主机与
+//!   凭据档案等）在自己里面放一条提示行（[`NoticeLine`]），打开后登记在窗口上（[`attach`]），开着时结果写在其中
+//!   一条里（选哪条见 `top_line`）；窗口中没有开着的对话框或没有登记的提示行时照常弹出通知。新加这样的对话框时
+//!   照此办理。
 //!   与对话框无关的提示（终端、SFTP 等在后台得到的结果）仍用通知。
 
 use gpui_kit::assets::IconName;
@@ -164,6 +166,11 @@ impl NoticeLine {
             cx.notify();
         }
     }
+
+    /// 正显示着提示：放在有间距的列里时据此决定放不放进去（空的提示行也会占一份间距）。
+    pub fn is_shown(&self) -> bool {
+        self.notice.is_some()
+    }
 }
 
 impl Render for NoticeLine {
@@ -188,8 +195,24 @@ impl Render for NoticeLine {
             .when(notice.level == Level::Error, |this| {
                 this.text_color(theme.danger)
             })
-            .child(Icon::new(icon).small().flex_none().text_color(color))
-            .child(div().min_w_0().child(prose(notice.text)))
+            // 图标放在高为一行文字的盒子里垂直居中：行高比图标高，直接顶对齐时图标偏上；单行与多行的第一行都对齐
+            .child(
+                h_flex()
+                    .id("dialog-notice-icon")
+                    .test_support()
+                    .flex_none()
+                    .items_center()
+                    .child(Icon::new(icon).small().text_color(color))
+                    // 不占宽度的一个字：盒子的高度随所在位置的字号，正好一行
+                    .child(div().w_0().overflow_hidden().child("\u{a0}")),
+            )
+            .child(
+                div()
+                    .id("dialog-notice-text")
+                    .test_support()
+                    .min_w_0()
+                    .child(prose(notice.text)),
+            )
             .into_any_element()
     }
 }
@@ -278,6 +301,57 @@ mod tests {
             assert_eq!(shown(window, cx), None);
         })
         .unwrap();
+    }
+
+    /// 宽度有限的提示行（长的提示换成几行）。
+    struct Narrow(Entity<NoticeLine>);
+
+    impl Render for Narrow {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div().w(gpui_kit::rems(12.)).text_sm().child(self.0.clone())
+        }
+    }
+
+    // 图标与第一行文字垂直居中对齐：图标所在的盒子与文字一样从顶上开始、正好一行高（单行时与文字等高）；
+    // 多行时仍只有一行高，对着第一行
+    #[gpui_kit::test]
+    fn icon_lines_up_with_the_first_line(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        let (handle, line) = cx.update(|cx| {
+            let line = NoticeLine::new(cx);
+            let view = line.clone();
+            let handle =
+                gpui_kit::open_window(Default::default(), cx, |_, cx| cx.new(|_| Narrow(view)))
+                    .unwrap()
+                    .0;
+            (handle, line)
+        });
+        let bounds = |cx: &mut TestAppContext, text: &str| {
+            let notice = Notice::success(text.to_string());
+            cx.update(|cx| {
+                line.update(cx, |line, cx| {
+                    line.notice = Some(notice);
+                    cx.notify();
+                })
+            });
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                (
+                    window.find("dialog-notice-icon").bounds(),
+                    window.find("dialog-notice-text").bounds(),
+                )
+            })
+            .unwrap()
+        };
+        let (icon, text) = bounds(cx, "ok");
+        assert_eq!(icon.top(), text.top());
+        assert_eq!(icon.size.height, text.size.height, "单行：与文字等高");
+        let (icon, text) = bounds(cx, &"long words ".repeat(20));
+        assert_eq!(icon.top(), text.top());
+        assert!(
+            text.size.height >= icon.size.height * 2.,
+            "多行：图标的盒子只有一行高：{icon:?} / {text:?}"
+        );
     }
 
     // 提示行只属于登记它的窗口：另一个窗口里开着对话框也照常弹出通知

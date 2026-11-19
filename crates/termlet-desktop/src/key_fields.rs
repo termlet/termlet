@@ -212,12 +212,13 @@ impl KeyFields {
                         .pasted_certificate
                         .update(cx, |input, cx| input.set_value(line, window, cx));
                 }
-                Err(e) => crate::notify::error(
-                    t!(
+                // 写在所在的对话框（主机、凭据档案）底部：弹出的通知会被对话框盖住
+                Err(e) => crate::notify::show(
+                    crate::notify::Notice::error(t!(
                         "keys.error.read_failed",
                         path = path.display().to_string(),
                         reason = e.to_string()
-                    ),
+                    )),
                     window,
                     cx,
                 ),

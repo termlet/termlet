@@ -770,7 +770,8 @@ impl BasePanel for EditorPanel {
 }
 
 impl Panel for EditorPanel {
-    fn title(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         h_flex()
             .id(("editor-tab-title", cx.entity_id().as_u64() as usize))
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
@@ -783,7 +784,7 @@ impl Panel for EditorPanel {
                     None => menu,
                 }
             })
-            .child(self.render_title(cx))
+            .child(self.render_title(menu_open, cx))
     }
 
     fn inner_padding(&self, _: &App) -> bool {

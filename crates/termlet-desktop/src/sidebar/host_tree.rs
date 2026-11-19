@@ -49,6 +49,7 @@ use crate::app_state::AppState;
 use crate::brand_icons;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::local_shell::LocalTarget;
+use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::settings::{self, Page as SettingsPage};
 use crate::terminal_panel::SessionStatus;
@@ -155,6 +156,8 @@ pub struct HostTree {
     /// 正在拖动本树中的条目（显示"未分组"作为放置位置）
     dragging: bool,
     drop_target: Option<DropTarget>,
+    /// 窗口中开着弹出菜单（右键菜单等）：这一帧的行与其中的按钮不挂悬停提示（见 [`crate::menu_tooltip`]）
+    menu_open: bool,
     _auto_expand: Option<Task<()>>,
     _detect: Option<Task<()>>,
     _subscriptions: Vec<Subscription>,
@@ -243,6 +246,7 @@ impl HostTree {
             icon_style,
             dragging: false,
             drop_target: None,
+            menu_open: false,
             _auto_expand: None,
             _detect: None,
             _subscriptions: subscriptions,
@@ -1361,7 +1365,9 @@ impl HostTree {
                             .text_color(theme.muted_foreground)
                             .child(t!("workspace.panes", count = panes)),
                     )
-                    .tooltip(|window, cx| Tooltip::new(t!("workspace.open_hint")).build(window, cx))
+                    .tooltip_unless_menu(self.menu_open, |window, cx| {
+                        Tooltip::new(t!("workspace.open_hint")).build(window, cx)
+                    })
                     .on_click(cx.listener({
                         let key = row.key.clone();
                         let id = id.clone();
@@ -1441,7 +1447,9 @@ impl HostTree {
                                         .small()
                                         .icon(IconName::FolderOpen)
                                         .tab_stop(false)
-                                        .tooltip(t!("hosts.local.sftp"))
+                                        .when(!self.menu_open, |this| {
+                                            this.tooltip(t!("hosts.local.sftp"))
+                                        })
                                         .on_click(cx.listener(move |_, _, _, cx| {
                                             cx.stop_propagation();
                                             cx.emit(HostTreeEvent::OpenWslSftp {
@@ -1610,7 +1618,7 @@ impl HostTree {
                                     .small()
                                     .icon(IconName::FolderOpen)
                                     .tab_stop(false)
-                                    .tooltip(t!("sftp.open"))
+                                    .when(!self.menu_open, |this| this.tooltip(t!("sftp.open")))
                                     .on_click(cx.listener({
                                         let id = id.clone();
                                         move |_, _, _, cx| {
@@ -1621,7 +1629,7 @@ impl HostTree {
                             ),
                     )
                 })
-                .tooltip({
+                .tooltip_unless_menu(self.menu_open, {
                     // 识别出系统时带上系统的名称（不认识的标志也知道是什么）
                     let endpoint = SharedString::from(match os {
                         Some(os) => t!(
@@ -1736,7 +1744,9 @@ impl HostTree {
                     }
                     SessionStatus::Disconnected => this.bg(color).border_1().border_color(ring),
                 })
-                .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
+                .tooltip_unless_menu(self.menu_open, move |window, cx| {
+                    Tooltip::new(tip.clone()).build(window, cx)
+                })
                 .on_click(cx.listener(move |_, _, _, cx| {
                     cx.stop_propagation();
                     cx.emit(HostTreeEvent::RevealHost(id.clone()));
@@ -1835,23 +1845,32 @@ impl HostTree {
             }))
     }
 
+    /// 没有主机、没有搜到时的说明。还没有主机时“还没有主机。”与怎样新建各占一行：连在一起时侧边栏窄，
+    /// 按避头尾换行会把“机。”单独带到第二行。
     fn render_empty(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let searching = !self.search.read(cx).value().trim().is_empty();
-        div()
+        v_flex()
+            .id("host-tree-empty")
+            .test_support()
             .p_4()
+            .gap_1()
             .text_sm()
             .text_color(cx.theme().muted_foreground)
-            .child(prose(if searching {
-                t!("hosts.empty.no_match")
-            } else {
-                t!("hosts.empty.no_hosts")
-            }))
+            .map(|this| {
+                if searching {
+                    this.child(prose(t!("hosts.empty.no_match")))
+                } else {
+                    this.child(prose(t!("hosts.empty.no_hosts")))
+                        .child(prose(t!("hosts.empty.no_hosts_hint")))
+                }
+            })
     }
 }
 
 impl Render for HostTree {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.finish_drag_if_cancelled(window, cx);
+        self.menu_open = crate::menu_tooltip::menu_open(window, cx);
         let rem = window.rem_size();
         let sizes: Rc<Vec<gpui_kit::Size<Pixels>>> = Rc::new(
             self.rows

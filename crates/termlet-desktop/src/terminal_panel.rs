@@ -2536,10 +2536,12 @@ impl TerminalPanel {
         // 精简样式只有数字，不带进度条与网速的小柱
         let meters = fit.meters && style == termlet_core::model::MonitorBar::Full;
         let gap = rems(0.75).to_pixels(window.rem_size());
+        // 状态条的右键菜单开着时各项不挂悬停提示（会浮在菜单上）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let shown: Vec<AnyElement> = items
             .iter()
             .take(fit.count)
-            .map(|item| monitor_bar::item(item, meters, id, cx))
+            .map(|item| monitor_bar::item(item, meters, id, menu_open, cx))
             .collect();
         let message = self.resources.message();
         let hover = cx.theme().secondary_hover;
@@ -3268,9 +3270,11 @@ impl TerminalPanel {
 }
 
 impl Panel for TerminalPanel {
-    fn title(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Tab 上写创建时的名称（主机名、本地 shell 等，与 SFTP 的 Tab 一致），不随远端程序设置的标题变化
         let program_title = self.tab_tooltip(cx);
+        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         // 自己的关闭按钮（Dock 自带的不显示）：有连接时按设置先确认
         let close_id = ("tab-close", cx.entity_id().as_u64() as usize);
         h_flex()
@@ -3283,7 +3287,7 @@ impl Panel for TerminalPanel {
                 gpui_kit::MouseButton::Left,
                 cx.listener(|this, _, window, cx| this.focus_handle(cx).focus(window, cx)),
             )
-            .when_some(program_title, |this, title| {
+            .when_some(program_title.filter(|_| !menu_open), |this, title| {
                 this.tooltip(move |window, cx| {
                     gpui_kit::component::tooltip::Tooltip::new(title.clone()).build(window, cx)
                 })
@@ -3308,7 +3312,9 @@ impl Panel for TerminalPanel {
                     .small()
                     .icon(gpui_kit::assets::IconName::Close)
                     .tab_stop(false)
-                    .tooltip_with_action(t!("panel.close"), &CloseTab, Some(KEY_CONTEXT))
+                    .when(!menu_open, |this| {
+                        this.tooltip_with_action(t!("panel.close"), &CloseTab, Some(KEY_CONTEXT))
+                    })
                     .on_click(cx.listener(|this, _, window, cx| {
                         cx.stop_propagation();
                         this.request_close(window, cx);

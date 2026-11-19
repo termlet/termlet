@@ -594,11 +594,11 @@ lock_ui.diag.copied:
   ja: 診断情報をコピーしました
   ko: 진단 정보를 복사했습니다
 lock_ui.diag.saved:
-  zh-CN: "已保存到 %{path}"
-  en: "Saved to %{path}"
-  zh-TW: "已儲存到 %{path}"
-  ja: "%{path} に保存しました"
-  ko: "%{path}에 저장했습니다"
+  zh-CN: "诊断信息已保存到 %{path}"
+  en: "Diagnostics saved to %{path}"
+  zh-TW: "診斷資訊已儲存到 %{path}"
+  ja: "診断情報を %{path} に保存しました"
+  ko: "진단 정보를 %{path}에 저장했습니다"
 lock_ui.diag.export_failed:
   zh-CN: "导出诊断信息失败：%{error}"
   en: "Couldn't export diagnostics: %{error}"
@@ -732,9 +732,27 @@ lock_ui.crash.copied:
   ja: クラッシュ記録をコピーしました
   ko: 충돌 기록을 복사했습니다
 lock_ui.crash.delete_all:
-  zh-CN: "全部删除"
-  en: "Delete all"
-  zh-TW: "全部刪除"
+  zh-CN: "全部删除…"
+  en: "Delete All…"
+  zh-TW: "全部刪除…"
+  ja: すべて削除…
+  ko: 모두 삭제…
+lock_ui.crash.delete_all_title:
+  zh-CN: 删除全部崩溃记录？
+  en: Delete all crash records?
+  zh-TW: 刪除全部當機記錄？
+  ja: すべてのクラッシュ記録を削除しますか？
+  ko: 충돌 기록을 모두 삭제하시겠습니까?
+lock_ui.crash.delete_all_body:
+  zh-CN: 所有崩溃记录与其中的内存转储都会从本机删除，无法恢复。
+  en: All crash records and their memory dumps are deleted from this computer. This can't be undone.
+  zh-TW: 所有當機記錄與其中的記憶體傾印都會從本機刪除，無法復原。
+  ja: すべてのクラッシュ記録とそのメモリダンプがこのコンピューターから削除され、元に戻すことはできません。
+  ko: 모든 충돌 기록과 메모리 덤프가 이 컴퓨터에서 삭제되며 되돌릴 수 없습니다.
+lock_ui.crash.delete_all_ok:
+  zh-CN: 全部删除
+  en: Delete All
+  zh-TW: 全部刪除
   ja: すべて削除
   ko: 모두 삭제
 lock_ui.crash.delete_failed:

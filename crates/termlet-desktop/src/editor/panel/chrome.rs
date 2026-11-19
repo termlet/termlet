@@ -15,6 +15,7 @@ use super::{
     Banner, CloseTab, ENCODINGS, EditorPanel, Find, KEY_CONTEXT, Link, Save, encoding_label,
 };
 use crate::editor::text::Eol;
+use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::sftp::list_model::{format_size, visible_name};
 use crate::t;
@@ -93,7 +94,8 @@ impl EditorPanel {
     }
 
     /// Tab 标题：文件名（有未保存的修改时前面加“● ”），悬停显示完整的远程路径；连接断开时带状态圆点。
-    pub(super) fn render_title(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    /// `menu_open`：Tab 的右键菜单等开着，不挂悬停提示（会浮在菜单上，见 [`crate::menu_tooltip`]）。
+    pub(super) fn render_title(&self, menu_open: bool, cx: &mut Context<Self>) -> impl IntoElement {
         let warning = cx.theme().warning;
         let id = cx.entity_id().as_u64() as usize;
         let label = self.tab_label();
@@ -107,7 +109,9 @@ impl EditorPanel {
                     .gap_1()
                     .child(Icon::new(IconName::FileText).xsmall().text_color(warning))
                     .child(label)
-                    .tooltip(move |window, cx| Tooltip::new(path.clone()).build(window, cx)),
+                    .tooltip_unless_menu(menu_open, move |window, cx| {
+                        Tooltip::new(path.clone()).build(window, cx)
+                    }),
             )
             .when_some(status, |this, color| {
                 this.child(div().size_1p5().rounded_full().bg(color))
@@ -119,7 +123,9 @@ impl EditorPanel {
                     .small()
                     .icon(IconName::Close)
                     .tab_stop(false)
-                    .tooltip_with_action(t!("panel.close"), &CloseTab, Some(KEY_CONTEXT))
+                    .when(!menu_open, |this| {
+                        this.tooltip_with_action(t!("panel.close"), &CloseTab, Some(KEY_CONTEXT))
+                    })
                     .on_click(cx.listener(|this, _, window, cx| {
                         cx.stop_propagation();
                         this.request_close(window, cx);

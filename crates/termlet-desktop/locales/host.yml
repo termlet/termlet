@@ -408,11 +408,11 @@ host.ssh.x11_trusted:
   ja: 信頼する（ssh -Y と同じ）
   ko: 신뢰함(ssh -Y와 같음)
 host.ssh.x11_trusted_hint:
-  zh-CN: 默认不受信任（与 ssh -X 相同）：用本机的 xauth 申请受限的权限，服务器上的程序读不到其他窗口的内容与按键。Windows 上的 X 服务器通常没有 xauth，这时要勾选这一项。受信任时服务器上的程序可以读取本机 X 服务器上所有窗口的内容与按键，只对信任的服务器开启。
-  en: "Untrusted by default (like ssh -X): the local xauth requests restricted access, so programs on the server can't read other windows or keystrokes. X servers on Windows usually have no xauth; turn this on there. When trusted, programs on the server can read every window and keystroke on your local X server. Only turn this on for trusted servers."
-  zh-TW: 預設不受信任（與 ssh -X 相同）：用本機的 xauth 申請受限的權限，伺服器上的程式讀不到其他視窗的內容與按鍵。Windows 上的 X 伺服器通常沒有 xauth，這時要勾選這一項。受信任時伺服器上的程式可以讀取本機 X 伺服器上所有視窗的內容與按鍵，只對信任的伺服器開啟。
-  ja: デフォルトでは信頼しません（ssh -X と同じ）。ローカルの xauth で制限付きの権限を要求するため、サーバー上のプログラムは他のウィンドウの内容やキー入力を読み取れません。Windows の X サーバーには通常 xauth がないため、その場合はこれをオンにしてください。信頼する場合、サーバー上のプログラムはローカルの X サーバー上のすべてのウィンドウの内容とキー入力を読み取れます。信頼できるサーバーでのみオンにしてください。
-  ko: 기본적으로 신뢰하지 않습니다(ssh -X와 같음). 로컬 xauth로 제한된 권한을 요청하므로 서버의 프로그램은 다른 창의 내용과 키 입력을 읽을 수 없습니다. Windows의 X 서버에는 대개 xauth가 없으므로 이때는 이 항목을 켜야 합니다. 신뢰하면 서버의 프로그램이 로컬 X 서버에 있는 모든 창의 내용과 키 입력을 읽을 수 있으므로, 신뢰하는 서버에서만 켜세요.
+  zh-CN: 默认不受信任（与 ssh -X 相同）：用本机的 xauth 申请受限的权限，服务器上的程序读不到其他窗口的内容与按键。VcXsrv 自带 xauth，用默认即可；X410 等没有 xauth 的 X 服务器要勾选这一项。受信任时服务器上的程序可以读取本机 X 服务器上所有窗口的内容与按键，只对信任的服务器开启。
+  en: "Untrusted by default (like ssh -X): the local xauth requests restricted access, so programs on the server can't read other windows or keystrokes. VcXsrv comes with xauth, so the default works with it; X servers without xauth, such as X410, need this turned on. When trusted, programs on the server can read every window and keystroke on your local X server. Only turn this on for trusted servers."
+  zh-TW: 預設不受信任（與 ssh -X 相同）：用本機的 xauth 申請受限的權限，伺服器上的程式讀不到其他視窗的內容與按鍵。VcXsrv 內附 xauth，用預設即可；X410 等沒有 xauth 的 X 伺服器要勾選這一項。受信任時伺服器上的程式可以讀取本機 X 伺服器上所有視窗的內容與按鍵，只對信任的伺服器開啟。
+  ja: デフォルトでは信頼しません（ssh -X と同じ）。ローカルの xauth で制限付きの権限を要求するため、サーバー上のプログラムは他のウィンドウの内容やキー入力を読み取れません。VcXsrv には xauth が付属しているため、デフォルトのままで使えます。X410 など xauth がない X サーバーでは、これをオンにしてください。信頼する場合、サーバー上のプログラムはローカルの X サーバー上のすべてのウィンドウの内容とキー入力を読み取れます。信頼できるサーバーでのみオンにしてください。
+  ko: 기본적으로 신뢰하지 않습니다(ssh -X와 같음). 로컬 xauth로 제한된 권한을 요청하므로 서버의 프로그램은 다른 창의 내용과 키 입력을 읽을 수 없습니다. VcXsrv에는 xauth가 포함되어 있어 기본값 그대로 사용할 수 있습니다. X410 등 xauth가 없는 X 서버에서는 이 항목을 켜야 합니다. 신뢰하면 서버의 프로그램이 로컬 X 서버에 있는 모든 창의 내용과 키 입력을 읽을 수 있으므로, 신뢰하는 서버에서만 켜세요.
 host.ssh.legacy:
   zh-CN: 兼容旧设备（启用旧的加密算法）
   en: Legacy devices (enable old algorithms)

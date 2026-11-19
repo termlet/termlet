@@ -13,7 +13,6 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::dialog::{DialogAction, DialogClose, DialogFooter};
 use gpui_kit::component::form::{field, v_form};
 use gpui_kit::component::input::{Input, InputState};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
@@ -26,6 +25,7 @@ use termlet_core::forward::{
 };
 
 use crate::app_state::AppState;
+use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::snippets::CommandInput;
 use crate::t;
@@ -34,6 +34,7 @@ use crate::terminal_panel::TerminalPanel;
 /// 打开“通过本机代理”：还没开启时是开启的表单，开启着时是命令片段与“停止”。
 pub fn open(terminal: Entity<TerminalPanel>, window: &mut Window, cx: &mut App) {
     let view = cx.new(|cx| ProxyShareView::new(terminal.clone(), window, cx));
+    let notice = view.read(cx).notice.clone();
     let first_focus = Rc::new(Cell::new(true));
     let width = rems(38.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, window, cx| {
@@ -93,6 +94,7 @@ pub fn open(terminal: Entity<TerminalPanel>, window: &mut Window, cx: &mut App) 
             .footer(footer)
             .on_close(move |_, window, cx| terminal.focus_handle(cx).focus(window, cx))
     });
+    notify::attach(&notice, window, cx);
 }
 
 struct ProxyShareView {
@@ -104,6 +106,8 @@ struct ProxyShareView {
     error: Option<SharedString>,
     starting: bool,
     kind: SnippetKind,
+    /// 复制、发到终端的结果（弹出的通知会被对话框盖住，见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
     _start: Option<Task<()>>,
     _observe: Subscription,
 }
@@ -145,6 +149,7 @@ impl ProxyShareView {
             starting: false,
             kind: SnippetKind::Shell,
             _start: None,
+            notice: NoticeLine::new(cx),
             _observe: observe,
         }
     }
@@ -236,19 +241,19 @@ impl ProxyShareView {
         cx: &mut App,
     ) {
         if terminal.read(cx).is_alt_screen(cx) {
-            window.push_notification(
-                Notification::warning(t!("terminal.proxy.send_full_screen")),
+            notify::show(
+                Notice::warning(t!("terminal.proxy.send_full_screen")),
+                window,
                 cx,
             );
             return;
         }
         let input = CommandInput::Type(format!("{command}\r"));
-        match terminal.update(cx, |terminal, cx| terminal.write_command(input, cx)) {
-            Ok(()) => {
-                window.push_notification(Notification::success(t!("terminal.proxy.sent")), cx)
-            }
-            Err(error) => window.push_notification(Notification::error(error), cx),
-        }
+        let notice = match terminal.update(cx, |terminal, cx| terminal.write_command(input, cx)) {
+            Ok(()) => Notice::success(t!("terminal.proxy.sent")),
+            Err(error) => Notice::error(error),
+        };
+        notify::show(notice, window, cx);
     }
 
     fn render_form(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -427,8 +432,9 @@ impl ProxyShareView {
                             .tooltip(t!("terminal.proxy.copy"))
                             .on_click(move |_, window, cx| {
                                 cx.write_to_clipboard(ClipboardItem::new_string(copy.clone()));
-                                window.push_notification(
-                                    Notification::success(t!("terminal.proxy.copied")),
+                                notify::show(
+                                    Notice::success(t!("terminal.proxy.copied")),
+                                    window,
                                     cx,
                                 );
                             }),
@@ -451,11 +457,17 @@ impl ProxyShareView {
 
 impl Render for ProxyShareView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.running(cx) {
+        let content = if self.running(cx) {
             self.render_running(cx).into_any_element()
         } else {
             self.render_form(cx).into_any_element()
-        }
+        };
+        v_flex()
+            .gap_3()
+            .child(content)
+            .when(self.notice.read(cx).is_shown(), |this| {
+                this.child(div().text_sm().child(self.notice.clone()))
+            })
     }
 }
 

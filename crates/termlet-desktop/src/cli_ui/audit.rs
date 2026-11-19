@@ -53,11 +53,11 @@ const STATUSES: [AuditStatus; 5] = [
     AuditStatus::Blocked,
     AuditStatus::Denied,
 ];
-const SOURCES: [AuditSource; 2] = [AuditSource::Cli, AuditSource::Panel];
+const SOURCES: [AuditSource; 3] = [AuditSource::Cli, AuditSource::Mcp, AuditSource::Panel];
 
 /// 各列的宽度（rem）；内容列占余下的宽度。
 const TIME_WIDTH: f32 = 9.;
-const SOURCE_WIDTH: f32 = 4.5;
+const SOURCE_WIDTH: f32 = 8.;
 const HOST_WIDTH: f32 = 7.;
 const ACTION_WIDTH: f32 = 6.;
 const RESULT_WIDTH: f32 = 4.;
@@ -190,7 +190,18 @@ pub(super) fn status_label(status: AuditStatus) -> SharedString {
 pub(super) fn source_label(source: AuditSource) -> SharedString {
     match source {
         AuditSource::Cli => t!("cli_ui.audit.source_cli"),
+        AuditSource::Mcp => t!("cli_ui.audit.source_mcp"),
         AuditSource::Panel => t!("cli_ui.audit.source_panel"),
+    }
+}
+
+/// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`）。
+pub(super) fn entry_source(entry: &AuditEntry) -> SharedString {
+    match termlet_core::audit::mcp_client(&entry.caller) {
+        Some(client) if entry.source == AuditSource::Mcp && !client.is_empty() => {
+            t!("cli_ui.audit.source_mcp_client", client = client)
+        }
+        _ => source_label(entry.source),
     }
 }
 
@@ -838,7 +849,7 @@ impl AuditView {
                     .text_color(muted)
                     .child(format_time(entry.at)),
             )
-            .child(cell(SOURCE_WIDTH).child(source_label(entry.source)))
+            .child(cell(SOURCE_WIDTH).child(entry_source(entry)))
             .child(cell(HOST_WIDTH).child(entry.host_name.clone()))
             .child(cell(ACTION_WIDTH).child(action_label(entry.action)))
             .child(
@@ -972,7 +983,7 @@ impl AuditView {
             div()
                 .child(format!(
                     "{} · {}",
-                    source_label(entry.source),
+                    entry_source(entry),
                     action_label(entry.action)
                 ))
                 .into_any_element(),
@@ -994,6 +1005,16 @@ impl AuditView {
                 .child(t!("cli_ui.audit.duration", ms = entry.duration_ms))
                 .into_any_element(),
         );
+        // 等用户批准的时长（0.3.2 起单独记，不算进耗时）
+        if let Some(ms) = entry.approval_wait_ms {
+            meta.push(
+                div()
+                    .id("audit-approval-wait")
+                    .test_support()
+                    .child(t!("cli_ui.audit.approval_wait", ms = ms))
+                    .into_any_element(),
+            );
+        }
         if let Some(bytes) = entry.bytes {
             meta.push(
                 div()
@@ -1226,6 +1247,20 @@ mod tests {
         assert_eq!(status_label(AuditStatus::Blocked), "已拦截");
         assert_eq!(source_label(AuditSource::Panel), "主机工具");
         assert_eq!(action_label(AuditAction::PanelTerminal), "交给终端执行");
+        // MCP 的调用带上客户端名；客户端没有报名字时只写 MCP；旧记录（同样的调用方）照样认出
+        let mut mcp = AuditEntry {
+            caller: "mcp:claude-code < claude.exe".into(),
+            source: AuditSource::Mcp,
+            ..Default::default()
+        };
+        assert_eq!(entry_source(&mcp), "MCP（claude-code）");
+        mcp.caller = "mcp < node.exe".into();
+        assert_eq!(entry_source(&mcp), "MCP");
+        let cli = AuditEntry {
+            caller: "bash".into(),
+            ..Default::default()
+        };
+        assert_eq!(entry_source(&cli), "命令行");
         i18n::set_language(Language::En);
         assert_eq!(status_label(AuditStatus::Denied), "Denied");
         assert_eq!(action_label(AuditAction::Terminal), "Run in terminal");

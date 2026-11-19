@@ -13,7 +13,7 @@ use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _,
 use gpui_kit::{
     AppContext as _, ClickEvent, Context, ElementId, Entity, EventEmitter, InteractiveElement as _,
     IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Subscription, TestSupportExt as _, Window, div,
+    Styled as _, Subscription, TestSupportExt as _, Window, div, prelude::FluentBuilder as _,
 };
 use termlet_core::id::SnippetId;
 use termlet_core::keymap::{self, KeyAction};
@@ -23,6 +23,7 @@ use termlet_core::store::{Record, StoreEvent};
 use super::{confirm_delete, editor};
 use crate::app_state::AppState;
 use crate::i18n::LocalizedPlaceholder as _;
+use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::t;
 
@@ -120,10 +121,12 @@ impl SnippetList {
         groups.into_iter().collect()
     }
 
+    /// `menu_open`：窗口中开着右键菜单，这一行与其中的按钮不挂悬停提示（见 [`crate::menu_tooltip`]）。
     fn render_row(
         &self,
         snippet: &Record<Snippet>,
         indent: bool,
+        menu_open: bool,
         cx: &Context<Self>,
     ) -> impl IntoElement {
         let theme = cx.theme();
@@ -168,7 +171,7 @@ impl SnippetList {
                             .ghost()
                             .small()
                             .icon(IconName::Pencil)
-                            .tooltip(t!("snippets.edit"))
+                            .when(!menu_open, |this| this.tooltip(t!("snippets.edit")))
                             .on_click({
                                 let id = id.clone();
                                 move |_, window, cx| {
@@ -182,7 +185,7 @@ impl SnippetList {
                             .ghost()
                             .small()
                             .icon(IconName::Trash)
-                            .tooltip(t!("snippets.delete"))
+                            .when(!menu_open, |this| this.tooltip(t!("snippets.delete")))
                             .on_click({
                                 let id = id.clone();
                                 move |_, window, cx| {
@@ -192,7 +195,9 @@ impl SnippetList {
                             }),
                     ),
             )
-            .tooltip(move |window, cx| Tooltip::new(content.clone()).build(window, cx))
+            .tooltip_unless_menu(menu_open, move |window, cx| {
+                Tooltip::new(content.clone()).build(window, cx)
+            })
             .on_click(cx.listener({
                 let id = id.clone();
                 move |_, _: &ClickEvent, _, cx| {
@@ -245,7 +250,8 @@ impl SnippetList {
 }
 
 impl Render for SnippetList {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let query = self.search.read(cx).value().to_string();
         let groups = self.grouped(&query);
         let show_headers = groups.iter().any(|(g, _)| !g.is_empty());
@@ -343,7 +349,7 @@ impl Render for SnippetList {
                 list = list.children(
                     snippets
                         .iter()
-                        .map(|s| self.render_row(s, show_headers, cx)),
+                        .map(|s| self.render_row(s, show_headers, menu_open, cx)),
                 );
             }
         }

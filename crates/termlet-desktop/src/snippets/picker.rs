@@ -437,9 +437,9 @@ impl CommandPicker {
                 panel.read(cx).focus_handle(cx).focus(window, cx);
             }
             Err(message) => {
-                // 只写入多行被拒绝等：留在选择器中，说明原因
-                self.error = Some(message.clone());
-                crate::notify::warning(message, window, cx);
+                // 只写入多行被拒绝等：留在选择器中，在其中说明原因（弹出的通知会被对话框盖住）
+                tracing::info!(%message, "快捷命令选择器：没有写入终端");
+                self.error = Some(message);
                 cx.notify();
             }
         }

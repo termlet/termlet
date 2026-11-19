@@ -9,11 +9,22 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Changed
 
 - The Agent Skill now lists Pi: Pi reads the shared folder `~/.agents/skills`, so Settings → Command-line tool names it and detects it when Pi is installed; from the command line, `termlet skill install --agent pi` works too (same as `--agent agents`).
+- When the command-line tool or MCP asks you to approve a dangerous command, the seconds left before it's blocked now count down in the dialog; before, the number was fixed when the dialog opened.
+- For commands you approve, the duration now covers only running them, not the time it took you to click "Allow": the time spent waiting for approval is reported separately (`approvalWaitMs` in the JSON from `termlet exec`, "plus … waiting for the user's approval" in MCP results, "Waited … for approval" in the audit log details). Older audit entries are unchanged and their duration includes the wait.
+- The audit log's Source now tells MCP apart: calls through the MCP server show as "MCP (client name)" and can be filtered on their own under "All sources"; before, they were mixed in with the command-line tool and you had to open the details to see the caller. Older entries are recognized too. In CSV and JSON exports these entries have the source `mcp`, and the CSV gets an `approval_wait_ms` column at the end.
+- "Delete All…" in the crash records now asks first and says this can't be undone.
 
 ### Fixed
 
 - After actions in Settings that run right away (importing host CAs from known_hosts, copying the version info, installing the Agent Skill, changing PATH and so on), the pop-up message was hidden behind the Settings dialog, leaving only its end or nothing visible; the result now appears at the bottom of the dialog. Export and copy results in the audit log and crash report dialogs now appear inside those dialogs too.
 - In Chinese and Japanese text, when the reason on a failed-connection page wrapped, a closing "。" could end up alone at the start of a line; the explanations shown when host tools are unavailable or need root, and the reasons for failed SFTP transfers, had the same problem.
+- Results of "Export Public Key…" and removing a certificate in the public key dialog, and those in the Command History, Lend Local Proxy to the Server, Clean Up Docker, host tools' root permission dialog (copying a command) and "Open remote folder in …" (when writing ~/.ssh/config fails) dialogs and of reading a certificate file in the host and credential profile dialogs, were also hidden behind the dialog; they now appear inside it.
+- The icon of a message inside a dialog sat higher than its text.
+- The result of exporting diagnostics on Settings → About appeared at the very bottom of the page while the previous "Diagnostics copied" stayed at the bottom of the dialog; it now appears at the bottom of the dialog like other results, replacing the previous one. After deleting crash records, "Crash record copied" no longer stays.
+- In Settings, switching from a category scrolled down to another one left the new category scrolled down as well (easy to click the wrong thing); it now starts at the top.
+- When you right-clicked a row in the sidebar, a tab, a snippet, the file list and so on after its tooltip had appeared, the tooltip floated over the context menu and covered its first item.
+- With no hosts, the sidebar's hint wrapped so that the last character and the full stop sat alone on the second line (in Chinese); its two sentences now take a line each.
+- The X11 forwarding hint on a host's Connection page and in the user guide was wrong: VcXsrv comes with xauth, which Termlet looks for in its install folder, so the default "untrusted" mode works with it; only X servers without xauth, such as X410, need "Trusted".
 
 ### Security
 

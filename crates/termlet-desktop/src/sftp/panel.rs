@@ -1298,16 +1298,17 @@ impl SftpPanel {
     }
 }
 
-/// 以 root 身份打开的标记（Tab 标题中的 `compact`，工具栏中的稍大）：悬停时说明影响范围。
+/// 以 root 身份打开的标记（Tab 标题中的 `compact`，工具栏中的稍大）：悬停时说明影响范围（Tab 的右键菜单开着时
+/// 不显示，见 [`crate::menu_tooltip::quiet`]）。
 fn root_badge(id: &'static str, compact: bool) -> impl IntoElement {
     let tag = gpui_kit::component::tag::Tag::danger().child(t!("sftp.root_badge"));
     div()
         .id(id)
         .test_support()
         .flex_none()
-        .tooltip(|window, cx| {
+        .tooltip(crate::menu_tooltip::quiet(|window, cx| {
             gpui_kit::component::tooltip::Tooltip::new(t!("sftp.root_hint")).build(window, cx)
-        })
+        }))
         .child(if compact { tag.small() } else { tag })
 }
 
@@ -1428,8 +1429,10 @@ impl SftpPanel {
 }
 
 impl Panel for SftpPanel {
-    fn title(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let close_id = ("sftp-tab-close", cx.entity_id().as_u64() as usize);
+        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         h_flex()
             .id(("sftp-tab-title", cx.entity_id().as_u64() as usize))
             .test_support()
@@ -1454,7 +1457,7 @@ impl Panel for SftpPanel {
                     .small()
                     .icon(IconName::Close)
                     .tab_stop(false)
-                    .tooltip(t!("panel.close"))
+                    .when(!menu_open, |this| this.tooltip(t!("panel.close")))
                     .on_click(cx.listener(|this, _, window, cx| {
                         cx.stop_propagation();
                         this.request_close(window, cx);

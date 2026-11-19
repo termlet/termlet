@@ -1,5 +1,6 @@
 //! 查看公钥：类型、指纹、authorized_keys 格式的一行（可复制），以及怎样使用的提示；
-//! 下面是附带的 OpenSSH 证书（见 [`super::certificate`]）。
+//! 下面是附带的 OpenSSH 证书（见 [`super::certificate`]）。导出公钥、附带证书的结果写在底部的提示行里
+//! （[`crate::notify::show`]：弹出的通知会被对话框盖住）。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -14,6 +15,7 @@ use termlet_core::model::{KeyEntry, Kind};
 use termlet_core::store::StoreEvent;
 
 use crate::app_state::AppState;
+use crate::notify::NoticeLine;
 use crate::prose::prose;
 use crate::t;
 
@@ -25,9 +27,11 @@ pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
     let view = cx.new(|cx| PublicKeyView::new(id, &key, window, cx));
     let title: SharedString = key.name.clone().into();
     let width = rems(36.).to_pixels(window.rem_size());
+    let notice = view.read(cx).notice.clone();
     window.open_dialog(cx, move |dialog, _, _| {
         dialog.title(title.clone()).w(width).child(view.clone())
     });
+    crate::notify::attach(&notice, window, cx);
 }
 
 struct PublicKeyView {
@@ -39,6 +43,8 @@ struct PublicKeyView {
     certificate: String,
     text: Entity<TextareaState>,
     copied: bool,
+    /// 导出公钥、附带证书等的结果
+    notice: Entity<NoticeLine>,
     _subscription: Subscription,
 }
 
@@ -67,6 +73,7 @@ impl PublicKeyView {
             certificate: key.certificate.clone(),
             text,
             copied: false,
+            notice: NoticeLine::new(cx),
             _subscription: subscription,
         }
     }
@@ -123,8 +130,14 @@ impl Render for PublicKeyView {
             )
             .child(
                 h_flex()
-                    .justify_end()
                     .gap_2()
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .text_sm()
+                            .child(self.notice.clone()),
+                    )
                     .child(
                         Button::new("key-copy-public")
                             .outline()

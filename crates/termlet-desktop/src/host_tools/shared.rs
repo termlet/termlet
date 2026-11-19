@@ -926,10 +926,14 @@ pub(super) fn empty_text(text: SharedString, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
-/// 复制文字并提示。
+/// 复制文字并提示（在“需要 root 权限”等对话框中复制时写在对话框里，见 [`crate::notify::show`]）。
 pub(super) fn copy_text(text: String, shown: String, window: &mut Window, cx: &mut App) {
     cx.write_to_clipboard(ClipboardItem::new_string(text));
-    window.push_notification(Notification::success(t!("tools.copied", text = shown)), cx);
+    crate::notify::show(
+        crate::notify::Notice::success(t!("tools.copied", text = shown)),
+        window,
+        cx,
+    );
 }
 
 /// 可复制的命令。
@@ -1693,16 +1697,20 @@ pub(super) fn detail_header(
         .into_any_element()
 }
 
-/// 详情头部与行右端的 ⋯：次要操作的菜单（与行的右键菜单是同一个）。
+/// 详情头部与行右端的 ⋯：次要操作的菜单（与行的右键菜单是同一个）。行的右键菜单开着时不挂悬停提示（按钮的
+/// 提示只在按下左键时收起，会浮在菜单上）。
 pub(super) fn more_button(
     id: impl Into<ElementId>,
     build: impl Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu + 'static,
+    cx: &App,
 ) -> AnyElement {
     Button::new(id)
         .ghost()
         .xsmall()
         .icon(IconName::Ellipsis)
-        .tooltip(t!("tools.detail.more"))
+        .when(!menu_is_open(cx), |this| {
+            this.tooltip(t!("tools.detail.more"))
+        })
         .dropdown_menu(build)
         .into_any_element()
 }
@@ -2151,7 +2159,7 @@ pub(super) fn row_actions(
         .into_any_element()
 }
 
-/// 行右端的主要操作：图标按钮（破坏性的用危险色的图标），悬停看名称；进行中时不能点。
+/// 行右端的主要操作：图标按钮（破坏性的用危险色的图标），悬停看名称（行的右键菜单开着时不挂）；进行中时不能点。
 pub(super) fn row_action_button(
     id: impl Into<ElementId>,
     icon: IconName,
@@ -2169,7 +2177,7 @@ pub(super) fn row_action_button(
         .ghost()
         .xsmall()
         .icon(icon)
-        .tooltip(label)
+        .when(!menu_is_open(cx), |this| this.tooltip(label))
         .disabled(busy)
 }
 

@@ -987,7 +987,13 @@ impl FileList {
         }
     }
 
-    fn render_header(&self, columns: Columns, cx: &Context<Self>) -> impl IntoElement {
+    /// `popup_open`：窗口中开着右键菜单，“…”按钮不挂悬停提示（见 [`crate::menu_tooltip`]）。
+    fn render_header(
+        &self,
+        columns: Columns,
+        popup_open: bool,
+        cx: &Context<Self>,
+    ) -> impl IntoElement {
         let theme = cx.theme();
         let layout = columns.layout;
         let chosen = self.chosen;
@@ -1002,7 +1008,7 @@ impl FileList {
             .ghost()
             .xsmall()
             .icon(IconName::Ellipsis)
-            .tooltip(tooltip)
+            .when(!popup_open, |this| this.tooltip(tooltip))
             .dropdown_menu(move |menu, _, _| column_menu(menu, chosen, &menu_squeezed));
         let header = h_flex()
             .id(SharedString::from(format!("{}-header", self.id)))
@@ -1061,6 +1067,8 @@ impl FileList {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let row = self.rows[ix].clone();
+        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let popup_open = crate::menu_tooltip::menu_open(window, cx);
         let selected = self.selection.contains(&row.name);
         let is_cursor = self.selection.cursor.as_deref() == Some(row.name.as_str());
         let ring = is_cursor && self.shows_focus(window);
@@ -1200,7 +1208,7 @@ impl FileList {
                     .truncate()
                     .text_xs()
                     .text_color(muted)
-                    .when(!modified_full.is_empty(), |this| {
+                    .when(!modified_full.is_empty() && !popup_open, |this| {
                         this.tooltip(move |window, cx| {
                             Tooltip::new(modified_full.clone()).build(window, cx)
                         })
@@ -1533,7 +1541,7 @@ impl Render for FileList {
                 .absolute()
                 .size_full(),
             )
-            .child(self.render_header(columns, cx))
+            .child(self.render_header(columns, crate::menu_tooltip::menu_open(window, cx), cx))
             .child(
                 div()
                     .relative()

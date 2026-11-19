@@ -83,7 +83,8 @@ impl KeyList {
             .collect();
     }
 
-    fn render_row(&self, row: &KeyRow, cx: &mut Context<Self>) -> AnyElement {
+    /// `menu_open`：窗口中开着右键菜单，行上的按钮不挂悬停提示（见 [`crate::menu_tooltip`]）。
+    fn render_row(&self, row: &KeyRow, menu_open: bool, cx: &mut Context<Self>) -> AnyElement {
         let KeyRow {
             key,
             hosts: host_count,
@@ -118,7 +119,7 @@ impl KeyList {
                 .small()
                 .icon(icon)
                 .tab_stop(false)
-                .tooltip(tip)
+                .when(!menu_open, |this| this.tooltip(tip))
         };
         let (view, deploy, export, rename, delete, open) = (
             id.clone(),
@@ -255,10 +256,11 @@ impl KeyList {
 }
 
 impl Render for KeyList {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let mut rows = Vec::with_capacity(self.keys.len());
         for row in &self.keys {
-            rows.push(self.render_row(row, cx));
+            rows.push(self.render_row(row, menu_open, cx));
         }
         let muted = cx.theme().muted_foreground;
         v_flex()
@@ -274,7 +276,7 @@ impl Render for KeyList {
                             .flex_1()
                             .text_xs()
                             .text_color(muted)
-                            .child(t!("keys.hint")),
+                            .child(prose(t!("keys.hint"))),
                     )
                     .child(
                         Button::new("key-generate")

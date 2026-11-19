@@ -52,6 +52,7 @@ use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::dialog_token::{DialogToken, close_own};
 use crate::group_dialog::{jump_hosts, profile_choices, scheme_choices};
 use crate::key_fields::{self, KeyFields};
+use crate::notify::{self, NoticeLine};
 use crate::prompt_dialog::{self, PromptRequest};
 use crate::prose::prose;
 use crate::{raw_errors, ssh_errors, store_errors, t};
@@ -114,7 +115,11 @@ fn open(
             .on_ok(save)
     });
     let token = DialogToken::take(window, cx);
-    owner.update(cx, |form, _| form.dialog = token);
+    let notice = owner.update(cx, |form, _| {
+        form.dialog = token;
+        form.notice.clone()
+    });
+    notify::attach(&notice, window, cx);
 }
 
 /// 确认后删除主机（连同它保存的凭据与端口转发规则）。
@@ -320,6 +325,8 @@ struct HostForm {
     saving: bool,
     /// 所在的对话框（后台检查完私钥、保存后只关它）
     dialog: Option<DialogToken>,
+    /// 读入证书文件失败等立即执行的操作的说明（底部按钮的左边，见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
     test: TestState,
     prompter: Prompter,
     _test: Option<Task<()>>,
@@ -730,6 +737,7 @@ impl HostForm {
             error: None,
             saving: false,
             dialog: None,
+            notice: NoticeLine::new(cx),
             test: TestState::Idle,
             prompter: prompt_dialog::prompter(prompt_tx),
             _test: None,
@@ -2489,7 +2497,13 @@ impl HostForm {
                             .disabled(running)
                             .on_click(cx.listener(|this, _, _, cx| this.test_connection(cx))),
                     )
-                    .child(div().flex_1())
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .text_sm()
+                            .child(self.notice.clone()),
+                    )
                     .child(
                         Button::new("host-cancel")
                             .label(t!("common.cancel"))

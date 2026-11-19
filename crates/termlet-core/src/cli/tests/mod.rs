@@ -604,6 +604,78 @@ fn approval_flow() {
     assert_eq!(f.desktop.asked().len(), asked);
 }
 
+// 等用户批准的时间不算进用时：结果与审计记录中的用时只算执行，等待的时长另外给出；拒绝的也记下等了多久；
+// 没有询问用户的（没有命中规则、没有窗口可以询问）没有等待的时长
+#[test]
+fn approval_wait_is_not_counted_as_run_time() {
+    const WAIT: Duration = Duration::from_millis(400);
+    let f = Fixture::new();
+    f.add_dead_host("web", true);
+    f.desktop.set_terminal(|_| terminal_ok("done\n", 0));
+    f.desktop.set_approve(Approve::Ignore);
+    let answer_later = |approved: bool| {
+        let endpoint = f.endpoint.clone();
+        let client = std::thread::spawn(move || {
+            Client::connect(
+                &endpoint,
+                &ClientHello {
+                    protocol: termlet_proto::PROTOCOL_VERSION,
+                    client: "test".into(),
+                    lang: Lang::Zh,
+                },
+            )
+            .unwrap()
+            .call(&Request::Exec(ExecRequest {
+                host: "web".into(),
+                command: "reboot".into(),
+                terminal: true,
+                caller: Vec::new(),
+            }))
+            .unwrap()
+        });
+        wait_until("界面收到批准请求", || {
+            !f.desktop.held.lock().unwrap().is_empty()
+        });
+        std::thread::sleep(WAIT);
+        let request = f.desktop.held.lock().unwrap().pop().unwrap();
+        request.answer(approved);
+        client.join().unwrap()
+    };
+
+    let r = exec_ok(answer_later(true));
+    let waited = r.approval_wait_ms.expect("等用户批准过");
+    assert!(waited >= WAIT.as_millis() as u64, "{waited}");
+    assert!(r.duration_ms < WAIT.as_millis() as u64, "{}", r.duration_ms);
+    let entry = &f.entries()[0];
+    assert_eq!(entry.status, AuditStatus::Approved);
+    assert!(
+        entry
+            .approval_wait_ms
+            .is_some_and(|ms| ms >= WAIT.as_millis() as i64)
+    );
+    assert!(entry.duration_ms < WAIT.as_millis() as i64, "{entry:?}");
+
+    assert_eq!(code_of(answer_later(false)), "command_denied");
+    let entry = &f.entries()[0];
+    assert_eq!(entry.status, AuditStatus::Denied);
+    assert!(
+        entry
+            .approval_wait_ms
+            .is_some_and(|ms| ms >= WAIT.as_millis() as i64)
+    );
+    assert!(entry.duration_ms < WAIT.as_millis() as i64, "{entry:?}");
+
+    let r = exec_ok(f.exec_in_terminal("web", "uptime"));
+    assert_eq!(r.approval_wait_ms, None);
+    assert_eq!(f.entries()[0].approval_wait_ms, None);
+    f.desktop.set_approve(Approve::Absent);
+    assert_eq!(
+        code_of(f.exec_in_terminal("web", "reboot")),
+        "command_blocked"
+    );
+    assert_eq!(f.entries()[0].approval_wait_ms, None);
+}
+
 // 锁定：一律返回 app_locked；等待批准期间被锁定时立即返回，对话框关闭
 #[test]
 fn locked_app() {

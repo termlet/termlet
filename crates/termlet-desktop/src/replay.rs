@@ -31,8 +31,8 @@ use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _,
 use gpui_kit::{
     App, AppContext as _, ClickEvent, ClipboardItem, Context, Entity, EventEmitter, FocusHandle,
     Focusable, InteractiveElement as _, IntoElement, KeyBinding, OperatingSystem,
-    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _,
-    Subscription, Task, TestSupportExt as _, Window, actions, div, prelude::FluentBuilder as _,
+    ParentElement as _, Render, SharedString, Styled as _, Subscription, Task, TestSupportExt as _,
+    Window, actions, div, prelude::FluentBuilder as _,
 };
 use termlet_core::recording::cast::{self, Cast, CastError, CastTheme};
 use termlet_core::recording::player::{DEFAULT_IDLE_LIMIT, Playhead, SPEEDS, Seek, Timeline};
@@ -43,6 +43,7 @@ use termlet_terminal::{
 
 use self::keyframes::{Keyframes, Pending as PendingKeyframe, feed_events, output_bytes};
 use crate::app_state::AppState;
+use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_colors::{self, SchemeLevels};
@@ -857,8 +858,10 @@ impl ReplayPanel {
 }
 
 impl Panel for ReplayPanel {
-    fn title(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let id = cx.entity_id().as_u64() as usize;
+        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let tip: SharedString = self.path.display().to_string().into();
         h_flex()
             .gap_1()
@@ -867,7 +870,9 @@ impl Panel for ReplayPanel {
                     .id(("replay-tab-title", id))
                     .test_support()
                     .gap_1()
-                    .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
+                    .tooltip_unless_menu(menu_open, move |window, cx| {
+                        Tooltip::new(tip.clone()).build(window, cx)
+                    })
                     // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
                     .context_menu({
                         let this = cx.entity().downgrade();
@@ -892,7 +897,7 @@ impl Panel for ReplayPanel {
                     .small()
                     .icon(IconName::Close)
                     .tab_stop(false)
-                    .tooltip(t!("panel.close"))
+                    .when(!menu_open, |this| this.tooltip(t!("panel.close")))
                     .on_click(cx.listener(|this, _, _, cx| {
                         cx.stop_propagation();
                         this.close_tab(cx);

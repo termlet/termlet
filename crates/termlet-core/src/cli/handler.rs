@@ -18,7 +18,7 @@ use super::connect::{self, ExecOutput};
 use super::error::{CliError, Failure, from_sftp, from_terminal, tr, vault_error};
 use super::events::{ApprovalRequest, CliEvent, TerminalRequest};
 use super::service::{Cancel, Shared};
-use crate::audit::{AuditAction, AuditEntry, AuditStatus};
+use crate::audit::{AuditAction, AuditEntry, AuditSource, AuditStatus};
 use crate::guard::{Guard, Rule};
 use crate::id::{GroupId, HostId};
 use crate::model::{Approval, Auth, Host, Profile};
@@ -90,6 +90,8 @@ fn error(code: ErrorCode, message: String) -> Response {
 /// 一次调用的审计记录。
 struct Call {
     started: Instant,
+    /// 等待用户批准危险命令的时长（询问过用户的才有）：不算进用时
+    approval_wait: Option<Duration>,
     entry: AuditEntry,
 }
 
@@ -97,6 +99,7 @@ impl Call {
     fn new(action: AuditAction, host_key: &str, detail: String, caller: &[String]) -> Self {
         Self {
             started: Instant::now(),
+            approval_wait: None,
             entry: AuditEntry {
                 host_name: host_key.to_string(),
                 action,
@@ -107,8 +110,16 @@ impl Call {
         }
     }
 
+    /// 用时：从收到请求到现在，不含等待用户批准的时间。
     fn elapsed_ms(&self) -> u64 {
-        self.started.elapsed().as_millis() as u64
+        let elapsed = self.started.elapsed();
+        elapsed
+            .saturating_sub(self.approval_wait.unwrap_or_default())
+            .as_millis() as u64
+    }
+
+    fn approval_wait_ms(&self) -> Option<u64> {
+        self.approval_wait.map(|wait| wait.as_millis() as u64)
     }
 
     /// 写入审计日志；写入失败只记运行日志，不影响结果。
@@ -116,7 +127,8 @@ impl Call {
         self.entry.status = status;
         self.entry.at = crate::time::now_ms();
         self.entry.duration_ms = self.elapsed_ms() as i64;
-        self.entry.source = self.entry.action.source();
+        self.entry.approval_wait_ms = self.approval_wait_ms().map(|ms| ms as i64);
+        self.entry.source = AuditSource::of(self.entry.action, &self.entry.caller);
         if let Some(error) = error {
             self.entry.error_code = error.code.as_str().to_string();
         }
@@ -287,9 +299,7 @@ impl Ctx<'_> {
         if !request.terminal {
             self.check_vault()?;
         }
-        let status = self
-            .check_rules(&record, &request.command, &call.entry.caller)
-            .await?;
+        let status = self.check_rules(call, &record, &request.command).await?;
         let (exit_code, stdout, stderr, truncated) = if request.terminal {
             let output = self.run_in_terminal(&record, &request.command).await?;
             (
@@ -319,17 +329,19 @@ impl Ctx<'_> {
                 stderr,
                 truncated,
                 duration_ms: call.elapsed_ms(),
+                approval_wait_ms: call.approval_wait_ms(),
             },
             status,
         ))
     }
 
     /// 危险命令规则：没有命中时为 `Ok`，经批准执行时为 `Approved`；拦截、拒绝时为错误。检查的是完整的命令（多行脚本逐行）。
+    /// 询问了用户时把等待的时长记在 `call` 中（不算进用时）。
     async fn check_rules(
         &self,
+        call: &mut Call,
         record: &Record<Host>,
         command: &str,
-        caller: &str,
     ) -> Result<AuditStatus, Failure> {
         let settings = self.shared.store.settings().guard;
         let (guard, invalid) = Guard::from_settings(&settings);
@@ -362,7 +374,9 @@ impl Ctx<'_> {
             tracing::info!(host = %record.id, rule = rule_id, "命令行的命令被拦截");
             return Err(blocked());
         }
-        match self.ask(record, command, caller, rule).await {
+        let (asked, waited) = self.ask(record, command, &call.entry.caller, rule).await;
+        call.approval_wait = waited;
+        match asked {
             Asked::Approved => {
                 // 批准与锁定可能同时发生：执行前再检查一次
                 if *self.shared.locked.borrow() {
@@ -387,12 +401,20 @@ impl Ctx<'_> {
         }
     }
 
-    /// 请界面批准：发出请求后等用户回答，最多等 `approval_timeout`；锁定、命令行工具退出时立即结束。
-    async fn ask(&self, record: &Record<Host>, command: &str, caller: &str, rule: Rule) -> Asked {
+    /// 请界面批准：发出请求后等用户回答，最多等 `approval_timeout`；锁定、命令行工具退出时立即结束。另返回等待的
+    /// 时长（没有发出请求、没有窗口可以询问时为 `None`）。
+    async fn ask(
+        &self,
+        record: &Record<Host>,
+        command: &str,
+        caller: &str,
+        rule: Rule,
+    ) -> (Asked, Option<Duration>) {
         let mut locked = self.shared.locked.subscribe();
         if *locked.borrow() {
-            return Asked::Locked;
+            return (Asked::Locked, None);
         }
+        let asked_at = Instant::now();
         let timeout = self.shared.approval_timeout;
         let (reply_tx, reply_rx) = oneshot::channel();
         let (done_tx, done_rx) = watch::channel(false);
@@ -426,7 +448,11 @@ impl Ctx<'_> {
         };
         // 界面据此关闭对话框
         done_tx.send_replace(true);
-        outcome
+        let waited = match outcome {
+            Asked::NoDesktop => None,
+            _ => Some(asked_at.elapsed()),
+        };
+        (outcome, waited)
     }
 
     /// 交给界面在已打开的终端中执行。

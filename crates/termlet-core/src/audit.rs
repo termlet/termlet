@@ -6,6 +6,8 @@
 //! - 单条内容最多保存 [`MAX_DETAIL`]，超出部分不保存并加上截断标记；列表只返回内容的开头（[`SUMMARY_LENGTH`] 个字符），
 //!   查看某一条时用 [`AuditLog::get`] 取完整内容。
 //! - 保留最近 [`MAX_ENTRIES`] 条、内容合计不超过 [`MAX_BYTES`]，每写入 100 条清理一次更早的。
+//! - 用时（`duration_ms`）不含等待用户批准危险命令的时间，等待的时长另记在 `approval_wait_ms`（0.3.2 起；
+//!   更早的记录没有这一项，它们的用时含等待的时间）。
 //!
 //! 方法都是同步的（SQLite），在界面中从后台执行器调用；写入很快（毫秒级）。
 
@@ -18,6 +20,7 @@ use regex::Regex;
 use rusqlite::{Connection, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
+use crate::proto::mcp::CALLER_MARKER;
 use crate::store::Store;
 use crate::{CoreError, Result};
 
@@ -38,7 +41,7 @@ pub const SUMMARY_LENGTH: usize = 500;
 const MAX_FIELD: usize = 1 << 10;
 
 /// 表结构。新建的数据库由结构版本 1 建表（`db/schema_v1.sql` 中的同一张表）；这里补上在加入这张表之前创建的
-/// 开发用数据库（发布前去掉）。`detail` 以外的列都有默认值。
+/// 开发用数据库（发布前去掉）。`detail` 以外的列都有默认值。之后加的列见 [`ADDED_COLUMNS`]。
 const ENSURE_TABLE: &str = "CREATE TABLE IF NOT EXISTS audit_log (
   id          INTEGER PRIMARY KEY,
   at          INTEGER NOT NULL DEFAULT 0,
@@ -53,6 +56,13 @@ const ENSURE_TABLE: &str = "CREATE TABLE IF NOT EXISTS audit_log (
   bytes       INTEGER,
   caller      TEXT NOT NULL DEFAULT ''
 ) STRICT";
+
+/// 结构版本 1 之后加的列（名称与定义）：打开时没有就补上，不升结构版本。只加可以为空的列，旧版本的 Termlet
+/// 照常读写（插入、查询都写明列名），备份恢复只复制两边都有的列，云同步不涉及这张表。
+const ADDED_COLUMNS: &[(&str, &str)] = &[
+    // 0.3.2：等待用户批准危险命令的时长（毫秒）；没有询问过用户的为空
+    ("approval_wait_ms", "INTEGER"),
+];
 
 /// 内容超过 [`MAX_DETAIL`] 时追加在保存的开头部分之后的标记，数字为原文的字节数。导出的文件中原样保留；
 /// [`AuditLog::get`] 时去掉标记，改为设置 `truncated` 与 `detail_size`。
@@ -111,12 +121,8 @@ impl AuditAction {
         .unwrap_or(AuditAction::Other)
     }
 
-    /// 来源由动作得出，不另存一列。
-    pub fn source(self) -> AuditSource {
-        match self {
-            AuditAction::Panel | AuditAction::PanelTerminal => AuditSource::Panel,
-            _ => AuditSource::Cli,
-        }
+    fn is_panel(self) -> bool {
+        matches!(self, AuditAction::Panel | AuditAction::PanelTerminal)
     }
 }
 
@@ -166,15 +172,47 @@ impl AuditStatus {
     }
 }
 
-/// 来源。
+/// 来源：由动作与调用方得出，不另存一列（旧记录同样适用）。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuditSource {
     /// `termlet` 命令行工具
     #[default]
     Cli,
+    /// 命令行工具的 MCP 服务（`termlet mcp`）：调用方以 `mcp` 或 `mcp:<客户端名>` 开头
+    Mcp,
     /// 主机工具面板
     Panel,
+}
+
+impl AuditSource {
+    pub fn of(action: AuditAction, caller: &str) -> Self {
+        if action.is_panel() {
+            AuditSource::Panel
+        } else if mcp_client(caller).is_some() {
+            AuditSource::Mcp
+        } else {
+            AuditSource::Cli
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AuditSource::Cli => "cli",
+            AuditSource::Mcp => "mcp",
+            AuditSource::Panel => "panel",
+        }
+    }
+}
+
+/// MCP 服务的调用：调用方的第一项是 `mcp:<客户端名>`（客户端自报的名字）或 `mcp`（客户端没有报名字），返回
+/// 客户端名（没有时为空）；不是 MCP 的调用为 `None`。
+pub fn mcp_client(caller: &str) -> Option<&str> {
+    let first = caller.split(" < ").next().unwrap_or_default();
+    if first == CALLER_MARKER {
+        return Some("");
+    }
+    first.strip_prefix(CALLER_MARKER)?.strip_prefix(':')
 }
 
 /// 一条审计记录。写入时 `id`、`source`、`partial`、`truncated`、`detail_size` 不用填。
@@ -197,7 +235,11 @@ pub struct AuditEntry {
     /// 失败时的错误码（`termlet_proto::ErrorCode` 的写法）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub error_code: String,
+    /// 用时：不含等待用户批准的时间（0.3.2 之前的记录含）
     pub duration_ms: i64,
+    /// 等待用户批准危险命令的时长（询问过用户的才有）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_wait_ms: Option<i64>,
     /// 传输的字节数
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<i64>,
@@ -295,25 +337,36 @@ pub struct AuditQuery {
 impl AuditQuery {
     fn conditions(&self) -> (String, Vec<rusqlite::types::Value>) {
         use rusqlite::types::Value;
-        let mut conds = Vec::new();
+        let mut conds: Vec<String> = Vec::new();
         let mut args: Vec<Value> = Vec::new();
         if self.before > 0 {
-            conds.push("id < ?");
+            conds.push("id < ?".into());
             args.push(Value::Integer(self.before));
         }
         if let Some(status) = self.status {
-            conds.push("status = ?");
+            conds.push("status = ?".into());
             args.push(Value::Text(status.as_str().into()));
         }
         let panel = [AuditAction::Panel, AuditAction::PanelTerminal]
             .map(|a| Value::Text(a.as_str().into()));
+        // 与 mcp_client 相同：调用方的第一项是 mcp 或 mcp:<客户端名>（标记是 ASCII，substr 按字符计也一样）
+        let m = CALLER_MARKER;
+        let mcp = format!(
+            "(caller = '{m}' OR substr(caller, 1, {}) = '{m}:' OR substr(caller, 1, {}) = '{m} < ')",
+            m.len() + 1,
+            m.len() + 3
+        );
         match self.source {
             Some(AuditSource::Panel) => {
-                conds.push("action IN (?, ?)");
+                conds.push("action IN (?, ?)".into());
+                args.extend(panel);
+            }
+            Some(AuditSource::Mcp) => {
+                conds.push(format!("action NOT IN (?, ?) AND {mcp}"));
                 args.extend(panel);
             }
             Some(AuditSource::Cli) => {
-                conds.push("action NOT IN (?, ?)");
+                conds.push(format!("action NOT IN (?, ?) AND NOT {mcp}"));
                 args.extend(panel);
             }
             None => {}
@@ -327,7 +380,8 @@ impl AuditQuery {
                     .replace('_', r"\_")
             );
             conds.push(
-                r"(host_name LIKE ? ESCAPE '\' OR detail LIKE ? ESCAPE '\' OR caller LIKE ? ESCAPE '\')",
+                r"(host_name LIKE ? ESCAPE '\' OR detail LIKE ? ESCAPE '\' OR caller LIKE ? ESCAPE '\')"
+                    .into(),
             );
             for _ in 0..3 {
                 args.push(Value::Text(like.clone()));
@@ -352,17 +406,19 @@ pub enum ExportFormat {
 /// 完整的记录（get、export）与列表中的摘要：内容只取开头 [`SUMMARY_LENGTH`] 个字符，最后一列表示还有更多
 /// （SQLite 的 substr、length 对文本按字符计）。
 const COLUMNS: &str = "id, at, host_id, host_name, action, detail, status, exit_code, \
-                       COALESCE(error_code, ''), duration_ms, bytes, caller, 0";
+                       COALESCE(error_code, ''), duration_ms, bytes, caller, 0, approval_wait_ms";
 
 fn summary_columns() -> String {
     format!(
         "id, at, host_id, host_name, action, substr(detail, 1, {SUMMARY_LENGTH}), status, exit_code, \
-         COALESCE(error_code, ''), duration_ms, bytes, caller, length(detail) > {SUMMARY_LENGTH}"
+         COALESCE(error_code, ''), duration_ms, bytes, caller, length(detail) > {SUMMARY_LENGTH}, \
+         approval_wait_ms"
     )
 }
 
 fn entry_from_row(row: &Row<'_>) -> rusqlite::Result<AuditEntry> {
     let action = AuditAction::parse(&row.get::<_, String>(4)?);
+    let caller: String = row.get(11)?;
     Ok(AuditEntry {
         id: row.get(0)?,
         at: row.get(1)?,
@@ -374,9 +430,10 @@ fn entry_from_row(row: &Row<'_>) -> rusqlite::Result<AuditEntry> {
         exit_code: row.get(7)?,
         error_code: row.get(8)?,
         duration_ms: row.get(9)?,
+        approval_wait_ms: row.get(13)?,
         bytes: row.get(10)?,
-        caller: row.get(11)?,
-        source: action.source(),
+        source: AuditSource::of(action, &caller),
+        caller,
         partial: row.get(12)?,
         truncated: false,
         detail_size: 0,
@@ -412,9 +469,24 @@ impl AuditLog {
         max_entries: usize,
         max_bytes: i64,
     ) -> Result<Self> {
-        store
-            .database()
-            .write(|tx| Ok(tx.execute(ENSURE_TABLE, [])?))?;
+        store.database().write(|tx| {
+            tx.execute(ENSURE_TABLE, [])?;
+            for (name, definition) in ADDED_COLUMNS {
+                let exists: bool = tx.query_row(
+                    "SELECT EXISTS (SELECT 1 FROM pragma_table_info('audit_log') WHERE name = ?1)",
+                    [name],
+                    |r| r.get(0),
+                )?;
+                if !exists {
+                    tx.execute(
+                        &format!("ALTER TABLE audit_log ADD COLUMN {name} {definition}"),
+                        [],
+                    )?;
+                    tracing::info!(column = name, "审计日志：补上新加的列");
+                }
+            }
+            Ok(())
+        })?;
         Ok(Self {
             store,
             inserts: AtomicU64::new(0),
@@ -433,8 +505,8 @@ impl AuditLog {
         let caller = cut(&entry.caller, MAX_FIELD).to_string();
         let id = self.store.database().write(|tx| {
             tx.execute(
-                "INSERT INTO audit_log (at, host_id, host_name, action, detail, status, exit_code, error_code, duration_ms, bytes, caller)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULLIF(?8, ''), ?9, ?10, ?11)",
+                "INSERT INTO audit_log (at, host_id, host_name, action, detail, status, exit_code, error_code, duration_ms, bytes, caller, approval_wait_ms)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULLIF(?8, ''), ?9, ?10, ?11, ?12)",
                 params![
                     entry.at,
                     entry.host_id,
@@ -447,6 +519,7 @@ impl AuditLog {
                     entry.duration_ms,
                     entry.bytes,
                     caller,
+                    entry.approval_wait_ms,
                 ],
             )?;
             Ok(tx.last_insert_rowid())
@@ -571,6 +644,8 @@ impl AuditLog {
                         "caller",
                         "detail",
                         "source",
+                        // 0.3.2 加的列放在最后，按位置读的脚本不受影响
+                        "approval_wait_ms",
                     ],
                 )?;
                 for e in &list {
@@ -578,10 +653,10 @@ impl AuditLog {
                     let exit = e.exit_code.map(|c| c.to_string()).unwrap_or_default();
                     let bytes = e.bytes.map(|b| b.to_string()).unwrap_or_default();
                     let duration = e.duration_ms.to_string();
-                    let source = match e.source {
-                        AuditSource::Cli => "cli",
-                        AuditSource::Panel => "panel",
-                    };
+                    let waited = e
+                        .approval_wait_ms
+                        .map(|ms| ms.to_string())
+                        .unwrap_or_default();
                     write_csv_row(
                         out,
                         &[
@@ -595,7 +670,8 @@ impl AuditLog {
                             &bytes,
                             &not_formula(&e.caller),
                             &not_formula(&e.detail),
-                            source,
+                            e.source.as_str(),
+                            &waited,
                         ],
                     )?;
                 }
@@ -930,13 +1006,52 @@ mod tests {
         )));
     }
 
-    // 主机工具面板的写操作与 CLI 的记录可以分开筛选、导出
+    // MCP 服务的标记在调用方的第一项：mcp:<客户端名>、没有客户端名时只有 mcp；进程名中间带 mcp 的不算
+    #[test]
+    fn mcp_client_comes_from_the_first_caller() {
+        assert_eq!(
+            mcp_client("mcp:claude-code < claude.exe"),
+            Some("claude-code")
+        );
+        assert_eq!(mcp_client("mcp:cursor"), Some("cursor"));
+        assert_eq!(mcp_client("mcp < node.exe"), Some(""));
+        assert_eq!(mcp_client("mcp"), Some(""));
+        for caller in [
+            "",
+            "bash < node",
+            "mcpd < bash",
+            "bash < mcp:x",
+            "mcp-server",
+        ] {
+            assert_eq!(mcp_client(caller), None, "{caller}");
+        }
+        assert_eq!(
+            AuditSource::of(AuditAction::Exec, "mcp:codex"),
+            AuditSource::Mcp
+        );
+        assert_eq!(
+            AuditSource::of(AuditAction::Panel, "mcp:codex"),
+            AuditSource::Panel
+        );
+        assert_eq!(
+            AuditSource::of(AuditAction::Upload, "bash"),
+            AuditSource::Cli
+        );
+    }
+
+    // 主机工具面板的写操作、MCP 与命令行的记录可以分开筛选、导出（来源由动作与调用方得出，旧记录同样适用）
     #[test]
     fn source_is_derived_from_action() {
         let log = log();
         let mut exec = entry("web", AuditAction::Exec, "uptime", AuditStatus::Ok);
         exec.exit_code = Some(0);
         exec.caller = "bash".into();
+        let mut mcp = entry("web", AuditAction::Exec, "df -h", AuditStatus::Ok);
+        mcp.caller = "mcp:claude-code < claude.exe".into();
+        let mut anonymous = entry("db", AuditAction::Upload, "C:\\a → /tmp/a", AuditStatus::Ok);
+        anonymous.caller = "mcp < node.exe".into();
+        log.add(mcp).unwrap();
+        log.add(anonymous).unwrap();
         let mut panel = entry(
             "web",
             AuditAction::Panel,
@@ -966,10 +1081,19 @@ mod tests {
         for e in &all {
             let want = match e.action {
                 AuditAction::Panel | AuditAction::PanelTerminal => AuditSource::Panel,
+                _ if e.caller.starts_with("mcp") => AuditSource::Mcp,
                 _ => AuditSource::Cli,
             };
             assert_eq!(e.source, want, "{e:?}");
         }
+        let mcp = log
+            .list(&AuditQuery {
+                source: Some(AuditSource::Mcp),
+                ..Default::default()
+            })
+            .unwrap();
+        let details: Vec<&str> = mcp.iter().map(|e| e.detail.as_str()).collect();
+        assert_eq!(details, ["C:\\a → /tmp/a", "df -h"]);
         let panel = log
             .list(&AuditQuery {
                 source: Some(AuditSource::Panel),
@@ -987,6 +1111,19 @@ mod tests {
             .unwrap();
         assert!(cli.len() == 1 && cli[0].detail == "uptime");
         assert_eq!(log.get(all[0].id).unwrap().source, AuditSource::Cli);
+        assert_eq!(log.get(mcp[1].id).unwrap().source, AuditSource::Mcp);
+        let mut csv = Vec::new();
+        log.export(
+            &mut csv,
+            ExportFormat::Csv,
+            &AuditQuery {
+                source: Some(AuditSource::Mcp),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let rows = parse_csv(&String::from_utf8(csv).unwrap());
+        assert_eq!((rows.len(), rows[1][10].as_str()), (3, "mcp"));
 
         let mut csv = Vec::new();
         let n = log
@@ -1040,7 +1177,79 @@ mod tests {
         );
     }
 
-    // 加入这张表之前创建的数据库（没有 audit_log）：打开时补上；与结构版本 1 中的表结构相同
+    // 等待批准的时长单独记，用时不含它；列表、详情、导出都带上，没有询问过用户的为空
+    #[test]
+    fn approval_wait_is_kept_apart() {
+        let log = log();
+        let mut approved = entry(
+            "web",
+            AuditAction::Exec,
+            "rm -rf /tmp/x",
+            AuditStatus::Approved,
+        );
+        approved.duration_ms = 40;
+        approved.approval_wait_ms = Some(31_000);
+        log.add(approved).unwrap();
+        log.add(entry("web", AuditAction::Exec, "ls", AuditStatus::Ok))
+            .unwrap();
+        let list = log.list(&AuditQuery::default()).unwrap();
+        assert_eq!(list[0].approval_wait_ms, None);
+        assert_eq!(
+            (list[1].duration_ms, list[1].approval_wait_ms),
+            (40, Some(31_000))
+        );
+        assert_eq!(log.get(list[1].id).unwrap().approval_wait_ms, Some(31_000));
+
+        let mut csv = Vec::new();
+        log.export(&mut csv, ExportFormat::Csv, &AuditQuery::default())
+            .unwrap();
+        let rows = parse_csv(&String::from_utf8(csv).unwrap());
+        assert_eq!(rows[0][6], "duration_ms");
+        assert_eq!(rows[0][11], "approval_wait_ms", "加在最后一列");
+        assert_eq!((rows[1][6].as_str(), rows[1][11].as_str()), ("40", "31000"));
+        assert_eq!(rows[2][11], "");
+        let mut json = Vec::new();
+        log.export(&mut json, ExportFormat::Json, &AuditQuery::default())
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&json).unwrap();
+        assert_eq!(v[0]["approvalWaitMs"], 31_000);
+        assert!(v[1].get("approvalWaitMs").is_none());
+    }
+
+    // 0.3.1 及更早的数据库没有 approval_wait_ms：打开时补上，已有的记录照常读出（没有等待的时长）；再打开不重复加
+    #[test]
+    fn added_columns_are_filled_in_for_old_databases() {
+        let store = memory_store();
+        store
+            .database()
+            .write(|tx| {
+                tx.execute("DROP TABLE audit_log", [])?;
+                tx.execute(ENSURE_TABLE, [])?;
+                tx.execute(
+                    "INSERT INTO audit_log (host_name, action, detail, status, duration_ms, caller)
+                     VALUES ('web', 'exec', 'rm -rf /tmp/x', 'approved', 31393, 'mcp:claude-code')",
+                    [],
+                )?;
+                Ok(())
+            })
+            .unwrap();
+        let log = AuditLog::new(store.clone()).unwrap();
+        let old = log.list(&AuditQuery::default()).unwrap();
+        assert_eq!(old.len(), 1);
+        assert_eq!((old[0].duration_ms, old[0].approval_wait_ms), (31393, None));
+        assert_eq!(old[0].source, AuditSource::Mcp);
+        let again = AuditLog::new(store).unwrap();
+        let mut new = entry("web", AuditAction::Exec, "ls", AuditStatus::Approved);
+        new.approval_wait_ms = Some(5);
+        again.add(new).unwrap();
+        assert_eq!(
+            again.list(&AuditQuery::default()).unwrap()[0].approval_wait_ms,
+            Some(5)
+        );
+    }
+
+    // 加入这张表之前创建的数据库（没有 audit_log）：打开时补上；与新数据库打开后的表结构相同（结构版本 1 中的表
+    // 加上之后补的列）
     #[test]
     fn table_is_ensured_and_matches_schema() {
         let columns = |db: &Database| {
@@ -1060,8 +1269,16 @@ mod tests {
             .unwrap()
         };
         let fresh = memory_store();
+        assert!(
+            !columns(fresh.database()).is_empty(),
+            "结构版本 1 应有 audit_log"
+        );
+        AuditLog::new(fresh.clone()).unwrap();
         let schema = columns(fresh.database());
-        assert!(!schema.is_empty(), "结构版本 1 应有 audit_log");
+        assert!(
+            schema.iter().any(|c| c.starts_with("approval_wait_ms ")),
+            "{schema:?}"
+        );
         fresh
             .database()
             .write(|tx| Ok(tx.execute("DROP TABLE audit_log", [])?))

@@ -34,9 +34,9 @@ use gpui_kit::component::{
 };
 use gpui_kit::{
     AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, InteractiveElement as _,
-    IntoElement, ParentElement as _, PathPromptOptions, Render, SharedString,
+    IntoElement, ParentElement as _, PathPromptOptions, Render, ScrollHandle, SharedString,
     StatefulInteractiveElement as _, Styled as _, Subscription, Task, TestSupportExt as _, Window,
-    div, prelude::FluentBuilder as _, px, rems,
+    div, point, prelude::FluentBuilder as _, px, rems,
 };
 use termlet_core::history;
 use termlet_core::model::{
@@ -272,6 +272,8 @@ pub(crate) struct SettingsForm {
     error: Option<SharedString>,
     /// 底部的提示行：立即执行的操作（导入、清除、复制等）的结果写在这里（见 [`crate::notify::show`]），换分类时清掉
     notice: Entity<NoticeLine>,
+    /// 右边分类内容的滚动位置：换分类时回到顶上（否则沿用上一页滚到的位置）
+    page_scroll: ScrollHandle,
     /// 设置所在的对话框（恢复备份完成后只关它）
     dialog: Option<DialogToken>,
     _tasks: Vec<Task<()>>,
@@ -507,6 +509,7 @@ impl SettingsForm {
             shell_snippets_open: false,
             error: None,
             notice: NoticeLine::new(cx),
+            page_scroll: ScrollHandle::new(),
             dialog: None,
             _tasks: Vec::new(),
             _subscriptions: subscriptions,
@@ -546,6 +549,7 @@ impl SettingsForm {
         }
         if page != self.page {
             self.notice.update(cx, |line, cx| line.clear(cx));
+            self.page_scroll.set_offset(point(px(0.), px(0.)));
         }
         self.page = page;
         if page == Page::Highlight {
@@ -1807,6 +1811,7 @@ impl Render for SettingsForm {
                             .flex_1()
                             .min_w_0()
                             .overflow_y_scroll()
+                            .track_scroll(&self.page_scroll)
                             .pr_1()
                             .child(
                                 v_flex()
@@ -2012,6 +2017,39 @@ mod tests {
             window.render_frame(cx);
             assert_eq!(shown(window, cx), None);
             assert!(window.try_find("dialog-notice").is_none());
+        })
+        .unwrap();
+    }
+
+    // 换分类时内容回到顶上：在“关于”页滚到下面后换到“通用”，“通用”不沿用滚动位置（实测时因此误点了勾选框）
+    #[gpui_kit::test]
+    fn switching_pages_scrolls_back_to_the_top(cx: &mut TestAppContext) {
+        let handle = open_workspace(cx);
+        set_language(Language::ZhCn);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.click("open-settings", cx);
+            window.render_frame(cx);
+            window.click(Page::About.nav_id(), cx);
+            window.render_frame(cx);
+            let top = window.find("about-copy-version").bounds().top();
+            window.scroll(
+                "settings-page",
+                gpui_kit::ScrollDelta::Pixels(gpui_kit::point(
+                    gpui_kit::px(0.),
+                    gpui_kit::px(-400.),
+                )),
+                cx,
+            );
+            window.render_frame(cx);
+            let scrolled = window.find("about-copy-version").bounds().top();
+            assert!(scrolled < top, "“关于”页滚动了：{top:?} → {scrolled:?}");
+
+            window.click(Page::General.nav_id(), cx);
+            window.render_frame(cx);
+            window.click(Page::About.nav_id(), cx);
+            window.render_frame(cx);
+            assert_eq!(window.find("about-copy-version").bounds().top(), top);
         })
         .unwrap();
     }

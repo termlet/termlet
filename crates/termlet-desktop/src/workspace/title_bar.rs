@@ -37,6 +37,9 @@ struct BarState {
     sftp_for: Option<WeakEntity<TerminalPanel>>,
     lock_enabled: bool,
     dark: bool,
+    /// 窗口中开着弹出菜单（右键按钮打开的“隐藏按钮”“自定义工具栏…”等）：按钮不挂悬停提示，免得盖住菜单
+    /// （按钮的提示只在按下左键时收起，见 [`crate::menu_tooltip`]）
+    menu_open: bool,
 }
 
 impl BarState {
@@ -65,6 +68,7 @@ impl Workspace {
             sftp_for: self.sftp_terminal(window, cx).map(|p| p.downgrade()),
             lock_enabled: crate::lock_ui::is_enabled(cx),
             dark: cx.theme().is_dark(),
+            menu_open: crate::menu_tooltip::menu_open(window, cx),
         }
     }
 
@@ -181,7 +185,7 @@ impl Workspace {
                                         .ghost()
                                         .small()
                                         .icon(IconName::Settings)
-                                        .tooltip(t!("settings.title"))
+                                        .when(!state.menu_open, |b| b.tooltip(t!("settings.title")))
                                         .on_click(|_, window, cx| {
                                             settings::open(settings::Page::General, window, cx)
                                         }),
@@ -290,6 +294,8 @@ impl Workspace {
         state: &BarState,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        // 挂不挂悬停提示（见 BarState::menu_open）
+        let tips = !state.menu_open;
         let button = match item {
             ToolbarItem::HostTools => Button::new("toggle-host-tools")
                 .icon(if state.tools_open {
@@ -298,60 +304,78 @@ impl Workspace {
                     IconName::PanelRightOpen
                 })
                 .selected(state.tools_open)
-                .tooltip_with_action(
-                    t!("workspace.host_tools"),
-                    &ToggleHostTools,
-                    Some(KEY_CONTEXT),
-                ),
+                .when(tips, |b| {
+                    b.tooltip_with_action(
+                        t!("workspace.host_tools"),
+                        &ToggleHostTools,
+                        Some(KEY_CONTEXT),
+                    )
+                }),
             ToolbarItem::MultiExec => Button::new("toggle-multi-exec")
                 .icon(IconName::LayoutGrid)
                 .selected(state.syncing)
                 .when(state.syncing, |b| b.text_color(cx.theme().warning))
-                .tooltip_with_action(t!("multi_exec.title"), &ToggleMultiExec, Some(KEY_CONTEXT)),
+                .when(tips, |b| {
+                    b.tooltip_with_action(
+                        t!("multi_exec.title"),
+                        &ToggleMultiExec,
+                        Some(KEY_CONTEXT),
+                    )
+                }),
             ToolbarItem::Forwards => Button::new("title-forwards")
                 .icon(IconName::ArrowRightLeft)
                 .label(t!("forward.title_bar", count = state.forwards))
-                .tooltip(t!("forward.title_bar_hint")),
+                .when(tips, |b| b.tooltip(t!("forward.title_bar_hint"))),
             ToolbarItem::Sftp => Button::new("open-sftp-for-tab")
                 .icon(IconName::FolderOpen)
                 .label("SFTP")
-                .tooltip(t!("sftp.open_for_tab")),
+                .when(tips, |b| b.tooltip(t!("sftp.open_for_tab"))),
             ToolbarItem::Snippets => Button::new("title-command-picker")
                 .icon(IconName::Zap)
-                .tooltip_with_action(
-                    t!("title_bar.command_picker"),
-                    &OpenCommandPicker,
-                    Some(KEY_CONTEXT),
-                ),
+                .when(tips, |b| {
+                    b.tooltip_with_action(
+                        t!("title_bar.command_picker"),
+                        &OpenCommandPicker,
+                        Some(KEY_CONTEXT),
+                    )
+                }),
             ToolbarItem::Compose => Button::new("title-compose")
                 .icon(IconName::SquarePen)
                 .selected(state.compose_open)
-                .tooltip_with_action(
-                    t!("toolbar.item.compose"),
-                    &ToggleCompose,
-                    Some(KEY_CONTEXT),
-                ),
+                .when(tips, |b| {
+                    b.tooltip_with_action(
+                        t!("toolbar.item.compose"),
+                        &ToggleCompose,
+                        Some(KEY_CONTEXT),
+                    )
+                }),
             ToolbarItem::Highlight => Button::new("title-highlight")
                 .icon(IconName::Highlighter)
-                .tooltip(t!("title_bar.highlight")),
+                .when(tips, |b| b.tooltip(t!("title_bar.highlight"))),
             ToolbarItem::Theme => Button::new("title-toggle-theme")
                 .icon(if state.dark {
                     IconName::Sun
                 } else {
                     IconName::Moon
                 })
-                .tooltip(if state.dark {
-                    t!("title_bar.to_light")
-                } else {
-                    t!("title_bar.to_dark")
+                .when(tips, |b| {
+                    b.tooltip(if state.dark {
+                        t!("title_bar.to_light")
+                    } else {
+                        t!("title_bar.to_dark")
+                    })
                 }),
-            ToolbarItem::Lock => Button::new("title-lock-now")
-                .icon(IconName::Lock)
-                .tooltip_with_action(
-                    t!("lock_ui.lock_now_tooltip"),
-                    &crate::lock_ui::LockNow,
-                    Some(KEY_CONTEXT),
-                ),
+            ToolbarItem::Lock => {
+                Button::new("title-lock-now")
+                    .icon(IconName::Lock)
+                    .when(tips, |b| {
+                        b.tooltip_with_action(
+                            t!("lock_ui.lock_now_tooltip"),
+                            &crate::lock_ui::LockNow,
+                            Some(KEY_CONTEXT),
+                        )
+                    })
+            }
         };
         div()
             .id(SharedString::from(format!("toolbar-{}", item.id())))
@@ -403,7 +427,7 @@ impl Workspace {
                     .ghost()
                     .small()
                     .icon(IconName::Ellipsis)
-                    .tooltip(t!("toolbar.more"))
+                    .when(!state.menu_open, |b| b.tooltip(t!("toolbar.more")))
                     .dropdown_menu(move |menu, _, _| {
                         items
                             .iter()

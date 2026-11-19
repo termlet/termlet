@@ -714,12 +714,48 @@ fn crashes_are_announced_once_and_can_be_deleted(cx: &mut TestAppContext) {
             .is_none()
     });
     assert_eq!(runtime.block_on(crash.list()).len(), 1);
+    // 复制的提示：删除后清掉（说的可能是已删除的记录）
+    cx.update_window(handle, |_, window, cx| {
+        window.click("crash-copy-crash-20261020-051000123-aaaa", cx);
+        assert_eq!(
+            crate::notify::shown(window, cx),
+            Some(crate::notify::Notice::success(crate::t!(
+                "lock_ui.crash.copied"
+            )))
+        );
+    })
+    .unwrap();
+    // 全部删除：先确认，取消时什么也不删
     cx.update_window(handle, |_, window, cx| window.click("crash-delete-all", cx))
         .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("cancel", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert_eq!(runtime.block_on(crash.list()).len(), 1, "取消后不删除");
+    cx.update_window(handle, |_, window, cx| window.click("crash-delete-all", cx))
+        .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("ok", cx);
+    })
+    .unwrap();
     wait_until(cx, handle, "全部删除", |window, _| {
         window.try_find("crash-empty").is_some()
     });
     assert!(runtime.block_on(crash.list()).is_empty());
+    cx.update_window(handle, |_, window, cx| {
+        assert_eq!(
+            crate::notify::shown(window, cx),
+            None,
+            "删除后清掉复制的提示"
+        );
+    })
+    .unwrap();
 }
 
 #[gpui_kit::test]

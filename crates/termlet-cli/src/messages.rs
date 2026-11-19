@@ -298,6 +298,11 @@ msg!(
     "host not found; call list_hosts to see the available hosts"
 );
 msg!(MCP_EXIT, "退出码 {}，用时 {}", "exit code {}, took {}");
+msg!(
+    MCP_EXIT_APPROVED,
+    "退出码 {}，用时 {}（另等待用户批准 {}）",
+    "exit code {}, took {} (plus {} waiting for the user's approval)"
+);
 msg!(MCP_NO_OUTPUT, "（没有输出）", "(no output)");
 msg!(
     MCP_CLIPPED,

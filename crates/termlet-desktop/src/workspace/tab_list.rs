@@ -414,7 +414,8 @@ struct Listing {
     /// 窗口里只有一个 Tab（停靠区不让拖动它，换成只能拖到另一个窗口上的载体）
     sole: bool,
     highlighted: Option<PanelId>,
-    /// 列表中打开的右键菜单开着（这时各行不显示悬停提示，免得盖住菜单）
+    /// 列表中打开的右键菜单开着，或窗口中开着别的弹出菜单（这时各行与列表头不显示悬停提示，免得盖住菜单，
+    /// 见 [`crate::menu_tooltip`]）
     menu_open: bool,
     /// 画焦点框的一行（列表有焦点时的当前行）
     ring: Option<usize>,
@@ -544,7 +545,8 @@ impl Workspace {
             }
         }
         let highlighted = self.highlighted_tab(window, cx);
-        let menu_open = self.tab_list_menu_open(window, cx);
+        let menu_open =
+            self.tab_list_menu_open(window, cx) || crate::menu_tooltip::menu_open(window, cx);
         let mut faces = self.tab_faces(cx);
         // 不是这几种 Tab 的（不会有）：用面板的名字
         for (id, view) in &views {
@@ -1289,7 +1291,7 @@ impl Workspace {
         let focus = self.tab_list.focus.clone();
         v_flex()
             .size_full()
-            .child(self.render_list_header(overlay, squeezed, cx))
+            .child(self.render_list_header(overlay, squeezed, listing.menu_open, cx))
             .child(
                 div()
                     .relative()
@@ -1367,6 +1369,7 @@ impl Workspace {
         &self,
         overlay: bool,
         squeezed: bool,
+        menu_open: bool,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = cx.theme();
@@ -1377,7 +1380,7 @@ impl Workspace {
                     .ghost()
                     .xsmall()
                     .icon(IconName::ArrowLeftToLine)
-                    .tooltip(t!("tab_list.collapse"))
+                    .when(!menu_open, |this| this.tooltip(t!("tab_list.collapse")))
                     .on_click(cx.listener(|this, _, _, cx| this.set_tab_list_collapsed(true, cx))),
             ),
             (true, false) => Some(
@@ -1385,7 +1388,7 @@ impl Workspace {
                     .ghost()
                     .xsmall()
                     .icon(IconName::ArrowRightToLine)
-                    .tooltip(t!("tab_list.expand"))
+                    .when(!menu_open, |this| this.tooltip(t!("tab_list.expand")))
                     .on_click(cx.listener(|this, _, _, cx| this.set_tab_list_collapsed(false, cx))),
             ),
             (true, true) => None,
@@ -1651,7 +1654,7 @@ impl Workspace {
                             .xsmall()
                             .icon(IconName::Close)
                             .tab_stop(false)
-                            .tooltip(t!("panel.close"))
+                            .when(!listing.menu_open, |this| this.tooltip(t!("panel.close")))
                             .on_click(cx.listener(move |this, _, window, cx| {
                                 cx.stop_propagation();
                                 this.request_close_tab(panel, window, cx);

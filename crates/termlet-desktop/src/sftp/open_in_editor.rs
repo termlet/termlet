@@ -19,9 +19,9 @@ use gpui_kit::component::menu::{PopupMenu, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _, v_flex};
 use gpui_kit::{
-    App, AppContext as _, ClickEvent, Context, Global, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, SharedString, Styled as _, TestSupportExt as _, Window, div,
-    prelude::FluentBuilder as _, rems,
+    App, AppContext as _, ClickEvent, Context, Entity, Global, InteractiveElement as _,
+    IntoElement, ParentElement as _, Render, SharedString, Styled as _, TestSupportExt as _,
+    Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::model::{Host, RemoteEditorSetting};
 use termlet_core::remote_editor::{
@@ -31,6 +31,7 @@ use termlet_core::store::Store;
 
 use super::panel::SftpTarget;
 use crate::app_state::AppState;
+use crate::notify::{Notice, NoticeLine};
 use crate::prose::prose;
 use crate::workspace::Workspace;
 use crate::{ssh_errors, t};
@@ -288,12 +289,14 @@ fn confirm(
 ) {
     let recommend_write =
         config_path.is_some() && launch.obstacles.iter().any(Obstacle::fixed_by_entry);
-    let view = cx.new(|_| ConfirmView {
+    let view = cx.new(|cx| ConfirmView {
         launch,
         remote,
         path,
         config_path,
+        notice: NoticeLine::new(cx),
     });
+    let notice = view.read(cx).notice.clone();
     let width = rems(36.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, cx| {
         let (editor, can_write) = {
@@ -363,6 +366,7 @@ fn confirm(
                 })
             })
     });
+    crate::notify::attach(&notice, window, cx);
 }
 
 /// 询问对话框的内容。
@@ -371,6 +375,8 @@ struct ConfirmView {
     remote: Remote,
     path: String,
     config_path: Option<PathBuf>,
+    /// 写入 ~/.ssh/config 失败的说明（对话框不关，弹出的通知会被它盖住，见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
 }
 
 impl ConfirmView {
@@ -432,12 +438,12 @@ impl ConfirmView {
                 true
             }
             Err(e) => {
-                crate::notify::error(
-                    t!(
+                crate::notify::show(
+                    Notice::error(t!(
                         "sftp.editor.write_failed",
                         path = path.display().to_string(),
                         error = e.to_string()
-                    ),
+                    )),
                     window,
                     cx,
                 );
@@ -523,6 +529,9 @@ impl Render for ConfirmView {
                                 .child(prose(t!("sftp.editor.entry_hint"))),
                         ),
                 )
+            })
+            .when(self.notice.read(cx).is_shown(), |this| {
+                this.child(self.notice.clone())
             })
     }
 }

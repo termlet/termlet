@@ -38,6 +38,7 @@ mod launch;
 mod local_shell;
 mod lock_ui;
 mod macos;
+mod menu_tooltip;
 mod monitor_bar;
 mod monitor_model;
 mod name_dialog;
@@ -237,6 +238,7 @@ pub(crate) fn copy_address_item(address: String) -> gpui_kit::component::menu::P
 /// 之后调用；UI 测试也要调用）。
 pub fn init(cx: &mut gpui_kit::App) {
     i18n::extend_gpui_kit();
+    menu_tooltip::init(cx);
     appearance::adjust_light_theme(cx);
     termlet_terminal::init(cx);
     local_shell::init(cx);

@@ -1668,6 +1668,7 @@ impl ProcessPage {
                 let more = shared::more_button(
                     ("tools-process-row-more", pid as usize),
                     self.menu_builder(process, data, docker, cx),
+                    cx,
                 );
                 Some(vec![term, more])
             }
@@ -2316,6 +2317,7 @@ impl ProcessPage {
         let more = shared::more_button(
             "tools-process-detail-more",
             self.menu_builder(process, data, docker.as_deref(), cx),
+            cx,
         );
         let status = state_label(process.state).map(|label| (label, state_tone(process.state)));
         let header = shared::detail_header(

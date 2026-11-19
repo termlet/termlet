@@ -28,6 +28,7 @@ use termlet_core::model::Host;
 use super::{command_input, editor};
 use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
+use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::terminal_panel::TerminalPanel;
 use crate::{store_errors, t};
@@ -60,7 +61,11 @@ pub fn open(
             .on_ok(|_, _, _| false)
     });
     let token = DialogToken::take(window, cx);
-    owner.update(cx, |view, _| view.dialog = token);
+    let notice = owner.update(cx, |view, _| {
+        view.dialog = token;
+        view.notice.clone()
+    });
+    notify::attach(&notice, window, cx);
 }
 
 struct HistoryDialog {
@@ -76,6 +81,8 @@ struct HistoryDialog {
     pending_click: Option<Task<()>>,
     /// 所在的对话框（写入后只关它）
     dialog: Option<DialogToken>,
+    /// 写入失败、删除失败等的说明（弹出的通知会被对话框盖住，见 [`crate::notify::show`]）
+    notice: Entity<NoticeLine>,
     _subscription: Subscription,
 }
 
@@ -115,6 +122,7 @@ impl HistoryDialog {
             scroll: VirtualListScrollHandle::new(),
             pending_click: None,
             dialog: None,
+            notice: NoticeLine::new(cx),
             _subscription: subscription,
         };
         this.reload(cx);
@@ -150,7 +158,7 @@ impl HistoryDialog {
                 close_own(self.dialog.as_ref(), window, cx);
                 panel.read(cx).focus_handle(cx).focus(window, cx);
             }
-            Err(message) => crate::notify::warning(message, window, cx),
+            Err(message) => notify::show(Notice::warning(message), window, cx),
         }
     }
 
@@ -159,7 +167,7 @@ impl HistoryDialog {
         self.pending_click = None;
         tracing::info!(owner = %self.owner, "删除一条命令历史");
         if let Err(e) = history::delete(&AppState::store(cx), &self.owner, command) {
-            crate::notify::error(store_errors::describe(&e), window, cx);
+            notify::show(Notice::error(store_errors::describe(&e)), window, cx);
         }
         self.reload(cx);
     }
@@ -181,7 +189,7 @@ impl HistoryDialog {
                 .on_ok(move |_, window, cx| {
                     tracing::info!(owner = %owner, "清空这台主机的命令历史");
                     if let Err(e) = history::clear(&AppState::store(cx), Some(&owner)) {
-                        crate::notify::error(store_errors::describe(&e), window, cx);
+                        notify::show(Notice::error(store_errors::describe(&e)), window, cx);
                     }
                     let _ = this.update(cx, |this, cx| this.reload(cx));
                     true
@@ -349,6 +357,9 @@ impl Render for HistoryDialog {
                         .size_full(),
                     )
                     .into_any_element()
+            })
+            .when(self.notice.read(cx).is_shown(), |this| {
+                this.child(div().text_xs().child(self.notice.clone()))
             })
     }
 }

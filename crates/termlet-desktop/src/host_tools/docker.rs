@@ -1494,6 +1494,7 @@ impl DockerPage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-container-row-more-{}", c.id)),
                     self.menu_builder(info, c, cx),
+                    cx,
                 );
                 Some(vec![primary, more])
             }
@@ -2008,6 +2009,7 @@ impl DockerPage {
         let more = shared::more_button(
             "tools-container-detail-more",
             self.menu_builder(info, &c, cx),
+            cx,
         );
         let header = shared::detail_header(
             visible_name(&c.name).into(),
@@ -2332,6 +2334,7 @@ impl DockerPage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-item-more-{key}")),
                     self.item_menu_builder(engine, item, cx),
+                    cx,
                 );
                 Some(vec![remove, more])
             }

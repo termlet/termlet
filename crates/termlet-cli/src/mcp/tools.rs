@@ -444,18 +444,24 @@ fn transfer_outcome(done: &TransferResponse, upload: bool, lang: Lang) -> Outcom
     Outcome::ok(text, serde_json::to_value(done).ok())
 }
 
-/// 执行结果的文本：退出码与用时，标准输出、标准错误（太长时只留开头与结尾），截断的说明。
+/// 执行结果的文本：退出码与用时（等用户批准过的另说明等了多久），标准输出、标准错误（太长时只留开头与结尾），
+/// 截断的说明。
 fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
     let (out_limit, err_limit) = budgets(exec.stdout.len(), exec.stderr.len(), OUTPUT_BUDGET);
     let (stdout, out_omitted) = clip(&exec.stdout, out_limit);
     let (stderr, err_omitted) = clip(&exec.stderr, err_limit);
-    let mut text = messages::MCP_EXIT.fill(
-        lang,
-        &[
-            &exec.exit_code,
-            &transfer::format_duration(exec.duration_ms, lang),
-        ],
-    );
+    let took = transfer::format_duration(exec.duration_ms, lang);
+    let mut text = match exec.approval_wait_ms {
+        Some(waited) => messages::MCP_EXIT_APPROVED.fill(
+            lang,
+            &[
+                &exec.exit_code,
+                &took,
+                &transfer::format_duration(waited, lang),
+            ],
+        ),
+        None => messages::MCP_EXIT.fill(lang, &[&exec.exit_code, &took]),
+    };
     text.push('\n');
     if stdout.is_empty() && stderr.is_empty() {
         text.push_str(messages::MCP_NO_OUTPUT.get(lang));
@@ -559,6 +565,7 @@ mod tests {
             stderr: "warn".into(),
             truncated: false,
             duration_ms: 1500,
+            approval_wait_ms: None,
         };
         assert_eq!(
             exec_text(&exec, false, Lang::En),
@@ -570,6 +577,21 @@ mod tests {
         );
         let empty = ExecResponse::default();
         assert!(exec_text(&empty, false, Lang::En).contains("(no output)"));
+        // 等用户批准过：用时只算执行，等待的时长另外说明
+        let approved = ExecResponse {
+            duration_ms: 40,
+            approval_wait_ms: Some(31_350),
+            ..Default::default()
+        };
+        assert!(
+            exec_text(&approved, false, Lang::Zh)
+                .starts_with("退出码 0，用时 0.0 秒（另等待用户批准 31.4 秒）\n")
+        );
+        assert!(
+            exec_text(&approved, false, Lang::En).starts_with(
+                "exit code 0, took 0.0s (plus 31.4s waiting for the user's approval)\n"
+            )
+        );
     }
 
     // 超出上限：截断并说明；Termlet 已截断（每路 1MB）时另外说明
@@ -581,6 +603,7 @@ mod tests {
             stderr: String::new(),
             truncated: true,
             duration_ms: 10,
+            approval_wait_ms: None,
         };
         let text = exec_text(&exec, false, Lang::En);
         assert!(text.len() < OUTPUT_BUDGET + 1024, "{}", text.len());

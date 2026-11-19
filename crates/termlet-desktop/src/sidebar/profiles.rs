@@ -127,7 +127,7 @@ impl Render for ProfileList {
                             .flex_1()
                             .text_xs()
                             .text_color(theme.muted_foreground)
-                            .child(t!("profiles.hint")),
+                            .child(prose(t!("profiles.hint"))),
                     )
                     .child(
                         Button::new("new-profile")

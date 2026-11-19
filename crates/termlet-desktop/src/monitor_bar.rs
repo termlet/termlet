@@ -20,12 +20,13 @@ use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     AnyElement, App, Div, ElementId, FontFeatures, Hsla, InteractiveElement as _, IntoElement,
-    ParentElement as _, Pixels, SharedString, StatefulInteractiveElement as _, Styled as _,
-    TestSupportExt as _, canvas, div, prelude::FluentBuilder as _, relative, rems,
+    ParentElement as _, Pixels, SharedString, Styled as _, TestSupportExt as _, canvas, div,
+    prelude::FluentBuilder as _, relative, rems,
 };
 use termlet_core::model::MonitorBar;
 use termlet_core::monitor::Sample;
 
+use crate::menu_tooltip::TooltipExt as _;
 use crate::monitor_model::{
     self, BarItem, Fit, History, Level, Levels, disk_percent, format_rate, format_size,
     fullest_disk, load_text, percent, short_rate, whole_percent,
@@ -407,8 +408,8 @@ fn render_item(item: &ItemView, meters: bool, cx: &App) -> Div {
     }
 }
 
-/// 状态条上的一项：带 ID（`monitor-<项>`）与悬停的详情。
-pub fn item(item: &ItemView, meters: bool, panel: usize, cx: &App) -> AnyElement {
+/// 状态条上的一项：带 ID（`monitor-<项>`）与悬停的详情（`menu_open` 时不挂，见 [`crate::menu_tooltip`]）。
+pub fn item(item: &ItemView, meters: bool, panel: usize, menu_open: bool, cx: &App) -> AnyElement {
     let tip = item.tip.clone();
     let id = ElementId::from((
         SharedString::from(format!("monitor-{}", item.item.key())),
@@ -417,7 +418,7 @@ pub fn item(item: &ItemView, meters: bool, panel: usize, cx: &App) -> AnyElement
     render_item(item, meters, cx)
         .id(id)
         .test_support()
-        .tooltip(move |window, cx| {
+        .tooltip_unless_menu(menu_open, move |window, cx| {
             let tip = tip.clone();
             Tooltip::element(move |_, _| {
                 v_flex()

@@ -581,6 +581,18 @@ cli_ui.audit.source_cli:
   zh-TW: 命令列
   ja: コマンドライン
   ko: 명령줄
+cli_ui.audit.source_mcp:
+  zh-CN: MCP
+  en: MCP
+  zh-TW: MCP
+  ja: MCP
+  ko: MCP
+cli_ui.audit.source_mcp_client:
+  zh-CN: MCP（%{client}）
+  en: MCP (%{client})
+  zh-TW: MCP（%{client}）
+  ja: MCP（%{client}）
+  ko: MCP(%{client})
 cli_ui.audit.source_panel:
   zh-CN: 主机工具
   en: Host tools
@@ -845,6 +857,12 @@ cli_ui.audit.duration:
   zh-TW: 耗時 %{ms} ms
   ja: 所要時間 %{ms} ms
   ko: 소요 시간 %{ms}ms
+cli_ui.audit.approval_wait:
+  zh-CN: 等待批准 %{ms} ms
+  en: Waited %{ms} ms for approval
+  zh-TW: 等待核准 %{ms} ms
+  ja: 承認待ち %{ms} ms
+  ko: 승인 대기 %{ms}ms
 cli_ui.audit.bytes:
   zh-CN: 传输 %{size}
   en: "%{size} transferred"

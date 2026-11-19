@@ -8,7 +8,6 @@ use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
-use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, WindowExt as _, h_flex, v_flex,
 };
@@ -23,6 +22,7 @@ use termlet_core::secret::SecretString;
 
 use super::errors;
 use crate::app_state::AppState;
+use crate::notify::{self, Notice};
 use crate::prose::{ProseLabel as _, prose};
 use crate::t;
 
@@ -60,7 +60,8 @@ pub fn export_public(id: KeyId, window: &mut Window, cx: &mut App) {
         .detach();
 }
 
-/// 写出公钥；文件已存在（`overwrite` 为假时）先确认。完成后提示写到了哪里。
+/// 写出公钥；文件已存在（`overwrite` 为假时）先确认。完成后提示写到了哪里（[`crate::notify::show`]：从查看公钥的
+/// 对话框导出时写在对话框底部）。
 fn save_public(id: KeyId, path: PathBuf, overwrite: bool, window: &mut Window, cx: &mut App) {
     tracing::info!(key = %id, path = %path.display(), overwrite, "导出公钥");
     let job = termlet_core::runtime::spawn(keyvault::export_public_key(
@@ -73,11 +74,12 @@ fn save_public(id: KeyId, path: PathBuf, overwrite: bool, window: &mut Window, c
         .spawn(cx, async move |cx| {
             let result = job.await;
             let _ = cx.update(|window, cx| match result {
-                Ok(Ok(path)) => window.push_notification(
-                    Notification::success(t!(
+                Ok(Ok(path)) => notify::show(
+                    Notice::success(t!(
                         "keys.public_exported",
                         path = path.display().to_string()
                     )),
+                    window,
                     cx,
                 ),
                 Ok(Err(KeyVaultError::FileExists { path })) => {
@@ -96,8 +98,8 @@ fn save_public(id: KeyId, path: PathBuf, overwrite: bool, window: &mut Window, c
                             })
                     });
                 }
-                Ok(Err(error)) => crate::notify::error(errors::describe(&error), window, cx),
-                Err(e) => crate::notify::error(e.to_string(), window, cx),
+                Ok(Err(error)) => notify::show(Notice::error(errors::describe(&error)), window, cx),
+                Err(e) => notify::show(Notice::error(e.to_string()), window, cx),
             });
         })
         .detach();
@@ -440,5 +442,60 @@ mod tests {
         );
         assert_eq!(public_file_name("...", "ssh-ed25519"), "id_ed25519.pub");
         assert_eq!(public_file_name("", "ecdsa-sha2-nistp256"), "id_ecdsa.pub");
+    }
+
+    // 从查看公钥的对话框导出：写到了哪里写在对话框底部，不弹出会被对话框盖住的通知
+    #[gpui_kit::test]
+    fn exported_public_key_is_reported_inside_the_dialog(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        use termlet_core::keyvault::GenerateRequest;
+        use termlet_core::sshkey::KeyKind;
+
+        use crate::notify::shown;
+
+        let handle = crate::testkit::open_workspace(cx);
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        let store = cx.update(|cx| AppState::store(cx));
+        let id = termlet_core::runtime::runtime()
+            .block_on(keyvault::generate(
+                store,
+                GenerateRequest {
+                    name: "deploy".into(),
+                    kind: KeyKind::Ed25519,
+                    comment: String::new(),
+                },
+            ))
+            .unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "termlet-export-public-{}",
+            termlet_core::id::random_token(8)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("deploy.pub");
+        let toasts = cx
+            .update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                super::super::view::open(id.clone(), window, cx);
+                window.render_frame(cx);
+                let toasts = window.notifications(cx).len();
+                save_public(id.clone(), path.clone(), false, window, cx);
+                toasts
+            })
+            .unwrap();
+        crate::testkit::poll_until(cx, "导出完成", |cx| {
+            cx.update_window(handle, |_, window, cx| shown(window, cx).is_some())
+                .unwrap()
+        });
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            let notice = shown(window, cx).unwrap();
+            assert_eq!(notice.level, crate::notify::Level::Success);
+            assert!(notice.text.contains("deploy.pub"), "{}", notice.text);
+            assert_eq!(window.notifications(cx).len(), toasts, "不弹出通知");
+            assert!(window.try_find("dialog-notice").is_some());
+        })
+        .unwrap();
+        assert!(path.is_file());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

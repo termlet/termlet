@@ -651,7 +651,8 @@ impl NetworkPage {
             .xsmall()
             .compact()
             .label(label)
-            .tooltip(tooltip)
+            // 行的右键菜单开着时不挂（按钮的提示只在按下左键时收起，会浮在菜单上）
+            .when(!shared::menu_is_open(cx), |this| this.tooltip(tooltip))
             .on_click(cx.listener(move |this, _, window, cx| this.show_owner(&target, window, cx)));
         let button = if matches!(owner, Owner::Container { .. }) {
             button.icon(IconName::Container)
@@ -721,10 +722,12 @@ impl NetworkPage {
                         .xsmall()
                         .flex_none()
                         .icon(IconName::Globe)
-                        .tooltip(t!(
-                            "tools.network.open_browser_hint",
-                            port = conn.local_port
-                        ))
+                        .when(!shared::menu_is_open(cx), |this| {
+                            this.tooltip(t!(
+                                "tools.network.open_browser_hint",
+                                port = conn.local_port
+                            ))
+                        })
                         .on_click(move |_, _, cx| open_browser(&context, &conn, cx))
                 });
         let row = h_flex()
@@ -871,7 +874,9 @@ impl NetworkPage {
                     .xsmall()
                     .flex_none()
                     .icon(IconName::Globe)
-                    .tooltip(t!("tools.network.open_browser_hint", port = row.port))
+                    .when(!shared::menu_is_open(cx), |this| {
+                        this.tooltip(t!("tools.network.open_browser_hint", port = row.port))
+                    })
                     .on_click(move |_, _, cx| open_browser(&context, &conn, cx))
             });
         let menu = self.menu_builder(MenuRow::Listen(row.clone(), forward, owner));

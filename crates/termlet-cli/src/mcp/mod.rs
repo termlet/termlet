@@ -28,6 +28,7 @@ use std::thread::JoinHandle;
 
 use serde_json::{Map, Value, json};
 use termlet_proto::client::Abort;
+use termlet_proto::mcp::CALLER_MARKER;
 use termlet_proto::{ErrorCode, ExitCode, Request, Response};
 
 use crate::app::{self, Failure};
@@ -469,9 +470,9 @@ impl Server {
     /// 审计与批准框中的调用方：`mcp:<客户端名>` 加上本进程的祖先进程。
     fn callers_for(&self, client: &str) -> Vec<String> {
         let marker = if client.is_empty() {
-            "mcp".to_string()
+            CALLER_MARKER.to_string()
         } else {
-            format!("mcp:{client}")
+            format!("{CALLER_MARKER}:{client}")
         };
         std::iter::once(marker)
             .chain(self.callers.iter().cloned())

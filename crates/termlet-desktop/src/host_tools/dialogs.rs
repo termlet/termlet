@@ -17,6 +17,7 @@ use super::shared::{
     DOCKER_GROUP_COMMAND, OpenDialogs, bullet, confirm_command, confirm_host, copy_command,
 };
 use super::target::HostLabel;
+use crate::notify::NoticeLine;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
@@ -101,6 +102,9 @@ pub(super) fn open_root(
 ) {
     let request = std::rc::Rc::new(request);
     let width = rems(30.).to_pixels(window.rem_size());
+    // 复制“加入 docker 组”的命令等的结果（弹出的通知会被对话框盖住，见 crate::notify::show）
+    let notice = NoticeLine::new(cx);
+    let line = notice.clone();
     window.open_dialog(cx, move |dialog, _, cx| {
         let theme = cx.theme();
         let muted = theme.muted_foreground;
@@ -203,7 +207,8 @@ pub(super) fn open_root(
                             })
                             .child(bullet(t!("tools.root.login")))
                             .child(bullet(t!("tools.root.sudoers"))),
-                    ),
+                    )
+                    .when(line.read(cx).is_shown(), |this| this.child(line.clone())),
             )
             .footer(
                 DialogFooter::new()
@@ -229,4 +234,5 @@ pub(super) fn open_root(
             )
     });
     dialogs.opened(window, cx);
+    crate::notify::attach(&notice, window, cx);
 }

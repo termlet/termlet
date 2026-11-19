@@ -1,7 +1,8 @@
 //! 崩溃记录：窗口打开后有新的记录时提示“Termlet 上次运行时出错了”（[`check_crashes`]，每次运行只提示一次，提示后
 //! 标为已提示）；“查看…”打开崩溃记录对话框（[`open_crash_log`]），可以复制、删除。
 
-use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
+use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{
     ActiveTheme as _, Sizable as _, StyledExt as _, WindowExt as _, h_flex, v_flex,
@@ -81,7 +82,7 @@ struct CrashLogView {
     /// `None` 为还在读取
     records: Option<Vec<CrashRecord>>,
     error: Option<SharedString>,
-    /// 复制的结果（写在底部，见 [`crate::notify::show`]）
+    /// 复制的结果（写在底部，见 [`crate::notify::show`]）；删除后清掉（说的可能是已删除的记录）
     notice: Entity<crate::notify::NoticeLine>,
     _load: Task<()>,
     _delete: Option<Task<()>>,
@@ -127,8 +128,28 @@ impl CrashLogView {
         );
     }
 
+    /// “全部删除”：先确认（删除后不能恢复）。
+    fn confirm_delete_all(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let view = cx.entity().downgrade();
+        crate::ui_scale::open_alert(window, cx, move |alert: AlertDialog, _, _| {
+            let view = view.clone();
+            alert
+                .confirm()
+                .title(t!("lock_ui.crash.delete_all_title"))
+                .description(prose(t!("lock_ui.crash.delete_all_body")))
+                .ok_text(t!("lock_ui.crash.delete_all_ok"))
+                .ok_variant(ButtonVariant::Danger)
+                .cancel_text(t!("common.cancel"))
+                .on_ok(move |_, window, cx| {
+                    let _ = view.update(cx, |view, cx| view.delete(None, window, cx));
+                    true
+                })
+        });
+    }
+
     /// 删除一份（`id` 为 `None` 时全部删除），然后重新读取。
     fn delete(&mut self, id: Option<String>, window: &mut Window, cx: &mut Context<Self>) {
+        self.notice.update(cx, |line, cx| line.clear(cx));
         let crash = self.crash.clone();
         self._delete = Some(cx.spawn_in(window, async move |this, cx| {
             let result = match &id {
@@ -345,11 +366,9 @@ impl Render for CrashLogView {
                                 .outline()
                                 .small()
                                 .label(t!("lock_ui.crash.delete_all"))
-                                .on_click(
-                                    cx.listener(|this, _, window, cx| {
-                                        this.delete(None, window, cx)
-                                    }),
-                                ),
+                                .on_click(cx.listener(|this, _, window, cx| {
+                                    this.confirm_delete_all(window, cx)
+                                })),
                         )
                     })
                     .child(
