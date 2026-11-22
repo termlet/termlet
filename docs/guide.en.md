@@ -211,7 +211,7 @@ Notes:
   - Connection: jump host, proxy, agent forwarding, X11 forwarding, legacy devices, single channel
   - Verification code
   - Terminal: color scheme, encoding, commands after login, tmux
-  - Command-line tool
+  - AI & automation
   - Tags and notes
 - Pages with settings show a small dot in the navigation.
 - The page navigation on the left of Settings and the host dialog can be reached with Tab; ↑ ↓ switch pages and Home / End go to the first or last page.
@@ -243,7 +243,7 @@ Notes:
 
 - Choose the protocol at the top of the General page: SSH (default), Telnet or serial port.
 - Telnet and serial hosts are for consoles of network devices, older systems and development boards.
-- They have no SFTP, port forwarding, command-line tool or other SSH-only features. Telnet has no Verification code or Command-line tool page, and serial ports have no Connection page either.
+- They have no SFTP, port forwarding, command-line tool or other SSH-only features. Telnet has no Verification code or AI & automation page, and serial ports have no Connection page either.
 - **Telnet**:
   - Port 23 by default.
   - With a user and password filled in, Termlet answers the login and password prompts (devices that only ask for a password get the password; after a wrong password it does not retry).
@@ -1390,7 +1390,7 @@ Default shortcuts:
   - by default passwords and private keys are not included, and the file is plain JSON you can read and edit;
   - with "Include passwords, private keys and other credentials" you must set a password, and the whole file is encrypted;
   - on another computer, use "Import Hosts" with "Termlet host file (.termlet-hosts)" (encrypted files ask for the password); you can preview it and skip or merge existing hosts as usual;
-  - imported hosts are not allowed command-line access;
+  - imported hosts can't be used by AI tools and scripts;
   - the preview marks proxy commands (run on this computer when connecting) and commands after login (run on the server), so make sure a file from someone else comes from a trusted source.
 - **OpenSSH config** (ssh_config):
   - the address, port, user, key file (and the certificate file given for it, `CertificateFile`), jump host (`ProxyJump`), proxy command (`ProxyCommand`, including one inherited from the group), X11 forwarding (`ForwardX11`, `ForwardX11Trusted`) and port forwards of SSH hosts;
@@ -1468,7 +1468,7 @@ Default shortcuts:
 | Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, ssh-agent address, opening by bastion hosts and other programs |
 | Host Keys | — |
 | Security | app lock |
-| Command-line tool | external CLI, dangerous command rules, Agent Skill, PATH, audit log |
+| AI & automation | external CLI, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration, audit log |
 | Backup | full backups and restore, local snapshots |
 | Sync | — |
 | Shortcuts | — |
@@ -1611,16 +1611,16 @@ termlet version
 
 ### Turning it on
 
-- The external CLI is off by default; tick "Enable external CLI" under Settings → Command-line tool. While it is off, every request returns `cli_disabled` (exit code 7).
-- Each host also needs "Allow Termlet command-line access" when editing it.
-- You can additionally tick "Use a separate credential for the command-line tool" to give the CLI its own user and password / key. A low-privilege account on the server is recommended; the real permission boundary is on the server.
+- The external CLI is off by default; tick "Allow access from AI tools and scripts" under Settings → AI & automation (it covers both the termlet command and the MCP server). While it is off, every request returns `cli_disabled` (exit code 7).
+- Each host also needs "Allow AI tools and scripts to use this host" when editing it (on the AI & automation page).
+- You can additionally tick "Use a separate credential for AI tools and scripts" to give the CLI its own user and password / key. A low-privilege account on the server is recommended; the real permission boundary is on the server.
 - If Termlet is not running, `termlet` starts it in the background by default (no window; it quits after 10 minutes without requests).
-- Untick "Also works when Termlet isn't open (start it in the background)" under Settings → Command-line tool to use the CLI only while Termlet is open. It then returns `app_not_running` (exit code 7) and asks you to open Termlet first.
+- Untick "Also works when Termlet isn't open (start it in the background)" under Settings → AI & automation to use the CLI only while Termlet is open. It then returns `app_not_running` (exit code 7) and asks you to open Termlet first.
 - Termlet quits once all its windows are closed (after any commands still running finish).
 
 ### Agent Skill
 
-- Under Settings → Command-line tool, install it with one click to:
+- Under Settings → AI & automation, install it with one click to:
   - the shared folder (`~/.agents/skills`, read by Codex, Gemini CLI, Cursor, GitHub Copilot, Pi and others);
   - Claude Code (`~/.claude/skills`);
   - or WorkBuddy.
@@ -1631,7 +1631,7 @@ termlet version
 ### MCP server
 
 - `termlet mcp` is an MCP server over standard input and output that AI tools such as Claude Code, Claude Desktop, Cursor and Codex start from their configuration. No network port is opened; there is no HTTP / SSE transport for now.
-- Settings → Command-line tool gives the configuration for each of these tools (with the full path of termlet on this computer) and copies it with one click.
+- Under Settings → AI & automation, pick the AI tool (Claude Code, Codex, Cursor, VS Code (GitHub Copilot), Gemini CLI, Claude Desktop, or generic JSON for other tools) to get its configuration (with the full path of termlet on this computer) and copy it with one click; for Claude Code, Codex and Gemini CLI there's both an `mcp add` command and the configuration file.
 - You only need one of MCP and the Agent Skill (MCP needs no terminal, so tools like Claude Desktop that can't run commands can use it too).
 - The tools match the commands:
 
@@ -1644,7 +1644,7 @@ termlet version
 
 - Local paths for `upload_file` and `download_file` must be absolute.
 - Every call goes through Termlet as usual: the external CLI switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
-- The caller in the audit log and approval dialog starts with `mcp:<client name>`; the audit log's Source column shows "MCP (client name)", and you can filter for these calls.
+- The caller in the audit log and approval dialog starts with `mcp:<client name>`; the audit log's Source column shows "MCP (client name)", and you can filter for these calls; the approval dialog's title reads "client name (MCP) wants to run a dangerous command on …".
 - When the external CLI is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
 - Commands return at most 32 KB of stdout and stderr together to the AI (the beginning and end are kept, with a note on how to get the full output).
 - When the AI tool cancels a call, Termlet stops the request (the remote command gets SIGTERM).
@@ -1699,7 +1699,7 @@ termlet version
 - It inherits the terminal's current directory and environment, and the output and exit code are returned.
 - The server needs bash or sh.
 - If the terminal is running a program (including full-screen programs and file transfers) you get `terminal_busy`, and `terminal_not_open` if no terminal is open.
-- Hosts with "Use a separate credential for the command-line tool" cannot use `--terminal` (the terminal runs as you, which would bypass the separate credential); use plain `exec` instead.
+- Hosts with "Use a separate credential for AI tools and scripts" cannot use `--terminal` (the terminal runs as you, which would bypass the separate credential); use plain `exec` instead.
 
 ### Dangerous commands
 
@@ -1714,12 +1714,12 @@ termlet version
 ### Audit
 
 - Every `exec`, `upload` and `download` (including failed, blocked, approved and rejected ones) goes into the local audit log (command, result, exit code, duration, time waiting for approval, calling process chain), up to 100,000 entries.
-- Click "View audit log…" under Settings → Command-line tool (or "View Audit Log" in the command palette) to view, search, filter, export to CSV / JSON or clear it.
+- Click "View audit log…" under Settings → AI & automation (or "View Audit Log" in the command palette) to view, search, filter, export to CSV / JSON or clear it.
 
 ### PATH
 
-- On Windows the command is at `bin\termlet.exe` in the installation folder. "Add to PATH" under Settings → Command-line tool adds it to the current user's PATH with one click (effective in newly opened terminals; removed on uninstall, and moved to the new location if you reinstall elsewhere).
-- On macOS and Linux, Termlet doesn't change PATH; Settings → Command-line tool shows the command to link it yourself (such as `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`).
+- On Windows the command is at `bin\termlet.exe` in the installation folder. "Add to PATH" under Settings → AI & automation adds it to the current user's PATH with one click (effective in newly opened terminals; removed on uninstall, and moved to the new location if you reinstall elsewhere).
+- On macOS and Linux, Termlet doesn't change PATH; Settings → AI & automation shows the command to link it yourself (such as `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`).
 - On Linux, the deb and rpm install it as `/usr/bin/termlet`, the tar.gz's `install.sh` links it as `~/.local/bin/termlet`, and the AppImage needs a link you make yourself (see [Linux](#linux)).
 
 ### Limits

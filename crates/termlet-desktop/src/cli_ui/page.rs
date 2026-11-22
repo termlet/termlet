@@ -1,4 +1,5 @@
-//! 设置中的「命令行工具」页：外部 CLI 的开关、审计日志入口、命令行工具、Agent Skill 与 MCP 服务的安装，以及危险命令规则。
+//! 设置中的「AI 与自动化」页：外部 CLI 的开关（“允许 AI 工具与脚本访问”）、审计日志入口、命令行工具、Agent Skill 与
+//! MCP 服务的接入，以及危险命令规则。
 //!
 //! 开关与规则是草稿，随设置对话框的“保存”写入（[`CliPage::apply`]，有不能使用的自定义规则时 [`CliPage::validate`]
 //! 返回错误）；安装、PATH 立即执行。规则测试用草稿中的规则，输入命令时即时显示命中哪一条。
@@ -96,7 +97,7 @@ impl CliPage {
             let env = env.clone();
             cx.new(|cx| ToolSection::new(&env, cx))
         };
-        let mcp = cx.new(|_| McpSection::new(&env));
+        let mcp = cx.new(|cx| McpSection::new(&env, window, cx));
         let skill = cx.new(|cx| SkillSection::new(env, cx));
         let guard = &settings.guard;
         let mut this = Self {

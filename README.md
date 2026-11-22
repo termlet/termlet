@@ -69,7 +69,7 @@ termlet skill install                       # 给 Claude Code 装 Agent Skill
 termlet mcp                                 # MCP 服务，由 AI 工具按配置启动
 ```
 
-- 默认关闭：在设置的“命令行工具”中开启，每台主机还要单独允许。
+- 默认关闭：在设置的“AI 与自动化”中开启，每台主机还要单独允许。
 - 危险命令先弹窗请你批准，每次调用都记入审计日志。
 - 全部命令、MCP、退出码与限制见[用户指南](docs/guide.md#命令行工具与-ai)。
 

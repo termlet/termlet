@@ -1,7 +1,7 @@
 //! 命令行工具（`termlet`）与界面之间：启动核心的命令行服务，处理它交来的事件（批准危险命令、在终端中执行、
 //! 第二个 Termlet 进程交来的启动参数），以及无窗口（headless）模式与退出。
 //!
-//! - Termlet 没有运行时，`termlet` 以 `--headless` 拉起它（不开窗口），10 分钟没有命令行请求后退出；设置“命令行工具”
+//! - Termlet 没有运行时，`termlet` 以 `--headless` 拉起它（不开窗口），10 分钟没有命令行请求后退出；设置“AI 与自动化”
 //!   中可以关掉自动启动（[`sync_launch_config`] 写给命令行读），关掉后 `termlet` 提示先打开 Termlet（`app_not_running`）。
 //! - 关闭全部窗口后退出；还有命令行请求在执行（长时间的 `exec`、上传下载）时等它们做完再退出。macOS 上照系统的习惯
 //!   关闭最后一个窗口后留在程序坞（不空闲退出），点程序坞图标重新打开主窗口（[`reopen`]），要退出时用“退出 Termlet”。
@@ -601,7 +601,7 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
         rule.to_string()
     };
     let deadline = request.deadline;
-    let title = t!("cli.approval.title", host = request.host_name.clone());
+    let title = approval_title(&request.host_name, &request.caller);
     let description = t!(
         "cli.approval.description",
         command = request.command.clone(),
@@ -721,6 +721,15 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
             })
             .detach();
     });
+}
+
+/// 批准框的标题，按来源写：MCP 的写客户端自报的名字（没有报名字时写“AI 工具”），其余是命令行工具。
+fn approval_title(host: &str, caller: &str) -> gpui_kit::SharedString {
+    match termlet_core::audit::mcp_client(caller) {
+        None => t!("cli.approval.title", host = host),
+        Some("") => t!("cli.approval.title_mcp_unnamed", host = host),
+        Some(client) => t!("cli.approval.title_mcp", client = client, host = host),
+    }
 }
 
 /// 批准框中距离超时拦截还剩几秒：向上取整（刚打开时是完整的秒数，最后不到一秒时是 1）。
@@ -1019,6 +1028,32 @@ mod tests {
             );
         })
         .unwrap();
+    }
+
+    // 批准框的标题按来源写：MCP 写客户端名（没有名字时写 AI 工具），命令行照旧
+    #[test]
+    fn approval_title_follows_the_source() {
+        let title = |caller: &str| approval_title("web", caller).to_string();
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        assert_eq!(
+            title("claude.exe < pwsh.exe"),
+            "命令行工具要在“web”上执行危险命令"
+        );
+        assert_eq!(title(""), "命令行工具要在“web”上执行危险命令");
+        assert_eq!(
+            title("mcp:claude-code < claude.exe"),
+            "claude-code（MCP）要在“web”上执行危险命令"
+        );
+        assert_eq!(
+            title("mcp < Cursor.exe"),
+            "AI 工具（MCP）要在“web”上执行危险命令"
+        );
+        crate::i18n::set_language(crate::i18n::Language::En);
+        assert_eq!(
+            title("mcp:cursor"),
+            "cursor (MCP) wants to run a dangerous command on “web”"
+        );
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
     }
 
     // 剩余秒数向上取整：刚打开时是完整的秒数、最后不到一秒时是 1；正好在整秒上时等一整秒再变

@@ -5,6 +5,18 @@ cli.approval.title:
   zh-TW: 命令列工具要在「%{host}」上執行危險指令
   ja: コマンドラインツールが「%{host}」で危険なコマンドを実行しようとしています
   ko: 명령줄 도구가 '%{host}'에서 위험한 명령을 실행하려고 합니다
+cli.approval.title_mcp:
+  zh-CN: "%{client}（MCP）要在“%{host}”上执行危险命令"
+  en: "%{client} (MCP) wants to run a dangerous command on “%{host}”"
+  zh-TW: "%{client}（MCP）要在「%{host}」上執行危險指令"
+  ja: "%{client}（MCP）が「%{host}」で危険なコマンドを実行しようとしています"
+  ko: "%{client}(MCP)이(가) '%{host}'에서 위험한 명령을 실행하려고 합니다"
+cli.approval.title_mcp_unnamed:
+  zh-CN: AI 工具（MCP）要在“%{host}”上执行危险命令
+  en: An AI tool (MCP) wants to run a dangerous command on “%{host}”
+  zh-TW: AI 工具（MCP）要在「%{host}」上執行危險指令
+  ja: AI ツール（MCP）が「%{host}」で危険なコマンドを実行しようとしています
+  ko: AI 도구(MCP)가 '%{host}'에서 위험한 명령을 실행하려고 합니다
 cli.approval.description:
   zh-CN: 调用方：%{caller}。命令“%{command}”命中了危险命令规则：%{rule}。
   en: "Caller: %{caller}. The command “%{command}” matches a dangerous-command rule: %{rule}."

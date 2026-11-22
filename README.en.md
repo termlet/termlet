@@ -69,7 +69,7 @@ termlet skill install                       # install the Agent Skill for Claude
 termlet mcp                                 # MCP server, started by AI tools from their configuration
 ```
 
-- Off by default: turn it on under Settings → Command-line tool, then allow each host separately.
+- Off by default: turn it on under Settings → AI & automation, then allow each host separately.
 - Dangerous commands wait for your approval in a dialog, and every call goes into the audit log.
 - For all commands, MCP, exit codes and limits, see the [user guide](docs/guide.en.md#command-line-tool-and-ai).
 

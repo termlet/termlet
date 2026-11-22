@@ -48,11 +48,11 @@ host.page.terminal:
   ja: ターミナル
   ko: 터미널
 host.page.cli:
-  zh-CN: 命令行工具
-  en: Command-line tool
-  zh-TW: 命令列工具
-  ja: コマンドラインツール
-  ko: 명령줄 도구
+  zh-CN: AI 与自动化
+  en: AI & automation
+  zh-TW: AI 與自動化
+  ja: AI と自動化
+  ko: AI 및 자동화
 host.page.tags:
   zh-CN: 标签与备注
   en: Tags and notes
@@ -606,23 +606,23 @@ host.terminal.tmux_hint:
   ja: 切断後に再接続すると元のセッションに戻り、実行中のプログラムは中断されません。タブを閉じるとその tmux セッションを終了します。リモートに tmux がインストールされている必要があります。
   ko: 연결이 끊긴 뒤 다시 연결하면 원래 세션으로 돌아가며 실행 중인 프로그램은 중단되지 않습니다. 탭을 닫으면 해당 tmux 세션을 종료합니다. 원격에 tmux가 설치되어 있어야 합니다.
 host.cli.allow:
-  zh-CN: 允许 Termlet 命令行访问
-  en: Allow Termlet command-line access
-  zh-TW: 允許 Termlet 命令列存取
-  ja: Termlet のコマンドラインアクセスを許可
-  ko: Termlet 명령줄 액세스 허용
+  zh-CN: 允许 AI 工具与脚本使用这台主机
+  en: Allow AI tools and scripts to use this host
+  zh-TW: 允許 AI 工具與指令碼使用這台主機
+  ja: AI ツールとスクリプトにこのホストの使用を許可
+  ko: AI 도구와 스크립트가 이 호스트를 사용하도록 허용
 host.cli.allow_hint:
-  zh-CN: Claude Code 等 AI 工具可以通过 termlet 命令在这台主机上执行命令，所有调用都会记录。
-  en: AI tools such as Claude Code can run commands on this host through the termlet command. Every call is logged.
-  zh-TW: Claude Code 等 AI 工具可以透過 termlet 指令在這台主機上執行指令，所有呼叫都會記錄。
-  ja: Claude Code などの AI ツールが termlet コマンドを通じてこのホストでコマンドを実行できます。すべての呼び出しが記録されます。
-  ko: Claude Code 등의 AI 도구가 termlet 명령을 통해 이 호스트에서 명령을 실행할 수 있습니다. 모든 호출이 기록됩니다.
+  zh-CN: Claude Code 等 AI 工具与脚本可以通过 termlet 命令或 MCP 服务在这台主机上执行命令、上传下载文件，所有调用都会记录。
+  en: AI tools such as Claude Code, and scripts, can run commands and transfer files on this host through the termlet command or the MCP server. Every call is logged.
+  zh-TW: Claude Code 等 AI 工具與指令碼可以透過 termlet 指令或 MCP 服務在這台主機上執行指令、上傳下載檔案，所有呼叫都會記錄。
+  ja: Claude Code などの AI ツールやスクリプトが、termlet コマンドまたは MCP サーバーを通じてこのホストでコマンドを実行したり、ファイルをアップロード・ダウンロードしたりできます。すべての呼び出しが記録されます。
+  ko: Claude Code 등의 AI 도구와 스크립트가 termlet 명령이나 MCP 서버를 통해 이 호스트에서 명령을 실행하고 파일을 업로드·다운로드할 수 있습니다. 모든 호출이 기록됩니다.
 host.cli.separate:
-  zh-CN: 命令行工具使用单独的凭据
-  en: Use a separate credential for the command-line tool
-  zh-TW: 命令列工具使用單獨的認證資訊
-  ja: コマンドラインツールには別の認証情報を使用
-  ko: 명령줄 도구에 별도의 자격 증명 사용
+  zh-CN: AI 工具与脚本使用单独的凭据
+  en: Use a separate credential for AI tools and scripts
+  zh-TW: AI 工具與指令碼使用單獨的認證資訊
+  ja: AI ツールとスクリプトには別の認証情報を使用
+  ko: AI 도구와 스크립트에 별도의 자격 증명 사용
 host.cli.separate_hint:
   zh-CN: 推荐使用服务器上的低权限账号，真正限制 AI 工具能做什么的是服务器端的权限。
   en: A low-privilege server account is recommended. Server-side permissions are what really limit AI tools.
@@ -744,11 +744,11 @@ host.error.totp_required:
   ja: TOTP シークレットを入力してください。
   ko: TOTP 비밀 키를 입력하세요.
 host.error.cli_credential_required:
-  zh-CN: 请填写命令行工具专用的密码，或选择私钥。
-  en: Enter a password for the command-line tool, or choose a private key.
-  zh-TW: 請填寫命令列工具專用的密碼，或選擇私密金鑰。
-  ja: コマンドラインツール専用のパスワードを入力するか、秘密鍵を選択してください。
-  ko: 명령줄 도구 전용 비밀번호를 입력하거나 개인 키를 선택하세요.
+  zh-CN: 请填写 AI 工具与脚本专用的密码，或选择私钥。
+  en: Enter a password for AI tools and scripts, or choose a private key.
+  zh-TW: 請填寫 AI 工具與指令碼專用的密碼，或選擇私密金鑰。
+  ja: AI ツールとスクリプト専用のパスワードを入力するか、秘密鍵を選択してください。
+  ko: AI 도구와 스크립트 전용 비밀번호를 입력하거나 개인 키를 선택하세요.
 host.field.protocol:
   zh-CN: 协议
   en: Protocol

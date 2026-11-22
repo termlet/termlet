@@ -3,7 +3,7 @@
 //! Claude Code 与 WorkBuddy 的 skills 目录（`<skills 目录>/termlet/SKILL.md`）。
 //!
 //! 是否已安装按文件内容与内置版本逐字比较：相同为已安装，不同为有更新，不存在为未安装。
-//! 界面（设置中的命令行工具）与 `termlet skill install` 共用这里。
+//! 界面（设置中的「AI 与自动化」）与 `termlet skill install` 共用这里。
 
 use std::io;
 use std::path::{Path, PathBuf};

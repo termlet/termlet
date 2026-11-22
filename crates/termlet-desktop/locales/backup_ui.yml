@@ -563,11 +563,11 @@ backup_ui.import.hint:
   ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
   ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
 backup_ui.import.hint_hostfile:
-  zh-CN: 导入另一台电脑或其他人的 Termlet 导出的主机。导入的主机不允许命令行工具访问，需要时在主机设置中勾选；预览中标出了连接时在本机执行的代理命令、登录后在服务器上执行的命令与随主机导入的端口转发（导入的转发不会自动启动），导入前请确认来源可信。
-  en: Import hosts exported from Termlet on another computer or by someone else. Imported hosts aren’t allowed command-line access; enable it in the host settings if needed. The preview marks proxy commands (run on this computer when connecting), startup commands (run on the server after login) and port forwards imported with the hosts (they aren’t started automatically). Make sure the file comes from a trusted source.
-  zh-TW: 匯入另一台電腦或其他人的 Termlet 匯出的主機。匯入的主機不允許命令列工具存取，需要時在主機設定中勾選；預覽中標出了連線時在本機執行的代理指令、登入後在伺服器上執行的指令與隨主機匯入的連接埠轉送（匯入的轉送不會自動啟動），匯入前請確認來源可信。
-  ja: 別のコンピューターやほかの人の Termlet からエクスポートしたホストをインポートします。インポートしたホストにはコマンドラインツールからのアクセスを許可しません。必要な場合はホストの設定でオンにしてください。プレビューには、接続時にこのコンピューターで実行されるプロキシコマンド、ログイン後にサーバーで実行されるコマンド、ホストと一緒にインポートされるポート転送（インポートしたポート転送は自動では開始されません）が示されます。インポートする前に、ファイルの入手元が信頼できることを確認してください。
-  ko: 다른 컴퓨터나 다른 사람의 Termlet에서 내보낸 호스트를 가져옵니다. 가져온 호스트에는 명령줄 도구의 액세스를 허용하지 않으며, 필요하면 호스트 설정에서 켜세요. 미리 보기에는 연결할 때 이 컴퓨터에서 실행되는 프록시 명령, 로그인 후 서버에서 실행되는 명령, 호스트와 함께 가져오는 포트 포워딩(가져온 포트 포워딩은 자동으로 시작되지 않음)이 표시됩니다. 가져오기 전에 파일 출처를 신뢰할 수 있는지 확인하세요.
+  zh-CN: 导入另一台电脑或其他人的 Termlet 导出的主机。导入的主机不允许 AI 工具与脚本使用，需要时在主机设置中勾选；预览中标出了连接时在本机执行的代理命令、登录后在服务器上执行的命令与随主机导入的端口转发（导入的转发不会自动启动），导入前请确认来源可信。
+  en: Import hosts exported from Termlet on another computer or by someone else. Imported hosts can’t be used by AI tools and scripts; enable it in the host settings if needed. The preview marks proxy commands (run on this computer when connecting), startup commands (run on the server after login) and port forwards imported with the hosts (they aren’t started automatically). Make sure the file comes from a trusted source.
+  zh-TW: 匯入另一台電腦或其他人的 Termlet 匯出的主機。匯入的主機不允許 AI 工具與指令碼使用，需要時在主機設定中勾選；預覽中標出了連線時在本機執行的代理指令、登入後在伺服器上執行的指令與隨主機匯入的連接埠轉送（匯入的轉送不會自動啟動），匯入前請確認來源可信。
+  ja: 別のコンピューターやほかの人の Termlet からエクスポートしたホストをインポートします。インポートしたホストは AI ツールやスクリプトから使用できません。必要な場合はホストの設定でオンにしてください。プレビューには、接続時にこのコンピューターで実行されるプロキシコマンド、ログイン後にサーバーで実行されるコマンド、ホストと一緒にインポートされるポート転送（インポートしたポート転送は自動では開始されません）が示されます。インポートする前に、ファイルの入手元が信頼できることを確認してください。
+  ko: 다른 컴퓨터나 다른 사람의 Termlet에서 내보낸 호스트를 가져옵니다. 가져온 호스트는 AI 도구와 스크립트가 사용할 수 없으며, 필요하면 호스트 설정에서 켜세요. 미리 보기에는 연결할 때 이 컴퓨터에서 실행되는 프록시 명령, 로그인 후 서버에서 실행되는 명령, 호스트와 함께 가져오는 포트 포워딩(가져온 포트 포워딩은 자동으로 시작되지 않음)이 표시됩니다. 가져오기 전에 파일 출처를 신뢰할 수 있는지 확인하세요.
 backup_ui.import.source.hostfile:
   zh-CN: Termlet 主机文件（.termlet-hosts）
   en: Termlet host file (.termlet-hosts)

@@ -1,5 +1,5 @@
 //! 这个程序是怎么装的：Windows 的安装程序或便携版、macOS 的应用、Linux 的 deb、rpm、AppImage 或 tar.gz，以及
-//! 程序的架构（x64、arm64）。“前往下载”据此打开下载页上对应的一节（[`crate::website::download_for`]），命令行工具页
+//! 程序的架构（x64、arm64）。“前往下载”据此打开下载页上对应的一节（[`crate::website::download_for`]），“AI 与自动化”页
 //! 据此说明 Linux 上怎么用。
 //! 判断写成纯函数（[`package_of`]、[`linux_install`]），输入由 [`InstallEnv::system`] 从这台电脑上读。
 

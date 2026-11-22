@@ -1,4 +1,4 @@
-//! 「命令行工具」页与审计对话框的 UI 集成测试：在无头窗口中渲染，经真实的事件路径操作并检查结果。
+//! 「AI 与自动化」页与审计对话框的 UI 集成测试：在无头窗口中渲染，经真实的事件路径操作并检查结果。
 //! 应用程序与用户主目录指向临时目录：不碰真实的 PATH 与 AI 工具的目录。
 
 use std::path::PathBuf;
@@ -216,10 +216,11 @@ fn portable_does_not_offer_to_change_path(cx: &mut TestAppContext) {
     );
 }
 
-// MCP 服务：按 AI 工具切换配置片段，复制的片段中是这台电脑上命令行工具的完整路径
+// MCP 服务：在下拉框中选 AI 工具，片段与复制的内容随之改变；复制的片段中是这台电脑上命令行工具的完整路径。
+// 有 mcp add 命令的工具另给配置文件的写法，各有复制按钮
 #[gpui_kit::test]
 fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
-    use termlet_core::proto::mcp::AiTool;
+    use termlet_core::proto::mcp::{AiTool, SnippetForm};
 
     let tmp = TempDir::new("mcp");
     let exe = tmp.0.join("Termlet.exe");
@@ -233,44 +234,82 @@ fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
         Some((Settings::default(), LocalSettings::default(), env)),
     );
     let page = page.unwrap();
+    let mcp = cx.read(|cx| page.read(cx).mcp.clone());
     let clipboard = |cx: &mut TestAppContext| {
         cx.read_from_clipboard()
             .and_then(|item| item.text())
             .unwrap_or_default()
     };
+    let expected = |tool: AiTool, form: SnippetForm| {
+        tool.snippets(&command, cfg!(windows))
+            .into_iter()
+            .find(|s| s.form == form)
+            .unwrap()
+            .text
+    };
+    let select = |cx: &mut TestAppContext, tool: AiTool| {
+        cx.update_window(handle, |_, window, cx| {
+            let tools = mcp.read(cx).tools.clone();
+            tools.update(cx, |state, cx| state.set_selected_value(&tool, window, cx));
+        })
+        .unwrap();
+        frame(cx, handle);
+        assert_eq!(cx.read(|cx| mcp.read(cx).selected(cx)), tool);
+    };
+    let copy = |cx: &mut TestAppContext, id: &'static str| {
+        cx.update_window(handle, |_, window, cx| window.click(id, cx))
+            .unwrap();
+        clipboard(cx)
+    };
 
+    // 默认是 Claude Code：命令在前，另有项目的 .mcp.json
     frame(cx, handle);
-    cx.update_window(handle, |_, window, cx| {
-        assert!(window.try_find("cli-mcp-snippet").is_some());
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-tool").is_some());
+        assert!(window.try_find("cli-mcp-snippet-command").is_some());
+        assert!(window.try_find("cli-mcp-snippet-file").is_some());
         assert!(
             window.try_find("cli-mcp-in-path").is_none(),
             "找到了命令行工具，不用提示 PATH"
         );
-        window.click("cli-mcp-copy", cx);
     })
     .unwrap();
     assert_eq!(
-        clipboard(cx),
-        AiTool::ClaudeCode.snippet(&command, cfg!(windows))
+        copy(cx, "cli-mcp-copy-command"),
+        expected(AiTool::ClaudeCode, SnippetForm::Command)
+    );
+    assert_eq!(
+        copy(cx, "cli-mcp-copy-file"),
+        expected(AiTool::ClaudeCode, SnippetForm::File)
     );
 
-    // 切到 Codex：片段与复制的内容随之改变
-    cx.update_window(handle, |_, window, cx| {
-        window.within("cli-mcp-tools").click(3usize, cx);
-    })
-    .unwrap();
-    frame(cx, handle);
-    assert_eq!(
-        cx.read(|cx| page.read(cx).mcp.read(cx).selected),
-        AiTool::Codex
-    );
-    cx.update_window(handle, |_, window, cx| window.click("cli-mcp-copy", cx))
-        .unwrap();
-    let copied = clipboard(cx);
+    // 切到 Codex：config.toml 与 codex mcp add 两种
+    select(cx, AiTool::Codex);
+    let copied = copy(cx, "cli-mcp-copy-file");
     assert!(copied.starts_with("[mcp_servers.termlet]\n"), "{copied}");
     assert!(
         copied.contains(&format!("command = '{command}'")),
         "{copied}"
+    );
+    assert!(
+        copy(cx, "cli-mcp-copy-command").starts_with("codex mcp add termlet -- "),
+        "Codex 的命令"
+    );
+
+    // VS Code 只有配置文件；“其他”是通用的 JSON
+    select(cx, AiTool::VsCode);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-snippet-command").is_none());
+    })
+    .unwrap();
+    assert_eq!(
+        copy(cx, "cli-mcp-copy-file"),
+        expected(AiTool::VsCode, SnippetForm::File)
+    );
+    select(cx, AiTool::Other);
+    assert_eq!(
+        copy(cx, "cli-mcp-copy-file"),
+        expected(AiTool::Other, SnippetForm::File)
     );
 }
 
@@ -289,9 +328,9 @@ fn mcp_without_the_tool_uses_path(cx: &mut TestAppContext) {
         assert!(window.try_find("cli-mcp-in-path").is_some());
     })
     .unwrap();
-    let snippet = cx.read(|cx| page.read(cx).mcp.read(cx).snippet());
+    let snippets = cx.read(|cx| page.read(cx).mcp.read(cx).snippets(cx));
     assert_eq!(
-        snippet,
+        snippets[0].text,
         "claude mcp add --scope user termlet -- termlet mcp"
     );
 }

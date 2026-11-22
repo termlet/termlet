@@ -177,7 +177,7 @@ pub(crate) mod tests {
             .fail(ExitCode::Blocked, "command_blocked", "rm -rf /");
         assert_eq!(code, 4);
         let text = c.stderr();
-        for want in ["危险命令规则", "「命令行工具」", "rm -rf /"] {
+        for want in ["危险命令规则", "「AI 与自动化」", "rm -rf /"] {
             assert!(text.contains(want), "拦截提示缺少 {want}: {text}");
         }
         let mut c = Captured::new();
@@ -205,7 +205,12 @@ pub(crate) mod tests {
         c.output(true, Lang::Zh)
             .fail(ExitCode::CliDisabled, "cli_disabled", "");
         let body: serde_json::Value = serde_json::from_slice(&c.stdout).unwrap();
-        assert!(body["message"].as_str().unwrap().contains("命令行工具"));
+        assert!(
+            body["message"]
+                .as_str()
+                .unwrap()
+                .contains("「AI 与自动化」")
+        );
     }
 
     #[test]

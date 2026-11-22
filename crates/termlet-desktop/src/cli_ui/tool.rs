@@ -1,4 +1,4 @@
-//! 「命令行工具」页的“termlet 命令”：命令行工具的位置、是否已在当前用户的 PATH 中，以及加入、移出 PATH
+//! 「AI 与自动化」页的“termlet 命令”：命令行工具的位置、是否已在当前用户的 PATH 中，以及加入、移出 PATH
 //! （立即执行，只在 Windows 上由 Termlet 修改；其他平台给出手动链接的命令）。开发构建中没有命令行工具时只作说明；
 //! 便携版不修改 PATH，只说明用完整路径运行。Linux 上按安装方式说明（[`linux_install`]）：deb、rpm 已装好
 //! `/usr/bin/termlet`；AppImage 显示 AppImage 文件本身（链接为 termlet 即为命令行工具），不显示每次都变的挂载点；

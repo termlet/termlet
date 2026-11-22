@@ -27,7 +27,7 @@ pub const USAGE: Msg = Msg {
                                                   Codex、Cursor、Gemini CLI、Pi 等读取；codex、pi 等同 agents）或 workbuddy
   termlet skill install --dir <目录>              安装到指定的 skills 目录
   termlet mcp                                     在标准输入输出上提供 MCP 服务（由 Claude Code、Claude Desktop 等 AI 工具启动，
-                                                  配置方法见 Termlet 设置中的「命令行工具」）
+                                                  配置方法见 Termlet 设置中的「AI 与自动化」）
   termlet version                                 打印版本号
   termlet help                                    打印本帮助
 
@@ -43,7 +43,7 @@ pub const USAGE: Msg = Msg {
   4  命令命中危险命令规则被拦截
   5  连接或执行失败
   6  凭据已锁定
-  7  外部 CLI 已关闭（在 Termlet 设置中的「命令行工具」中开启）
+  7  外部 CLI 已关闭（在 Termlet 设置中的「AI 与自动化」中开启）
   其他  exec 连接成功后透传远程命令的退出码
 
 语言: 跟随 LC_ALL / LC_MESSAGES / LANG 或系统界面语言，可用 TERMLET_LANG=en|zh 指定。
@@ -66,7 +66,7 @@ Usage:
                                                   or workbuddy
   termlet skill install --dir <dir>               Install into the given skills directory
   termlet mcp                                     Serve MCP over stdin/stdout (started by AI tools such as Claude Code and Claude
-                                                  Desktop; see Settings → Command-line tool in Termlet for the setup)
+                                                  Desktop; see Settings → AI & automation in Termlet for the setup)
   termlet version                                 Print the version
   termlet help                                    Print this help
 
@@ -83,7 +83,7 @@ Exit codes:
   4  command blocked by a dangerous-command rule
   5  connection or execution failed
   6  credentials are locked
-  7  external CLI is turned off (turn it on in Termlet under Settings → Command-line tool)
+  7  external CLI is turned off (turn it on in Termlet under Settings → AI & automation)
   other  exec passes through the remote command's exit code once connected
 
 Language: follows LC_ALL / LC_MESSAGES / LANG or the system UI language; override with TERMLET_LANG=en|zh.
@@ -157,8 +157,8 @@ msg!(
 // 运行结果
 msg!(
     NO_HOSTS,
-    "没有允许 CLI 访问的主机。请在 Termlet 中为主机开启 CLI 访问。",
-    "No hosts allow CLI access. Enable CLI access for a host in Termlet."
+    "没有允许 CLI 访问的主机。请在 Termlet 中编辑主机，勾选“允许 AI 工具与脚本使用这台主机”。",
+    "No hosts allow CLI access. Edit a host in Termlet and turn on “Allow AI tools and scripts to use this host”."
 );
 msg!(
     HOSTS_HEADER,
@@ -226,8 +226,8 @@ msg!(
 );
 msg!(
     APP_NOT_RUNNING,
-    "请先打开 Termlet（设置的「命令行工具」中没有允许在 Termlet 未打开时自动在后台启动它）",
-    "open Termlet first (Settings → Command-line tool doesn't allow starting it in the background when it isn't open)"
+    "请先打开 Termlet（设置的「AI 与自动化」中没有允许在 Termlet 未打开时自动在后台启动它）",
+    "open Termlet first (Settings → AI & automation doesn't allow starting it in the background when it isn't open)"
 );
 msg!(
     CLI_UNAVAILABLE,
@@ -268,8 +268,8 @@ msg!(
 );
 msg!(
     MCP_INTERACTIVE,
-    "termlet mcp 是给 AI 工具（Claude Code、Claude Desktop、Cursor、Codex 等）启动的 MCP 服务，从标准输入读取 JSON-RPC 消息；配置方法见 Termlet 设置中的「命令行工具」。按 Ctrl+C 退出。",
-    "termlet mcp is an MCP server for AI tools (Claude Code, Claude Desktop, Cursor, Codex and others) to start; it reads JSON-RPC messages from stdin. See Settings → Command-line tool in Termlet for the setup. Press Ctrl+C to quit."
+    "termlet mcp 是给 AI 工具（Claude Code、Claude Desktop、Cursor、Codex 等）启动的 MCP 服务，从标准输入读取 JSON-RPC 消息；配置方法见 Termlet 设置中的「AI 与自动化」。按 Ctrl+C 退出。",
+    "termlet mcp is an MCP server for AI tools (Claude Code, Claude Desktop, Cursor, Codex and others) to start; it reads JSON-RPC messages from stdin. See Settings → AI & automation in Termlet for the setup. Press Ctrl+C to quit."
 );
 msg!(MCP_ARG_MISSING, "缺少参数 {}", "missing argument: {}");
 msg!(
@@ -344,12 +344,12 @@ pub fn human(code: &str) -> Option<Msg> {
             "host not found; run termlet ls to see available hosts",
         ),
         HostNotAllowed => (
-            "该主机未允许 CLI 访问，请在 Termlet 中为它开启 CLI 访问",
-            "this host does not allow CLI access; enable it in Termlet",
+            "该主机未允许 CLI 访问，请在 Termlet 中编辑这台主机，勾选“允许 AI 工具与脚本使用这台主机”",
+            "this host does not allow CLI access; edit it in Termlet and turn on “Allow AI tools and scripts to use this host”",
         ),
         CommandBlocked => (
-            "命令命中危险命令规则被拦截，可在 Termlet 设置中的「命令行工具」中查看规则",
-            "command blocked by a dangerous-command rule; see the rules under Settings → Command-line tool in Termlet",
+            "命令命中危险命令规则被拦截，可在 Termlet 设置中的「AI 与自动化」中查看规则",
+            "command blocked by a dangerous-command rule; see the rules under Settings → AI & automation in Termlet",
         ),
         CommandDenied => (
             "命令命中危险命令规则，未获得批准（在 Termlet 中被拒绝或等待超时），不要尝试绕过，请让用户在终端中手动执行",
@@ -360,8 +360,8 @@ pub fn human(code: &str) -> Option<Msg> {
             "Termlet is locked; unlock it in Termlet first",
         ),
         CliDisabled => (
-            "外部 CLI 已关闭，请在 Termlet 设置中的「命令行工具」中开启",
-            "External CLI is turned off; turn it on in Termlet under Settings → Command-line tool",
+            "外部 CLI 已关闭，请在 Termlet 设置中的「AI 与自动化」中开启",
+            "External CLI is turned off; turn it on in Termlet under Settings → AI & automation",
         ),
         AppNotRunning => ("Termlet 没有运行", "Termlet is not running"),
         ConnectFailed => ("连接或执行失败", "connection or execution failed"),

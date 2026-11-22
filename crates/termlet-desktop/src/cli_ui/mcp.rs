@@ -1,22 +1,25 @@
-//! 「命令行工具」页的 MCP 服务：AI 工具按配置自己启动 `termlet mcp`（stdio，不开端口）。按 AI 工具（Claude Code、
-//! Claude Desktop、Cursor、Codex）给出配置片段与复制按钮；片段中的命令是这台电脑上命令行工具的完整路径（AI 工具从图形界面
-//! 启动时不一定读到新的 PATH），Linux 的 deb、rpm 是 `/usr/bin/termlet`。找不到命令行工具时（开发构建没有编译它、AppImage
-//! 要先链接为 termlet）写 `termlet`，并说明它要在 PATH 中。
+//! 「AI 与自动化」页的 MCP 服务：AI 工具按配置自己启动 `termlet mcp`（stdio，不开端口）。在下拉框中选 AI 工具，给出
+//! 配置片段与复制按钮（有 `mcp add` 命令的工具另给配置文件的写法）；片段中的命令是这台电脑上命令行工具的完整路径
+//! （AI 工具从图形界面启动时不一定读到新的 PATH），Linux 的 deb、rpm 是 `/usr/bin/termlet`。找不到命令行工具时（开发构建
+//! 没有编译它、AppImage 要先链接为 termlet）写 `termlet`，并说明它要在 PATH 中。
 
 use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
-use gpui_kit::component::tab::{Tab, TabBar};
+use gpui_kit::component::searchable_list::SearchableVec;
+use gpui_kit::component::select::{Select, SelectEvent};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
-    ClipboardItem, Context, InteractiveElement as _, IntoElement, ParentElement as _, Render,
-    SharedString, Styled as _, TestSupportExt as _, Window, div, prelude::FluentBuilder as _,
+    App, ClipboardItem, Context, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
+    Render, SharedString, Styled as _, Subscription, TestSupportExt as _, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
-use termlet_core::proto::mcp::{AiTool, CODEX_TOOL_TIMEOUT_SECS};
+use termlet_core::proto::mcp::{AiTool, CODEX_TOOL_TIMEOUT_SECS, Snippet, SnippetForm};
 use termlet_core::userpath;
 
 use super::CliEnv;
+use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::install_kind::{LinuxInstall, SYSTEM_CLI, linux_install};
 use crate::prose::prose;
 use crate::t;
@@ -66,86 +69,90 @@ impl McpCommand {
     }
 }
 
+type ToolEvent = SelectEvent<SearchableVec<Choice<AiTool>>>;
+
 pub(super) struct McpSection {
     command: McpCommand,
-    pub(super) selected: AiTool,
+    /// 选中的 AI 工具（下拉框）
+    pub(super) tools: Entity<ChoiceState<AiTool>>,
+    _subscription: Subscription,
 }
 
-/// Claude Desktop 的配置文件（Linux 上没有官方版本，按社区版的位置写）。
-fn claude_desktop_config() -> &'static str {
-    if cfg!(windows) {
-        r"%APPDATA%\Claude\claude_desktop_config.json"
-    } else if cfg!(target_os = "macos") {
-        "~/Library/Application Support/Claude/claude_desktop_config.json"
-    } else {
-        "~/.config/Claude/claude_desktop_config.json"
+/// AI 工具在下拉框与提示中的名称。
+fn tool_label(tool: AiTool) -> SharedString {
+    match tool.name() {
+        Some(name) => name.into(),
+        None => t!("cli_ui.mcp.other"),
     }
 }
 
 /// 片段放在哪里、怎么生效。
-fn where_text(tool: AiTool) -> SharedString {
-    match tool {
-        AiTool::ClaudeCode => t!("cli_ui.mcp.where_claude_code"),
-        AiTool::ClaudeDesktop => {
-            t!(
-                "cli_ui.mcp.where_claude_desktop",
-                path = claude_desktop_config()
-            )
+fn where_text(tool: AiTool, form: SnippetForm) -> SharedString {
+    match (tool, form) {
+        (AiTool::ClaudeCode, SnippetForm::Command) => t!("cli_ui.mcp.where_claude_code"),
+        (AiTool::ClaudeCode, SnippetForm::File) => t!("cli_ui.mcp.where_claude_code_file"),
+        (AiTool::Codex, SnippetForm::File) => {
+            t!("cli_ui.mcp.where_codex", seconds = CODEX_TOOL_TIMEOUT_SECS)
         }
-        AiTool::Cursor => t!("cli_ui.mcp.where_cursor"),
-        AiTool::Codex => t!("cli_ui.mcp.where_codex", seconds = CODEX_TOOL_TIMEOUT_SECS),
+        (AiTool::Codex, SnippetForm::Command) => t!(
+            "cli_ui.mcp.where_codex_command",
+            seconds = CODEX_TOOL_TIMEOUT_SECS
+        ),
+        (AiTool::Cursor, _) => t!("cli_ui.mcp.where_cursor"),
+        (AiTool::VsCode, _) => t!("cli_ui.mcp.where_vscode"),
+        (AiTool::GeminiCli, SnippetForm::Command) => t!("cli_ui.mcp.where_gemini"),
+        (AiTool::GeminiCli, SnippetForm::File) => t!("cli_ui.mcp.where_gemini_file"),
+        (AiTool::ClaudeDesktop, _) => t!("cli_ui.mcp.where_claude_desktop"),
+        (AiTool::Other, _) => t!("cli_ui.mcp.where_other"),
     }
 }
 
 impl McpSection {
-    pub(super) fn new(env: &CliEnv) -> Self {
+    pub(super) fn new(env: &CliEnv, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let tools = choice_state(
+            AiTool::ALL
+                .iter()
+                .map(|tool| Choice::new(tool_label(*tool), *tool))
+                .collect(),
+            &AiTool::ClaudeCode,
+            false,
+            window,
+            cx,
+        );
+        let subscription = cx.subscribe(&tools, |_, _, _: &ToolEvent, cx| cx.notify());
         Self {
             command: McpCommand::find(env),
-            selected: AiTool::ClaudeCode,
+            tools,
+            _subscription: subscription,
         }
     }
 
-    /// 选中的 AI 工具的配置片段。
-    pub(super) fn snippet(&self) -> String {
-        self.selected.snippet(&self.command.text(), cfg!(windows))
+    /// 选中的 AI 工具。
+    pub(super) fn selected(&self, cx: &App) -> AiTool {
+        chosen(&self.tools, cx).unwrap_or(AiTool::ClaudeCode)
     }
-}
 
-impl Render for McpSection {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    /// 选中的 AI 工具的配置片段（第一份是推荐的写法）。
+    pub(super) fn snippets(&self, cx: &App) -> Vec<Snippet> {
+        self.selected(cx)
+            .snippets(&self.command.text(), cfg!(windows))
+    }
+
+    /// 一份片段：说明、代码与复制按钮。元素的 ID 按写法区分（同一工具中每种写法只有一份）。
+    fn render_snippet(tool: AiTool, snippet: Snippet, cx: &App) -> impl IntoElement {
         let theme = cx.theme();
         let (muted, code_bg, radius) = (theme.muted_foreground, theme.muted, theme.radius);
         let mono = theme.mono_font_family.clone();
-        let selected = self.selected;
-        let snippet = self.snippet();
-        let lines: Vec<String> = snippet.lines().map(str::to_string).collect();
+        let form = snippet.form.id();
+        let lines: Vec<String> = snippet.text.lines().map(str::to_string).collect();
+        let text = snippet.text;
         v_flex()
-            .gap_2()
-            .child(
-                h_flex().child(
-                    TabBar::new("cli-mcp-tools")
-                        .segmented()
-                        .small()
-                        .selected_index(
-                            AiTool::ALL
-                                .iter()
-                                .position(|tool| *tool == selected)
-                                .unwrap_or_default(),
-                        )
-                        .on_click(cx.listener(|this, ix: &usize, _, cx| {
-                            if let Some(tool) = AiTool::ALL.get(*ix) {
-                                this.selected = *tool;
-                                cx.notify();
-                            }
-                        }))
-                        .children(AiTool::ALL.map(|tool| Tab::new().label(tool.name()))),
-                ),
-            )
+            .gap_1()
             .child(
                 div()
                     .text_xs()
                     .text_color(muted)
-                    .child(prose(where_text(selected))),
+                    .child(prose(where_text(tool, snippet.form))),
             )
             .child(
                 h_flex()
@@ -153,7 +160,7 @@ impl Render for McpSection {
                     .gap_2()
                     .child(
                         div()
-                            .id("cli-mcp-snippet")
+                            .id(SharedString::from(format!("cli-mcp-snippet-{form}")))
                             .test_support()
                             .flex_1()
                             .min_w_0()
@@ -166,23 +173,50 @@ impl Render for McpSection {
                             .children(lines.into_iter().map(|line| div().child(line))),
                     )
                     .child(
-                        Button::new("cli-mcp-copy")
+                        Button::new(SharedString::from(format!("cli-mcp-copy-{form}")))
                             .outline()
                             .small()
                             .icon(IconName::Copy)
                             .label(t!("cli_ui.mcp.copy"))
                             .on_click(move |_, window, cx| {
-                                cx.write_to_clipboard(ClipboardItem::new_string(snippet.clone()));
+                                cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
+                                let notice = match tool.name() {
+                                    Some(name) => t!("cli_ui.mcp.copied", tool = name),
+                                    None => t!("cli_ui.mcp.copied_generic"),
+                                };
                                 crate::notify::show(
-                                    crate::notify::Notice::success(t!(
-                                        "cli_ui.mcp.copied",
-                                        tool = selected.name()
-                                    )),
+                                    crate::notify::Notice::success(notice),
                                     window,
                                     cx,
                                 );
                             }),
                     ),
+            )
+    }
+}
+
+impl Render for McpSection {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let muted = cx.theme().muted_foreground;
+        let tool = self.selected(cx);
+        let snippets = self.snippets(cx);
+        // 以后加上 HTTP 时，接入类型（标准输入输出 / HTTP）放在 AI 工具的上面，两种共用这里选中的 AI 工具
+        v_flex()
+            .gap_2()
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(div().text_sm().child(t!("cli_ui.mcp.tool")))
+                    .child(
+                        div()
+                            .w(rems(16.))
+                            .child(Select::new(&self.tools).small().id("cli-mcp-tool")),
+                    ),
+            )
+            .children(
+                snippets
+                    .into_iter()
+                    .map(|snippet| Self::render_snippet(tool, snippet, cx)),
             )
             .when(self.command == McpCommand::InPath, |this| {
                 this.child(

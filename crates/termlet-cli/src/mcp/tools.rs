@@ -65,7 +65,7 @@ impl Tool {
     fn description(self) -> &'static str {
         match self {
             Tool::ListHosts => {
-                "List the servers saved in Termlet that the user allows AI tools to use (Termlet's command-line access). Each entry has the host's id, name, address, port, login user and protocol, never a password or key. Pass the id or name as `host` to the other tools. A server that is missing here needs \"Allow Termlet command-line access\" turned on in Termlet first."
+                "List the servers saved in Termlet that the user allows AI tools to use. Each entry has the host's id, name, address, port, login user and protocol, never a password or key. Pass the id or name as `host` to the other tools. A server that is missing here needs \"Allow AI tools and scripts to use this host\" turned on in Termlet first."
             }
             Tool::RunCommand => {
                 "Run a shell command on a server saved in Termlet (same as `termlet exec`) and return its exit code, stdout and stderr. Termlet logs in with the credentials it keeps; you never see them. Each call is a new SSH session, so nothing carries over between calls: put related steps in one command (for example `cd /srv/app && git pull`). Interactive programs and password prompts don't work; use non-interactive options such as `-y`. Commands that match the user's dangerous-command rules wait for the user to approve them in Termlet (up to 60 seconds); on command_denied or command_blocked, don't try to get around the rule, ask the user to run it themselves. Output is capped at 32 KB (the beginning and the end are kept), so redirect long output to a file and read it in parts."

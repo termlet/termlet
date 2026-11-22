@@ -361,7 +361,7 @@ FunctionEnd
 Section "Uninstall"
   Call un.StopRunning
 
-  ; 从当前用户的 PATH 中移除命令行工具的目录（在“命令行工具”设置中加入过时），并通知资源管理器等进程
+  ; 从当前用户的 PATH 中移除命令行工具的目录（在设置的“AI 与自动化”中加入过时），并通知资源管理器等进程
   nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action RemovePath -Dir "$INSTDIR"'
   Pop $0
   SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment" /TIMEOUT=5000

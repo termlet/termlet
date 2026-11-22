@@ -1,4 +1,4 @@
-//! 连接 Termlet：连不上时以 headless 模式拉起它，等命令行服务就绪（最多 10 秒）。设置“命令行工具”中关闭了
+//! 连接 Termlet：连不上时以 headless 模式拉起它，等命令行服务就绪（最多 10 秒）。设置“AI 与自动化”中关闭了
 //! “Termlet 没有打开时自动在后台启动”时不拉起，提示先打开 Termlet（`app_not_running`，见 `endpoint::LaunchConfig`）。
 //!
 //! 找 Termlet 程序的顺序：环境变量 `TERMLET_APP`（为空表示不拉起）；安装目录（命令行工具在 `bin\termlet.exe`，

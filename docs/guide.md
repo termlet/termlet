@@ -211,7 +211,7 @@
   - 连接：跳板机、代理、agent 转发、X11 转发、兼容旧设备、只用一个通道
   - 验证码
   - 终端：配色、编码、登录后执行的命令、tmux
-  - 命令行工具
+  - AI 与自动化
   - 标签与备注
 - 有设置的分页在导航上带一个小圆点。
 - 设置窗口与主机对话框左侧的分页导航可以用 Tab 到达，↑ ↓ 切换分页，Home / End 到第一页 / 最后一页。
@@ -243,7 +243,7 @@
 
 - 协议在常规页顶部选择：SSH（默认）、Telnet、串口。
 - Telnet、串口用于网络设备、老系统与开发板的控制台。
-- 它们没有 SFTP、端口转发、命令行工具等 SSH 才有的功能：Telnet 没有验证码与命令行工具页，串口另外没有连接页。
+- 它们没有 SFTP、端口转发、命令行工具等 SSH 才有的功能：Telnet 没有验证码页与“AI 与自动化”页，串口另外没有连接页。
 - **Telnet**：
   - 默认端口 23。
   - 填写用户名与密码后，看到登录、密码提示时自动填写（只问密码的设备直接填密码，密码错误后不再重复填写）。
@@ -1390,7 +1390,7 @@
   - 默认不含密码、私钥，文件是可以阅读、编辑的 JSON；
   - 勾选"包含密码、私钥等凭据"时需要设置密码，整个文件加密；
   - 在另一台电脑上用"导入主机"选择"Termlet 主机文件（.termlet-hosts）"导入（加密的会要求输入密码），同样可以预览、跳过或合并已有的主机；
-  - 导入的主机不允许命令行访问；
+  - 导入的主机不允许 AI 工具与脚本使用；
   - 预览中会标出连接时在本机执行的代理命令与登录后执行的命令，导入别人的文件前请确认来源可信。
 - **OpenSSH 配置**（ssh_config）：
   - SSH 主机的地址、端口、用户名、私钥文件（与指定的证书文件 `CertificateFile`）、跳板机（`ProxyJump`）、代理命令（`ProxyCommand`，含沿用分组的）、X11 转发（`ForwardX11`、`ForwardX11Trusted`）与端口转发；
@@ -1468,7 +1468,7 @@
 | 连接 | 保活间隔、自动重连、连接后识别远程系统、ssh-agent 地址、被堡垒机等外部程序调起 |
 | 主机指纹 | — |
 | 安全 | 应用锁 |
-| 命令行工具 | 外部 CLI、危险命令规则、Agent Skill、PATH、审计日志 |
+| AI 与自动化 | 外部 CLI、危险命令规则、termlet 命令与 PATH、Agent Skill、MCP 服务的配置、审计日志 |
 | 备份 | 完整备份与恢复、本机快照 |
 | 同步 | — |
 | 快捷键 | — |
@@ -1611,16 +1611,16 @@ termlet version
 
 ### 开启
 
-- 外部 CLI 默认关闭，在设置的"命令行工具"中勾选"启用外部 CLI"；关闭时全部请求返回 `cli_disabled`（退出码 7）。
-- 主机还需在编辑时勾选"允许 Termlet 命令行访问"。
-- 可再勾选"命令行工具使用单独的凭据"，为 CLI 指定单独的用户名与密码 / 密钥。推荐服务器上的低权限账号，真正的权限边界在服务器端。
+- 外部 CLI 默认关闭，在设置的"AI 与自动化"中勾选"允许 AI 工具与脚本访问"（同时管 termlet 命令与 MCP 服务）；关闭时全部请求返回 `cli_disabled`（退出码 7）。
+- 主机还需在编辑时（"AI 与自动化"页）勾选"允许 AI 工具与脚本使用这台主机"。
+- 可再勾选"AI 工具与脚本使用单独的凭据"，为 CLI 指定单独的用户名与密码 / 密钥。推荐服务器上的低权限账号，真正的权限边界在服务器端。
 - Termlet 没有运行时，`termlet` 默认在后台启动它（不打开窗口，10 分钟没有请求后退出）。
-- 在设置的"命令行工具"中取消"Termlet 没有打开时也能使用（自动在后台启动）"后，只在 Termlet 打开时可用；没有打开时返回 `app_not_running`（退出码 7）并提示先打开 Termlet。
+- 在设置的"AI 与自动化"中取消"Termlet 没有打开时也能使用（自动在后台启动）"后，只在 Termlet 打开时可用；没有打开时返回 `app_not_running`（退出码 7）并提示先打开 Termlet。
 - 关闭全部窗口后 Termlet 退出（还有命令在执行时等它们做完）。
 
 ### Agent Skill
 
-- 在设置的"命令行工具"中一键安装到：
+- 在设置的"AI 与自动化"中一键安装到：
   - 通用目录（`~/.agents/skills`，Codex、Gemini CLI、Cursor、GitHub Copilot、Pi 等读取）；
   - Claude Code（`~/.claude/skills`）；
   - 或 WorkBuddy。
@@ -1631,7 +1631,7 @@ termlet version
 ### MCP 服务
 
 - `termlet mcp` 是标准输入输出上的 MCP 服务，由 Claude Code、Claude Desktop、Cursor、Codex 等 AI 工具按配置启动。不开网络端口；暂不提供 HTTP / SSE 传输。
-- 设置的"命令行工具"中给出各 AI 工具的配置片段（命令写这台电脑上 termlet 的完整路径），可一键复制。
+- 在设置的"AI 与自动化"中选择 AI 工具（Claude Code、Codex、Cursor、VS Code（GitHub Copilot）、Gemini CLI、Claude Desktop，或其他工具通用的 JSON），给出配置片段（命令写这台电脑上 termlet 的完整路径），可一键复制；Claude Code、Codex、Gemini CLI 既给 `mcp add` 命令，也给配置文件的写法。
 - 与 Agent Skill 装一种即可（MCP 不需要终端，Claude Desktop 这类不能运行命令的工具也能用）。
 - 工具与命令一一对应：
 
@@ -1644,7 +1644,7 @@ termlet version
 
 - `upload_file`、`download_file` 的本机路径须为绝对路径。
 - 每次调用照常经过 Termlet：外部 CLI 的开关、按主机授权、危险命令的批准、审计日志与"凭据不出 Termlet"都与命令行工具相同。
-- 审计与批准框中的调用方前面是 `mcp:<客户端名>`；审计日志的来源一栏写“MCP（客户端名）”，可以单独筛选出来。
+- 审计与批准框中的调用方前面是 `mcp:<客户端名>`；审计日志的来源一栏写“MCP（客户端名）”，可以单独筛选出来；批准框的标题写“客户端名（MCP）要在…上执行危险命令”。
 - 外部 CLI 已关闭、Termlet 没有运行、命令被拦截或被拒绝等，以工具错误返回，带上与 JSON 输出相同的错误码。
 - 执行命令时返回给 AI 的标准输出与标准错误合计最多 32KB（保留开头与结尾，说明怎样看完整的输出）。
 - AI 工具取消调用时 Termlet 中止这次请求（远程命令收到 SIGTERM）。
@@ -1699,7 +1699,7 @@ termlet version
 - 命令继承终端的当前目录与环境，返回输出与退出码。
 - 需要服务器上有 bash 或 sh。
 - 终端正在运行程序（含全屏程序、传输文件）时返回 `terminal_busy`，没有打开的终端时返回 `terminal_not_open`。
-- 设置了"命令行工具使用单独的凭据"的主机不能用 `--terminal`（终端是你本人的身份，会绕过单独的凭据），请改用普通 `exec`。
+- 设置了"AI 工具与脚本使用单独的凭据"的主机不能用 `--terminal`（终端是你本人的身份，会绕过单独的凭据），请改用普通 `exec`。
 
 ### 危险命令
 
@@ -1714,12 +1714,12 @@ termlet version
 ### 审计
 
 - 每次 `exec`、`upload`、`download`（含失败、被拦截、经批准与被拒绝的）都记入本机的审计日志（命令原文、结果、退出码、耗时、等待批准的时长、调用方进程链），最多 10 万条。
-- 在设置的"命令行工具"中点"查看审计日志…"（或命令面板的"查看审计日志"）查看、搜索、筛选、导出 CSV / JSON、清空。
+- 在设置的"AI 与自动化"中点"查看审计日志…"（或命令面板的"查看审计日志"）查看、搜索、筛选、导出 CSV / JSON、清空。
 
 ### PATH
 
-- Windows 上命令位于安装目录的 `bin\termlet.exe`。可在设置的"命令行工具"中一键"加入 PATH"（当前用户的 PATH，新打开的终端中生效；卸载时自动移除，重装时换了安装位置会自动改到新位置）。
-- macOS、Linux 上 Termlet 不修改 PATH，设置的"命令行工具"中给出手动链接的命令（如 `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`）。
+- Windows 上命令位于安装目录的 `bin\termlet.exe`。可在设置的"AI 与自动化"中一键"加入 PATH"（当前用户的 PATH，新打开的终端中生效；卸载时自动移除，重装时换了安装位置会自动改到新位置）。
+- macOS、Linux 上 Termlet 不修改 PATH，设置的"AI 与自动化"中给出手动链接的命令（如 `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`）。
 - Linux 的 deb、rpm 装好后命令就是 `/usr/bin/termlet`，tar.gz 中的 `install.sh` 会把它链接为 `~/.local/bin/termlet`，AppImage 要自己链接（见 [Linux](#linux)）。
 
 ### 限制

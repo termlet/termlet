@@ -273,12 +273,15 @@ fn disabled_by_default() {
     assert_eq!(code, 7);
     assert_eq!(value["error"], "cli_disabled");
     assert!(
-        value["message"].as_str().unwrap().contains("命令行工具"),
+        value["message"]
+            .as_str()
+            .unwrap()
+            .contains("「AI 与自动化」"),
         "{value}"
     );
     let (code, stdout, stderr) = env.run_in(&["ls"], None, "en", None);
     assert_eq!(code, 7);
-    assert!(stdout.contains("Settings → Command-line tool"), "{stdout}");
+    assert!(stdout.contains("Settings → AI & automation"), "{stdout}");
     assert!(stderr.is_empty(), "JSON 模式不写标准错误：{stderr}");
 
     env.enable();
@@ -706,7 +709,7 @@ fn mcp_goes_through_the_cli_service() {
     let (error, text, structured) = mcp.call("list_hosts", json!({}));
     assert!(error, "外部 CLI 默认关闭");
     assert_eq!(structured["error"], "cli_disabled");
-    assert!(text.contains("「命令行工具」"), "{text}");
+    assert!(text.contains("「AI 与自动化」"), "{text}");
     env.enable();
     let (error, _, structured) = mcp.call("list_hosts", json!({}));
     assert!(!error);

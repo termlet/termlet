@@ -50,6 +50,8 @@ objc2 = "0.6"
 # Linux 的 D-Bus（任务栏进度）；与 GPUI（ashpd）、系统凭据管理器用同一个版本，锁定版本以免引入新的包
 zbus = "=5.19.0"
 tempfile = "3"
+# 测试中解析 Codex 的 MCP 配置片段（config.toml）；锁文件中已有这个版本（embed-resource 用），不引入新的包
+toml = "1.1"
 
 # SSH：用 ring 作加密后端（aws-lc-rs 在 Windows 上构建需要 NASM）；des 提供 3des-cbc（兼容旧设备）
 russh = { version = "0.65", default-features = false, features = ["ring", "flate2", "rsa", "des", "dsa"] }

@@ -1,4 +1,4 @@
-//! 命令行工具（`termlet`）的界面：设置中的「命令行工具」页（[`CliPage`]）与审计日志对话框（[`open_audit`]）。
+//! 命令行工具（`termlet`）与 MCP 服务的界面：设置中的「AI 与自动化」页（[`CliPage`]）与审计日志对话框（[`open_audit`]）。
 //!
 //! - 设置页：外部 CLI 的开关（本机设置）、危险命令规则（内置规则的开关、自定义规则、命中时询问或拦截、规则测试）
 //!   随设置对话框的“保存”写入；Agent Skill 的安装与 PATH 的修改立即执行，结果写在设置对话框底部
@@ -26,7 +26,7 @@ pub(crate) use page::CliPage;
 
 use crate::t;
 
-/// 设置导航中这一页的名称（与 `termlet` 的错误说明中“设置中的「命令行工具」”一致）。
+/// 设置导航中这一页的名称（与 `termlet` 的错误说明中“设置中的「AI 与自动化」”一致）。
 pub(crate) fn page_title() -> SharedString {
     t!("cli_ui.nav")
 }
