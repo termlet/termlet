@@ -4,7 +4,7 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
-## 0.3.3 (unreleased)
+## 0.3.3 (2026-11-22)
 
 ### Added
 
@@ -38,6 +38,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Usage statistics
 
 - The daily anonymous usage statistics gain one item: which features were used since the last message (`features`). It contains only names from a fixed list (such as `ssh`, `sftp` and `port_forward`; 50 in all, listed with their meanings under "Usage statistics" in the user guide), with no counts, times or order of use. The message goes out the first time Termlet is used each day, so the list covers what was used since the previous message and is removed from this computer once sent. The server only adds each name to that day's counts; it doesn't keep the list or combine it with the version, country or anything else. A new file, `usage-features.json`, holds only the list not yet sent. With "Send anonymous usage statistics" off, or `DO_NOT_TRACK` or `TERMLET_USAGE_URL=off` set, no list is kept, and turning it off deletes the file; "View what is sent…" still shows the exact message.
+
+### Security
+
+- Updated the url dependency to 2.5.9, which fixes a stack overflow in `Url::origin()` on nested `blob:` URLs (RUSTSEC-2026-0592); Termlet's own code doesn't call it, so the impact is small.
 
 ## 0.3.2 (2026-11-19)
 
