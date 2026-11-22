@@ -721,18 +721,21 @@
 
 ### 关键词高亮
 
-- error、failed、warning、ok、IP 地址等按颜色标出。
+- error、failed、warning、ok、IPv4 与 IPv6 地址等按颜色标出。
 - 只给程序没有着色的文字着色，vim 等全屏程序中不生效。
 - 标题栏的"关键词高亮"按钮（即设置的"关键词高亮"）中修改规则（关键词或正则）、颜色，或关闭。
+- "添加预设规则"中还有网址、MAC 地址、UUID、日期与时间、数字（连单位，如 `230ms`），已在列表中的打勾；误删的默认规则也能从这里加回来。列表中的预设在关键词前标出名称。
+- 规则重叠时靠前的优先：预设按固定的先后插入（网址最先、数字最后），网址中的 IP、日期中的数字不会被单独着色。
+- 正则中的 `\b`、`\B` 按 ASCII 判断单词边界，紧挨着中文也算边界（"连接failed" 中的 failed 也算整词）。
 
 ### 终端配色
 
 - 设置的"终端配色"中分别选择界面为浅色、深色时用的配色。任何配色都能放进任一个，想要浅色界面配深色终端就设成同一套。
 - 切换界面的浅色 / 深色（设置的"通用"或命令面板）时，终端跟着变。
 - 开启了深浅色切换通知（DEC 2031）的程序（Claude Code、Neovim 等），在终端配色的背景在深浅之间变了时收到通知，跟着切换自己的配色。
-- 内置 26 套（Solarized、Catppuccin、Tokyo Night、Gruvbox、Dracula、Nord 等，每套注明来源与许可）。
+- 内置 38 套（Solarized、Catppuccin、Tokyo Night、Gruvbox、Dracula、Nord、One Dark Pro、Ayu、VS Code 等，每套注明来源与许可）。
 - 卡片上用你的字体预览，并标出在这套背景上看不清的颜色；可开启"保证文字可读"。
-- 可以导入 Windows Terminal、iTerm2（`.itermcolors`）、Xshell（`.xcs`）、MobaXterm、base16、Alacritty、Kitty、Ghostty、Xresources、Tabby、Gogh 的配色（拖入、选择文件或粘贴，自动识别格式），也能直接读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色。
+- 可以导入 Windows Terminal、iTerm2（`.itermcolors`）、Xshell（`.xcs`）、MobaXterm、base16、Alacritty、Kitty、Ghostty、Xresources、Tabby、Gogh 的配色（拖入、选择文件或粘贴，自动识别格式），也能直接读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色；配色库搜索不到时，下面也有这两个入口。
 - 可导出为 Windows Terminal JSON 或 `.itermcolors`。
 - 复制为自定义配色后可以逐色编辑。
 - 主机设置的"终端"页、分组可以指定一套固定的配色（例如让生产环境一眼认出）。

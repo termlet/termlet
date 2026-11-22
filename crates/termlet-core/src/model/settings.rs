@@ -3,14 +3,14 @@
 //! [`Settings`] 会同步，按组存在 `setting` 表中（每组一行，同步按组合并）；
 //! [`LocalSettings`] 只与这台电脑有关（本地终端、应用锁、CLI 开关、自动快照、使用统计的开关、关闭窗口时最小化到
 //! 托盘、启动时打开的主机、标题栏的工具栏、本机的 X 显示与确认过的代理命令等），存在 `local_setting` 表中、不同步。
-//! 每组都有 `extra` 保存不认识的字段。
+//! 每组都有 `extra` 保存不认识的字段。关键词高亮的旧默认规则在读取时升级（见 [`HighlightSettings`]）。
 
 use std::collections::BTreeMap;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use super::Extra;
+use super::{Extra, HIGHLIGHT_PRESETS, HighlightPreset};
 use crate::id::HostId;
 
 /// 一组设置：数据库中的一行。
@@ -290,36 +290,87 @@ pub enum CursorShape {
     Underline,
 }
 
+/// 关键词高亮。默认规则取 [`HIGHLIGHT_PRESETS`] 中标了默认的几条；之前版本保存的、与当时的默认规则完全相同的
+/// 规则在读取时升级成现在的（见 [`HighlightFields`]）。
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", from = "HighlightFields")]
 pub struct HighlightSettings {
     pub enabled: bool,
     pub rules: Vec<HighlightRule>,
+    /// 规则基于第几版的默认规则（[`HighlightSettings::RULES_VERSION`]）：新的默认、升级后的、在设置页改过规则的都有，
+    /// 0.3.3 之前保存的没有。读取时据此决定要不要升级旧的默认规则；没有它的话，用户删掉新加的默认规则后，
+    /// 下次读取又会被加回来
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rules_version: Option<u32>,
     #[serde(flatten)]
     pub extra: Extra,
 }
 
+impl HighlightSettings {
+    /// 现在的默认规则是第几版：1 是 0.1.0–0.3.2 的 4 条，2 加上了 IPv6。默认规则再变时加一，并在
+    /// [`HighlightFields`] 中加上从上一版升级的判断。
+    pub const RULES_VERSION: u32 = 2;
+}
+
 impl Default for HighlightSettings {
     fn default() -> Self {
-        let rule = |pattern: &str, color: &str| HighlightRule {
-            pattern: pattern.into(),
-            regex: true,
-            case_sensitive: false,
-            color: color.into(),
-            enabled: true,
-        };
         Self {
             enabled: true,
-            rules: vec![
-                rule(
-                    r"\b(error|errors|fail|failed|failure|fatal|panic|denied|refused|exception|critical)\b",
-                    "red",
-                ),
-                rule(r"\b(warn|warning|warnings|deprecated)\b", "yellow"),
-                rule(r"\b(ok|success|successful|succeeded|passed)\b", "green"),
-                rule(r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b", "cyan"),
-            ],
+            rules: HIGHLIGHT_PRESETS
+                .iter()
+                .filter(|preset| preset.default)
+                .map(HighlightPreset::rule)
+                .collect(),
+            rules_version: Some(Self::RULES_VERSION),
             extra: Extra::new(),
+        }
+    }
+}
+
+/// 读取 [`HighlightSettings`] 时的字段。没有版本标记、规则又与 0.1.0–0.3.2 的默认规则完全相同（从没改过）的，
+/// 升级成现在的默认规则；改过的原样保留。只在读取时升级、不在启动时写库：数据库中仍是旧的规则，直到用户改了
+/// 高亮才写入；云同步把升级后的内容当作本机的修改上传（修改时间是那一行原来的，对方之后的修改胜出）。
+#[derive(Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct HighlightFields {
+    enabled: bool,
+    rules: Option<Vec<HighlightRule>>,
+    rules_version: Option<u32>,
+    #[serde(flatten)]
+    extra: Extra,
+}
+
+impl Default for HighlightFields {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            rules: None,
+            rules_version: None,
+            extra: Extra::new(),
+        }
+    }
+}
+
+impl From<HighlightFields> for HighlightSettings {
+    fn from(fields: HighlightFields) -> Self {
+        let (rules, rules_version) = match fields.rules {
+            Some(rules)
+                if fields.rules_version.is_some()
+                    || rules != super::highlight::legacy_default_rules() =>
+            {
+                (rules, fields.rules_version)
+            }
+            // 没有规则这一项，或者是从没改过的旧默认规则
+            _ => {
+                let defaults = HighlightSettings::default();
+                (defaults.rules, defaults.rules_version)
+            }
+        };
+        Self {
+            enabled: fields.enabled,
+            rules,
+            rules_version,
+            extra: fields.extra,
         }
     }
 }
@@ -737,8 +788,76 @@ mod tests {
         assert_eq!(terminal.font_size, 13);
         assert_eq!(terminal.scrollback, 5000);
         assert_eq!(ConnectionSettings::default().keepalive_seconds, 30);
-        assert_eq!(HighlightSettings::default().rules.len(), 4);
+        // 0.3.3 起默认规则多了 IPv6（见 highlight.rs 的预设）
+        assert_eq!(HighlightSettings::default().rules.len(), 5);
         assert_eq!(BackupSettings::default().keep, 7);
+    }
+
+    // 0.3.3 之前保存的、与当时的默认规则完全相同的规则读出来是新的默认（全局开关照旧），不认识的字段保留；
+    // 改过的、带版本标记的原样
+    #[test]
+    fn old_default_highlight_rules_upgrade_on_read() {
+        let old_rules =
+            serde_json::to_value(crate::model::highlight::legacy_default_rules()).unwrap();
+        for enabled in [true, false] {
+            let doc = serde_json::json!({"enabled": enabled, "rules": old_rules, "later": 1});
+            let read: HighlightSettings = serde_json::from_value(doc).unwrap();
+            assert_eq!(read.rules, HighlightSettings::default().rules);
+            assert_eq!(read.rules_version, Some(HighlightSettings::RULES_VERSION));
+            assert_eq!(read.enabled, enabled);
+            assert_eq!(read.extra["later"], 1);
+            let json = serde_json::to_value(&read).unwrap();
+            assert_eq!(json["rulesVersion"], 2);
+            assert_eq!(
+                serde_json::from_value::<HighlightSettings>(json).unwrap(),
+                read
+            );
+        }
+        // 改过的：停用一条、换颜色、少一条、多一条、换顺序
+        let legacy = crate::model::highlight::legacy_default_rules();
+        let mut variants = Vec::new();
+        let mut disabled = legacy.clone();
+        disabled[0].enabled = false;
+        variants.push(disabled);
+        let mut recolored = legacy.clone();
+        recolored[3].color = "blue".into();
+        variants.push(recolored);
+        variants.push(legacy[..3].to_vec());
+        let mut more = legacy.clone();
+        more.push(HighlightRule {
+            pattern: "timeout".into(),
+            color: "magenta".into(),
+            enabled: true,
+            ..Default::default()
+        });
+        variants.push(more);
+        let mut reordered = legacy.clone();
+        reordered.swap(0, 1);
+        variants.push(reordered);
+        for rules in variants {
+            let doc = serde_json::json!({"enabled": true, "rules": rules});
+            let read: HighlightSettings = serde_json::from_value(doc).unwrap();
+            assert_eq!(read.rules, rules);
+            assert_eq!(read.rules_version, None);
+            assert!(
+                serde_json::to_value(&read)
+                    .unwrap()
+                    .get("rulesVersion")
+                    .is_none()
+            );
+        }
+        // 带版本标记、规则正好是旧的 4 条（升级后用户删掉了 IPv6）：不再加回
+        let doc = serde_json::json!({"enabled": true, "rules": legacy, "rulesVersion": 2});
+        let read: HighlightSettings = serde_json::from_value(doc).unwrap();
+        assert_eq!(read.rules, legacy);
+        // 空的、没有规则这一项的：默认
+        assert_eq!(
+            serde_json::from_str::<HighlightSettings>("{}").unwrap(),
+            HighlightSettings::default()
+        );
+        let off: HighlightSettings = serde_json::from_str(r#"{"enabled": false}"#).unwrap();
+        assert!(!off.enabled);
+        assert_eq!(off.rules, HighlightSettings::default().rules);
     }
 
     #[test]

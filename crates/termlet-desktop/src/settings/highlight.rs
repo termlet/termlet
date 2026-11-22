@@ -1,19 +1,26 @@
 //! 设置中的“关键词高亮”：开关、规则列表（关键词或正则、颜色）与预览。
 //!
 //! 规则没有 ID，界面上每一行用一个递增的编号区分。关键词为空的规则保存时去掉；有无效的正则时不能保存。
+//! “添加预设规则”列出核心的 [`HIGHLIGHT_PRESETS`]：按预设的先后插入（不是加在最后），已在列表中的打勾、不能再加；
+//! 是预设的行在关键词前标出预设的名称。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, Entity, HighlightStyle, Hsla,
-    InteractiveElement as _, IntoElement, ParentElement as _, Render, SharedString, Styled as _,
-    StyledText, Subscription, Window, div, prelude::FluentBuilder as _, rems,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, SharedString,
+    StatefulInteractiveElement as _, Styled as _, StyledText, Subscription, TestSupportExt as _,
+    Window, div, prelude::FluentBuilder as _, rems,
 };
-use termlet_core::model::{ColorScheme, HighlightRule, HighlightSettings};
+use termlet_core::model::{
+    ColorScheme, HIGHLIGHT_PRESETS, HighlightPreset, HighlightRule, HighlightSettings,
+    highlight_preset_of, preset_insert_position,
+};
 use termlet_core::schemes::{self, HighlightPalette};
 use termlet_terminal::colors::to_hsla;
 
@@ -24,8 +31,8 @@ use crate::{t, terminal_colors};
 
 /// 规则最多这么多条。
 const MAX_RULES: usize = 50;
-/// 预览的默认文字：覆盖内置规则。
-const SAMPLE: &str = "12:00:01 ERROR connect 10.0.0.12:5432 refused · 12:00:02 WARN retry 1/3 · 12:00:03 OK connected";
+/// 预览的默认文字：覆盖默认规则（时间、数字也能演示对应的预设）。
+const SAMPLE: &str = "12:00:01 ERROR connect 10.0.0.12:5432 refused · 12:00:02 WARN retry 1/3 via [2001:db8::1]:22 · 12:00:03 OK connected";
 /// 可选的颜色（终端配色中的颜色名）。
 const COLORS: [&str; 6] = ["red", "green", "yellow", "blue", "magenta", "cyan"];
 
@@ -80,12 +87,19 @@ impl HighlightPage {
             _sample_subscription: sample_subscription,
         };
         for rule in &settings.rules {
-            this.push_rule(rule, window, cx);
+            this.insert_rule(this.rules.len(), rule, window, cx);
         }
         this
     }
 
-    fn push_rule(&mut self, rule: &HighlightRule, window: &mut Window, cx: &mut Context<Self>) {
+    /// 在第 `index` 行插入一条规则。
+    fn insert_rule(
+        &mut self,
+        index: usize,
+        rule: &HighlightRule,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let pattern = cx.new(|cx| {
             InputState::new(window, cx)
                 .placeholder(t!("settings.highlight.pattern_placeholder"))
@@ -104,16 +118,38 @@ impl HighlightPage {
             }),
             cx.observe(&color, |_, _, cx| cx.notify()),
         ];
-        self.rules.push(RuleRow {
-            key: self.next_key,
-            pattern,
-            regex: rule.regex,
-            case_sensitive: rule.case_sensitive,
-            color,
-            enabled: rule.enabled,
-            _subscriptions: subscriptions,
-        });
+        self.rules.insert(
+            index.min(self.rules.len()),
+            RuleRow {
+                key: self.next_key,
+                pattern,
+                regex: rule.regex,
+                case_sensitive: rule.case_sensitive,
+                color,
+                enabled: rule.enabled,
+                _subscriptions: subscriptions,
+            },
+        );
         self.next_key += 1;
+    }
+
+    /// 添加一条预设：插在第一条顺序在它后面的预设之前（见 [`preset_insert_position`]）。
+    fn add_preset(
+        &mut self,
+        preset: &HighlightPreset,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.rules.len() >= MAX_RULES {
+            return;
+        }
+        let rules: Vec<HighlightRule> = self.rules.iter().map(|row| self.rule(row, cx)).collect();
+        if rules.iter().any(|rule| preset.matches(rule)) {
+            return;
+        }
+        let index = preset_insert_position(&rules, preset);
+        self.insert_rule(index, &preset.rule(), window, cx);
+        cx.notify();
     }
 
     fn rule(&self, row: &RuleRow, cx: &App) -> HighlightRule {
@@ -154,6 +190,10 @@ impl HighlightPage {
             return Err(t!("settings.highlight.too_many", max = MAX_RULES));
         }
         settings.enabled = self.enabled;
+        // 规则改过的记下默认规则的版本：之后读取时不再把它当作没改过的旧默认规则升级
+        if settings.rules != rules {
+            settings.rules_version = Some(HighlightSettings::RULES_VERSION);
+        }
         settings.rules = rules;
         Ok(())
     }
@@ -188,17 +228,35 @@ impl HighlightPage {
         });
     }
 
+    /// 一行规则；`preset` 是这一行对应的预设的名称（不是预设时为 `None`），标在关键词前。
     fn render_rule(
         &self,
         row: &RuleRow,
         error: Option<String>,
+        preset: Option<SharedString>,
         colors: &HighlightPalette,
         cx: &Context<Self>,
     ) -> impl IntoElement {
         let key = row.key;
         let color = chosen(&row.color, cx).unwrap_or_else(|| "red".into());
-        let swatch = highlight_color(colors, &color).unwrap_or(cx.theme().muted_foreground);
+        let muted = cx.theme().muted_foreground;
+        let swatch = highlight_color(colors, &color).unwrap_or(muted);
         let id = |name: &'static str| ElementId::from((name, key as usize));
+        let pattern = Input::new(&row.pattern)
+            .small()
+            .id(id("highlight-pattern"))
+            .when_some(preset, |input, name| {
+                input.prefix(
+                    div()
+                        .id(id("highlight-preset-name"))
+                        .test_support()
+                        .aria_label(name.clone())
+                        .flex_none()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(name),
+                )
+            });
         v_flex()
             .gap_0p5()
             .child(
@@ -215,12 +273,7 @@ impl HighlightPage {
                                 cx.notify();
                             })),
                     )
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .child(Input::new(&row.pattern).small().id(id("highlight-pattern"))),
-                    )
+                    .child(div().flex_1().min_w_0().child(pattern))
                     .child(
                         div().w(rems(3.5)).flex().justify_center().child(
                             Checkbox::new(id("highlight-regex"))
@@ -360,10 +413,15 @@ impl Render for HighlightPage {
             )
             .child(div().w(rems(7.)).child(t!("settings.highlight.color")))
             .child(div().w(rems(1.5)));
-        let errors = self
+        let (errors, presets): (Vec<Option<String>>, Vec<Option<&'static HighlightPreset>>) = self
             .memo
             .as_ref()
-            .map(|m| m.errors.clone())
+            .map(|m| {
+                (
+                    m.errors.clone(),
+                    m.rules.iter().map(highlight_preset_of).collect(),
+                )
+            })
             .unwrap_or_default();
         let rules = self
             .rules
@@ -371,9 +429,34 @@ impl Render for HighlightPage {
             .enumerate()
             .map(|(i, row)| {
                 let error = errors.get(i).cloned().flatten();
-                self.render_rule(row, error, &colors, cx).into_any_element()
+                let preset = presets.get(i).copied().flatten().map(preset_title);
+                self.render_rule(row, error, preset, &colors, cx)
+                    .into_any_element()
             })
             .collect::<Vec<_>>();
+        let page = cx.entity().downgrade();
+        let add_preset = Button::new("highlight-add-preset")
+            .outline()
+            .small()
+            .icon(IconName::Plus)
+            .label(t!("settings.highlight.add_preset"))
+            .dropdown_caret(true)
+            .disabled(full)
+            .dropdown_menu(move |menu, _, _| {
+                HIGHLIGHT_PRESETS.iter().fold(menu, |menu, preset| {
+                    let added = presets.contains(&Some(preset));
+                    let page = page.clone();
+                    menu.item(
+                        PopupMenuItem::new(preset_title(preset))
+                            .checked(added)
+                            .disabled(added || full)
+                            .on_click(move |_, window, cx| {
+                                let _ =
+                                    page.update(cx, |page, cx| page.add_preset(preset, window, cx));
+                            }),
+                    )
+                })
+            });
         v_flex()
             .gap_3()
             .child(
@@ -404,29 +487,48 @@ impl Render for HighlightPage {
                     .child(header)
                     .children(rules)
                     .child(
-                        h_flex().child(
-                            Button::new("highlight-add")
-                                .outline()
-                                .small()
-                                .icon(IconName::Plus)
-                                .label(t!("settings.highlight.add"))
-                                .disabled(full)
-                                .on_click(cx.listener(|this, _, window, cx| {
-                                    let rule = HighlightRule {
-                                        color: "red".into(),
-                                        enabled: true,
-                                        ..Default::default()
-                                    };
-                                    this.push_rule(&rule, window, cx);
-                                    if let Some(row) = this.rules.last() {
-                                        row.pattern.update(cx, |s, cx| s.focus(window, cx));
-                                    }
-                                    cx.notify();
-                                })),
-                        ),
+                        h_flex()
+                            .gap_2()
+                            .child(
+                                Button::new("highlight-add")
+                                    .outline()
+                                    .small()
+                                    .icon(IconName::Plus)
+                                    .label(t!("settings.highlight.add"))
+                                    .disabled(full)
+                                    .on_click(cx.listener(|this, _, window, cx| {
+                                        let rule = HighlightRule {
+                                            color: "red".into(),
+                                            enabled: true,
+                                            ..Default::default()
+                                        };
+                                        this.insert_rule(this.rules.len(), &rule, window, cx);
+                                        if let Some(row) = this.rules.last() {
+                                            row.pattern.update(cx, |s, cx| s.focus(window, cx));
+                                        }
+                                        cx.notify();
+                                    })),
+                            )
+                            .child(add_preset),
                     ),
             )
             .child(self.render_preview(&scheme, &colors, cx))
+    }
+}
+
+/// 预设的名称（菜单、规则行前的标注）。
+fn preset_title(preset: &HighlightPreset) -> SharedString {
+    match preset.id {
+        "url" => t!("settings.highlight.preset.url"),
+        "errors" => t!("settings.highlight.preset.errors"),
+        "warnings" => t!("settings.highlight.preset.warnings"),
+        "success" => t!("settings.highlight.preset.success"),
+        "ipv6" => t!("settings.highlight.preset.ipv6"),
+        "ipv4" => t!("settings.highlight.preset.ipv4"),
+        "mac" => t!("settings.highlight.preset.mac"),
+        "uuid" => t!("settings.highlight.preset.uuid"),
+        "datetime" => t!("settings.highlight.preset.datetime"),
+        _ => t!("settings.highlight.preset.number"),
     }
 }
 
@@ -470,3 +572,6 @@ fn highlight_color(colors: &HighlightPalette, name: &str) -> Option<Hsla> {
         b: rgb.b,
     }))
 }
+
+#[cfg(test)]
+mod tests;

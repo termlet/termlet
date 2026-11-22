@@ -533,6 +533,75 @@ fn settings_write_only_changed_sections_and_persist() {
     assert!(store.local_settings().cli.enabled);
 }
 
+// 0.3.3 之前保存的、与当时的默认相同的高亮规则：读取时升级成新的默认（含 IPv6），数据库中的一行不动；
+// 云同步写入同样的旧内容时也升级（写库的是升级后的内容）
+#[test]
+fn old_default_highlight_rules_upgrade_when_loaded_and_synced() {
+    use crate::db::{self, SettingRow};
+    use crate::model::HighlightSettings;
+    use crate::store::sync::RawChange;
+    let rule = |pattern: &str, color: &str| {
+        serde_json::json!({
+            "pattern": pattern, "regex": true, "caseSensitive": false, "color": color, "enabled": true
+        })
+    };
+    let legacy = |enabled: bool| {
+        serde_json::json!({"enabled": enabled, "rules": [
+            rule(
+                r"\b(error|errors|fail|failed|failure|fatal|panic|denied|refused|exception|critical)\b",
+                "red",
+            ),
+            rule(r"\b(warn|warning|warnings|deprecated)\b", "yellow"),
+            rule(r"\b(ok|success|successful|succeeded|passed)\b", "green"),
+            rule(r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b", "cyan"),
+        ]})
+    };
+    let fixture = Fixture::new();
+    let store = fixture.open();
+    let row = SettingRow {
+        id: "highlight".into(),
+        doc: legacy(true).to_string(),
+        updated_at: 1,
+    };
+    store
+        .database()
+        .write(|tx| Ok(db::put_setting(tx, "setting", &row)?))
+        .unwrap();
+    drop(store);
+
+    let store = fixture.open();
+    assert_eq!(store.settings().highlight, HighlightSettings::default());
+    let stored = |store: &Store| -> String {
+        store
+            .database()
+            .read(|c| {
+                c.query_row("SELECT doc FROM setting WHERE id = 'highlight'", [], |r| {
+                    r.get(0)
+                })
+            })
+            .unwrap()
+    };
+    assert_eq!(stored(&store), row.doc, "读取时升级，不写库");
+
+    store
+        .sync_apply(
+            |_| true,
+            &[RawChange::PutSetting {
+                id: "highlight".into(),
+                doc: legacy(false),
+                updated_at: 5,
+                keep_local: &[],
+            }],
+        )
+        .unwrap();
+    let highlight = store.settings().highlight;
+    assert!(!highlight.enabled);
+    assert_eq!(highlight.rules, HighlightSettings::default().rules);
+    let doc: serde_json::Value = serde_json::from_str(&stored(&store)).unwrap();
+    assert_eq!(doc["rulesVersion"], 2);
+    assert_eq!(doc["rules"].as_array().unwrap().len(), 5);
+}
+
 // 使用统计的开关是本机设置（`local_setting` 的 usage 一行），不进同步的 `setting` 表
 #[test]
 fn usage_settings_are_local_and_persist() {

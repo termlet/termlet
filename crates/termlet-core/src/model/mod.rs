@@ -8,6 +8,7 @@
 
 mod forward;
 mod group;
+mod highlight;
 mod host;
 mod key;
 mod profile;
@@ -22,6 +23,7 @@ use serde::de::DeserializeOwned;
 
 pub use forward::*;
 pub use group::*;
+pub use highlight::*;
 pub use host::*;
 pub use key::*;
 pub use profile::*;

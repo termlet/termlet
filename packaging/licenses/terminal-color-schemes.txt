@@ -17,6 +17,14 @@ Copyright (c) 2019 Son A. Pham <sp@sonpham.me>
     https://github.com/sonph/onehalf/blob/master/iterm/OneHalfDark.itermcolors
 
 ==============================================================================
+One Dark Pro (Binaryify/OneDark-Pro)
+License: MIT
+Copyright (c) 2013-2022 Binaryify
+
+  - One Dark Pro (one-dark-pro)
+    https://github.com/Binaryify/OneDark-Pro/blob/master/themes/OneDark-Pro.json
+
+==============================================================================
 Solarized
 License: MIT
 Copyright (c) 2011 Ethan Schoonover
@@ -43,6 +51,10 @@ Copyright (c) 2021 Catppuccin
 
   - Catppuccin Latte (catppuccin-latte)
     https://github.com/catppuccin/windows-terminal/blob/main/latte.json
+  - Catppuccin Frappé (catppuccin-frappe)
+    https://github.com/catppuccin/windows-terminal/blob/main/frappe.json
+  - Catppuccin Macchiato (catppuccin-macchiato)
+    https://github.com/catppuccin/windows-terminal/blob/main/macchiato.json
   - Catppuccin Mocha (catppuccin-mocha)
     https://github.com/catppuccin/windows-terminal/blob/main/mocha.json
 
@@ -73,8 +85,18 @@ Copyright (c) Rosé Pine
 
   - Rosé Pine Dawn (rose-pine-dawn)
     https://github.com/rose-pine/windows-terminal/blob/main/rose-pine-dawn.scheme.json
+  - Rosé Pine Moon (rose-pine-moon)
+    https://github.com/rose-pine/windows-terminal/blob/main/rose-pine-moon.scheme.json
   - Rosé Pine (rose-pine)
     https://github.com/rose-pine/windows-terminal/blob/main/rose-pine.scheme.json
+
+==============================================================================
+Tomorrow Theme
+License: MIT
+Copyright (C) 2011 Chris Kempson
+
+  - Tomorrow Night (tomorrow-night)
+    https://github.com/chriskempson/tomorrow-theme/blob/master/iTerm2/Tomorrow%20Night.itermcolors
 
 ==============================================================================
 Everforest
@@ -97,12 +119,60 @@ Copyright (c) 2023 Steph Ango
     https://github.com/kepano/flexoki/blob/main/kitty/flexoki_dark.conf
 
 ==============================================================================
+ayu (ayu-theme/vscode-ayu)
+License: MIT
+Copyright (c) 2016 Ike Kurghinyan
+
+  - Ayu Light (ayu-light)
+    https://github.com/ayu-theme/vscode-ayu/blob/master/ayu-light.json
+  - Ayu Dark (ayu-dark)
+    https://github.com/ayu-theme/vscode-ayu/blob/master/ayu-dark.json
+
+==============================================================================
+Visual Studio Code
+License: MIT
+Copyright (c) 2015 - present Microsoft Corporation
+
+  - VS Code Light 2026 (vscode-light-2026)
+    https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/2026-light.json
+  - VS Code Dark 2026 (vscode-dark-2026)
+    https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/2026-dark.json
+
+==============================================================================
+Nightfox (EdenEast/nightfox.nvim)
+License: MIT
+Copyright (c) 2021 James Simpson
+
+  - Dayfox (dayfox)
+    https://github.com/EdenEast/nightfox.nvim/blob/main/extra/dayfox/windows_terminal.json
+  - Nightfox (nightfox)
+    https://github.com/EdenEast/nightfox.nvim/blob/main/extra/nightfox/windows_terminal.json
+
+==============================================================================
+Kanagawa (rebelot/kanagawa.nvim)
+License: MIT
+Copyright (c) 2021 Tommaso Laurenzi
+
+  - Kanagawa Lotus (kanagawa-lotus)
+    https://github.com/rebelot/kanagawa.nvim/blob/master/extras/ghostty/kanagawa-lotus
+  - Kanagawa Wave (kanagawa-wave)
+    https://github.com/rebelot/kanagawa.nvim/blob/master/extras/windows-terminal/kanagawa.json
+
+==============================================================================
 Windows Terminal
 License: MIT
 Copyright (c) Microsoft Corporation. All rights reserved.
 
   - Campbell (campbell)
     https://github.com/microsoft/terminal/blob/main/src/cascadia/TerminalSettingsModel/defaults.json
+
+==============================================================================
+xterm
+License: X11
+Copyright 2002-2006,2009 by Thomas E. Dickey
+
+  - Classic Black (xterm) (xterm-classic)
+    https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad
 
 ==============================================================================
 Dracula for Windows Terminal
@@ -121,22 +191,6 @@ Copyright (c) 2016-present Sven Greb <development@svengreb.de>
     https://github.com/nordtheme/alacritty/blob/main/src/nord.yaml
 
 ==============================================================================
-Kanagawa (rebelot/kanagawa.nvim)
-License: MIT
-Copyright (c) 2021 Tommaso Laurenzi
-
-  - Kanagawa Wave (kanagawa-wave)
-    https://github.com/rebelot/kanagawa.nvim/blob/master/extras/windows-terminal/kanagawa.json
-
-==============================================================================
-xterm
-License: X11
-Copyright 2002-2006,2009 by Thomas E. Dickey
-
-  - Classic Black (xterm) (xterm-classic)
-    https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad
-
-==============================================================================
 Termlet 自调的配色，没有外部来源：
   - High Contrast Light (high-contrast-light)
   - High Contrast Dark (high-contrast-dark)
@@ -145,17 +199,22 @@ Termlet 自调的配色，没有外部来源：
 MIT License
 
 Copyright (c) 2019 Son A. Pham <sp@sonpham.me>
+Copyright (c) 2013-2022 Binaryify
 Copyright (c) 2011 Ethan Schoonover
 Copyright (c) 2022 projekt0n
 Copyright (c) 2021 Catppuccin
 Copyright (c) Pavel Pertsev <morhetz@gmail.com>
 Copyright (c) Rosé Pine
+Copyright (C) 2011 Chris Kempson
 Copyright (c) 2019 sainnhe
 Copyright (c) 2023 Steph Ango
+Copyright (c) 2016 Ike Kurghinyan
+Copyright (c) 2015 - present Microsoft Corporation
+Copyright (c) 2021 James Simpson
+Copyright (c) 2021 Tommaso Laurenzi
 Copyright (c) Microsoft Corporation. All rights reserved.
 Copyright (c) 2019 thismat
 Copyright (c) 2016-present Sven Greb <development@svengreb.de>
-Copyright (c) 2021 Tommaso Laurenzi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

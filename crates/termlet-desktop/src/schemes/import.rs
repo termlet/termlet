@@ -43,6 +43,8 @@ pub struct ImportOptions {
     pub remaining: usize,
     pub highlights: Rc<SampleHighlights>,
     pub font_family: SharedString,
+    /// 打开时停在哪个页签；停在“本机已装的客户端”时立即开始读取
+    pub source: Source,
     /// 按“导入”时调用，参数是勾选的配色（已改名、颜色已规范）
     pub on_import: Rc<dyn Fn(Vec<ColorScheme>, &mut Window, &mut App)>,
 }
@@ -50,6 +52,7 @@ pub struct ImportOptions {
 /// 打开导入对话框。
 pub fn open(options: ImportOptions, window: &mut Window, cx: &mut App) {
     let view = cx.new(|cx| SchemeImport::new(options, window, cx));
+    view.update(cx, |view, cx| view.read_installed_once(window, cx));
     let width = rems(48.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, _| {
         // Enter 与点“导入”相同（能导入时）；导入后由 submit 关闭对话框，这里总是返回 false
@@ -73,8 +76,9 @@ pub fn open(options: ImportOptions, window: &mut Window, cx: &mut App) {
     });
 }
 
+/// 导入对话框的页签：文件、粘贴、本机已装的客户端。
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Source {
+pub enum Source {
     File,
     Paste,
     Installed,
@@ -148,6 +152,8 @@ struct SchemeImport {
     batches: Vec<Batch>,
     selected: HashSet<usize>,
     busy: bool,
+    /// 读取过本机已装客户端的配色（第一次切到这个页签时自动读一次，之后按“重新读取”）
+    installed_read: bool,
     /// 读取的序号：每次读取、切换来源时加一，返回时已不是最新的结果丢弃
     read_seq: u64,
     error: Option<SharedString>,
@@ -173,14 +179,15 @@ impl SchemeImport {
             .map(|n| n.trim().to_lowercase())
             .collect();
         Self {
+            source: options.source,
             options,
             taken,
-            source: Source::File,
             text,
             found: None,
             batches: Vec::new(),
             selected: HashSet::new(),
             busy: false,
+            installed_read: false,
             read_seq: 0,
             error: None,
             _read: None,
@@ -188,7 +195,7 @@ impl SchemeImport {
         }
     }
 
-    fn switch_source(&mut self, source: Source, cx: &mut Context<Self>) {
+    fn switch_source(&mut self, source: Source, window: &mut Window, cx: &mut Context<Self>) {
         if self.source == source {
             return;
         }
@@ -196,7 +203,15 @@ impl SchemeImport {
         self.read_seq += 1;
         self.busy = false;
         self.source = source;
+        self.read_installed_once(window, cx);
         cx.notify();
+    }
+
+    /// 停在“本机已装的客户端”页签而还没有读过时，读一次（读取在后台，没有副作用）。
+    fn read_installed_once(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.source == Source::Installed && !self.installed_read {
+            self.read_installed(window, cx);
+        }
     }
 
     /// 显示读取结果：默认勾选不重名的。
@@ -290,6 +305,7 @@ impl SchemeImport {
 
     /// 在后台读取本机已装客户端的配色。
     fn read_installed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.installed_read = true;
         self.read_seq += 1;
         let seq = self.read_seq;
         self.busy = true;
@@ -433,6 +449,8 @@ impl SchemeImport {
                         .small()
                         .label(if self.busy {
                             t!("schemes.import.reading")
+                        } else if self.installed_read {
+                            t!("schemes.import.reread")
                         } else {
                             t!("schemes.import.read_installed")
                         })
@@ -641,9 +659,9 @@ impl Render for SchemeImport {
                         .segmented()
                         .small()
                         .selected_index(source_ix)
-                        .on_click(cx.listener(|this, ix: &usize, _, cx| {
+                        .on_click(cx.listener(|this, ix: &usize, window, cx| {
                             if let Some(source) = Source::ALL.get(*ix) {
-                                this.switch_source(*source, cx);
+                                this.switch_source(*source, window, cx);
                             }
                         }))
                         .child(Tab::new().label(t!("schemes.import.from_file")))

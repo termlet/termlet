@@ -2,8 +2,9 @@
 //!
 //! - 规则按顺序匹配，匹配之间互不重叠，重叠时靠前的规则优先；一行最多 [`MAX_MATCHES_PER_LINE`] 处；
 //!   空匹配跳过。设置页的预览与终端渲染用同一个 [`Highlighter::find_matches`]。
-//! - 关键词按字面匹配。正则中的 `\b` 按 ASCII 的单词边界（与 JavaScript 正则相同："连接failed" 中的
-//!   failed 也算整词），这样正则引擎在含中文的行上也能走快速路径。
+//! - 关键词按字面匹配。正则中的 `\b`、`\B` 按 ASCII 的单词边界（与 JavaScript 正则相同："连接failed" 中的
+//!   failed 也算整词），这样正则引擎在含中文的行上也能走快速路径（按 Unicode 判断边界时，惰性 DFA 遇到非 ASCII
+//!   字节就放弃，整个合并的 `RegexSet` 退回慢的引擎）。
 //! - 先用合并的 `RegexSet` 判断一行命中了哪些规则，只对命中的规则逐个找位置；渲染时按逻辑行的文字缓存结果，
 //!   行的内容不变就不再匹配。渲染时在可见区的快照（[`GridSnapshot`]）上匹配，不碰内核。
 //! - 渲染时只给程序没有着色的文字（默认前景色、不反色）着色：一处匹配中有一个格子程序着过色就不改这一处
@@ -115,7 +116,8 @@ fn compile(rule: &HighlightRuleSpec) -> Result<Regex, regex::Error> {
         .build()
 }
 
-/// 字符类之外的 `\b` 换成 ASCII 的单词边界 `(?-u:\b)`（`\\b` 是反斜杠加 b，不换；`\b{start}` 等是 Rust 的写法，不换）。
+/// 字符类之外的 `\b`、`\B` 换成 ASCII 的单词边界 `(?-u:\b)`、`(?-u:\B)`（`\\b` 是反斜杠加 b，不换；`\b{start}` 等是
+/// Rust 的写法，不换）。
 fn ascii_word_boundaries(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len() + 8);
     let mut chars = pattern.chars().peekable();
@@ -127,6 +129,7 @@ fn ascii_word_boundaries(pattern: &str) -> String {
         match c {
             '\\' => match chars.next() {
                 Some('b') if class == 0 && chars.peek() != Some(&'{') => out.push_str(r"(?-u:\b)"),
+                Some('B') if class == 0 => out.push_str(r"(?-u:\B)"),
                 Some(next) => {
                     out.push('\\');
                     out.push(next);
@@ -239,6 +242,11 @@ impl Highlighter {
     /// 可用的规则数。
     pub fn len(&self) -> usize {
         self.rules.len()
+    }
+
+    /// 规则是否合并成了一个 `RegexSet`（只有一条时不需要合并，也算）；合并失败（太大）时退回逐条匹配，慢得多。
+    pub fn is_merged(&self) -> bool {
+        self.set.is_some() || self.rules.len() <= 1
     }
 
     /// 文本中的匹配：按位置排列、互不重叠，重叠时靠前的规则优先，最多 [`MAX_MATCHES_PER_LINE`] 处。
@@ -376,6 +384,10 @@ fn is_plain(snapshot: &GridSnapshot, point: GridPoint) -> bool {
     })
 }
 
+/// 与 core 的 IPv6 预设（`model/highlight.rs`）相同，测试与测量用。
+#[cfg(test)]
+const IPV6: &str = r"\[::\](?::[0-9]{1,5}\b)?|\B:::[0-9]{1,5}\b|\B::/[0-9]{1,3}\b|\[?(?:\b(?:[0-9a-f]{3,4}|[0-9a-f])(?::[0-9a-f]{1,4}){7}\b|\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){5}:(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b|\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){1,6}::(?:(?:[0-9a-f]{1,4}:){0,5}(?:[0-9]{1,3}\.){3}[0-9]{1,3}|[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})\b|\b[0-9a-f]{1,4}::(?:(?:[0-9a-f]{1,4}:){0,5}(?:[0-9]{1,3}\.){3}[0-9]{1,3}|[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){1,6})\b|\b(?:[0-9a-f]{0,3}[0-9][0-9a-f]{0,3}::[0-9a-f]{1,4}|[0-9a-f]{1,4}::[0-9a-f]{0,3}[0-9][0-9a-f]{0,3})\b|\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){1,6}::\B|\b[0-9a-f]{0,3}[0-9][0-9a-f]{0,3}::\B|\B::(?:(?:[0-9a-f]{1,4}:){0,5}(?:[0-9]{1,3}\.){3}[0-9]{1,3}|[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){1,6})\b|\B::[0-9a-f]{0,3}[0-9][0-9a-f]{0,3}\b)(?:%[0-9a-z]+(?:[._-][0-9a-z]+)*)?(?:\](?::[0-9]{1,5}\b)?|/[0-9]{1,3}\b)?";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -392,7 +404,7 @@ mod tests {
         }
     }
 
-    /// 与 core 的内置规则相同
+    /// 与 core 的默认规则相同
     fn builtin() -> Highlighter {
         let (highlighter, errors) = Highlighter::new(&[
             rule(
@@ -410,6 +422,7 @@ mod tests {
                 true,
                 HighlightColor::Green,
             ),
+            rule(IPV6, true, HighlightColor::Cyan),
             rule(
                 r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b",
                 true,
@@ -440,6 +453,14 @@ mod tests {
                 ("Warning".into(), HighlightColor::Yellow),
                 ("ok".into(), HighlightColor::Green),
             ]
+        );
+        // IPv6 连方括号与端口；时间、MAC 不算
+        assert_eq!(
+            texts(
+                "connect [2001:db8::1]:22 at 12:34:56 from aa:bb:cc:dd:ee:ff",
+                &builtin()
+            ),
+            vec![("[2001:db8::1]:22".into(), HighlightColor::Cyan)]
         );
         // ASCII 的单词边界：紧挨着中文也算整词
         assert_eq!(
@@ -526,6 +547,14 @@ mod tests {
         assert_eq!(ascii_word_boundaries(r"[\b]\b"), r"[\b](?-u:\b)");
         assert_eq!(ascii_word_boundaries(r"[]\b]\b"), r"[]\b](?-u:\b)");
         assert_eq!(ascii_word_boundaries(r"\b{start}x"), r"\b{start}x");
+        assert_eq!(ascii_word_boundaries(r"\B::\b"), r"(?-u:\B)::(?-u:\b)");
+        assert_eq!(ascii_word_boundaries(r"\\B"), r"\\B");
+        // ASCII 的 \B 能编译；中文按 ASCII 不算单词字符，与冒号之间不是边界
+        let (highlighter, errors) =
+            Highlighter::new(&[rule(r"\B::1\b", true, HighlightColor::Cyan)]);
+        assert!(errors.is_empty());
+        assert_eq!(highlighter.find_matches("地址::1").len(), 1);
+        assert!(highlighter.find_matches("a::1").is_empty());
     }
 
     #[test]
@@ -581,7 +610,8 @@ mod bench {
     use crate::engine::test_kernel;
     use std::time::Instant;
 
-    fn rules(extra: usize) -> Vec<HighlightRuleSpec> {
+    /// 默认规则（`ipv6` 为 false 时是 0.3.3 之前没有 IPv6 的 4 条）加上 `extra` 条凑数的规则。
+    fn rules(ipv6: bool, extra: usize) -> Vec<HighlightRuleSpec> {
         let rule = |pattern: &str, regex: bool, color| HighlightRuleSpec {
             pattern: pattern.into(),
             regex,
@@ -605,12 +635,15 @@ mod bench {
                 true,
                 HighlightColor::Green,
             ),
-            rule(
-                r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b",
-                true,
-                HighlightColor::Cyan,
-            ),
         ];
+        if ipv6 {
+            rules.push(rule(IPV6, true, HighlightColor::Cyan));
+        }
+        rules.push(rule(
+            r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b",
+            true,
+            HighlightColor::Cyan,
+        ));
         for i in 0..extra {
             if i % 2 == 0 {
                 rules.push(rule(&format!("keyword{i}"), false, HighlightColor::Blue));
@@ -680,11 +713,12 @@ mod bench {
     #[test]
     #[ignore = "耗时测量，手动运行"]
     fn highlight_frame() {
-        for extra in [0, 46] {
-            let (highlighter, errors) = Highlighter::new(&rules(extra));
+        // 0.3.3 之前的 4 条默认规则、现在的 5 条（加了 IPv6）、凑满 50 条
+        for (ipv6, extra) in [(false, 0), (true, 0), (true, 45)] {
+            let (highlighter, errors) = Highlighter::new(&rules(ipv6, extra));
             assert!(errors.is_empty());
             let highlighter = Arc::new(highlighter);
-            let mut without_set = Highlighter::new(&rules(extra)).0;
+            let mut without_set = Highlighter::new(&rules(ipv6, extra)).0;
             without_set.set = None;
             let without_set = Arc::new(without_set);
             println!(

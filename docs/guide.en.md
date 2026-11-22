@@ -721,18 +721,21 @@ Default shortcuts:
 
 ### Keyword highlighting
 
-- Colors error, failed, warning, ok, IP addresses and so on.
+- Colors error, failed, warning, ok, IPv4 and IPv6 addresses and so on.
 - Only in text the program has not colored, and not in full-screen programs such as vim.
 - Edit the rules (keywords or regular expressions) and colors, or turn it off, with the "Keyword highlighting" button in the title bar (the same as Settings → Highlighting).
+- "Add Preset" also offers URLs, MAC addresses, UUIDs, dates and times, and numbers (with their units, such as `230ms`); presets already in the list are checked, and a default rule deleted by mistake can be added back there. Presets in the list show their name in front of the pattern.
+- When rules overlap, the earlier one wins: presets are inserted in a fixed order (URLs first, numbers last), so an IP inside a URL or the numbers in a date are not colored on their own.
+- `\b` and `\B` in regular expressions use ASCII word boundaries, so text right next to Chinese counts as a boundary (in "连接failed", failed is a whole word).
 
 ### Terminal color schemes
 
 - In Settings → Color Schemes, choose the scheme used in light mode and the one used in dark mode. Any scheme can go in either; use the same one in both for a dark terminal in a light interface.
 - When you switch the interface between light and dark (Settings → General or the command palette), the terminal follows.
 - Programs that turn on theme change notifications (DEC 2031), such as Claude Code and Neovim, are told when the terminal background switches between light and dark and change their own colors.
-- 26 schemes are built in (Solarized, Catppuccin, Tokyo Night, Gruvbox, Dracula, Nord and more, each with its source and license).
+- 38 schemes are built in (Solarized, Catppuccin, Tokyo Night, Gruvbox, Dracula, Nord, One Dark Pro, Ayu, VS Code and more, each with its source and license).
 - Cards preview them in your font and mark colors that are hard to read on that background, and "Keep text readable" can be turned on.
-- Import schemes from Windows Terminal, iTerm2 (`.itermcolors`), Xshell (`.xcs`), MobaXterm, base16, Alacritty, Kitty, Ghostty, Xresources, Tabby and Gogh (drop, choose files or paste; the format is detected), or read them directly from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer.
+- Import schemes from Windows Terminal, iTerm2 (`.itermcolors`), Xshell (`.xcs`), MobaXterm, base16, Alacritty, Kitty, Ghostty, Xresources, Tabby and Gogh (drop, choose files or paste; the format is detected), or read them directly from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer. When a search in the library finds nothing, both options are offered right there.
 - Export as Windows Terminal JSON or `.itermcolors`.
 - Copy a scheme as a custom one to edit its colors.
 - A host's Terminal page and a group can use a fixed scheme (for example to make production stand out).

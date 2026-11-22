@@ -6,6 +6,12 @@ This file lists the changes you will notice in each version, newest first. Versi
 
 ## 0.3.3 (unreleased)
 
+### Added
+
+- Keyword highlighting now marks IPv6 addresses by default: full and `::`-compressed forms, zones such as `fe80::1%eth0`, `/64` prefixes, `::ffff:192.0.2.1`, and bracketed forms with a port such as `[::1]:22` and `[::]:22`. Times (`12:34:56`), MAC addresses, certificate fingerprints and code such as `std::vector` are not mistaken for IPv6. If you never changed the highlighting rules, the new rule is added when you upgrade; changed rules are kept as they are, and you can add it with "Add Preset".
+- "Add Preset" in the keyword highlighting settings: besides the default error, warning and success keywords and IPv4 / IPv6 addresses, you can add URLs, MAC addresses, UUIDs, dates and times, and numbers (with their units, such as `230ms` and `1.5GiB`). Presets already in the list are checked. Presets are inserted in a fixed order (URLs first, numbers last), so URLs and dates are not colored in pieces, and a default rule deleted by mistake can be added back here. Presets in the list show their name in front of the pattern.
+- 12 new built-in terminal color schemes, 38 in total: One Dark Pro, Ayu Dark / Light, VS Code Dark 2026 / Light 2026, Tomorrow Night, Catppuccin Frappé / Macchiato, Rosé Pine Moon, Nightfox / Dayfox and Kanagawa Lotus, each taken from the project's own files, with its source and license.
+
 ### Changed
 
 - The command-line tool (`termlet exec`, `upload`, `download`) and MCP now warn you too when a login certificate is about to expire: when an OpenSSH certificate (including one used for a jump host) expires in less than an hour, the command runs as usual and a line on stderr says when it expires and about how many minutes are left, naming the jump host for a jump host's certificate (the same warning the terminal shows). The JSON gets an `expiringCertificates` field listing each certificate's expiry time and minutes left (plus `jump` for a jump host's), left out when no certificate is about to expire, and MCP results warn you the same way. Before, only the terminal warned you, so command-line and AI calls found out only once the certificate had expired and they couldn't connect.
@@ -14,6 +20,8 @@ This file lists the changes you will notice in each version, newest first. Versi
 - The "Command-line tool" page in Settings is now called "AI & automation", since it covers more than the termlet command: the Agent Skill, the MCP server, the audit log and the dangerous command rules too. The switch at the top now reads "Allow access from AI tools and scripts". The page of the same name in the host dialog is renamed too, and its options now read "Allow AI tools and scripts to use this host" and "Use a separate credential for AI tools and scripts". Error messages from the termlet command and the Agent Skill use the new name (an installed Agent Skill shows that an update is available).
 - MCP server configuration: you now pick the AI tool from a drop-down, which adds VS Code (GitHub Copilot, in `~/.copilot/mcp-config.json`), Gemini CLI and generic JSON for other AI tools. Claude Code, Codex and Gemini CLI get both their `mcp add` command and the configuration file, each with its own Copy button. For Claude Desktop, you now find the configuration file through its Settings → Developer → Edit Config (on Windows its location depends on how Claude Desktop was installed, so the path given before wasn't always right).
 - When a dangerous command comes from MCP, the approval dialog's title names the AI tool (such as "claude-code (MCP) wants to run a dangerous command on …"); before, it always said "The command-line tool".
+- When a search in the color scheme library finds nothing, it now suggests importing scheme files from other terminals or reading the schemes in Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer, with a button for each. The import dialog starts reading as soon as you switch to "Installed clients".
+- In highlighting regexes, `\B` now uses ASCII word boundaries like `\b` (text right next to Chinese counts as a boundary), which makes matching faster on lines with Chinese text.
 
 ### Fixed
 

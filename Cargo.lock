@@ -8207,6 +8207,7 @@ dependencies = [
  "raw-window-handle",
  "regex",
  "rust-i18n",
+ "serde_json",
  "sys-locale",
  "termlet-core",
  "termlet-terminal",

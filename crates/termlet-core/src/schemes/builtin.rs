@@ -128,6 +128,30 @@ const WINDOWS_TERMINAL: SchemeSource = SchemeSource {
     license: License::Mit,
     copyright: "Copyright (c) Microsoft Corporation. All rights reserved.",
 };
+const AYU: SchemeSource = SchemeSource {
+    project: "ayu (ayu-theme/vscode-ayu)",
+    url: "",
+    license: License::Mit,
+    copyright: "Copyright (c) 2016 Ike Kurghinyan",
+};
+const VSCODE: SchemeSource = SchemeSource {
+    project: "Visual Studio Code",
+    url: "",
+    license: License::Mit,
+    copyright: "Copyright (c) 2015 - present Microsoft Corporation",
+};
+const NIGHTFOX: SchemeSource = SchemeSource {
+    project: "Nightfox (EdenEast/nightfox.nvim)",
+    url: "",
+    license: License::Mit,
+    copyright: "Copyright (c) 2021 James Simpson",
+};
+const KANAGAWA: SchemeSource = SchemeSource {
+    project: "Kanagawa (rebelot/kanagawa.nvim)",
+    url: "",
+    license: License::Mit,
+    copyright: "Copyright (c) 2021 Tommaso Laurenzi",
+};
 
 /// 全部内置配色，按设置中列出的顺序。
 pub(super) const SCHEMES: &[RawScheme] = &[
@@ -187,6 +211,27 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         source: Some(SchemeSource {
             url: gh!("sonph/onehalf", "iterm/OneHalfDark.itermcolors", "master"),
             ..ONE_HALF
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // VS Code 主题 JSON 中的 terminal.*。主题没写终端光标色，与 VS Code 终端相同用前景色；
+        // 选区 #abb2bf30 按透明度叠在背景上
+        id: "one-dark-pro",
+        name: "One Dark Pro",
+        foreground: "#abb2bf",
+        background: "#282c34",
+        cursor: "#abb2bf",
+        selection_background: "#41454e",
+        ansi: ansi(
+            "#3f4451 #e05561 #8cc265 #d18f52 #4aa5f0 #c162de #42b3c2 #d7dae0",
+            "#4f5666 #ff616e #a5e075 #f0a45d #4dc4ff #de73ff #4cd1e0 #e6e6e6",
+        ),
+        source: Some(SchemeSource {
+            project: "One Dark Pro (Binaryify/OneDark-Pro)",
+            url: gh!("Binaryify/OneDark-Pro", "themes/OneDark-Pro.json", "master"),
+            license: License::Mit,
+            copyright: "Copyright (c) 2013-2022 Binaryify",
         }),
         ..BLANK
     },
@@ -273,6 +318,40 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         ),
         source: Some(SchemeSource {
             url: gh!("catppuccin/windows-terminal", "latte.json"),
+            ..CATPPUCCIN
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        id: "catppuccin-frappe",
+        name: "Catppuccin Frappé",
+        foreground: "#c6d0f5",
+        background: "#303446",
+        cursor: "#f2d5cf",
+        selection_background: "#626880",
+        ansi: ansi(
+            "#51576d #e78284 #a6d189 #e5c890 #8caaee #f4b8e4 #81c8be #b5bfe2",
+            "#626880 #e78284 #a6d189 #e5c890 #8caaee #f4b8e4 #81c8be #a5adce",
+        ),
+        source: Some(SchemeSource {
+            url: gh!("catppuccin/windows-terminal", "frappe.json"),
+            ..CATPPUCCIN
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        id: "catppuccin-macchiato",
+        name: "Catppuccin Macchiato",
+        foreground: "#cad3f5",
+        background: "#24273a",
+        cursor: "#f4dbd6",
+        selection_background: "#5b6078",
+        ansi: ansi(
+            "#494d64 #ed8796 #a6da95 #eed49f #8aadf4 #f5bde6 #8bd5ca #b8c0e0",
+            "#5b6078 #ed8796 #a6da95 #eed49f #8aadf4 #f5bde6 #8bd5ca #a5adcb",
+        ),
+        source: Some(SchemeSource {
+            url: gh!("catppuccin/windows-terminal", "macchiato.json"),
             ..CATPPUCCIN
         }),
         ..BLANK
@@ -382,6 +461,23 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         ..BLANK
     },
     RawScheme {
+        id: "rose-pine-moon",
+        name: "Rosé Pine Moon",
+        foreground: "#e0def4",
+        background: "#232136",
+        cursor: "#6e6a86",
+        selection_background: "#44415a",
+        ansi: ansi(
+            "#393552 #eb6f92 #3e8fb0 #f6c177 #9ccfd8 #c4a7e7 #ea9a97 #e0def4",
+            "#908caa #eb6f92 #3e8fb0 #f6c177 #9ccfd8 #c4a7e7 #ea9a97 #e0def4",
+        ),
+        source: Some(SchemeSource {
+            url: gh!("rose-pine/windows-terminal", "rose-pine-moon.scheme.json"),
+            ..ROSE_PINE
+        }),
+        ..BLANK
+    },
+    RawScheme {
         id: "rose-pine",
         name: "Rosé Pine",
         foreground: "#e0def4",
@@ -395,6 +491,31 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         source: Some(SchemeSource {
             url: gh!("rose-pine/windows-terminal", "rose-pine.scheme.json"),
             ..ROSE_PINE
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // iTerm2 移植中 brightBlack 是 #000000（在背景上看不见），改用同一仓库 termite 移植的 color8
+        // （Tomorrow 的注释色）；其余 bright 色与普通色相同，原文如此
+        id: "tomorrow-night",
+        name: "Tomorrow Night",
+        foreground: "#c5c8c6",
+        background: "#1d1f21",
+        cursor: "#c5c8c6",
+        selection_background: "#373b41",
+        ansi: ansi(
+            "#000000 #cc6666 #b5bd68 #f0c674 #81a2be #b294bb #8abeb7 #ffffff",
+            "#969896 #cc6666 #b5bd68 #f0c674 #81a2be #b294bb #8abeb7 #ffffff",
+        ),
+        source: Some(SchemeSource {
+            project: "Tomorrow Theme",
+            url: gh!(
+                "chriskempson/tomorrow-theme",
+                "iTerm2/Tomorrow%20Night.itermcolors",
+                "master"
+            ),
+            license: License::Mit,
+            copyright: "Copyright (C) 2011 Chris Kempson",
         }),
         ..BLANK
     },
@@ -466,7 +587,175 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         }),
     },
     RawScheme {
-        // Windows Terminal 的默认配色。原数据没有选区色（Windows Terminal 用半透明白色叠加），
+        // vscode-ayu 主题 JSON 中的 terminal.*（由 ayu-colors 生成）。前景 #020a12a3 带透明度，叠在背景上；
+        // 主题没写终端光标色与选区色，与 VS Code 终端相同：光标用前景色，选区用 editor.selectionBackground
+        // （#035bd626，叠在背景上）
+        id: "ayu-light",
+        name: "Ayu Light",
+        foreground: "#5b6066",
+        background: "#f8f9fa",
+        cursor: "#5b6066",
+        selection_background: "#d3e1f5",
+        ansi: ansi(
+            "#000000 #f06b6c #6cbf43 #e7a100 #21a1e2 #a176cb #4abc96 #c7c7c7",
+            "#686868 #f07171 #86b300 #eba400 #22a4e6 #a37acc #4cbf99 #d1d1d1",
+        ),
+        source: Some(SchemeSource {
+            url: gh!("ayu-theme/vscode-ayu", "ayu-light.json", "master"),
+            ..AYU
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // 同上（深色）：前景 #fcf8ecbd、选区 #3388ff40 叠在背景上
+        id: "ayu-dark",
+        name: "Ayu Dark",
+        foreground: "#bebcb5",
+        background: "#0d1017",
+        cursor: "#bebcb5",
+        selection_background: "#172e51",
+        ansi: ansi(
+            "#1b1f29 #f06b73 #70bf56 #fdb04c #4fbfff #d0a1ff #93e2c8 #c7c7c7",
+            "#686868 #f07178 #aad94c #ffb454 #59c2ff #d2a6ff #95e6cb #ffffff",
+        ),
+        source: Some(SchemeSource {
+            url: gh!("ayu-theme/vscode-ayu", "ayu-dark.json", "master"),
+            ..AYU
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // VS Code 的默认浅色主题 Light 2026：16 色是终端的内置默认（terminalColorRegistry.ts），前景取它继承的
+        // light_modern.json 的 terminal.foreground，背景取终端所在面板的 panel.background；
+        // 选区 #0069cc26 叠在背景上
+        id: "vscode-light-2026",
+        name: "VS Code Light 2026",
+        foreground: "#3b3b3b",
+        background: "#fafafd",
+        cursor: "#202020",
+        cursor_accent: Some("#ffffff"),
+        selection_background: "#d5e4f6",
+        ansi: ansi(
+            "#000000 #cd3131 #107c10 #949800 #0451a5 #bc05bc #0598bc #555555",
+            "#666666 #f14c4c #14ce14 #b5ba00 #3b8eea #d670d6 #29b8db #a5a5a5",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "microsoft/vscode",
+                "extensions/theme-defaults/themes/2026-light.json"
+            ),
+            ..VSCODE
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // 同上（深色 Dark 2026）：前景取 dark_modern.json 的 terminal.foreground，选区 #3994bc33 叠在背景上
+        id: "vscode-dark-2026",
+        name: "VS Code Dark 2026",
+        foreground: "#cccccc",
+        background: "#191a1b",
+        cursor: "#bfbfbf",
+        selection_background: "#1f323b",
+        ansi: ansi(
+            "#000000 #cd3131 #0dbc79 #e5e510 #2472c8 #bc3fbc #11a8cd #e5e5e5",
+            "#666666 #f14c4c #23d18b #f5f543 #3b8eea #d670d6 #29b8db #e5e5e5",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "microsoft/vscode",
+                "extensions/theme-defaults/themes/2026-dark.json"
+            ),
+            ..VSCODE
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        id: "dayfox",
+        name: "Dayfox",
+        foreground: "#3d2b5a",
+        background: "#f6f2ee",
+        cursor: "#3d2b5a",
+        selection_background: "#e7d2be",
+        ansi: ansi(
+            "#352c24 #a5222f #396847 #ac5402 #2848a9 #6e33ce #287980 #f2e9e1",
+            "#534c45 #b3434e #577f63 #b86e28 #4863b6 #8452d5 #488d93 #f4ece6",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "EdenEast/nightfox.nvim",
+                "extra/dayfox/windows_terminal.json"
+            ),
+            ..NIGHTFOX
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        id: "nightfox",
+        name: "Nightfox",
+        foreground: "#cdcecf",
+        background: "#192330",
+        cursor: "#cdcecf",
+        selection_background: "#2b3b51",
+        ansi: ansi(
+            "#393b44 #c94f6d #81b29a #dbc074 #719cd6 #9d79d6 #63cdcf #dfdfe0",
+            "#575860 #d16983 #8ebaa4 #e0c989 #86abdc #baa1e2 #7ad5d6 #e4e4e5",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "EdenEast/nightfox.nvim",
+                "extra/nightfox/windows_terminal.json"
+            ),
+            ..NIGHTFOX
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // 同一仓库 Windows Terminal 文件中的 KanagawaLotus 光标 #c9cbd1、选区 #b5cbd2 对背景都只有约 1.4:1，
+        // 改取 ghostty 移植（16 色与之相同，光标、选区与主题源码一致）
+        id: "kanagawa-lotus",
+        name: "Kanagawa Lotus",
+        foreground: "#545464",
+        background: "#f2ecbc",
+        cursor: "#43436c",
+        selection_background: "#c9cbd1",
+        selection_foreground: Some("#43436c"),
+        ansi: ansi(
+            "#1f1f28 #c84053 #6f894e #77713f #4d699b #b35b79 #597b75 #545464",
+            "#8a8980 #d7474b #6e915f #836f4a #6693bf #624c83 #5e857a #43436c",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "rebelot/kanagawa.nvim",
+                "extras/ghostty/kanagawa-lotus",
+                "master"
+            ),
+            ..KANAGAWA
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        id: "kanagawa-wave",
+        name: "Kanagawa Wave",
+        foreground: "#dcd7ba",
+        background: "#1f1f28",
+        cursor: "#c8c093",
+        selection_background: "#2d4f67",
+        ansi: ansi(
+            "#090618 #c34043 #76946a #c0a36e #7e9cd8 #957fb8 #6a9589 #c8c093",
+            "#727169 #e82424 #98bb6c #e6c384 #7fb4ca #938aa9 #7aa89f #dcd7ba",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "rebelot/kanagawa.nvim",
+                "extras/windows-terminal/kanagawa.json",
+                "master"
+            ),
+            ..KANAGAWA
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // Windows Terminal 的默认配色。原数据没有选区色（Windows Terminal 缺省画不透明的白色、文字自动换成黑或白），
         // 这里与导入时的补法相同，由前景与背景混合
         id: "campbell",
         name: "Campbell",
@@ -479,6 +768,27 @@ pub(super) const SCHEMES: &[RawScheme] = &[
             "#767676 #e74856 #16c60c #f9f1a5 #3b78ff #b4009e #61d6d6 #f2f2f2",
         ),
         source: Some(WINDOWS_TERMINAL),
+        ..BLANK
+    },
+    RawScheme {
+        // xterm 原生的 16 色（XTerm-col.ad 中的 X11 颜色名换算为十六进制），照顾习惯黑底的用户；
+        // 前景取 color7（gray90），选区与导入时的补法相同，由前景与背景混合
+        id: "xterm-classic",
+        name: "Classic Black (xterm)",
+        foreground: "#e5e5e5",
+        background: "#000000",
+        cursor: "#e5e5e5",
+        selection_background: "#454545",
+        ansi: ansi(
+            "#000000 #cd0000 #00cd00 #cdcd00 #0000ee #cd00cd #00cdcd #e5e5e5",
+            "#7f7f7f #ff0000 #00ff00 #ffff00 #5c5cff #ff00ff #00ffff #ffffff",
+        ),
+        source: Some(SchemeSource {
+            project: "xterm",
+            url: gh!("ThomasDickey/xterm-snapshots", "XTerm-col.ad", "master"),
+            license: License::X11,
+            copyright: "Copyright 2002-2006,2009 by Thomas E. Dickey",
+        }),
         ..BLANK
     },
     RawScheme {
@@ -522,29 +832,6 @@ pub(super) const SCHEMES: &[RawScheme] = &[
         ..BLANK
     },
     RawScheme {
-        id: "kanagawa-wave",
-        name: "Kanagawa Wave",
-        foreground: "#dcd7ba",
-        background: "#1f1f28",
-        cursor: "#c8c093",
-        selection_background: "#2d4f67",
-        ansi: ansi(
-            "#090618 #c34043 #76946a #c0a36e #7e9cd8 #957fb8 #6a9589 #c8c093",
-            "#727169 #e82424 #98bb6c #e6c384 #7fb4ca #938aa9 #7aa89f #dcd7ba",
-        ),
-        source: Some(SchemeSource {
-            project: "Kanagawa (rebelot/kanagawa.nvim)",
-            url: gh!(
-                "rebelot/kanagawa.nvim",
-                "extras/windows-terminal/kanagawa.json",
-                "master"
-            ),
-            license: License::Mit,
-            copyright: "Copyright (c) 2021 Tommaso Laurenzi",
-        }),
-        ..BLANK
-    },
-    RawScheme {
         // Termlet 自调：给视力不好、投影演示的场景。除 black 外，16 色与背景的对比度都不低于 7:1（WCAG AAA）；
         // 选区用深蓝底白字
         id: "high-contrast-light",
@@ -575,27 +862,6 @@ pub(super) const SCHEMES: &[RawScheme] = &[
             "#3c3c3c #ff6b6b #4ee44e #ffeb3b #6cb6ff #ff79ff #4fe8f0 #e0e0e0",
             "#a0a0a0 #ff9999 #8cff8c #ffff8c #9ccfff #ffa8ff #8cffff #ffffff",
         ),
-        ..BLANK
-    },
-    RawScheme {
-        // xterm 原生的 16 色（XTerm-col.ad 中的 X11 颜色名换算为十六进制），照顾习惯黑底的用户；
-        // 前景取 color7（gray90），选区与导入时的补法相同，由前景与背景混合
-        id: "xterm-classic",
-        name: "Classic Black (xterm)",
-        foreground: "#e5e5e5",
-        background: "#000000",
-        cursor: "#e5e5e5",
-        selection_background: "#454545",
-        ansi: ansi(
-            "#000000 #cd0000 #00cd00 #cdcd00 #0000ee #cd00cd #00cdcd #e5e5e5",
-            "#7f7f7f #ff0000 #00ff00 #ffff00 #5c5cff #ff00ff #00ffff #ffffff",
-        ),
-        source: Some(SchemeSource {
-            project: "xterm",
-            url: gh!("ThomasDickey/xterm-snapshots", "XTerm-col.ad", "master"),
-            license: License::X11,
-            copyright: "Copyright 2002-2006,2009 by Thomas E. Dickey",
-        }),
         ..BLANK
     },
 ];

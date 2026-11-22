@@ -425,7 +425,8 @@ impl SchemesPage {
         self.refresh_selects(window, cx);
     }
 
-    fn open_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    /// 打开导入对话框，停在 `source` 页签。
+    fn open_import(&mut self, source: import::Source, window: &mut Window, cx: &mut Context<Self>) {
         let page = cx.entity().downgrade();
         import::open(
             import::ImportOptions {
@@ -433,6 +434,7 @@ impl SchemesPage {
                 remaining: MAX_CUSTOM_SCHEMES.saturating_sub(self.custom.len()),
                 highlights: self.highlights.clone(),
                 font_family: self.font_family.clone(),
+                source,
                 on_import: Rc::new(move |schemes, window, cx| {
                     let _ = page.update(cx, |page, cx| page.on_imported(schemes, window, cx));
                 }),
@@ -779,9 +781,9 @@ impl Render for SchemesPage {
                             .when(full, |this| {
                                 this.tooltip(t!("schemes.full", count = MAX_CUSTOM_SCHEMES))
                             })
-                            .on_click(
-                                cx.listener(|this, _, window, cx| this.open_import(window, cx)),
-                            ),
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.open_import(import::Source::File, window, cx)
+                            })),
                     )
                     .child(
                         Button::new("scheme-export")
@@ -795,10 +797,39 @@ impl Render for SchemesPage {
                     ),
             )
             .child(if cards.is_empty() {
-                div()
+                // 搜索不到：给出导入其他终端的配色、读取本机已装客户端的配色这两条路
+                v_flex()
+                    .gap_2()
+                    .items_start()
                     .text_sm()
                     .text_color(muted)
                     .child(t!("schemes.no_match"))
+                    .child(div().text_xs().child(prose(t!("schemes.no_match_hint"))))
+                    .child(
+                        h_flex()
+                            .gap_2()
+                            .child(
+                                Button::new("scheme-no-match-import")
+                                    .outline()
+                                    .small()
+                                    .icon(IconName::Download)
+                                    .label(t!("schemes.import"))
+                                    .disabled(full)
+                                    .on_click(cx.listener(|this, _, window, cx| {
+                                        this.open_import(import::Source::File, window, cx)
+                                    })),
+                            )
+                            .child(
+                                Button::new("scheme-no-match-installed")
+                                    .outline()
+                                    .small()
+                                    .label(t!("schemes.import.read_installed"))
+                                    .disabled(full)
+                                    .on_click(cx.listener(|this, _, window, cx| {
+                                        this.open_import(import::Source::Installed, window, cx)
+                                    })),
+                            ),
+                    )
                     .into_any_element()
             } else {
                 div()

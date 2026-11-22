@@ -881,6 +881,72 @@ settings.highlight.add:
   zh-TW: 新增規則
   ja: ルールを追加
   ko: 규칙 추가
+settings.highlight.add_preset:
+  zh-CN: 添加预设规则
+  en: Add Preset
+  zh-TW: 新增內建規則
+  ja: プリセットを追加
+  ko: 사전 설정 추가
+settings.highlight.preset.url:
+  zh-CN: 网址
+  en: URLs
+  zh-TW: 網址
+  ja: URL
+  ko: URL
+settings.highlight.preset.errors:
+  zh-CN: 错误关键词
+  en: Error keywords
+  zh-TW: 錯誤關鍵字
+  ja: エラーのキーワード
+  ko: 오류 키워드
+settings.highlight.preset.warnings:
+  zh-CN: 警告关键词
+  en: Warning keywords
+  zh-TW: 警告關鍵字
+  ja: 警告のキーワード
+  ko: 경고 키워드
+settings.highlight.preset.success:
+  zh-CN: 成功关键词
+  en: Success keywords
+  zh-TW: 成功關鍵字
+  ja: 成功のキーワード
+  ko: 성공 키워드
+settings.highlight.preset.ipv6:
+  zh-CN: IPv6 地址
+  en: IPv6 addresses
+  zh-TW: IPv6 位址
+  ja: IPv6 アドレス
+  ko: IPv6 주소
+settings.highlight.preset.ipv4:
+  zh-CN: IPv4 地址
+  en: IPv4 addresses
+  zh-TW: IPv4 位址
+  ja: IPv4 アドレス
+  ko: IPv4 주소
+settings.highlight.preset.mac:
+  zh-CN: MAC 地址
+  en: MAC addresses
+  zh-TW: MAC 位址
+  ja: MAC アドレス
+  ko: MAC 주소
+settings.highlight.preset.uuid:
+  zh-CN: UUID
+  en: UUIDs
+  zh-TW: UUID
+  ja: UUID
+  ko: UUID
+settings.highlight.preset.datetime:
+  zh-CN: 日期与时间
+  en: Dates and times
+  zh-TW: 日期與時間
+  ja: 日付と時刻
+  ko: 날짜 및 시간
+settings.highlight.preset.number:
+  zh-CN: 数字
+  en: Numbers
+  zh-TW: 數字
+  ja: 数値
+  ko: 숫자
 settings.highlight.preview:
   zh-CN: 预览（可修改示例文字）
   en: Preview (you can edit the sample text)

@@ -101,6 +101,12 @@ schemes.no_match:
   zh-TW: 沒有符合的配色
   ja: 一致する配色はありません
   ko: 일치하는 색 구성표가 없습니다
+schemes.no_match_hint:
+  zh-CN: 可以导入其他终端的配色文件，或读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色。
+  en: You can import scheme files from other terminals, or read the schemes in Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer.
+  zh-TW: 可以匯入其他終端機的配色檔案，或讀取本機已安裝的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色。
+  ja: 他のターミナルの配色ファイルをインポートするか、このコンピューターにインストールされている Windows Terminal、Xshell、MobaXterm、Tabby の配色を読み込めます。
+  ko: 다른 터미널의 색 구성표 파일을 가져오거나, 이 컴퓨터에 설치된 Windows Terminal, Xshell, MobaXterm, Tabby의 색 구성표를 읽어 올 수 있습니다.
 schemes.mode.light:
   zh-CN: 浅色
   en: Light
@@ -521,6 +527,12 @@ schemes.import.read_installed:
   zh-TW: 讀取本機的配色
   ja: このコンピューターの配色を読み込む
   ko: 이 컴퓨터의 색 구성표 읽기
+schemes.import.reread:
+  zh-CN: 重新读取
+  en: Read Again
+  zh-TW: 重新讀取
+  ja: 再読み込み
+  ko: 다시 읽기
 schemes.import.installed_hint:
   zh-CN: 从本机已安装的 Windows Terminal、Xshell、MobaXterm、Tabby 中读取配色。
   en: Reads color schemes from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer.

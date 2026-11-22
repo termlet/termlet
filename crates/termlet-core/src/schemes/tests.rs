@@ -53,29 +53,41 @@ fn builtin_ids_are_the_released_ones() {
             "termlet-light",
             "termlet-dark",
             "one-half-dark",
+            "one-dark-pro",
             "solarized-light",
             "solarized-dark",
             "github-light",
             "github-dark",
             "catppuccin-latte",
+            "catppuccin-frappe",
+            "catppuccin-macchiato",
             "catppuccin-mocha",
             "tokyo-night-day",
             "tokyo-night",
             "gruvbox-light",
             "gruvbox-dark",
             "rose-pine-dawn",
+            "rose-pine-moon",
             "rose-pine",
+            "tomorrow-night",
             "everforest-light",
             "everforest-dark",
             "flexoki-light",
             "flexoki-dark",
+            "ayu-light",
+            "ayu-dark",
+            "vscode-light-2026",
+            "vscode-dark-2026",
+            "dayfox",
+            "nightfox",
+            "kanagawa-lotus",
+            "kanagawa-wave",
             "campbell",
+            "xterm-classic",
             "dracula",
             "nord",
-            "kanagawa-wave",
             "high-contrast-light",
             "high-contrast-dark",
-            "xterm-classic",
         ]
     );
 }
@@ -83,7 +95,7 @@ fn builtin_ids_are_the_released_ones() {
 #[test]
 fn builtin_ids_and_names_unique() {
     let list = builtin_schemes();
-    assert!((20..=26).contains(&list.len()));
+    assert!((30..=40).contains(&list.len()));
     let ids: HashSet<&str> = list.iter().map(BuiltinScheme::id).collect();
     assert_eq!(ids.len(), list.len());
     for id in &ids {
@@ -258,6 +270,10 @@ fn light_and_dark_classification() {
         "solarized-light",
         "github-light",
         "high-contrast-light",
+        "ayu-light",
+        "vscode-light-2026",
+        "dayfox",
+        "kanagawa-lotus",
     ] {
         assert!(light.contains(&id), "{id}");
     }
@@ -266,6 +282,14 @@ fn light_and_dark_classification() {
         "solarized-dark",
         "campbell",
         "xterm-classic",
+        "one-dark-pro",
+        "ayu-dark",
+        "vscode-dark-2026",
+        "tomorrow-night",
+        "catppuccin-frappe",
+        "catppuccin-macchiato",
+        "rose-pine-moon",
+        "nightfox",
     ] {
         assert!(dark.contains(&id), "{id}");
     }

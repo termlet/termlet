@@ -2283,6 +2283,251 @@ fn deleting_a_settings_row_keeps_focus_in_the_dialog(cx: &mut TestAppContext) {
     .unwrap();
 }
 
+/// 打开设置的“关键词高亮”页。
+fn open_highlight_settings(cx: &mut TestAppContext, handle: AnyWindowHandle) {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("open-settings", cx);
+        window.render_frame(cx);
+        window.click("settings-nav-highlight", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+}
+
+/// 设置中高亮规则的正则原文，按顺序。
+fn highlight_patterns(cx: &mut TestAppContext) -> Vec<String> {
+    cx.update(|cx| AppState::store(cx).settings().highlight.rules)
+        .into_iter()
+        .map(|rule| rule.pattern)
+        .collect()
+}
+
+fn preset_pattern(id: &str) -> String {
+    use termlet_core::model::HIGHLIGHT_PRESETS;
+    HIGHLIGHT_PRESETS
+        .iter()
+        .find(|p| p.id == id)
+        .unwrap()
+        .pattern
+        .to_string()
+}
+
+// “添加预设规则”：预设行在关键词前标出名称；菜单中已在列表里的打勾、不能再加；加入的预设按预设的先后插入
+// （MAC 在 IPv4 之后，网址在最前），保存后记下默认规则的版本
+#[gpui_kit::test]
+fn highlight_presets_are_inserted_in_order_and_marked(cx: &mut TestAppContext) {
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    open_highlight_settings(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        // 默认 5 条：错误、警告、成功、IPv6、IPv4（行号 0–4）
+        assert_eq!(
+            window.find(("highlight-preset-name", 3usize)).label(),
+            Some("IPv6 地址")
+        );
+        assert_eq!(
+            window.find(("highlight-preset-name", 0usize)).label(),
+            Some("错误关键词")
+        );
+        window.click("highlight-add-preset", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        // 菜单按预设的先后：网址、错误、警告、成功、IPv6、IPv4、MAC、UUID、日期与时间、数字。
+        // 错误关键词已在列表中（打勾、禁用），点了不加
+        window.within("popup-menu").click(1usize, cx);
+        window.render_frame(cx);
+        assert!(window.try_find(("highlight-pattern", 5usize)).is_none());
+        window.within("popup-menu").click(6usize, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert_eq!(
+            window.find(("highlight-preset-name", 5usize)).label(),
+            Some("MAC 地址")
+        );
+        window.click("highlight-add-preset", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.within("popup-menu").click(0usize, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        let y = |window: &gpui_kit::Window, key: usize| {
+            window.find(("highlight-pattern", key)).bounds().origin.y
+        };
+        assert!(y(window, 6) < y(window, 0), "网址插在最前");
+        assert!(y(window, 5) > y(window, 4), "MAC 插在 IPv4 之后");
+        window.click("settings-save", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let ids = [
+        "url", "errors", "warnings", "success", "ipv6", "ipv4", "mac",
+    ];
+    assert_eq!(
+        highlight_patterns(cx),
+        ids.map(preset_pattern).to_vec(),
+        "保存后的顺序与预设的先后相同"
+    );
+    assert_eq!(
+        cx.update(|cx| AppState::store(cx).settings().highlight.rules_version),
+        Some(2)
+    );
+    // 再打开（行号从 0 重新编）：MAC 已加过，点了不加；数字还没加，加在最后
+    open_highlight_settings(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        window.click("highlight-add-preset", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.within("popup-menu").click(6usize, cx);
+        window.render_frame(cx);
+        assert!(window.try_find(("highlight-pattern", 7usize)).is_none());
+        window.within("popup-menu").click(9usize, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert_eq!(
+            window.find(("highlight-preset-name", 7usize)).label(),
+            Some("数字")
+        );
+    })
+    .unwrap();
+}
+
+// 规则满 50 条时“添加规则”与“添加预设规则”都禁用，点了也不出菜单
+#[gpui_kit::test]
+fn highlight_presets_are_disabled_when_the_rules_are_full(cx: &mut TestAppContext) {
+    use termlet_core::model::HighlightRule;
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_settings(|s| {
+                s.highlight.rules = (0..50)
+                    .map(|i| HighlightRule {
+                        pattern: format!("keyword{i}"),
+                        color: "blue".into(),
+                        enabled: true,
+                        ..Default::default()
+                    })
+                    .collect();
+            })
+            .unwrap();
+    });
+    open_highlight_settings(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        // 按钮在 50 行规则下面：先滚到底
+        window.scroll(
+            ("highlight-pattern", 0usize),
+            ScrollDelta::Pixels(point(px(0.), px(-5000.))),
+            cx,
+        );
+        window.render_frame(cx);
+        assert_eq!(window.find("highlight-add").disabled(), Some(true));
+        assert_eq!(window.find("highlight-add-preset").disabled(), Some(true));
+        window.click("highlight-add-preset", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("popup-menu").is_none(), "满了不出菜单");
+    })
+    .unwrap();
+}
+
+// 迁移：0.3.3 之前保存的、从没改过的 4 条默认规则读出来是新的默认（设置页中有 IPv6 一行，菜单中打勾）；
+// 在设置页删掉 IPv6 并保存后，保存的内容带版本标记，再读出来不会把 IPv6 加回来
+#[gpui_kit::test]
+fn old_default_highlight_rules_are_upgraded_and_stay_edited(cx: &mut TestAppContext) {
+    use termlet_core::model::HighlightSettings;
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    // 0.3.2 写进数据库的原样（没有 rulesVersion）
+    let old = r#"{"enabled":true,"rules":[
+        {"pattern":"\\b(error|errors|fail|failed|failure|fatal|panic|denied|refused|exception|critical)\\b","regex":true,"caseSensitive":false,"color":"red","enabled":true},
+        {"pattern":"\\b(warn|warning|warnings|deprecated)\\b","regex":true,"caseSensitive":false,"color":"yellow","enabled":true},
+        {"pattern":"\\b(ok|success|successful|succeeded|passed)\\b","regex":true,"caseSensitive":false,"color":"green","enabled":true},
+        {"pattern":"\\b(?:\\d{1,3}\\.){3}\\d{1,3}(?:/\\d{1,2})?\\b","regex":true,"caseSensitive":false,"color":"cyan","enabled":true}]}"#;
+    let upgraded: HighlightSettings = serde_json::from_str(old).unwrap();
+    assert_eq!(upgraded, HighlightSettings::default());
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_settings(|s| s.highlight = upgraded)
+            .unwrap();
+    });
+    open_highlight_settings(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        assert_eq!(
+            window.find(("highlight-preset-name", 3usize)).label(),
+            Some("IPv6 地址")
+        );
+        window.click(("highlight-delete", 3usize), cx);
+        window.render_frame(cx);
+        window.click("settings-save", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let saved = cx.update(|cx| AppState::store(cx).settings().highlight);
+    assert_eq!(saved.rules.len(), 4);
+    assert_eq!(saved.rules_version, Some(2));
+    let json = serde_json::to_string(&saved).unwrap();
+    let reread: HighlightSettings = serde_json::from_str(&json).unwrap();
+    assert_eq!(
+        reread.rules, saved.rules,
+        "带了版本标记，不再把 IPv6 加回来"
+    );
+}
+
+// 配色库搜索不到时给出导入的两条路；“读取本机的配色”打开导入对话框并停在“本机已装的客户端”页签
+#[gpui_kit::test]
+fn scheme_library_offers_import_when_nothing_matches(cx: &mut TestAppContext) {
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("open-settings", cx);
+        window.render_frame(cx);
+        window.click("settings-nav-schemes", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("scheme-no-match-installed").is_none());
+        window.click("scheme-search", cx);
+        window.input("没有这套配色", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("scheme-no-match-import").is_some());
+        window.click("scheme-no-match-installed", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(
+            window.try_find("scheme-import-installed").is_some(),
+            "停在本机已装的客户端"
+        );
+        assert!(window.try_find("scheme-import-drop").is_none());
+    })
+    .unwrap();
+}
+
 // 同步输入时粘贴要确认的内容，在确认框里点“取消”：之后的键入照常同步到各个终端
 #[gpui_kit::test]
 fn sync_input_continues_after_cancelling_a_paste(cx: &mut TestAppContext) {
