@@ -354,11 +354,29 @@ cli_ui.mcp.label:
   ja: MCP サーバー
   ko: MCP 서버
 cli_ui.mcp.hint:
-  zh-CN: 让 Claude Desktop、Cursor 等 AI 工具把 Termlet 当作 MCP 服务直接调用：列出主机、执行命令、上传下载文件。AI 工具按下面的配置自己启动 termlet mcp（只用标准输入输出，不开网络端口），最上面的开关、危险命令的批准与审计日志都与 termlet 命令相同。MCP 与 Agent Skill 装一种即可：Skill 让 AI 在终端中运行 termlet 命令；MCP 不需要终端，Claude Desktop 这类不能运行命令的工具也能用。
-  en: "Lets AI tools such as Claude Desktop and Cursor call Termlet directly as an MCP server to list hosts, run commands and transfer files. The AI tool starts termlet mcp itself with the configuration below (it only uses standard input and output and opens no network port); the switch at the top of this page, approval of dangerous commands and the audit log work the same as for the termlet command. You only need one of MCP and the Agent Skill: the skill has the AI run termlet commands in a terminal, while MCP needs no terminal, so tools like Claude Desktop that can't run commands can use it too."
-  zh-TW: 讓 Claude Desktop、Cursor 等 AI 工具把 Termlet 當作 MCP 服務直接呼叫：列出主機、執行指令、上傳下載檔案。AI 工具依下面的設定自行啟動 termlet mcp（只用標準輸入輸出，不開網路連接埠），最上面的開關、危險指令的核准與稽核記錄都與 termlet 指令相同。MCP 與 Agent Skill 裝一種即可：Skill 讓 AI 在終端機中執行 termlet 指令；MCP 不需要終端機，Claude Desktop 這類不能執行指令的工具也能用。
-  ja: Claude Desktop、Cursor などの AI ツールが、Termlet を MCP サーバーとして直接呼び出せるようにします（ホストの一覧表示、コマンドの実行、ファイルのアップロード・ダウンロード）。AI ツールは下の設定に従って termlet mcp を自分で起動します（標準入出力のみを使い、ネットワークポートは開きません）。このページ上部のオン・オフ、危険なコマンドの承認、監査ログは termlet コマンドと同じです。MCP と Agent Skill はどちらか一方をインストールすれば十分です。Skill は AI にターミナルで termlet コマンドを実行させます。MCP はターミナルが不要なので、Claude Desktop のようにコマンドを実行できないツールでも使えます。
-  ko: Claude Desktop, Cursor 등 AI 도구가 Termlet을 MCP 서버로 직접 호출해 호스트 목록 보기, 명령 실행, 파일 업로드·다운로드를 할 수 있게 합니다. AI 도구는 아래 구성에 따라 termlet mcp를 직접 시작하며(표준 입출력만 사용하고 네트워크 포트는 열지 않음), 이 페이지 맨 위의 켜기/끄기, 위험한 명령 승인, 감사 로그는 termlet 명령과 같습니다. MCP와 Agent Skill 중 하나만 설치하면 됩니다. Skill은 AI가 터미널에서 termlet 명령을 실행하게 하고, MCP는 터미널이 필요 없어 Claude Desktop처럼 명령을 실행할 수 없는 도구에서도 사용할 수 있습니다.
+  zh-CN: 让 Claude Desktop、Cursor 等 AI 工具把 Termlet 当作 MCP 服务直接调用：列出主机、执行命令、上传下载文件。接入类型有两种：标准输入输出由 AI 工具按下面的配置自己启动 termlet mcp，不开网络端口，推荐使用；HTTP 由 Termlet 在本机监听，AI 工具按地址与令牌连接，只在 Termlet 运行时可用。两种都经过最上面的开关、危险命令的批准与审计日志，与 termlet 命令相同。MCP 与 Agent Skill 装一种即可：Skill 让 AI 在终端中运行 termlet 命令；MCP 不需要终端，Claude Desktop 这类不能运行命令的工具也能用。
+  en: "Lets AI tools such as Claude Desktop and Cursor call Termlet directly as an MCP server to list hosts, run commands and transfer files. There are two transports: with standard input and output (recommended), the AI tool starts termlet mcp itself from the configuration below and no network port is opened; with HTTP, Termlet listens on this computer and the AI tool connects with the address and a token, which only works while Termlet is running. Both go through the switch at the top of this page, approval of dangerous commands and the audit log, like the termlet command. You only need one of MCP and the Agent Skill: the skill has the AI run termlet commands in a terminal, while MCP needs no terminal, so tools like Claude Desktop that can't run commands can use it too."
+  zh-TW: 讓 Claude Desktop、Cursor 等 AI 工具把 Termlet 當作 MCP 服務直接呼叫：列出主機、執行指令、上傳下載檔案。串接類型有兩種：標準輸入輸出由 AI 工具依下面的設定自行啟動 termlet mcp，不開網路連接埠，建議使用；HTTP 由 Termlet 在本機監聽，AI 工具依位址與權杖連線，只在 Termlet 執行時可用。兩種都經過最上面的開關、危險指令的核准與稽核記錄，與 termlet 指令相同。MCP 與 Agent Skill 裝一種即可：Skill 讓 AI 在終端機中執行 termlet 指令；MCP 不需要終端機，Claude Desktop 這類不能執行指令的工具也能用。
+  ja: Claude Desktop、Cursor などの AI ツールが、Termlet を MCP サーバーとして直接呼び出せるようにします（ホストの一覧表示、コマンドの実行、ファイルのアップロード・ダウンロード）。接続方式は 2 つあります。標準入出力では AI ツールが下の設定に従って termlet mcp を自分で起動し、ネットワークポートは開きません（推奨）。HTTP では Termlet がこのコンピューターで待ち受け、AI ツールがアドレスとトークンで接続します。Termlet の実行中のみ使用できます。どちらもこのページ上部のオン・オフ、危険なコマンドの承認、監査ログを経由し、termlet コマンドと同じです。MCP と Agent Skill はどちらか一方をインストールすれば十分です。Skill は AI にターミナルで termlet コマンドを実行させます。MCP はターミナルが不要なので、Claude Desktop のようにコマンドを実行できないツールでも使えます。
+  ko: Claude Desktop, Cursor 등 AI 도구가 Termlet을 MCP 서버로 직접 호출해 호스트 목록 보기, 명령 실행, 파일 업로드·다운로드를 할 수 있게 합니다. 연결 방식은 두 가지입니다. 표준 입출력은 AI 도구가 아래 구성에 따라 termlet mcp를 직접 시작하며 네트워크 포트를 열지 않습니다(권장). HTTP는 Termlet이 이 컴퓨터에서 수신 대기하고 AI 도구가 주소와 토큰으로 연결하며, Termlet이 실행 중일 때만 사용할 수 있습니다. 두 방식 모두 이 페이지 맨 위의 켜기/끄기, 위험한 명령 승인, 감사 로그를 거치며 termlet 명령과 같습니다. MCP와 Agent Skill 중 하나만 설치하면 됩니다. Skill은 AI가 터미널에서 termlet 명령을 실행하게 하고, MCP는 터미널이 필요 없어 Claude Desktop처럼 명령을 실행할 수 없는 도구에서도 사용할 수 있습니다.
+cli_ui.mcp.access:
+  zh-CN: 接入类型
+  en: Transport
+  zh-TW: 串接類型
+  ja: 接続方式
+  ko: 연결 방식
+cli_ui.mcp.access_stdio:
+  zh-CN: 标准输入输出（推荐）
+  en: Standard I/O (recommended)
+  zh-TW: 標準輸入輸出（建議）
+  ja: 標準入出力（推奨）
+  ko: 표준 입출력(권장)
+cli_ui.mcp.access_http:
+  zh-CN: HTTP
+  en: HTTP
+  zh-TW: HTTP
+  ja: HTTP
+  ko: HTTP
 cli_ui.mcp.tool:
   zh-CN: AI 工具
   en: AI tool
@@ -431,6 +449,42 @@ cli_ui.mcp.where_other:
   zh-TW: 多數 AI 工具的 MCP 設定用這種寫法（已有 mcpServers 時只加其中的 termlet 一項）；要逐項填寫的，指令填 command 的值，參數填 mcp：
   ja: 多くの AI ツールは MCP サーバーの設定にこの形式を使います（mcpServers がすでにあれば termlet の項目だけを追加します）。項目ごとに入力するツールでは、コマンドに command の値を、引数に mcp を入力します：
   ko: "대부분의 AI 도구는 MCP 서버 구성에 이 형식을 사용합니다(mcpServers가 이미 있으면 termlet 항목만 추가). 항목별로 입력하는 도구에서는 명령에 command 값을, 인수에 mcp를 입력하세요:"
+cli_ui.mcp.http_where_claude_code:
+  zh-CN: 在终端中运行。--scope user 写进你自己的配置 ~/.claude.json，所有项目都能用；其中有令牌，不要改为项目级（.mcp.json），以免随代码提交：
+  en: "Run this in a terminal. --scope user puts it in your own configuration (~/.claude.json) for every project; it contains the token, so don't make it project-scoped (.mcp.json), where it could be committed with your code:"
+  zh-TW: 在終端機中執行。--scope user 寫進你自己的設定 ~/.claude.json，所有專案都能用；其中有權杖，不要改為專案層級（.mcp.json），以免隨程式碼提交：
+  ja: ターミナルで次のコマンドを実行します。--scope user を付けると自分の設定（~/.claude.json）に追加され、すべてのプロジェクトで使用できます。トークンが含まれるため、コードと一緒にコミットされないよう、プロジェクト単位（.mcp.json）にはしないでください：
+  ko: "터미널에서 다음 명령을 실행하세요. --scope user를 지정하면 자신의 구성(~/.claude.json)에 추가되어 모든 프로젝트에서 사용할 수 있습니다. 토큰이 들어 있으므로 코드와 함께 커밋되지 않도록 프로젝트 범위(.mcp.json)로 바꾸지 마세요:"
+cli_ui.mcp.http_where_cursor:
+  zh-CN: 加到 ~/.cursor/mcp.json（已有 mcpServers 时只加其中的 termlet 一项）。其中有令牌，不要加到项目中的 .cursor/mcp.json：
+  en: "Add this to ~/.cursor/mcp.json (if it already has mcpServers, add just the termlet entry). It contains the token, so don't add it to .cursor/mcp.json in a project:"
+  zh-TW: 加到 ~/.cursor/mcp.json（已有 mcpServers 時只加其中的 termlet 一項）。其中有權杖，不要加到專案中的 .cursor/mcp.json：
+  ja: ~/.cursor/mcp.json に追加します（mcpServers がすでにあれば termlet の項目だけを追加します）。トークンが含まれるため、プロジェクト内の .cursor/mcp.json には追加しないでください：
+  ko: "~/.cursor/mcp.json에 추가하세요(mcpServers가 이미 있으면 termlet 항목만 추가). 토큰이 들어 있으므로 프로젝트의 .cursor/mcp.json에는 추가하지 마세요:"
+cli_ui.mcp.http_where_vscode:
+  zh-CN: "加到 ~/.copilot/mcp-config.json（设置了 COPILOT_HOME 时是其中的 mcp-config.json；已有 mcpServers 时只加其中的 termlet 一项）。其中有令牌，不要加到工作区的 .mcp.json。还在用旧的配置（命令面板中的 MCP: Open User Configuration）时，把最外层的 mcpServers 改为 servers："
+  en: "Add this to ~/.copilot/mcp-config.json (or mcp-config.json in COPILOT_HOME if it's set; if it already has mcpServers, add just the termlet entry). It contains the token, so don't add it to .mcp.json in a workspace. If you still use the old configuration (MCP: Open User Configuration in the Command Palette), rename the top-level mcpServers to servers:"
+  zh-TW: "加到 ~/.copilot/mcp-config.json（設定了 COPILOT_HOME 時是其中的 mcp-config.json；已有 mcpServers 時只加其中的 termlet 一項）。其中有權杖，不要加到工作區的 .mcp.json。還在用舊的設定（命令選擇區中的 MCP: Open User Configuration）時，把最外層的 mcpServers 改為 servers："
+  ja: "~/.copilot/mcp-config.json（COPILOT_HOME を設定している場合はその中の mcp-config.json）に追加します（mcpServers がすでにあれば termlet の項目だけを追加します）。トークンが含まれるため、ワークスペースの .mcp.json には追加しないでください。古い設定（コマンドパレットの MCP: Open User Configuration）をまだ使っている場合は、最上位の mcpServers を servers に変えてください："
+  ko: "~/.copilot/mcp-config.json(COPILOT_HOME을 설정한 경우 그 안의 mcp-config.json)에 추가하세요(mcpServers가 이미 있으면 termlet 항목만 추가). 토큰이 들어 있으므로 작업 영역의 .mcp.json에는 추가하지 마세요. 아직 이전 구성(명령 팔레트의 MCP: Open User Configuration)을 사용한다면 최상위의 mcpServers를 servers로 바꾸세요:"
+cli_ui.mcp.http_where_gemini:
+  zh-CN: 在终端中运行。-s user 写进你自己的配置 ~/.gemini/settings.json，所有项目都能用；不要去掉它，否则令牌会写进当前项目：
+  en: "Run this in a terminal. -s user puts it in your own settings (~/.gemini/settings.json) for every project; keep it, or the token goes into the current project:"
+  zh-TW: 在終端機中執行。-s user 寫進你自己的設定 ~/.gemini/settings.json，所有專案都能用；不要拿掉它，否則權杖會寫進目前的專案：
+  ja: ターミナルで次のコマンドを実行します。-s user を付けると自分の設定（~/.gemini/settings.json）に追加され、すべてのプロジェクトで使用できます。付けないとトークンが現在のプロジェクトに書き込まれるため、外さないでください：
+  ko: "터미널에서 다음 명령을 실행하세요. -s user를 지정하면 자신의 설정(~/.gemini/settings.json)에 추가되어 모든 프로젝트에서 사용할 수 있습니다. 빼면 토큰이 현재 프로젝트에 기록되므로 빼지 마세요:"
+cli_ui.mcp.http_where_other:
+  zh-CN: 多数 AI 工具认这种写法，只加到用户级的配置中，不要加到项目里。各家的字段名不同（地址可能叫 serverUrl、httpUrl，类型可能写 streamableHttp），照它们的文档填，保留地址与 Authorization 的值：
+  en: "Most AI tools accept this format. Add it to your user-level configuration only, not to a project. Field names differ between tools (the address may be called serverUrl or httpUrl, and the type streamableHttp), so follow their documentation and keep the address and the Authorization value:"
+  zh-TW: 多數 AI 工具接受這種寫法，只加到使用者層級的設定中，不要加到專案裡。各家的欄位名稱不同（位址可能叫 serverUrl、httpUrl，類型可能寫 streamableHttp），依它們的文件填寫，保留位址與 Authorization 的值：
+  ja: 多くの AI ツールはこの形式を受け付けます。プロジェクトではなく、ユーザー単位の設定にだけ追加してください。フィールド名はツールによって異なる（アドレスが serverUrl や httpUrl、種類が streamableHttp など）ため、各ツールのドキュメントに従い、アドレスと Authorization の値はそのまま使ってください：
+  ko: "대부분의 AI 도구는 이 형식을 사용합니다. 프로젝트가 아닌 사용자 수준의 구성에만 추가하세요. 필드 이름은 도구마다 다르므로(주소가 serverUrl이나 httpUrl, 유형이 streamableHttp 등) 각 도구의 문서를 따르고 주소와 Authorization 값은 그대로 두세요:"
+cli_ui.mcp.http_claude_desktop:
+  zh-CN: Claude Desktop 不能连接这台电脑上的 HTTP 服务：它的自定义连接器从 Anthropic 的服务器发起连接，只能连公网上的 HTTPS 地址。请在上面改用标准输入输出。
+  en: "Claude Desktop can't connect to an HTTP server on this computer: its custom connectors connect from Anthropic's servers and can only reach public HTTPS addresses. Switch to standard input and output above instead."
+  zh-TW: Claude Desktop 無法連線到這台電腦上的 HTTP 服務：它的自訂連接器從 Anthropic 的伺服器發起連線，只能連到公開網路上的 HTTPS 位址。請在上方改用標準輸入輸出。
+  ja: Claude Desktop はこのコンピューター上の HTTP サーバーには接続できません。カスタムコネクタは Anthropic のサーバーから接続するため、インターネット上の HTTPS アドレスにしか接続できません。上で標準入出力に切り替えてください。
+  ko: Claude Desktop은 이 컴퓨터의 HTTP 서버에 연결할 수 없습니다. 사용자 지정 커넥터는 Anthropic 서버에서 연결하므로 인터넷의 HTTPS 주소에만 연결할 수 있습니다. 위에서 표준 입출력으로 바꾸세요.
 cli_ui.mcp.in_path:
   zh-CN: 配置中写的是 termlet 命令，它需要在 PATH 中（见上方的“termlet 命令”）。
   en: The configuration uses the termlet command, so it must be on PATH (see “termlet command” above).
@@ -455,6 +509,258 @@ cli_ui.mcp.copied_generic:
   zh-TW: 已複製通用的 JSON 設定
   ja: 汎用の JSON 設定をコピーしました
   ko: 범용 JSON 구성을 복사했습니다
+cli_ui.mcp.copied_with_token:
+  zh-CN: 已复制 %{tool} 的配置（含令牌）
+  en: "%{tool} configuration copied (includes the token)"
+  zh-TW: 已複製 %{tool} 的設定（含權杖）
+  ja: "%{tool} の設定をコピーしました（トークンを含む）"
+  ko: "%{tool} 구성을 복사했습니다(토큰 포함)"
+cli_ui.mcp.copied_generic_with_token:
+  zh-CN: 已复制通用的 JSON 配置（含令牌）
+  en: Generic JSON configuration copied (includes the token)
+  zh-TW: 已複製通用的 JSON 設定（含權杖）
+  ja: 汎用の JSON 設定をコピーしました（トークンを含む）
+  ko: 범용 JSON 구성을 복사했습니다(토큰 포함)
+cli_ui.http.enabled:
+  zh-CN: 在本机监听 HTTP（只接受这台电脑上的连接，Termlet 运行时可用）
+  en: Listen for HTTP on this computer (only accepts connections from this computer; works while Termlet is running)
+  zh-TW: 在本機監聽 HTTP（只接受這台電腦上的連線，Termlet 執行時可用）
+  ja: このコンピューターで HTTP を待ち受ける（このコンピューターからの接続のみ受け付け、Termlet の実行中に使用可能）
+  ko: 이 컴퓨터에서 HTTP 수신 대기(이 컴퓨터의 연결만 허용, Termlet 실행 중에 사용 가능)
+cli_ui.http.port:
+  zh-CN: 端口
+  en: Port
+  zh-TW: 連接埠
+  ja: ポート
+  ko: 포트
+cli_ui.http.port_range:
+  zh-CN: 要在 1–65535 之间
+  en: Must be 1–65535
+  zh-TW: 須在 1–65535 之間
+  ja: 1–65535 の範囲で指定してください
+  ko: 1–65535 사이여야 합니다
+cli_ui.http.port_invalid:
+  zh-CN: MCP 的 HTTP 端口要是 1–65535 之间的数字。
+  en: The MCP HTTP port must be a number from 1 to 65535.
+  zh-TW: MCP 的 HTTP 連接埠必須是 1–65535 之間的數字。
+  ja: MCP の HTTP ポートには 1–65535 の数値を指定してください。
+  ko: MCP HTTP 포트는 1–65535 사이의 숫자여야 합니다.
+cli_ui.http.status:
+  zh-CN: 状态
+  en: Status
+  zh-TW: 狀態
+  ja: 状態
+  ko: 상태
+cli_ui.http.status_listening:
+  zh-CN: 运行中：正在监听 127.0.0.1:%{port}
+  en: "Running: listening on 127.0.0.1:%{port}"
+  zh-TW: 執行中：正在監聽 127.0.0.1:%{port}
+  ja: 実行中：127.0.0.1:%{port} で待ち受け中
+  ko: "실행 중: 127.0.0.1:%{port}에서 수신 대기 중"
+cli_ui.http.status_off:
+  zh-CN: 未启用
+  en: "Off"
+  zh-TW: 未啟用
+  ja: オフ
+  ko: 꺼짐
+cli_ui.http.status_needs_cli:
+  zh-CN: 未启用：需要先允许 AI 工具与脚本访问（这一页最上面的开关）
+  en: "Off: first allow access from AI tools and scripts (the switch at the top of this page)"
+  zh-TW: 未啟用：需要先允許 AI 工具與指令碼存取（這一頁最上面的開關）
+  ja: オフ：先に AI ツールとスクリプトからのアクセスを許可してください（このページ上部の設定）
+  ko: "꺼짐: 먼저 AI 도구와 스크립트의 액세스를 허용하세요(이 페이지 맨 위의 설정)"
+cli_ui.http.status_in_use:
+  zh-CN: 端口 %{port} 已被其他程序占用。换一个端口后保存，或者关掉占用它的程序后重试。
+  en: Port %{port} is in use by another program. Choose another port and save, or close that program and retry.
+  zh-TW: 連接埠 %{port} 已被其他程式占用。換一個連接埠後儲存，或者關閉占用它的程式後重試。
+  ja: ポート %{port} はほかのプログラムが使用しています。別のポートに変えて保存するか、そのプログラムを終了してから再試行してください。
+  ko: 포트 %{port}을(를) 다른 프로그램이 사용하고 있습니다. 다른 포트로 바꿔 저장하거나, 그 프로그램을 종료한 후 다시 시도하세요.
+cli_ui.http.status_denied:
+  zh-CN: 没有权限监听端口 %{port}，它可能被系统保留（Hyper-V、WSL 会保留一些端口范围）。请换一个端口后保存。
+  en: No permission to listen on port %{port}; it may be reserved by the system (Hyper-V and WSL reserve some port ranges). Choose another port and save.
+  zh-TW: 沒有權限監聽連接埠 %{port}，它可能被系統保留（Hyper-V、WSL 會保留一些連接埠範圍）。請換一個連接埠後儲存。
+  ja: ポート %{port} で待ち受ける権限がありません。システムに予約されている可能性があります（Hyper-V や WSL は一部のポート範囲を予約します）。別のポートに変えて保存してください。
+  ko: 포트 %{port}에서 수신 대기할 권한이 없습니다. 시스템에서 예약한 포트일 수 있습니다(Hyper-V, WSL은 일부 포트 범위를 예약함). 다른 포트로 바꿔 저장하세요.
+cli_ui.http.status_invalid:
+  zh-CN: 端口 %{port} 不能使用，请换一个端口后保存。
+  en: Port %{port} can't be used. Choose another port and save.
+  zh-TW: 連接埠 %{port} 無法使用，請換一個連接埠後儲存。
+  ja: ポート %{port} は使用できません。別のポートに変えて保存してください。
+  ko: 포트 %{port}은(는) 사용할 수 없습니다. 다른 포트로 바꿔 저장하세요.
+cli_ui.http.status_other:
+  zh-CN: 没能监听端口 %{port}：%{error}
+  en: "Couldn't listen on port %{port}: %{error}"
+  zh-TW: 無法監聽連接埠 %{port}：%{error}
+  ja: ポート %{port} で待ち受けできませんでした：%{error}
+  ko: "포트 %{port}에서 수신 대기하지 못했습니다: %{error}"
+cli_ui.http.pending:
+  zh-CN: 保存后生效
+  en: Takes effect after you save
+  zh-TW: 儲存後生效
+  ja: 保存すると反映されます
+  ko: 저장하면 적용됩니다
+cli_ui.http.retry:
+  zh-CN: 重试
+  en: Retry
+  zh-TW: 重試
+  ja: 再試行
+  ko: 다시 시도
+cli_ui.http.address:
+  zh-CN: 地址
+  en: Address
+  zh-TW: 位址
+  ja: アドレス
+  ko: 주소
+cli_ui.http.copy_address:
+  zh-CN: 复制地址
+  en: Copy address
+  zh-TW: 複製位址
+  ja: アドレスをコピー
+  ko: 주소 복사
+cli_ui.http.copied_address:
+  zh-CN: 已复制地址
+  en: Address copied
+  zh-TW: 已複製位址
+  ja: アドレスをコピーしました
+  ko: 주소를 복사했습니다
+cli_ui.http.token:
+  zh-CN: 令牌
+  en: Token
+  zh-TW: 權杖
+  ja: トークン
+  ko: 토큰
+cli_ui.http.show:
+  zh-CN: 显示
+  en: Show
+  zh-TW: 顯示
+  ja: 表示
+  ko: 표시
+cli_ui.http.hide:
+  zh-CN: 隐藏
+  en: Hide
+  zh-TW: 隱藏
+  ja: 非表示
+  ko: 숨기기
+cli_ui.http.copy_token:
+  zh-CN: 复制
+  en: Copy
+  zh-TW: 複製
+  ja: コピー
+  ko: 복사
+cli_ui.http.copied_token:
+  zh-CN: 已复制令牌
+  en: Token copied
+  zh-TW: 已複製權杖
+  ja: トークンをコピーしました
+  ko: 토큰을 복사했습니다
+cli_ui.http.regenerate:
+  zh-CN: 重新生成…
+  en: Regenerate…
+  zh-TW: 重新產生…
+  ja: 再生成…
+  ko: 다시 생성…
+cli_ui.http.regenerate_title:
+  zh-CN: 重新生成令牌？
+  en: Regenerate the token?
+  zh-TW: 重新產生權杖？
+  ja: トークンを再生成しますか？
+  ko: 토큰을 다시 생성할까요?
+cli_ui.http.regenerate_body:
+  zh-CN: 使用旧令牌的 AI 工具会立即失效，要把新的配置复制到它们之中。
+  en: AI tools using the old token stop working right away; you'll need to copy the new configuration into them.
+  zh-TW: 使用舊權杖的 AI 工具會立即失效，要把新的設定複製到它們之中。
+  ja: 古いトークンを使っている AI ツールはすぐに使えなくなります。新しい設定をそれぞれのツールにコピーしてください。
+  ko: 이전 토큰을 사용하는 AI 도구는 즉시 작동하지 않게 됩니다. 새 구성을 각 도구에 복사해야 합니다.
+cli_ui.http.regenerate_ok:
+  zh-CN: 重新生成
+  en: Regenerate
+  zh-TW: 重新產生
+  ja: 再生成
+  ko: 다시 생성
+cli_ui.http.regenerated:
+  zh-CN: 已生成新的令牌，请把新的配置复制到 AI 工具中
+  en: New token generated; copy the new configuration into your AI tools
+  zh-TW: 已產生新的權杖，請把新的設定複製到 AI 工具中
+  ja: 新しいトークンを生成しました。新しい設定を AI ツールにコピーしてください
+  ko: 새 토큰을 생성했습니다. 새 구성을 AI 도구에 복사하세요
+cli_ui.http.regenerate_locked:
+  zh-CN: 保险库已锁定，解锁后再重新生成。
+  en: The vault is locked. Unlock it, then regenerate the token.
+  zh-TW: 保險庫已鎖定，解鎖後再重新產生。
+  ja: 保管庫がロックされています。ロックを解除してから再生成してください。
+  ko: 보관함이 잠겨 있습니다. 잠금을 해제한 후 다시 생성하세요.
+cli_ui.http.regenerate_failed:
+  zh-CN: 重新生成令牌失败：%{error}
+  en: "Couldn't regenerate the token: %{error}"
+  zh-TW: 重新產生權杖失敗：%{error}
+  ja: トークンを再生成できませんでした：%{error}
+  ko: "토큰을 다시 생성하지 못했습니다: %{error}"
+cli_ui.http.token_missing:
+  zh-CN: 打开并保存后生成
+  en: Generated once you turn HTTP on and save
+  zh-TW: 開啟並儲存後產生
+  ja: オンにして保存すると生成されます
+  ko: 켜고 저장하면 생성됩니다
+cli_ui.http.token_locked:
+  zh-CN: 解锁后可以查看
+  en: Unlock the vault to view it
+  zh-TW: 解鎖後可以檢視
+  ja: ロックを解除すると表示できます
+  ko: 잠금을 해제하면 볼 수 있습니다
+cli_ui.http.token_lost:
+  zh-CN: 读不出原来的令牌（例如保险库重置过），只能重新生成
+  en: The token can't be read (for example, the vault was reset); regenerate it to get a new one
+  zh-TW: 讀不出原來的權杖（例如保險庫重設過），只能重新產生
+  ja: 元のトークンを読み取れません（保管庫をリセットした場合など）。再生成してください
+  ko: 원래 토큰을 읽을 수 없습니다(보관함을 재설정한 경우 등). 다시 생성하세요
+cli_ui.http.token_loading:
+  zh-CN: 正在读取…
+  en: Loading…
+  zh-TW: 正在讀取…
+  ja: 読み込み中…
+  ko: 읽는 중…
+cli_ui.http.token_failed:
+  zh-CN: 读取令牌失败：%{error}
+  en: "Couldn't read the token: %{error}"
+  zh-TW: 讀取權杖失敗：%{error}
+  ja: トークンを読み取れませんでした：%{error}
+  ko: "토큰을 읽지 못했습니다: %{error}"
+cli_ui.http.token_placeholder:
+  zh-CN: <令牌>
+  en: <token>
+  zh-TW: <權杖>
+  ja: <トークン>
+  ko: <토큰>
+cli_ui.http.copy_later_off:
+  zh-CN: 预览中的令牌是占位：打开 HTTP 并保存、生成令牌后才能复制配置。
+  en: "The token in the preview is a placeholder: turn HTTP on and save to generate one, then copy the configuration."
+  zh-TW: 預覽中的權杖是預留位置：開啟 HTTP 並儲存、產生權杖後才能複製設定。
+  ja: プレビューのトークンは仮のものです。HTTP をオンにして保存し、トークンが生成されてから設定をコピーしてください。
+  ko: 미리 보기의 토큰은 자리 표시자입니다. HTTP를 켜고 저장해 토큰이 생성된 후에 구성을 복사하세요.
+cli_ui.http.copy_later_locked:
+  zh-CN: 保险库已锁定：解锁后才能复制含令牌的配置。
+  en: "The vault is locked: unlock it to copy the configuration with the token."
+  zh-TW: 保險庫已鎖定：解鎖後才能複製含權杖的設定。
+  ja: 保管庫がロックされています。ロックを解除すると、トークンを含む設定をコピーできます。
+  ko: 보관함이 잠겨 있습니다. 잠금을 해제해야 토큰이 포함된 구성을 복사할 수 있습니다.
+cli_ui.http.copy_later_lost:
+  zh-CN: 读不出令牌：重新生成后才能复制配置。
+  en: "The token can't be read: regenerate it to copy the configuration."
+  zh-TW: 讀不出權杖：重新產生後才能複製設定。
+  ja: トークンを読み取れません。再生成すると設定をコピーできます。
+  ko: 토큰을 읽을 수 없습니다. 다시 생성해야 구성을 복사할 수 있습니다.
+cli_ui.http.note_windows:
+  zh-CN: HTTP 由 Termlet 自己监听，只在 Termlet 运行时可用，Termlet 退出后连不上。要在关掉窗口后仍能使用，可以在“通用”中打开“关闭窗口时最小化到托盘”，或者改用标准输入输出（Termlet 没有运行时由 AI 工具在后台启动它）。
+  en: HTTP is served by Termlet itself, so it only works while Termlet is running. To keep it available after you close the window, turn on “Minimize to the system tray when closing the window” under General, or use standard input and output instead (the AI tool then starts Termlet in the background when it isn't running).
+  zh-TW: HTTP 由 Termlet 自己監聽，只在 Termlet 執行時可用，Termlet 結束後就連不上。要在關閉視窗後仍能使用，可以在「一般」中開啟「關閉視窗時最小化到系統匣」，或者改用標準輸入輸出（Termlet 沒有執行時由 AI 工具在背景啟動它）。
+  ja: HTTP は Termlet 自身が待ち受けるため、Termlet の実行中にしか使用できません。ウィンドウを閉じた後も使用するには、「一般」で「ウィンドウを閉じたら通知領域に最小化」をオンにするか、標準入出力を使ってください（Termlet が実行されていないときは AI ツールがバックグラウンドで起動します）。
+  ko: HTTP는 Termlet이 직접 수신 대기하므로 Termlet이 실행 중일 때만 사용할 수 있습니다. 창을 닫은 후에도 사용하려면 '일반'에서 '창을 닫으면 알림 영역으로 최소화'를 켜거나, 표준 입출력을 사용하세요(Termlet이 실행 중이 아니면 AI 도구가 백그라운드에서 시작함).
+cli_ui.http.note_other:
+  zh-CN: HTTP 由 Termlet 自己监听，只在 Termlet 运行时可用，Termlet 退出后连不上。要在 Termlet 没有运行时也能使用，请改用标准输入输出（由 AI 工具在后台启动 Termlet）。
+  en: HTTP is served by Termlet itself, so it only works while Termlet is running. To use MCP when Termlet isn't running, use standard input and output instead (the AI tool then starts Termlet in the background).
+  zh-TW: HTTP 由 Termlet 自己監聽，只在 Termlet 執行時可用，Termlet 結束後就連不上。要在 Termlet 沒有執行時也能使用，請改用標準輸入輸出（由 AI 工具在背景啟動 Termlet）。
+  ja: HTTP は Termlet 自身が待ち受けるため、Termlet の実行中にしか使用できません。Termlet が実行されていないときも使用するには、標準入出力を使ってください（AI ツールがバックグラウンドで Termlet を起動します）。
+  ko: HTTP는 Termlet이 직접 수신 대기하므로 Termlet이 실행 중일 때만 사용할 수 있습니다. Termlet이 실행 중이 아닐 때도 사용하려면 표준 입출력을 사용하세요(AI 도구가 백그라운드에서 Termlet을 시작함).
 cli_ui.rules.hint:
   zh-CN: 通过 termlet 命令与 MCP 服务执行的命令（包括 Claude Code 等 AI 工具发出的）命中以下规则时，先请你批准或直接拦截，并记入审计日志；粘贴、同步输入与撰写栏发送前也按这些规则检查。规则用于防止误操作，命令可以通过编码、脚本等方式绕过，不是安全边界；请为 AI 工具与脚本使用服务器上的低权限账号（编辑主机 → AI 与自动化 → AI 工具与脚本使用单独的凭据）。
   en: Commands run through the termlet command or the MCP server (including those from AI tools such as Claude Code) that match these rules need your approval or are blocked, and are recorded in the audit log. Pasting, synchronized input and the compose bar check these rules too. The rules prevent mistakes but can be bypassed with encoding or scripts, so they aren't a security boundary; use a low-privilege server account for AI tools and scripts (Edit host → AI & automation → Use a separate credential for AI tools and scripts).

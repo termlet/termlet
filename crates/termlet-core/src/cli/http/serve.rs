@@ -19,7 +19,7 @@ use termlet_mcp::{
     HEADER_MISMATCH, INVALID_REQUEST, MAX_MESSAGE, UNSUPPORTED_PROTOCOL_VERSION, tools,
 };
 use termlet_proto::Lang;
-use termlet_proto::mcp::CALLER_HTTP;
+use termlet_proto::mcp::{CALLER_HTTP, HTTP_PATH};
 use tokio::net::TcpStream;
 use tokio::sync::{OnceCell, mpsc, watch};
 
@@ -149,7 +149,7 @@ async fn handle(
             "Forbidden: requests from web pages (with an Origin header) are not accepted",
         );
     }
-    if request.uri().path() != "/mcp" {
+    if request.uri().path() != HTTP_PATH {
         return empty(StatusCode::NOT_FOUND);
     }
     if request.method() != Method::POST {

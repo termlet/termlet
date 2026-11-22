@@ -19,6 +19,24 @@ pub const CALLER_HTTP: &str = "http";
 /// Codex 中工具调用的超时（秒）：默认 60 秒，等用户批准危险命令（最多 60 秒）再执行时会超时。
 pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 300;
 
+/// HTTP 接入的路径（只有这一个端点）。
+pub const HTTP_PATH: &str = "/mcp";
+
+/// HTTP 接入的地址。应用只在 IPv4 的回环地址上监听，所以写 `127.0.0.1` 而不写 `localhost`（有的运行时会先把
+/// localhost 解析成 `::1`）。
+pub fn http_url(port: u16) -> String {
+    format!("http://127.0.0.1:{port}{HTTP_PATH}")
+}
+
+/// 配置片段连到 MCP 服务的方式。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Transport<'a> {
+    /// 标准输入输出：AI 工具自己启动 `<command> mcp`（`command` 是命令行工具的路径，或在 PATH 中时的 `termlet`）
+    Stdio { command: &'a str },
+    /// HTTP：应用监听的地址与令牌（界面预览时传打码的令牌，复制时传原文）
+    Http { url: &'a str, token: &'a str },
+}
+
 /// 给出配置的 AI 工具。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum AiTool {
@@ -97,22 +115,20 @@ impl AiTool {
         })
     }
 
-    /// 标准输入输出的配置片段，第一份是推荐的写法。有 `mcp add` 命令的（Claude Code、Codex、Gemini CLI）另给配置文件
-    /// 的写法：Codex 推荐配置文件（命令不能放宽超时），另两个推荐命令。`command` 是命令行工具的路径（或在 PATH 中时的
-    /// `termlet`）；`windows` 决定命令中路径的写法。
-    ///
-    /// JSON 都是 `mcpServers` 下的一项 `termlet`：Claude Code 的 `.mcp.json` 与 VS Code 写明 `"type": "stdio"`，
-    /// VS Code 另写 `"tools": ["*"]`（文档的写法）；Codex 是 TOML（`mcp_servers`），带放宽的工具超时。
-    pub fn snippets(self, command: &str, windows: bool) -> Vec<Snippet> {
+    /// 配置片段，第一份是推荐的写法；`windows` 决定命令中参数的引号。JSON 都是 `mcpServers` 下的一项 `termlet`，
+    /// Codex 是 TOML（`mcp_servers`），带放宽的工具超时。
+    pub fn snippets(self, transport: Transport<'_>, windows: bool) -> Vec<Snippet> {
+        match transport {
+            Transport::Stdio { command } => self.stdio(command, windows),
+            Transport::Http { url, token } => self.http(url, token, windows),
+        }
+    }
+
+    /// 标准输入输出。有 `mcp add` 命令的（Claude Code、Codex、Gemini CLI）另给配置文件的写法：Codex 推荐配置文件
+    /// （命令不能放宽超时），另两个推荐命令。Claude Code 的 `.mcp.json` 与 VS Code 写明 `"type": "stdio"`，VS Code
+    /// 另写 `"tools": ["*"]`（文档的写法）。
+    fn stdio(self, command: &str, windows: bool) -> Vec<Snippet> {
         let word = shell_word(command, windows);
-        let run = |text: String| Snippet {
-            form: SnippetForm::Command,
-            text,
-        };
-        let file = |text: String| Snippet {
-            form: SnippetForm::File,
-            text,
-        };
         let args = || serde_json::json!([SUBCOMMAND]);
         let plain = || {
             json_entry(&[
@@ -156,16 +172,103 @@ impl AiTool {
             AiTool::Cursor | AiTool::ClaudeDesktop | AiTool::Other => vec![file(plain())],
         }
     }
+
+    /// HTTP：令牌放在 `Authorization: Bearer` 请求头中。带令牌的配置只写到用户级的文件（不进项目、不会被提交）：
+    /// Claude Code 只给 `--scope user` 的命令，Gemini CLI 的命令带 `-s user`。各家的写法：
+    ///
+    /// - Claude Code：`claude mcp add --transport http … --header`；
+    /// - Codex：`url` 与 `http_headers`（`codex mcp add` 只能从环境变量读令牌，不给命令）；
+    /// - Cursor：`url` 与 `headers`，不写类型；
+    /// - VS Code（Copilot）：`"type": "http"`，另写 `"tools": ["*"]`；
+    /// - Gemini CLI：`gemini mcp add --transport http -H`，配置文件写 `"type": "http"` 与 `url`（与命令写入的相同；
+    ///   旧写法 `httpUrl` 已标为弃用）；
+    /// - 通用的 JSON：`"type": "http"`、`url`、`headers`；
+    /// - Claude Desktop 没有：它的自定义连接器从 Anthropic 的服务器发起连接，连不到这台电脑上的地址。
+    fn http(self, url: &str, token: &str, windows: bool) -> Vec<Snippet> {
+        let bearer = format!("Bearer {token}");
+        let header = shell_word(&format!("Authorization: {bearer}"), windows);
+        let address = shell_word(url, windows);
+        let headers = || serde_json::json!({ "Authorization": bearer });
+        let typed = || {
+            json_entry(&[
+                ("type", "http".into()),
+                ("url", url.into()),
+                ("headers", headers()),
+            ])
+        };
+        match self {
+            AiTool::ClaudeCode => vec![run(format!(
+                "claude mcp add --transport http --scope user {SERVER_NAME} {address} --header {header}"
+            ))],
+            AiTool::Codex => vec![file(format!(
+                "[mcp_servers.{SERVER_NAME}]\nurl = {}\nhttp_headers = {{ Authorization = {} }}\ntool_timeout_sec = {CODEX_TOOL_TIMEOUT_SECS}",
+                toml_string(url),
+                toml_string(&bearer)
+            ))],
+            AiTool::Cursor => vec![file(json_entry(&[
+                ("url", url.into()),
+                ("headers", headers()),
+            ]))],
+            AiTool::VsCode => vec![file(json_entry(&[
+                ("type", "http".into()),
+                ("url", url.into()),
+                ("headers", headers()),
+                ("tools", serde_json::json!(["*"])),
+            ]))],
+            AiTool::GeminiCli => vec![
+                run(format!(
+                    "gemini mcp add -s user --transport http -H {header} {SERVER_NAME} {address}"
+                )),
+                file(typed()),
+            ],
+            AiTool::ClaudeDesktop => Vec::new(),
+            AiTool::Other => vec![file(typed())],
+        }
+    }
 }
 
-/// `{"mcpServers": {"termlet": {…}}}`：手写缩进，数组写在一行上（比 to_string_pretty 短）；字符串按 JSON 转义。
+fn run(text: String) -> Snippet {
+    Snippet {
+        form: SnippetForm::Command,
+        text,
+    }
+}
+
+fn file(text: String) -> Snippet {
+    Snippet {
+        form: SnippetForm::File,
+        text,
+    }
+}
+
+/// `{"mcpServers": {"termlet": {…}}}`：手写缩进，数组与对象写在一行上（比 to_string_pretty 短）；字符串按 JSON 转义。
 fn json_entry(fields: &[(&str, serde_json::Value)]) -> String {
     let body = fields
         .iter()
-        .map(|(key, value)| format!("      \"{key}\": {value}"))
+        .map(|(key, value)| format!("      \"{key}\": {}", inline(value)))
         .collect::<Vec<_>>()
         .join(",\n");
     format!("{{\n  \"mcpServers\": {{\n    \"{SERVER_NAME}\": {{\n{body}\n    }}\n  }}\n}}")
+}
+
+/// 一行内的 JSON：对象写成 `{ "键": 值 }`（比紧凑的写法好读），其余照 serde_json 的紧凑写法。
+fn inline(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::Object(map) if !map.is_empty() => {
+            let items: Vec<String> = map
+                .iter()
+                .map(|(key, value)| {
+                    format!(
+                        "{}: {}",
+                        serde_json::Value::from(key.as_str()),
+                        inline(value)
+                    )
+                })
+                .collect();
+            format!("{{ {} }}", items.join(", "))
+        }
+        other => other.to_string(),
+    }
 }
 
 /// 命令行中的一个参数：只有常见的路径字符时原样写，否则加引号。Windows（PowerShell、cmd）用双引号，
@@ -210,16 +313,39 @@ mod tests {
     /// 引号、制表符：JSON 与 TOML 都要转义
     const ODD: &str = "/opt/a \"b\"\tc/it's/termlet";
 
-    fn forms(tool: AiTool) -> Vec<SnippetForm> {
-        tool.snippets(WIN, true).iter().map(|s| s.form).collect()
+    const URL: &str = "http://127.0.0.1:47800/mcp";
+    /// 测试用的假令牌（比真令牌短，gitleaks 的规则认不出它）
+    const TOKEN: &str = "termlet_mcp_testtoken234567";
+    /// 界面预览中打码的令牌
+    const MASKED: &str = "termlet_mcp_••••••••";
+    /// 引号、反斜杠、制表符：JSON 与 TOML 都要转义
+    const ODD_TOKEN: &str = "a\"b\\c'd\te";
+
+    fn stdio(command: &str) -> Transport<'_> {
+        Transport::Stdio { command }
     }
 
-    fn text(tool: AiTool, form: SnippetForm, command: &str, windows: bool) -> String {
-        tool.snippets(command, windows)
+    fn http(token: &str) -> Transport<'_> {
+        Transport::Http { url: URL, token }
+    }
+
+    fn forms(tool: AiTool, transport: Transport<'_>) -> Vec<SnippetForm> {
+        tool.snippets(transport, true)
+            .iter()
+            .map(|s| s.form)
+            .collect()
+    }
+
+    fn snippet(tool: AiTool, form: SnippetForm, transport: Transport<'_>, windows: bool) -> String {
+        tool.snippets(transport, windows)
             .into_iter()
             .find(|s| s.form == form)
             .unwrap()
             .text
+    }
+
+    fn text(tool: AiTool, form: SnippetForm, command: &str, windows: bool) -> String {
+        snippet(tool, form, stdio(command), windows)
     }
 
     fn json(tool: AiTool, command: &str) -> serde_json::Value {
@@ -231,16 +357,133 @@ mod tests {
     #[test]
     fn forms_per_tool() {
         use SnippetForm::*;
-        assert_eq!(forms(AiTool::ClaudeCode), [Command, File]);
-        assert_eq!(forms(AiTool::Codex), [File, Command]);
-        assert_eq!(forms(AiTool::GeminiCli), [Command, File]);
+        let local = stdio(WIN);
+        assert_eq!(forms(AiTool::ClaudeCode, local), [Command, File]);
+        assert_eq!(forms(AiTool::Codex, local), [File, Command]);
+        assert_eq!(forms(AiTool::GeminiCli, local), [Command, File]);
         for tool in [
             AiTool::Cursor,
             AiTool::VsCode,
             AiTool::ClaudeDesktop,
             AiTool::Other,
         ] {
-            assert_eq!(forms(tool), [File], "{tool:?}");
+            assert_eq!(forms(tool, local), [File], "{tool:?}");
+        }
+        // HTTP：Claude Code 只给用户级的命令（不给项目的 .mcp.json），Codex 只给配置文件，Claude Desktop 没有
+        let remote = http(TOKEN);
+        assert_eq!(forms(AiTool::ClaudeCode, remote), [Command]);
+        assert_eq!(forms(AiTool::Codex, remote), [File]);
+        assert_eq!(forms(AiTool::GeminiCli, remote), [Command, File]);
+        assert!(forms(AiTool::ClaudeDesktop, remote).is_empty());
+        for tool in [AiTool::Cursor, AiTool::VsCode, AiTool::Other] {
+            assert_eq!(forms(tool, remote), [File], "{tool:?}");
+        }
+    }
+
+    #[test]
+    fn http_address() {
+        assert_eq!(http_url(47800), URL);
+        assert_eq!(http_url(1), "http://127.0.0.1:1/mcp");
+    }
+
+    // HTTP 的命令：Claude Code 写进用户级（--scope user），Gemini CLI 带 -s user；请求头按系统加引号
+    #[test]
+    fn http_commands() {
+        assert_eq!(
+            snippet(AiTool::ClaudeCode, SnippetForm::Command, http(TOKEN), true),
+            format!(
+                "claude mcp add --transport http --scope user termlet {URL} --header \"Authorization: Bearer {TOKEN}\""
+            )
+        );
+        assert_eq!(
+            snippet(AiTool::ClaudeCode, SnippetForm::Command, http(TOKEN), false),
+            format!(
+                "claude mcp add --transport http --scope user termlet {URL} --header 'Authorization: Bearer {TOKEN}'"
+            )
+        );
+        assert_eq!(
+            snippet(AiTool::GeminiCli, SnippetForm::Command, http(TOKEN), true),
+            format!(
+                "gemini mcp add -s user --transport http -H \"Authorization: Bearer {TOKEN}\" termlet {URL}"
+            )
+        );
+    }
+
+    // HTTP 的 JSON：地址、Bearer 令牌（含要转义的字符）原样读回；各家的类型字段
+    #[test]
+    fn http_json() {
+        for token in [TOKEN, MASKED, ODD_TOKEN] {
+            for (tool, kind) in [
+                (AiTool::Cursor, None),
+                (AiTool::VsCode, Some("http")),
+                (AiTool::GeminiCli, Some("http")),
+                (AiTool::Other, Some("http")),
+            ] {
+                let text = snippet(tool, SnippetForm::File, http(token), cfg!(windows));
+                let value: serde_json::Value =
+                    serde_json::from_str(&text).unwrap_or_else(|e| panic!("{tool:?}：{e}\n{text}"));
+                assert_eq!(value.as_object().unwrap().len(), 1, "{text}");
+                let entry = &value["mcpServers"]["termlet"];
+                assert_eq!(entry["url"], URL);
+                assert_eq!(
+                    entry["headers"],
+                    serde_json::json!({ "Authorization": format!("Bearer {token}") })
+                );
+                assert_eq!(entry.get("type").and_then(|t| t.as_str()), kind, "{tool:?}");
+                assert!(entry.get("command").is_none() && entry.get("httpUrl").is_none());
+                if tool == AiTool::VsCode {
+                    assert_eq!(entry["tools"], serde_json::json!(["*"]));
+                }
+            }
+        }
+        // 对象写在一行上
+        let text = snippet(AiTool::Cursor, SnippetForm::File, http(TOKEN), true);
+        assert!(
+            text.contains(&format!(
+                "\n      \"headers\": {{ \"Authorization\": \"Bearer {TOKEN}\" }}\n"
+            )),
+            "{text}"
+        );
+    }
+
+    // Codex 的 HTTP：url 与 http_headers，照样放宽工具超时
+    #[test]
+    fn http_codex_toml() {
+        assert_eq!(
+            snippet(AiTool::Codex, SnippetForm::File, http(TOKEN), true),
+            format!(
+                "[mcp_servers.termlet]\nurl = '{URL}'\nhttp_headers = {{ Authorization = 'Bearer {TOKEN}' }}\ntool_timeout_sec = 300"
+            )
+        );
+        for token in [TOKEN, MASKED, ODD_TOKEN] {
+            let text = snippet(AiTool::Codex, SnippetForm::File, http(token), true);
+            let table: toml::Table = text.parse().unwrap_or_else(|e| panic!("{e}\n{text}"));
+            let entry = table["mcp_servers"]["termlet"].as_table().unwrap();
+            assert_eq!(entry["url"].as_str(), Some(URL));
+            assert_eq!(
+                entry["http_headers"]["Authorization"].as_str(),
+                Some(format!("Bearer {token}").as_str())
+            );
+            assert_eq!(entry["tool_timeout_sec"].as_integer(), Some(300));
+            assert_eq!(entry.len(), 3, "{text}");
+        }
+    }
+
+    // 预览（打码）与复制（原文）的片段只在令牌处不同
+    #[test]
+    fn masked_snippets_differ_only_in_the_token() {
+        for tool in AiTool::ALL {
+            for windows in [true, false] {
+                let masked = tool.snippets(http(MASKED), windows);
+                let real = tool.snippets(http(TOKEN), windows);
+                assert_eq!(masked.len(), real.len());
+                for (masked, real) in masked.iter().zip(&real) {
+                    assert_eq!(masked.form, real.form);
+                    assert_eq!(real.text.matches(TOKEN).count(), 1, "{}", real.text);
+                    assert!(!masked.text.contains(TOKEN));
+                    assert_eq!(masked.text.replace(MASKED, TOKEN), real.text);
+                }
+            }
         }
     }
 

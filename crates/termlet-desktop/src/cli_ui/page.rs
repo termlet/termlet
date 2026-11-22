@@ -1,8 +1,9 @@
 //! 设置中的「AI 与自动化」页：外部 CLI 的开关（“允许 AI 工具与脚本访问”）、审计日志入口、命令行工具、Agent Skill 与
 //! MCP 服务的接入，以及危险命令规则。
 //!
-//! 开关与规则是草稿，随设置对话框的“保存”写入（[`CliPage::apply`]，有不能使用的自定义规则时 [`CliPage::validate`]
-//! 返回错误）；安装、PATH 立即执行。规则测试用草稿中的规则，输入命令时即时显示命中哪一条。
+//! 开关、MCP 的 HTTP 接入（开关与端口）与规则是草稿，随设置对话框的“保存”写入（[`CliPage::apply`]，有不能使用的
+//! 自定义规则或端口时 [`CliPage::validate`] 返回错误）；安装、PATH、重新生成 HTTP 令牌立即执行。规则测试用草稿中的
+//! 规则，输入命令时即时显示命中哪一条。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -97,7 +98,7 @@ impl CliPage {
             let env = env.clone();
             cx.new(|cx| ToolSection::new(&env, cx))
         };
-        let mcp = cx.new(|cx| McpSection::new(&env, window, cx));
+        let mcp = cx.new(|cx| McpSection::new(&env, local, window, cx));
         let skill = cx.new(|cx| SkillSection::new(env, cx));
         let guard = &settings.guard;
         let mut this = Self {
@@ -121,10 +122,11 @@ impl CliPage {
         this
     }
 
-    /// 写进设置：外部 CLI 的开关写本机设置，规则写同步的设置（其余字段不动）。
-    pub(crate) fn apply(&self, settings: &mut Settings, local: &mut LocalSettings) {
+    /// 写进设置：外部 CLI 与 MCP 的 HTTP 接入的开关、端口写本机设置，规则写同步的设置（其余字段不动）。
+    pub(crate) fn apply(&self, settings: &mut Settings, local: &mut LocalSettings, cx: &App) {
         local.cli.enabled = self.enabled;
         local.cli.auto_start = self.auto_start;
+        self.mcp.read(cx).http.read(cx).apply(&mut local.cli.http);
         let guard = &mut settings.guard;
         guard.disabled_rules = self.disabled_rules.clone();
         guard.custom_rules = custom_patterns(self.custom.iter().map(|r| r.pattern.as_str()));
@@ -132,11 +134,11 @@ impl CliPage {
     }
 
     /// 有不能使用的自定义规则（不合法的正则、会匹配空命令的、超出数量上限的）时不能保存。
-    pub(crate) fn validate(&self, _cx: &App) -> Result<(), SharedString> {
+    pub(crate) fn validate(&self, cx: &App) -> Result<(), SharedString> {
         if self.custom_errors().iter().any(Option::is_some) {
             return Err(t!("cli_ui.rules.fix_custom"));
         }
-        Ok(())
+        self.mcp.read(cx).http.read(cx).validate()
     }
 
     /// 各行自定义规则的错误：正则本身的错误，以及非空的规则中排在上限之后的（保存后会被跳过）。
@@ -248,6 +250,9 @@ impl CliPage {
                         .checked(self.enabled)
                         .on_change(cx.listener(|this, checked: &bool, _, cx| {
                             this.enabled = *checked;
+                            // HTTP 的状态行据此说明要先打开这一项
+                            let http = this.mcp.read(cx).http.clone();
+                            http.update(cx, |http, cx| http.set_cli_enabled(*checked, cx));
                             cx.notify();
                         })),
                 )

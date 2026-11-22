@@ -1,7 +1,10 @@
-//! 「AI 与自动化」页的 MCP 服务：AI 工具按配置自己启动 `termlet mcp`（stdio，不开端口）。在下拉框中选 AI 工具，给出
-//! 配置片段与复制按钮（有 `mcp add` 命令的工具另给配置文件的写法）；片段中的命令是这台电脑上命令行工具的完整路径
-//! （AI 工具从图形界面启动时不一定读到新的 PATH），Linux 的 deb、rpm 是 `/usr/bin/termlet`。找不到命令行工具时（开发构建
-//! 没有编译它、AppImage 要先链接为 termlet）写 `termlet`，并说明它要在 PATH 中。
+//! 「AI 与自动化」页的 MCP 服务。接入类型有两种：标准输入输出（AI 工具按配置自己启动 `termlet mcp`，不开端口，推荐）
+//! 与 HTTP（Termlet 在本机监听，AI 工具按地址与令牌连接，见 [`super::http`]）。在下拉框中选 AI 工具，按接入类型给出
+//! 配置片段与复制按钮（有 `mcp add` 命令的工具另给配置文件的写法）；两种接入类型共用选中的 AI 工具。
+//!
+//! 标准输入输出的片段中，命令是这台电脑上命令行工具的完整路径（AI 工具从图形界面启动时不一定读到新的 PATH），Linux 的
+//! deb、rpm 是 `/usr/bin/termlet`；找不到命令行工具时（开发构建没有编译它、AppImage 要先链接为 termlet）写 `termlet`，
+//! 并说明它要在 PATH 中。HTTP 的片段预览中令牌打码，复制出的是含原文的片段；还不能复制时预览中写占位。
 
 use std::path::PathBuf;
 
@@ -9,16 +12,19 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
 use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::{Select, SelectEvent};
-use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use gpui_kit::component::tab::{Tab, TabBar};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
-    App, ClipboardItem, Context, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
-    Render, SharedString, Styled as _, Subscription, TestSupportExt as _, Window, div,
-    prelude::FluentBuilder as _, rems,
+    App, AppContext as _, ClipboardItem, Context, Entity, InteractiveElement as _, IntoElement,
+    ParentElement as _, Render, SharedString, Styled as _, Subscription, TestSupportExt as _,
+    Window, div, prelude::FluentBuilder as _, rems,
 };
-use termlet_core::proto::mcp::{AiTool, CODEX_TOOL_TIMEOUT_SECS, Snippet, SnippetForm};
+use termlet_core::model::LocalSettings;
+use termlet_core::proto::mcp::{AiTool, CODEX_TOOL_TIMEOUT_SECS, Snippet, SnippetForm, Transport};
 use termlet_core::userpath;
 
 use super::CliEnv;
+use super::http::{HttpPanel, masked_token, row};
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::install_kind::{LinuxInstall, SYSTEM_CLI, linux_install};
 use crate::prose::prose;
@@ -71,11 +77,24 @@ impl McpCommand {
 
 type ToolEvent = SelectEvent<SearchableVec<Choice<AiTool>>>;
 
+/// MCP 的接入类型（界面上的分段选择）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Access {
+    Stdio,
+    Http,
+}
+
+impl Access {
+    const ALL: [Access; 2] = [Access::Stdio, Access::Http];
+}
+
 pub(super) struct McpSection {
     command: McpCommand,
-    /// 选中的 AI 工具（下拉框）
+    pub(super) access: Access,
+    /// 选中的 AI 工具（下拉框，两种接入类型共用）
     pub(super) tools: Entity<ChoiceState<AiTool>>,
-    _subscription: Subscription,
+    pub(super) http: Entity<HttpPanel>,
+    _subscriptions: Vec<Subscription>,
 }
 
 /// AI 工具在下拉框与提示中的名称。
@@ -86,29 +105,48 @@ fn tool_label(tool: AiTool) -> SharedString {
     }
 }
 
-/// 片段放在哪里、怎么生效。
-fn where_text(tool: AiTool, form: SnippetForm) -> SharedString {
-    match (tool, form) {
-        (AiTool::ClaudeCode, SnippetForm::Command) => t!("cli_ui.mcp.where_claude_code"),
-        (AiTool::ClaudeCode, SnippetForm::File) => t!("cli_ui.mcp.where_claude_code_file"),
-        (AiTool::Codex, SnippetForm::File) => {
+/// 片段放在哪里、怎么生效。带令牌的 HTTP 片段都指向用户级的配置。
+fn where_text(tool: AiTool, form: SnippetForm, access: Access) -> SharedString {
+    match (access, tool, form) {
+        // HTTP 只有配置文件
+        (_, AiTool::Codex, SnippetForm::File) | (Access::Http, AiTool::Codex, _) => {
             t!("cli_ui.mcp.where_codex", seconds = CODEX_TOOL_TIMEOUT_SECS)
         }
-        (AiTool::Codex, SnippetForm::Command) => t!(
+        (_, AiTool::GeminiCli, SnippetForm::File) => t!("cli_ui.mcp.where_gemini_file"),
+        (Access::Stdio, AiTool::ClaudeCode, SnippetForm::Command) => {
+            t!("cli_ui.mcp.where_claude_code")
+        }
+        (Access::Stdio, AiTool::ClaudeCode, SnippetForm::File) => {
+            t!("cli_ui.mcp.where_claude_code_file")
+        }
+        (Access::Stdio, AiTool::Codex, SnippetForm::Command) => t!(
             "cli_ui.mcp.where_codex_command",
             seconds = CODEX_TOOL_TIMEOUT_SECS
         ),
-        (AiTool::Cursor, _) => t!("cli_ui.mcp.where_cursor"),
-        (AiTool::VsCode, _) => t!("cli_ui.mcp.where_vscode"),
-        (AiTool::GeminiCli, SnippetForm::Command) => t!("cli_ui.mcp.where_gemini"),
-        (AiTool::GeminiCli, SnippetForm::File) => t!("cli_ui.mcp.where_gemini_file"),
-        (AiTool::ClaudeDesktop, _) => t!("cli_ui.mcp.where_claude_desktop"),
-        (AiTool::Other, _) => t!("cli_ui.mcp.where_other"),
+        (Access::Stdio, AiTool::Cursor, _) => t!("cli_ui.mcp.where_cursor"),
+        (Access::Stdio, AiTool::VsCode, _) => t!("cli_ui.mcp.where_vscode"),
+        (Access::Stdio, AiTool::GeminiCli, SnippetForm::Command) => t!("cli_ui.mcp.where_gemini"),
+        (Access::Stdio, AiTool::ClaudeDesktop, _) => t!("cli_ui.mcp.where_claude_desktop"),
+        (Access::Stdio, AiTool::Other, _) => t!("cli_ui.mcp.where_other"),
+        (Access::Http, AiTool::ClaudeCode, _) => t!("cli_ui.mcp.http_where_claude_code"),
+        (Access::Http, AiTool::Cursor, _) => t!("cli_ui.mcp.http_where_cursor"),
+        (Access::Http, AiTool::VsCode, _) => t!("cli_ui.mcp.http_where_vscode"),
+        (Access::Http, AiTool::GeminiCli, SnippetForm::Command) => {
+            t!("cli_ui.mcp.http_where_gemini")
+        }
+        // 没有 HTTP 的片段，界面上只写这一句
+        (Access::Http, AiTool::ClaudeDesktop, _) => t!("cli_ui.mcp.http_claude_desktop"),
+        (Access::Http, AiTool::Other, _) => t!("cli_ui.mcp.http_where_other"),
     }
 }
 
 impl McpSection {
-    pub(super) fn new(env: &CliEnv, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub(super) fn new(
+        env: &CliEnv,
+        local: &LocalSettings,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let tools = choice_state(
             AiTool::ALL
                 .iter()
@@ -119,11 +157,23 @@ impl McpSection {
             window,
             cx,
         );
-        let subscription = cx.subscribe(&tools, |_, _, _: &ToolEvent, cx| cx.notify());
+        let http = cx.new(|cx| HttpPanel::new(local.cli.enabled, &local.cli.http, window, cx));
+        let subscriptions = vec![
+            cx.subscribe(&tools, |_, _, _: &ToolEvent, cx| cx.notify()),
+            // 令牌、端口、状态变了：片段随之改变
+            cx.observe(&http, |_, _, cx| cx.notify()),
+        ];
         Self {
             command: McpCommand::find(env),
+            // 打开过 HTTP 的直接显示它
+            access: if local.cli.http.enabled {
+                Access::Http
+            } else {
+                Access::Stdio
+            },
             tools,
-            _subscription: subscription,
+            http,
+            _subscriptions: subscriptions,
         }
     }
 
@@ -132,28 +182,76 @@ impl McpSection {
         chosen(&self.tools, cx).unwrap_or(AiTool::ClaudeCode)
     }
 
-    /// 选中的 AI 工具的配置片段（第一份是推荐的写法）。
-    pub(super) fn snippets(&self, cx: &App) -> Vec<Snippet> {
-        self.selected(cx)
-            .snippets(&self.command.text(), cfg!(windows))
+    /// 选中的 AI 工具的配置片段（第一份是推荐的写法）：界面上显示的与复制的。HTTP 的预览中令牌打码（还不能复制时写
+    /// 占位），复制的含原文；还不能复制时复制的一份为 `None`。
+    pub(super) fn snippets(&self, cx: &App) -> Vec<(Snippet, Option<String>)> {
+        let tool = self.selected(cx);
+        let windows = cfg!(windows);
+        match self.access {
+            Access::Stdio => {
+                let command = self.command.text();
+                tool.snippets(Transport::Stdio { command: &command }, windows)
+                    .into_iter()
+                    .map(|snippet| {
+                        let text = snippet.text.clone();
+                        (snippet, Some(text))
+                    })
+                    .collect()
+            }
+            Access::Http => {
+                let http = self.http.read(cx);
+                let url = http.url();
+                let real = http.token_for_copy();
+                let shown = match real {
+                    Some(_) => masked_token(),
+                    None => t!("cli_ui.http.token_placeholder").to_string(),
+                };
+                let preview = tool.snippets(
+                    Transport::Http {
+                        url: &url,
+                        token: &shown,
+                    },
+                    windows,
+                );
+                let copies: Vec<Option<String>> = match &real {
+                    Some(token) => tool
+                        .snippets(Transport::Http { url: &url, token }, windows)
+                        .into_iter()
+                        .map(|s| Some(s.text))
+                        .collect(),
+                    None => vec![None; preview.len()],
+                };
+                preview.into_iter().zip(copies).collect()
+            }
+        }
     }
 
     /// 一份片段：说明、代码与复制按钮。元素的 ID 按写法区分（同一工具中每种写法只有一份）。
-    fn render_snippet(tool: AiTool, snippet: Snippet, cx: &App) -> impl IntoElement {
+    fn render_snippet(
+        tool: AiTool,
+        access: Access,
+        snippet: Snippet,
+        copy: Option<String>,
+        cx: &App,
+    ) -> impl IntoElement {
         let theme = cx.theme();
         let (muted, code_bg, radius) = (theme.muted_foreground, theme.muted, theme.radius);
         let mono = theme.mono_font_family.clone();
         let form = snippet.form.id();
         let lines: Vec<String> = snippet.text.lines().map(str::to_string).collect();
-        let text = snippet.text;
+        let notice = match (tool.name(), access) {
+            (Some(name), Access::Stdio) => t!("cli_ui.mcp.copied", tool = name),
+            (None, Access::Stdio) => t!("cli_ui.mcp.copied_generic"),
+            (Some(name), Access::Http) => t!("cli_ui.mcp.copied_with_token", tool = name),
+            (None, Access::Http) => t!("cli_ui.mcp.copied_generic_with_token"),
+        };
         v_flex()
             .gap_1()
-            .child(
-                div()
-                    .text_xs()
-                    .text_color(muted)
-                    .child(prose(where_text(tool, snippet.form))),
-            )
+            .child(div().text_xs().text_color(muted).child(prose(where_text(
+                tool,
+                snippet.form,
+                access,
+            ))))
             .child(
                 h_flex()
                     .items_start()
@@ -178,14 +276,14 @@ impl McpSection {
                             .small()
                             .icon(IconName::Copy)
                             .label(t!("cli_ui.mcp.copy"))
+                            .disabled(copy.is_none())
                             .on_click(move |_, window, cx| {
-                                cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
-                                let notice = match tool.name() {
-                                    Some(name) => t!("cli_ui.mcp.copied", tool = name),
-                                    None => t!("cli_ui.mcp.copied_generic"),
+                                let Some(text) = copy.clone() else {
+                                    return;
                                 };
+                                cx.write_to_clipboard(ClipboardItem::new_string(text));
                                 crate::notify::show(
-                                    crate::notify::Notice::success(notice),
+                                    crate::notify::Notice::success(notice.clone()),
                                     window,
                                     cx,
                                 );
@@ -193,41 +291,89 @@ impl McpSection {
                     ),
             )
     }
+
+    /// 一行说明（灰色小字）。
+    fn note(id: &'static str, text: SharedString, cx: &App) -> impl IntoElement {
+        div()
+            .id(id)
+            .test_support()
+            .text_xs()
+            .text_color(cx.theme().muted_foreground)
+            .child(prose(text))
+    }
 }
 
 impl Render for McpSection {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let muted = cx.theme().muted_foreground;
         let tool = self.selected(cx);
+        let access = self.access;
         let snippets = self.snippets(cx);
-        // 以后加上 HTTP 时，接入类型（标准输入输出 / HTTP）放在 AI 工具的上面，两种共用这里选中的 AI 工具
+        let copy_blocked = match access {
+            Access::Http if !snippets.is_empty() => self.http.read(cx).copy_blocked(),
+            _ => None,
+        };
         v_flex()
             .gap_2()
-            .child(
-                h_flex()
-                    .gap_2()
-                    .child(div().text_sm().child(t!("cli_ui.mcp.tool")))
-                    .child(
-                        div()
-                            .w(rems(16.))
-                            .child(Select::new(&self.tools).small().id("cli-mcp-tool")),
-                    ),
-            )
+            .child(row(
+                t!("cli_ui.mcp.access"),
+                muted,
+                h_flex().child(
+                    TabBar::new("cli-mcp-access")
+                        .segmented()
+                        .small()
+                        .selected_index(
+                            Access::ALL
+                                .iter()
+                                .position(|a| *a == access)
+                                .unwrap_or_default(),
+                        )
+                        .on_click(cx.listener(|this, ix: &usize, _, cx| {
+                            if let Some(access) = Access::ALL.get(*ix) {
+                                this.access = *access;
+                                cx.notify();
+                            }
+                        }))
+                        .child(Tab::new().label(t!("cli_ui.mcp.access_stdio")))
+                        .child(Tab::new().label(t!("cli_ui.mcp.access_http"))),
+                ),
+            ))
+            .when(access == Access::Http, |this| {
+                this.child(
+                    div()
+                        .pl_3()
+                        .py_1()
+                        .border_l_2()
+                        .border_color(cx.theme().border)
+                        .child(self.http.clone()),
+                )
+            })
+            .child(row(
+                t!("cli_ui.mcp.tool"),
+                muted,
+                div()
+                    .w(rems(16.))
+                    .child(Select::new(&self.tools).small().id("cli-mcp-tool")),
+            ))
+            .when(snippets.is_empty(), |this| {
+                this.child(Self::note(
+                    "cli-mcp-no-http",
+                    t!("cli_ui.mcp.http_claude_desktop"),
+                    cx,
+                ))
+            })
             .children(
                 snippets
                     .into_iter()
-                    .map(|snippet| Self::render_snippet(tool, snippet, cx)),
+                    .map(|(snippet, copy)| Self::render_snippet(tool, access, snippet, copy, cx)),
             )
-            .when(self.command == McpCommand::InPath, |this| {
-                this.child(
-                    div()
-                        .id("cli-mcp-in-path")
-                        .test_support()
-                        .text_xs()
-                        .text_color(muted)
-                        .child(prose(t!("cli_ui.mcp.in_path"))),
-                )
+            .when_some(copy_blocked, |this, text| {
+                this.child(Self::note("cli-mcp-copy-later", text, cx))
             })
+            .when(
+                access == Access::Stdio && self.command == McpCommand::InPath,
+                |this| this.child(Self::note("cli-mcp-in-path", t!("cli_ui.mcp.in_path"), cx)),
+            )
     }
 }
 

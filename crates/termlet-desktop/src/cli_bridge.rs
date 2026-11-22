@@ -288,6 +288,22 @@ pub fn audit(cx: &App) -> Option<Arc<AuditLog>> {
     cx.try_global::<Bridge>().and_then(|b| b.audit.clone())
 }
 
+/// MCP 的 HTTP 接入实际的状态与之后的变化（设置页显示用）；命令行服务没有启动时为 `None`。
+pub(crate) fn subscribe_http(
+    cx: &App,
+) -> Option<tokio::sync::watch::Receiver<termlet_core::cli::HttpStatus>> {
+    cx.try_global::<Bridge>()
+        .and_then(|b| b.service.as_ref())
+        .map(CliService::subscribe_http)
+}
+
+/// 现在对照一次设置（端口被占用、对方让出后“重试”）；新的状态经 [`subscribe_http`] 送达。
+pub(crate) fn refresh_http(cx: &App) {
+    if let Some(service) = cx.try_global::<Bridge>().and_then(|b| b.service.as_ref()) {
+        drop(service.refresh_http());
+    }
+}
+
 /// 应用锁定、解锁：锁定期间命令行一律返回 `app_locked`（应用锁打不开时一直按锁定处理）。
 pub fn set_app_locked(locked: bool, cx: &App) {
     if let Some(service) = cx.try_global::<Bridge>().and_then(|b| b.service.as_ref()) {

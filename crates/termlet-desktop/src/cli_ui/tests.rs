@@ -10,10 +10,13 @@ use gpui_kit::{
     Render, Styled as _, TestAppContext, Window, WindowBounds, WindowOptions, div, px, size,
 };
 use termlet_core::audit::{AuditAction, AuditEntry, AuditLog, AuditStatus};
-use termlet_core::model::{Approval, LocalSettings, Settings};
+use termlet_core::cli::{HttpError, HttpStatus, TokenView};
+use termlet_core::model::{Approval, CliHttpSettings, LocalSettings, Settings};
 use termlet_core::proto::skill::{self, Agent, Status};
 
 use super::audit::{self, AuditView, PAGE, SEARCH_DELAY};
+use super::http::TokenState;
+use super::mcp::{Access, McpSection};
 use super::page::CliPage;
 use super::tool::PathState;
 use super::{CliEnv, refresh_open_audit};
@@ -220,7 +223,7 @@ fn portable_does_not_offer_to_change_path(cx: &mut TestAppContext) {
 // 有 mcp add 命令的工具另给配置文件的写法，各有复制按钮
 #[gpui_kit::test]
 fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
-    use termlet_core::proto::mcp::{AiTool, SnippetForm};
+    use termlet_core::proto::mcp::{AiTool, SnippetForm, Transport};
 
     let tmp = TempDir::new("mcp");
     let exe = tmp.0.join("Termlet.exe");
@@ -235,36 +238,18 @@ fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
     );
     let page = page.unwrap();
     let mcp = cx.read(|cx| page.read(cx).mcp.clone());
-    let clipboard = |cx: &mut TestAppContext| {
-        cx.read_from_clipboard()
-            .and_then(|item| item.text())
-            .unwrap_or_default()
-    };
     let expected = |tool: AiTool, form: SnippetForm| {
-        tool.snippets(&command, cfg!(windows))
+        tool.snippets(Transport::Stdio { command: &command }, cfg!(windows))
             .into_iter()
             .find(|s| s.form == form)
             .unwrap()
             .text
     };
-    let select = |cx: &mut TestAppContext, tool: AiTool| {
-        cx.update_window(handle, |_, window, cx| {
-            let tools = mcp.read(cx).tools.clone();
-            tools.update(cx, |state, cx| state.set_selected_value(&tool, window, cx));
-        })
-        .unwrap();
-        frame(cx, handle);
-        assert_eq!(cx.read(|cx| mcp.read(cx).selected(cx)), tool);
-    };
-    let copy = |cx: &mut TestAppContext, id: &'static str| {
-        cx.update_window(handle, |_, window, cx| window.click(id, cx))
-            .unwrap();
-        clipboard(cx)
-    };
 
-    // 默认是 Claude Code：命令在前，另有项目的 .mcp.json
+    // 默认是标准输入输出与 Claude Code：命令在前，另有项目的 .mcp.json
     frame(cx, handle);
     cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-enabled").is_none(), "没有选 HTTP");
         assert!(window.try_find("cli-mcp-tool").is_some());
         assert!(window.try_find("cli-mcp-snippet-command").is_some());
         assert!(window.try_find("cli-mcp-snippet-file").is_some());
@@ -274,41 +259,42 @@ fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
         );
     })
     .unwrap();
+    assert_eq!(cx.read(|cx| mcp.read(cx).access), Access::Stdio);
     assert_eq!(
-        copy(cx, "cli-mcp-copy-command"),
+        copy(cx, handle, "cli-mcp-copy-command"),
         expected(AiTool::ClaudeCode, SnippetForm::Command)
     );
     assert_eq!(
-        copy(cx, "cli-mcp-copy-file"),
+        copy(cx, handle, "cli-mcp-copy-file"),
         expected(AiTool::ClaudeCode, SnippetForm::File)
     );
 
     // 切到 Codex：config.toml 与 codex mcp add 两种
-    select(cx, AiTool::Codex);
-    let copied = copy(cx, "cli-mcp-copy-file");
+    select_tool(cx, handle, &mcp, AiTool::Codex);
+    let copied = copy(cx, handle, "cli-mcp-copy-file");
     assert!(copied.starts_with("[mcp_servers.termlet]\n"), "{copied}");
     assert!(
         copied.contains(&format!("command = '{command}'")),
         "{copied}"
     );
     assert!(
-        copy(cx, "cli-mcp-copy-command").starts_with("codex mcp add termlet -- "),
+        copy(cx, handle, "cli-mcp-copy-command").starts_with("codex mcp add termlet -- "),
         "Codex 的命令"
     );
 
     // VS Code 只有配置文件；“其他”是通用的 JSON
-    select(cx, AiTool::VsCode);
+    select_tool(cx, handle, &mcp, AiTool::VsCode);
     cx.update_window(handle, |_, window, _| {
         assert!(window.try_find("cli-mcp-snippet-command").is_none());
     })
     .unwrap();
     assert_eq!(
-        copy(cx, "cli-mcp-copy-file"),
+        copy(cx, handle, "cli-mcp-copy-file"),
         expected(AiTool::VsCode, SnippetForm::File)
     );
-    select(cx, AiTool::Other);
+    select_tool(cx, handle, &mcp, AiTool::Other);
     assert_eq!(
-        copy(cx, "cli-mcp-copy-file"),
+        copy(cx, handle, "cli-mcp-copy-file"),
         expected(AiTool::Other, SnippetForm::File)
     );
 }
@@ -330,9 +316,321 @@ fn mcp_without_the_tool_uses_path(cx: &mut TestAppContext) {
     .unwrap();
     let snippets = cx.read(|cx| page.read(cx).mcp.read(cx).snippets(cx));
     assert_eq!(
-        snippets[0].text,
+        snippets[0].0.text,
         "claude mcp add --scope user termlet -- termlet mcp"
     );
+}
+
+/// 点一个复制按钮，返回剪贴板中的文字。
+fn copy(cx: &mut TestAppContext, handle: AnyWindowHandle, id: &'static str) -> String {
+    cx.update_window(handle, |_, window, cx| window.click(id, cx))
+        .unwrap();
+    cx.read_from_clipboard()
+        .and_then(|item| item.text())
+        .unwrap_or_default()
+}
+
+/// 在下拉框中选 AI 工具。
+fn select_tool(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    mcp: &Entity<McpSection>,
+    tool: termlet_core::proto::mcp::AiTool,
+) {
+    cx.update_window(handle, |_, window, cx| {
+        let tools = mcp.read(cx).tools.clone();
+        tools.update(cx, |state, cx| state.set_selected_value(&tool, window, cx));
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(cx.read(|cx| mcp.read(cx).selected(cx)), tool);
+}
+
+/// 本机设置中外部 CLI 与 HTTP 的开关。
+fn http_local(cli: bool, http: bool) -> LocalSettings {
+    let mut local = LocalSettings::default();
+    local.cli.enabled = cli;
+    local.cli.http.enabled = http;
+    local
+}
+
+// HTTP：分段选择切到 HTTP；开关与端口是草稿，与实际状态不同时写“保存后生效”；总开关关着时说明要先打开它；
+// 端口不在 1–65535 时标出、不能保存；失败时有“重试”；保存时写进本机设置
+#[gpui_kit::test]
+fn mcp_http_drafts_and_status(cx: &mut TestAppContext) {
+    let tmp = TempDir::new("mcp-http");
+    let env = CliEnv::at(Some(tmp.0.join("Termlet.exe")), Some(tmp.0.join("home")));
+    let (handle, page) = open(
+        cx,
+        Some((Settings::default(), http_local(false, false), env)),
+    );
+    let page = page.unwrap();
+    let mcp = cx.read(|cx| page.read(cx).mcp.clone());
+    let http = cx.read(|cx| mcp.read(cx).http.clone());
+    let port = CliHttpSettings::DEFAULT_PORT;
+
+    frame(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-mcp-access").click(1usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(cx.read(|cx| mcp.read(cx).access), Access::Http);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-enabled").is_some());
+        assert!(window.try_find("cli-http-status").is_some());
+        assert!(window.try_find("cli-http-pending").is_none());
+        assert!(window.try_find("cli-http-retry").is_none());
+    })
+    .unwrap();
+    cx.read(|cx| {
+        let http = http.read(cx);
+        assert_eq!(http.status, HttpStatus::Off);
+        assert!(!http.pending());
+        assert_eq!(http.url(), format!("http://127.0.0.1:{port}/mcp"));
+    });
+    let status =
+        |cx: &mut TestAppContext| cx.update(|cx| http.read(cx).status_text(cx).0.to_string());
+    assert_eq!(
+        status(cx),
+        "未启用：需要先允许 AI 工具与脚本访问（这一页最上面的开关）"
+    );
+
+    // 只打开 HTTP：总开关还关着，保存后也不会监听，不算“保存后生效”
+    cx.update_window(handle, |_, window, cx| window.click("cli-http-enabled", cx))
+        .unwrap();
+    frame(cx, handle);
+    assert!(cx.read(|cx| http.read(cx).enabled && !http.read(cx).pending()));
+    // 再打开总开关：保存后才监听
+    cx.update_window(handle, |_, window, cx| window.click("cli-enabled", cx))
+        .unwrap();
+    frame(cx, handle);
+    assert_eq!(status(cx), "未启用");
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-pending").is_some());
+    })
+    .unwrap();
+
+    // 服务送来实际的状态：在草稿的端口上监听，与草稿一致
+    cx.update(|cx| http.update(cx, |h, cx| h.set_status(HttpStatus::Listening { port }, cx)));
+    frame(cx, handle);
+    assert_eq!(status(cx), format!("运行中：正在监听 127.0.0.1:{port}"));
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-pending").is_none());
+    })
+    .unwrap();
+
+    // 端口被占用：写明原因，有“重试”
+    cx.update(|cx| {
+        http.update(cx, |h, cx| {
+            h.set_status(
+                HttpStatus::Failed {
+                    port,
+                    error: HttpError::PortInUse,
+                },
+                cx,
+            )
+        })
+    });
+    frame(cx, handle);
+    assert!(status(cx).starts_with(&format!("端口 {port} 已被其他程序占用")));
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-retry").is_some());
+        assert!(window.try_find("cli-http-pending").is_none());
+    })
+    .unwrap();
+
+    // 改端口：不合法时标出、不能保存；改成别的端口后“保存后生效”，不再给“重试”
+    let retype = |cx: &mut TestAppContext, text: &str| {
+        cx.update_window(handle, |_, window, cx| window.click("cli-http-port", cx))
+            .unwrap();
+        frame(cx, handle);
+        cx.update_window(handle, |_, window, cx| {
+            window.press("end", cx);
+            for _ in 0..8 {
+                window.press("backspace", cx);
+            }
+            window.input(text, cx);
+        })
+        .unwrap();
+        frame(cx, handle);
+    };
+    retype(cx, "70000");
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-port-error").is_some());
+    })
+    .unwrap();
+    assert!(cx.read(|cx| page.read(cx).validate(cx).is_err()));
+    retype(cx, "47900");
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-port-error").is_none());
+        assert!(window.try_find("cli-http-pending").is_some());
+        assert!(window.try_find("cli-http-retry").is_none());
+    })
+    .unwrap();
+    assert!(cx.read(|cx| page.read(cx).validate(cx).is_ok()));
+    // 没在监听：地址按草稿的端口写
+    assert_eq!(
+        cx.read(|cx| http.read(cx).url()),
+        "http://127.0.0.1:47900/mcp"
+    );
+
+    let mut saved = Settings::default();
+    let mut local = http_local(false, false);
+    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local, cx));
+    assert!(local.cli.enabled);
+    assert!(local.cli.http.enabled);
+    assert_eq!(local.cli.http.port, 47900);
+}
+
+// HTTP 的令牌与片段：令牌默认打码，“显示”后露出原文；预览的片段中令牌打码、复制的含原文；重新生成要先确认，
+// 取消时不变，确认后立即换成新的
+#[gpui_kit::test]
+fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
+    use termlet_core::cli::http::token;
+    use termlet_core::proto::mcp::{AiTool, Transport};
+
+    let tmp = TempDir::new("mcp-token");
+    let env = CliEnv::at(Some(tmp.0.join("Termlet.exe")), Some(tmp.0.join("home")));
+    let (handle, page) = open(cx, Some((Settings::default(), http_local(true, true), env)));
+    let page = page.unwrap();
+    let mcp = cx.read(|cx| page.read(cx).mcp.clone());
+    let http = cx.read(|cx| mcp.read(cx).http.clone());
+    let port = CliHttpSettings::DEFAULT_PORT;
+    let url = format!("http://127.0.0.1:{port}/mcp");
+
+    // 本机设置中打开过 HTTP：直接显示 HTTP；还没有令牌时预览写占位，不能复制
+    poll_until(cx, "读令牌", |cx| {
+        cx.read(|cx| !matches!(http.read(cx).token, TokenState::Loading))
+    });
+    frame(cx, handle);
+    assert_eq!(cx.read(|cx| mcp.read(cx).access), Access::Http);
+    cx.update_window(handle, |_, window, _| {
+        assert!(
+            window.try_find("cli-http-token-note").is_some(),
+            "还没有令牌"
+        );
+        assert!(window.try_find("cli-mcp-copy-later").is_some());
+    })
+    .unwrap();
+    let snippets = cx.read(|cx| mcp.read(cx).snippets(cx));
+    assert!(
+        snippets[0].0.text.contains("<令牌>"),
+        "{}",
+        snippets[0].0.text
+    );
+    assert!(snippets.iter().all(|(_, copy)| copy.is_none()));
+
+    // 开始监听时（核心在这时生成令牌）重新读令牌
+    let store = cx.update(|cx| AppState::store(cx));
+    let first = token::regenerate(&store).unwrap().expose().to_string();
+    cx.update(|cx| http.update(cx, |h, cx| h.set_status(HttpStatus::Listening { port }, cx)));
+    poll_until(cx, "读出令牌", |cx| {
+        cx.read(|cx| http.read(cx).token_for_copy()).as_ref() == Some(&first)
+    });
+    frame(cx, handle);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-token").is_some());
+        assert!(window.try_find("cli-mcp-copy-later").is_none());
+    })
+    .unwrap();
+    assert!(!cx.read(|cx| http.read(cx).revealed), "默认打码");
+
+    // 预览打码、复制原文：Claude Code 只给用户级的命令
+    let snippets = cx.read(|cx| mcp.read(cx).snippets(cx));
+    assert_eq!(snippets.len(), 1);
+    let (preview, real) = &snippets[0];
+    assert!(preview.text.contains(&super::http::masked_token()));
+    assert!(!preview.text.contains(&first));
+    let copied = copy(cx, handle, "cli-mcp-copy-command");
+    assert_eq!(Some(&copied), real.as_ref());
+    assert!(
+        copied.contains("--scope user") && copied.contains(&first),
+        "{copied}"
+    );
+    select_tool(cx, handle, &mcp, AiTool::Cursor);
+    assert_eq!(
+        copy(cx, handle, "cli-mcp-copy-file"),
+        AiTool::Cursor.snippets(
+            Transport::Http {
+                url: &url,
+                token: &first
+            },
+            cfg!(windows)
+        )[0]
+        .text
+    );
+
+    // 显示 / 隐藏；复制令牌
+    cx.update_window(handle, |_, window, cx| {
+        window.click("cli-http-token-reveal", cx)
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert!(cx.read(|cx| http.read(cx).revealed));
+    assert_eq!(copy(cx, handle, "cli-http-token-copy"), first);
+
+    // 重新生成：取消时不变
+    cx.update_window(handle, |_, window, cx| {
+        window.click("cli-http-token-regenerate", cx)
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| window.click("cancel", cx))
+        .unwrap();
+    cx.run_until_parked();
+    assert_eq!(
+        cx.read(|cx| http.read(cx).token_for_copy()),
+        Some(first.clone())
+    );
+    // 确认后换成新的（立即生效：存储中已是新的），重新打码
+    cx.update_window(handle, |_, window, cx| {
+        window.click("cli-http-token-regenerate", cx)
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| window.click("ok", cx))
+        .unwrap();
+    poll_until(cx, "重新生成令牌", |cx| {
+        cx.read(|cx| http.read(cx).token_for_copy())
+            .is_some_and(|t| t != first)
+    });
+    let second = cx.read(|cx| http.read(cx).token_for_copy()).unwrap();
+    assert!(!cx.read(|cx| http.read(cx).revealed));
+    match token::view(&store).unwrap() {
+        TokenView::Ready(stored) => assert_eq!(stored.expose(), second),
+        other => panic!("{other:?}"),
+    }
+    frame(cx, handle);
+    assert!(
+        copy(cx, handle, "cli-mcp-copy-file").contains(&second),
+        "片段跟着换成新的令牌"
+    );
+
+    // Claude Desktop 选 HTTP：不给片段，说明它连不了本机的 HTTP
+    select_tool(cx, handle, &mcp, AiTool::ClaudeDesktop);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-no-http").is_some());
+        assert!(window.try_find("cli-mcp-snippet-file").is_none());
+        assert!(window.try_find("cli-mcp-snippet-command").is_none());
+    })
+    .unwrap();
+    // 切回标准输入输出：Claude Desktop 照常有片段，同一个 AI 工具
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-mcp-access").click(0usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(
+        cx.read(|cx| mcp.read(cx).selected(cx)),
+        AiTool::ClaudeDesktop
+    );
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-no-http").is_none());
+        assert!(window.try_find("cli-mcp-snippet-file").is_some());
+        assert!(window.try_find("cli-http-enabled").is_none());
+    })
+    .unwrap();
 }
 
 #[gpui_kit::test]
@@ -422,7 +720,7 @@ fn page_drafts_rules_and_validates(cx: &mut TestAppContext) {
 
     // 写进设置：只动这一页的字段，不认识的关闭 ID 保留
     let (mut saved, mut local) = (settings.clone(), LocalSettings::default());
-    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local));
+    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local, cx));
     assert!(local.cli.enabled);
     assert!(!local.cli.auto_start);
     assert_eq!(
@@ -439,7 +737,7 @@ fn page_drafts_rules_and_validates(cx: &mut TestAppContext) {
     })
     .unwrap();
     frame(cx, handle);
-    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local));
+    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local, cx));
     assert!(saved.guard.custom_rules.is_empty());
 }
 

@@ -739,7 +739,7 @@ impl SettingsForm {
         self.about_extras.read(cx).apply(&mut draft, &mut local, cx);
         let cli_page = self.cli_page.read(cx);
         cli_page.validate(cx).map_err(|e| (Page::Cli, e))?;
-        cli_page.apply(&mut draft, &mut local);
+        cli_page.apply(&mut draft, &mut local, cx);
         let backup_page = self.backup_page.read(cx);
         backup_page.validate(cx).map_err(|e| (Page::Backup, e))?;
         backup_page.apply(&mut local, cx);
