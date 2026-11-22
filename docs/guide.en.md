@@ -23,7 +23,7 @@
 - [Sync](#sync): [What is synced](#what-is-synced) · [Sync locations](#sync-locations) · [Encryption](#encryption) · [Merging](#merging) · [Safeguards](#safeguards) · [Automatic sync](#automatic-sync)
 - [Interface and settings](#interface-and-settings): [Settings pages](#settings-pages) · [Font and cursor](#font-and-cursor) · [Sidebar](#sidebar) · [Windows and the title bar](#windows-and-the-title-bar) · [Toolbar](#toolbar) · [Opening at startup](#opening-at-startup)
 - [Updates, diagnostics and uninstalling](#updates-diagnostics-and-uninstalling): [Updates](#updates) · [Usage statistics](#usage-statistics) · [Diagnostics](#diagnostics) · [Logs](#logs) · [Crash records](#crash-records) · [Uninstalling](#uninstalling)
-- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [Limits](#limits)
+- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [MCP over HTTP](#mcp-over-http) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [Limits](#limits)
 - [Known limitations](#known-limitations)
 
 ## Installation
@@ -1471,7 +1471,7 @@ Default shortcuts:
 | Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, ssh-agent address, opening by bastion hosts and other programs |
 | Host Keys | — |
 | Security | app lock |
-| AI & automation | external CLI, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration, audit log |
+| AI & automation | external CLI, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration and HTTP, audit log |
 | Backup | full backups and restore, local snapshots |
 | Sync | — |
 | Shortcuts | — |
@@ -1633,8 +1633,14 @@ termlet version
 
 ### MCP server
 
-- `termlet mcp` is an MCP server over standard input and output that AI tools such as Claude Code, Claude Desktop, Cursor and Codex start from their configuration. No network port is opened; there is no HTTP / SSE transport for now.
-- Under Settings → AI & automation, pick the AI tool (Claude Code, Codex, Cursor, VS Code (GitHub Copilot), Gemini CLI, Claude Desktop, or generic JSON for other tools) to get its configuration (with the full path of termlet on this computer) and copy it with one click; for Claude Code, Codex and Gemini CLI there's both an `mcp add` command and the configuration file.
+- AI tools such as Claude Code, Codex and Cursor can call Termlet directly as an MCP server (list hosts, run commands, upload and download files). There are two transports:
+  - **Standard input and output** (recommended): the AI tool starts `termlet mcp` itself from its configuration, and no network port is opened. If Termlet isn't running, it's started in the background as set under [Turning it on](#turning-it-on).
+  - **HTTP**: Termlet listens on this computer and the AI tool connects with an address and a token. It only works while Termlet is running; see [MCP over HTTP](#mcp-over-http).
+- Which to choose: standard input and output usually, with no port or token to look after. Use HTTP when the AI tool only supports HTTP MCP servers, or when it runs on a server and connects back to this computer through SSH port forwarding. Claude Desktop can only use standard input and output.
+- Both transports have the same tools, checks, approval and audit. You only need one of them in an AI tool (both are named `termlet`).
+- Copy every AI tool's configuration from the settings page: under Settings → AI & automation → MCP server, pick the transport and the AI tool (Claude Code, Codex, Cursor, VS Code (GitHub Copilot), Gemini CLI, Claude Desktop, or generic JSON for other tools) to get the configuration and where it goes, and copy it with one click.
+  - For standard input and output, the command is the full path of termlet on this computer; for HTTP, the address and token are filled in (the preview masks the token; what you copy contains it).
+  - For Claude Code, Codex and Gemini CLI there's both an `mcp add` command and the configuration file (for Codex over HTTP, only the configuration file).
 - You only need one of MCP and the Agent Skill (MCP needs no terminal, so tools like Claude Desktop that can't run commands can use it too).
 - The tools match the commands:
 
@@ -1645,13 +1651,47 @@ termlet version
   | `upload_file` | `upload` |
   | `download_file` | `download` |
 
-- Local paths for `upload_file` and `download_file` must be absolute.
+- Local paths for `upload_file` and `download_file` must be absolute (paths on the computer running Termlet).
 - Every call goes through Termlet as usual: the external CLI switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
-- The caller in the audit log and approval dialog starts with `mcp:<client name>`; the audit log's Source column shows "MCP (client name)", and you can filter for these calls; the approval dialog's title reads "client name (MCP) wants to run a dangerous command on …".
+- The audit log's Source column shows "MCP (client name)", or "MCP·HTTP (client name)" over HTTP, and you can filter for these calls. The caller starts with `mcp:<client name>`; over HTTP it's followed by `http` and the chain of processes that opened the connection (recorded on Windows and Linux).
+- The approval dialog for a dangerous command names the AI tool in its title, such as "Claude Code (MCP) wants to run a dangerous command on …": common AI tools get their product name, others the name they report; those without a brand logo get a generic AI icon.
 - When the external CLI is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
 - Commands return at most 32 KB of stdout and stderr together to the AI (the beginning and end are kept, with a note on how to get the full output).
-- When the AI tool cancels a call, Termlet stops the request (the remote command gets SIGTERM).
+- While a call runs, Termlet reports progress every 15 seconds when the AI tool asks for it (Claude Code and Codex both do). Some AI tools abort a call after a while without progress, so longer commands aren't cut off for that reason.
+- When the AI tool cancels a call (or drops the HTTP connection), Termlet stops the request (the remote command gets SIGTERM), and the audit log records it as "Canceled".
+- Codex:
+  - `tool_timeout_sec = 900` in the configuration is the longest a single command may run, including the time you take to approve a dangerous command; past it, Codex aborts the call. Codex defaults to 60 seconds, and progress reports don't extend it. Adding the server with `codex mcp add` doesn't set it, so add it yourself under `[mcp_servers.termlet]` in `config.toml`; raise it for commands that run longer.
+  - By default, Codex asks you before every command, upload and download (listing hosts isn't asked). To skip that, add `default_tools_approval_mode = "approve"` under `[mcp_servers.termlet]`. Termlet still only lets AI use the hosts you allow and still asks you to approve dangerous commands. You need it where nobody can answer, such as `codex exec`, or those tools fail.
+  - With a system proxy on (such as Clash), Codex also sends requests for `127.0.0.1` through it, ignoring the proxy's bypass list: the token passes through the proxy, and if the proxy isn't on this computer, HTTP can't connect at all. Set the environment variable `NO_PROXY=127.0.0.1,localhost` before starting Codex.
 - It supports MCP revision 2026-07-28 and the `initialize`-based 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05.
+
+### MCP over HTTP
+
+- Turning it on: under Settings → AI & automation → MCP server, set the transport to "HTTP", tick "Listen for HTTP on this computer" and save.
+  - It's off by default. "Allow access from AI tools and scripts" at the top must be on as well; Termlet only listens when both are on, and opens no port otherwise.
+  - "Status" shows what's actually happening: running, off, or why it couldn't listen.
+- Address: `http://127.0.0.1:<port>/mcp`. The port defaults to 47800 and can be changed (1–65535); change the address in your AI tools along with it.
+  - That's the only address, and it only accepts POST. In the AI tool, choose the HTTP type (some call it Streamable HTTP or `streamableHttp`); the old SSE type isn't supported.
+  - If the port is in use by another program or reserved by the system (Hyper-V and WSL reserve some port ranges), "Status" says so and Termlet doesn't switch ports by itself: choose another port and save, or close that program and click "Retry".
+- Token: the AI tool sends it in the `Authorization: Bearer <token>` header; the configuration from the settings page already has it.
+  - It's generated the first time you turn HTTP on and save (after unlocking, if you use a master password) and starts with `termlet_mcp_`.
+  - The settings page masks it; you can show and copy it. With a master password, you need to unlock the vault to view it while it's locked (checking the token still works).
+  - Termlet checks requests against a digest of the token only; the token itself is kept encrypted by the vault, just so you can view and copy it. The token stays on this computer: it isn't synced or included in backups.
+  - "Regenerate…" takes effect right away: AI tools using the old token are refused, so copy the new configuration into them. Regenerate it if the token leaks (for example, if it was committed with your code).
+  - With a wrong token, the AI tool gets a 401. Keep configurations with the token in user-level configuration files only, not in a project (`.mcp.json`, `.cursor/mcp.json` and so on), where they could be committed with your code; the settings page always gives the user-level form.
+- It only works while Termlet is running: HTTP is served by Termlet itself, so AI tools can't connect after Termlet quits, and unlike standard input and output, nothing starts Termlet in the background.
+  - On Windows, to keep it available after you close the window, turn on "Minimize to the system tray when closing the window" under General.
+  - A Termlet started in the background by the termlet command (no window) listens too; it quits after 10 minutes without requests, and HTTP requests count.
+  - After Termlet restarts, there's nothing to reconfigure: calls in progress fail, and it works as usual afterwards.
+- It only accepts connections from this computer: it listens on `127.0.0.1` only, so other devices on your network can't connect.
+  - The Host of a request must be `127.0.0.1`, `localhost` or `[::1]` with this port, and requests with an `Origin` header (sent by web pages in a browser) are always refused, so web pages can't call it.
+  - Refused requests are noted in the log with the reason (at most once a minute per reason), without the token or the content.
+- There's no access from your network: local paths for uploads and downloads are paths on the computer running Termlet, and approval dialogs appear on it too, so opening it to the network would let another computer read and write files on this one as you. For an AI tool on another computer, install Termlet on that computer.
+- For an AI tool on a server (for example, Claude Code running on the server in a terminal), use SSH remote forwarding to bring a port on the server back to this computer:
+  - Add a remote forwarding rule under [Port forwarding](#port-forwarding): listen on `127.0.0.1:47800` on the server with target `127.0.0.1:47800`; or with OpenSSH: `ssh -R 47800:127.0.0.1:47800 <server>`.
+  - The AI tool on the server uses the address `http://127.0.0.1:47800/mcp` and the token as usual. The ports on both ends must match, because Termlet checks the port in the Host.
+  - Local paths for `upload_file` and `download_file` are still paths on the computer running Termlet: any program on the server that has the token can read and write files on this computer through it, and run commands on the hosts you've allowed.
+  - Other users on the server can reach that port too, with only the token to stop them. Do this only on servers you trust, and close the forwarding when you're done.
 
 ### Output
 
