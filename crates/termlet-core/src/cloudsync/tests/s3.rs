@@ -318,6 +318,8 @@ fn sync_over_s3() {
     s3.lock().unwrap().bad_signatures = 0;
     block_on(a.sync.setup(s3_input(&server.base, "a"))).unwrap();
     a.sync();
+    // 使用统计的功能名单另记一项“经 S3 同步”
+    assert!(crate::usage::features::global().contains(crate::usage::Feature::SyncS3));
     assert!(
         s3.lock()
             .unwrap()

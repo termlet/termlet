@@ -634,6 +634,24 @@ impl TerminalPanel {
         }
     }
 
+    /// 使用统计的功能名单：这个会话连上了（`x11`：SSH 会话开着 X11 转发）。
+    fn mark_connected(&self, x11: bool) {
+        use termlet_core::usage::{Feature, mark};
+        mark(match (&self.session, self.protocol) {
+            (Session::Local { .. }, _) => Feature::LocalShell,
+            (Session::Wsl { .. }, _) => Feature::Wsl,
+            (_, Protocol::Telnet) => Feature::Telnet,
+            (_, Protocol::Serial) => Feature::Serial,
+            (_, Protocol::Ssh) => Feature::Ssh,
+        });
+        if matches!(self.session, Session::Launch { .. }) {
+            mark(Feature::Bastion);
+        }
+        if x11 {
+            mark(Feature::X11);
+        }
+    }
+
     /// SSH 会话（保存的 SSH 主机、快速连接）。
     pub fn is_ssh(&self) -> bool {
         self.session.is_ssh() && self.protocol == Protocol::Ssh
@@ -1209,6 +1227,7 @@ impl TerminalPanel {
                                 tracing::info!(session = %this.name, restarted = forced, "本地终端已启动");
                                 this.note_restarted(cx);
                                 this.state = State::Connected;
+                                this.mark_connected(false);
                                 let io = this.wrap_io(io, false, cx);
                                 this.attach(io, window, cx);
                             }
@@ -1238,6 +1257,7 @@ impl TerminalPanel {
                                 tracing::info!(session = %this.name, restarted = forced, "WSL 终端已启动");
                                 this.note_restarted(cx);
                                 this.state = State::Connected;
+                                this.mark_connected(false);
                                 let io = this.wrap_io(io, false, cx);
                                 this.transport = Some(io.input.clone());
                                 this.attach(io, window, cx);
@@ -1451,6 +1471,7 @@ impl TerminalPanel {
                             }
                         }
                         this.state = State::Connected;
+                        this.mark_connected(false);
                         this.attach(io, window, cx);
                     }
                     Err(error) => {
@@ -1541,6 +1562,7 @@ impl TerminalPanel {
         self.tmux = tmux;
         self.cwd_reader = None;
         self.state = State::Connected;
+        self.mark_connected(matches!(x11, X11Status::Forwarding { .. }));
         self.stalled = false;
         self.watch_health(&connection, window, cx);
         self._x11 = matches!(x11, X11Status::Forwarding { .. })
@@ -1804,6 +1826,9 @@ impl TerminalPanel {
                 TerminalViewEvent::RestartRequested => this.reconnect_now(window, cx),
                 TerminalViewEvent::Closed(reason) => this.on_closed(reason.clone(), window, cx),
                 TerminalViewEvent::TitleChanged => cx.notify(),
+                TerminalViewEvent::SuggestionAccepted => {
+                    termlet_core::usage::mark(termlet_core::usage::Feature::CommandSuggest)
+                }
                 _ => {}
             },
         ));
@@ -2181,6 +2206,7 @@ impl TerminalPanel {
                 Ok(log) => {
                     this._log_start = None;
                     tracing::info!(session = %this.name, path = %log.path().display(), "开始记录会话日志");
+                    termlet_core::usage::mark(termlet_core::usage::Feature::SessionLog);
                     let log = Arc::new(log);
                     // 正在全屏程序中：画面不记录，回到 shell 后再记
                     if let Some(view) = &this.view

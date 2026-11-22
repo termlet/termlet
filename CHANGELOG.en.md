@@ -35,6 +35,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 - When you first connected to a host at an IPv6 address on a port other than 22, the title of the fingerprint dialog read "::1:2222", so you couldn't tell which part was the port; it now reads "[::1]:2222".
 - Switching pages in the host dialog kept the previous page's scroll position, cutting off the top of the new page; it now goes back to the top.
 
+### Usage statistics
+
+- The daily anonymous usage statistics gain one item: which features were used since the last message (`features`). It contains only names from a fixed list (such as `ssh`, `sftp` and `port_forward`; 50 in all, listed with their meanings under "Usage statistics" in the user guide), with no counts, times or order of use. The message goes out the first time Termlet is used each day, so the list covers what was used since the previous message and is removed from this computer once sent. The server only adds each name to that day's counts; it doesn't keep the list or combine it with the version, country or anything else. A new file, `usage-features.json`, holds only the list not yet sent. With "Send anonymous usage statistics" off, or `DO_NOT_TRACK` or `TERMLET_USAGE_URL=off` set, no list is kept, and turning it off deletes the file; "View what is sent…" still shows the exact message.
+
 ## 0.3.2 (2026-11-19)
 
 ### Changed

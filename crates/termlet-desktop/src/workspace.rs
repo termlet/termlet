@@ -891,6 +891,7 @@ impl Workspace {
             return;
         };
         tracing::info!(session = %panel.read(cx).name(), ?placement, "分屏");
+        termlet_core::usage::mark(termlet_core::usage::Feature::Split);
         let copy = panel.update(cx, |panel, cx| panel.duplicate(window, cx));
         self.add_terminal(copy.clone(), window, cx);
         let target = InsertTarget::Split {
@@ -1101,7 +1102,10 @@ impl Workspace {
         };
         let input = snippets::command_input(&snippet.doc.content, run);
         match panel.update(cx, |panel, cx| panel.write_command(input, cx)) {
-            Ok(()) => self.show_terminal(&panel, window, cx),
+            Ok(()) => {
+                termlet_core::usage::mark(termlet_core::usage::Feature::QuickCommands);
+                self.show_terminal(&panel, window, cx)
+            }
             Err(message) => crate::notify::warning(message, window, cx),
         }
     }

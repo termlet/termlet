@@ -122,6 +122,7 @@ impl Workspace {
             terminals = terminals.len(),
             "开启同步输入"
         );
+        termlet_core::usage::mark(termlet_core::usage::Feature::SyncInput);
         self.multi_exec = Some(MultiExec {
             members: live.iter().map(|p| p.entity_id()).collect(),
             zoom: None,

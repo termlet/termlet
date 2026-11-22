@@ -256,6 +256,8 @@ fn sync_over_gist() {
         assert!(g.files.contains_key(MANIFEST));
     }
     a.sync();
+    // 使用统计的功能名单另记一项“经 Gist 同步”
+    assert!(crate::usage::features::global().contains(crate::usage::Feature::SyncGist));
     {
         let g = &gh.lock().unwrap().gists[&id];
         assert!(g.files.contains_key(&part_name(0)), "{:?}", g.files.keys());

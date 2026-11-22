@@ -187,6 +187,7 @@ impl ProxyShare {
             host = %shared.connection.label(),
             "通过本机代理已开始"
         );
+        crate::usage::mark(crate::usage::Feature::ProxyShare);
         crate::runtime::spawn(shared.clone().accept(receiver));
         crate::runtime::spawn(shared.clone().watch_connection());
         Ok(Self { shared })

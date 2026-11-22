@@ -103,6 +103,7 @@ impl TerminalPanel {
         let Some(view) = self.view.clone() else {
             return;
         };
+        termlet_core::usage::mark(termlet_core::usage::Feature::Recording);
         let input = self.store.settings().terminal.record_input;
         let theme = cast_theme(&view.read(cx).style().palette);
         let title = self.name.to_string();

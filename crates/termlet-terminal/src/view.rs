@@ -234,6 +234,8 @@ pub enum TerminalViewEvent {
     /// 转交输入时（[`TerminalView::set_forward_input`]）用户键入的内容：按键（已按本终端的模式编码）与输入法上屏的
     /// 文字。没有写给远端，由上层分发（同步输入）；终端自己的回应、鼠标上报、粘贴不在其中
     Typed(Vec<u8>),
+    /// 用户接受了命令补全提示（整条或一个词）；接受的内容已经发出，事件中不带
+    SuggestionAccepted,
 }
 
 /// 鼠标正在做什么。
@@ -602,6 +604,7 @@ impl TerminalView {
         let expected = format!("{typed}{accepted}");
         self.typed(accepted.as_bytes(), cx);
         self.accepted = Some(expected);
+        cx.emit(TerminalViewEvent::SuggestionAccepted);
         true
     }
 

@@ -1587,15 +1587,39 @@
 ### 使用统计
 
 - 默认开启；匿名，每天（UTC）最多发送一次。
-- 内容是版本、系统与大版本（如 Windows 11 25H2，不含构建号）、CPU 架构、界面语言、使用时长的档位与"本周 / 本月第一次"两个标记。
+- 内容是版本、系统与大版本（如 Windows 11 25H2，不含构建号）、CPU 架构、界面语言、使用时长的档位、"本周 / 本月第一次"两个标记，以及上次发送以来用过哪些功能（见下）。
 - 不含主机、命令、文件，也不带设备 ID 这类能识别这台电脑的标识。
 - 服务器另外按 IP 推断国家或地区，IP 本身不保存，只保存每天的计数。
-- 本机只记两个日期（`{数据目录}/usage.json`：第一次与上次发送）。
+- 本机只记两个日期（`{数据目录}/usage.json`：第一次与上次发送）与还没发出的功能名单（`{数据目录}/usage-features.json`）。
 - 界面中不另外提示，许可协议与官网的隐私说明中写明。
-- 可在设置的"关于 → 隐私"中随时关闭（关闭后删除 `usage.json`），点"查看发送的内容…"看将发送的原文。
+- 可在设置的"关于 → 隐私"中随时关闭（关闭后删除这两个文件，不再记功能名单），点"查看发送的内容…"看将发送的原文。
 - 每次发送的内容也写进日志。
 - 环境变量 `TERMLET_USAGE_URL=off` 或 `DO_NOT_TRACK=1` 也能关闭；命令行工具 `termlet` 本身不发送。
 - 为防滥用，Cloudflare 会按网络地址限制请求频率；被拦下的请求会在 Cloudflare 的安全日志中短期留下网络地址，Termlet 不读取、不保存。
+- **功能名单**（正文中的 `features`）：
+  - 上次发送成功以来用过的功能，只有下表中的名称，按表中的顺序，没有次数、时间与先后；什么都没用过时为空。
+  - 统计在当天第一次用到 Termlet 时就发出，所以名单是从上次发送到这次发送之间用过的，下一次发送时带上；发送成功后从本机的名单中去掉。
+  - 服务器只把每个名称加到当天的计数上，不保存名单，也不与版本、国家等交叉。
+  - 自动同步、定时备份、自动启动的端口转发在运行就算用过；`agent_skill`、`vertical_tabs` 按当时的状态记。
+
+  | 名称 | 用过的是 |
+  |---|---|
+  | `ssh`、`telnet`、`serial` | 连上过 SSH 终端（含快速连接、被堡垒机调起的）、Telnet、串口 |
+  | `local_shell`、`wsl` | 打开过本地终端（不含 WSL）、WSL 终端或 WSL 的文件管理 |
+  | `x11`、`bastion` | 开着 X11 转发的会话连上过；被堡垒机等外部程序调起过 |
+  | `split`、`sync_input`、`compose` | 分屏、同步输入、撰写栏（发送或执行并对比） |
+  | `quick_commands`、`command_suggest` | 发送或写入过快捷命令；接受过命令补全提示 |
+  | `session_log`、`recording` | 会话日志；会话录制或回放 |
+  | `vertical_tabs`、`highlight_presets`、`scheme_import` | Tab 放在左侧；添加过关键词高亮的预设规则；导入过终端配色 |
+  | `sftp`、`open_in_editor` | 远程的文件管理（SFTP 或 SCP）连上过；在 VS Code / Zed 中打开过 |
+  | `port_forward`、`proxy_share` | 启动过端口转发；把本机代理借给服务器 |
+  | `host_tools`、`host_tools_popout`、`host_tools_action` | 主机工具显示过一台主机；打开过置顶小窗；在其中执行过写操作 |
+  | `cli`、`mcp_stdio`、`mcp_http`、`mcp_lan` | 经 termlet 命令、MCP（标准输入输出、HTTP、局域网）执行过命令或传过文件 |
+  | `agent_skill`、`approval_prompt` | 这台电脑上装着 Agent Skill；弹出过危险命令的批准框 |
+  | `sync`、`sync_s3`、`sync_gist` | 同步成功过（后两项为经 S3、Gist） |
+  | `backup`、`backup_scheduled` | 手动创建或恢复过完整备份；定时备份做过 |
+  | `app_lock`、`master_password` | 解锁过应用锁；用主密码解锁过 |
+  | `import_ssh_config`、`import_xshell`、`import_finalshell`、`import_mobaxterm`、`import_tabby`、`import_termora`、`import_windterm`、`import_electerm`、`import_netcatty`、`import_shellrs`、`import_nyaterm`、`import_nyaterm_snippets`、`import_termlet_file` | 从这个来源导入过（`import_nyaterm_snippets` 为 NyaTerm 导出的快捷命令，`import_termlet_file` 为 Termlet 主机文件） |
 
 ### 诊断信息
 

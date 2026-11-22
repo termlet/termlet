@@ -663,6 +663,10 @@ fn ssh_config_preview_and_apply() {
     let keys = preview.items.iter().map(|i| i.key.clone()).collect();
     let report = block_on(apply(m.backups.clone(), plan, keys, OnDuplicate::Skip)).unwrap();
     assert_eq!(counts(&report), (1, 0, 1, 0));
+    assert!(
+        crate::usage::features::global().contains(crate::usage::Feature::ImportSshConfig),
+        "使用统计的功能名单按来源记下导入"
+    );
     let mut host_events = 0;
     while let Ok(event) = events.try_recv() {
         if event == StoreEvent::Changed(crate::model::Kind::Host) {

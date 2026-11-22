@@ -410,6 +410,7 @@ pub async fn apply(
         }
     }
 
+    let source = plan.source;
     let result = tokio::task::spawn_blocking(move || {
         write_plan(
             &store,
@@ -435,6 +436,7 @@ pub async fn apply(
                 failures = report.failures.len(),
                 "导入主机"
             );
+            crate::usage::mark(crate::usage::Feature::import(source));
             Ok(report)
         }
         Err(e) if e.is_panic() => std::panic::resume_unwind(e.into_panic()),

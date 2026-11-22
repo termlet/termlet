@@ -91,8 +91,10 @@ pub fn terminal_entry(host: &str, command: &str, label: &str) -> AuditEntry {
     }
 }
 
-/// 写一条审计记录（在后台线程写库）；没有审计日志或写入失败只记运行日志，不影响操作的结果。
+/// 写一条审计记录（在后台线程写库）；没有审计日志或写入失败只记运行日志，不影响操作的结果。使用统计的功能名单记
+/// 一次“在主机工具中执行过写操作”。
 pub fn record(log: Option<Arc<AuditLog>>, entry: AuditEntry) {
+    termlet_core::usage::mark(termlet_core::usage::Feature::HostToolsAction);
     tracing::info!(
         action = ?entry.action,
         host = %entry.host,

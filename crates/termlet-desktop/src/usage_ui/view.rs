@@ -189,7 +189,8 @@ impl Render for UsageView {
                     .child(field("lang", t!("usage.view.field.lang")))
                     .child(field("age", t!("usage.view.field.age")))
                     .child(field("firstOfWeek", t!("usage.view.field.first_of_week")))
-                    .child(field("firstOfMonth", t!("usage.view.field.first_of_month"))),
+                    .child(field("firstOfMonth", t!("usage.view.field.first_of_month")))
+                    .child(field("features", t!("usage.view.field.features"))),
             )
             .child(
                 v_flex()

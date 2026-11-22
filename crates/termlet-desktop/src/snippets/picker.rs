@@ -433,6 +433,7 @@ impl CommandPicker {
         match panel.update(cx, |panel, cx| panel.write_command(input, cx)) {
             Ok(()) => {
                 tracing::info!(session = %panel.read(cx).name(), "快捷命令选择器：写入终端");
+                termlet_core::usage::mark(termlet_core::usage::Feature::QuickCommands);
                 window.close_dialog(cx);
                 panel.read(cx).focus_handle(cx).focus(window, cx);
             }

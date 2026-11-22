@@ -236,6 +236,7 @@ fn launch_url(launch: &Launch, cx: &mut App) {
         alias = launch.alias.is_some(),
         "在编辑器中打开远程目录"
     );
+    termlet_core::usage::mark(termlet_core::usage::Feature::OpenInEditor);
     let opener = cx.try_global::<Editors>().map(|e| e.opener.clone());
     match opener {
         Some(opener) => opener(&launch.url, cx),

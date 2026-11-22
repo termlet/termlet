@@ -65,6 +65,12 @@ usage.view.field.first_of_month:
   zh-TW: "是不是本月（UTC）第一次傳送，用來計算每月有多少台電腦在使用"
   ja: 今月（UTC）最初の送信かどうか。月ごとに使われているコンピューターの台数を数えるために使います
   ko: 이번 달(UTC)의 첫 전송인지 여부. 달마다 사용 중인 컴퓨터 수를 세는 데 씁니다
+usage.view.field.features:
+  zh-CN: "上次发送以来用过的功能，只有名称，没有次数、时间与先后；全部可能的名称见隐私说明"
+  en: "Features used since the last message: names only, with no counts, times or order. The privacy policy lists every possible name"
+  zh-TW: "上次傳送以來用過的功能，只有名稱，沒有次數、時間與先後；所有可能的名稱見隱私權聲明"
+  ja: 前回の送信以降に使った機能。名前だけで、回数、時刻、順序は含みません。取りうる名前はすべてプライバシーポリシーに載っています
+  ko: 지난 전송 이후 사용한 기능. 이름만 있으며 횟수, 시각, 순서는 없습니다. 가능한 이름은 모두 개인정보 처리방침에 있습니다
 usage.view.country:
   zh-CN: "接收端另外按网络地址推断国家或地区（两位代码，如 CN、US），不在上面的内容中；网络地址不保存。"
   en: "The receiver also works out the country or region (a two-letter code such as CN or US) from the network address; it is not part of the message above, and the address is not stored."

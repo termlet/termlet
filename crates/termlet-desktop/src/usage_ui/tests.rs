@@ -4,7 +4,7 @@
 use std::io::{Read as _, Write as _};
 use std::net::TcpListener;
 use std::path::PathBuf;
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc};
 use std::time::Duration;
 
 use gpui_kit::test::TestWindowExt as _;
@@ -12,7 +12,7 @@ use gpui_kit::{
     AnyWindowHandle, AppContext as _, Bounds, Context, Entity, IntoElement, ParentElement as _,
     Render, Styled as _, TestAppContext, Window, WindowBounds, WindowOptions, div, px, size,
 };
-use termlet_core::usage::{ReporterOptions, Route, UsageReporter};
+use termlet_core::usage::{Collecting, Feature, FeatureLog, ReporterOptions, Route, UsageReporter};
 
 use super::Setup;
 use crate::app_state::AppState;
@@ -72,6 +72,11 @@ fn receiver() -> (Route, mpsc::Receiver<String>) {
 
 /// 装好应用状态（本机设置是默认的），使用统计发到 `route`，返回 `usage.json` 的位置。
 fn setup(cx: &mut TestAppContext, route: Route) -> PathBuf {
+    setup_with_features(cx, route).0
+}
+
+/// 同 [`setup`]，另返回这次用的功能名单（记在数据目录的 `usage-features.json` 中，不是全局的那一份）。
+fn setup_with_features(cx: &mut TestAppContext, route: Route) -> (PathBuf, Arc<FeatureLog>) {
     // 发送在核心的运行时上，不受测试调度器管理
     cx.executor().allow_parking();
     cx.update(gpui_kit::init);
@@ -79,12 +84,17 @@ fn setup(cx: &mut TestAppContext, route: Route) -> PathBuf {
     cx.update(AppState::install_in_memory);
     cx.update(|cx| cx.set_reduce_motion(true));
     cx.update(|cx| {
-        let state_file = AppState::global(cx).data_dir.usage_state();
+        let data_dir = &AppState::global(cx).data_dir;
+        let state_file = data_dir.usage_state();
+        let features = Arc::new(FeatureLog::default());
+        features.attach(data_dir.usage_features());
         let reporter = UsageReporter::with(ReporterOptions {
             state_file: state_file.clone(),
             route,
             remote: None,
             builtin: termlet_core::usage::USAGE_URL.parse().unwrap(),
+            features: features.clone(),
+            skill_installed: || false,
         });
         super::install_with(
             Setup {
@@ -93,7 +103,7 @@ fn setup(cx: &mut TestAppContext, route: Route) -> PathBuf {
             },
             cx,
         );
-        state_file
+        (state_file, features)
     })
 }
 
@@ -348,4 +358,81 @@ fn environment_variable_turns_the_switch_off(cx: &mut TestAppContext) {
             .as_ref()
         );
     });
+}
+
+// 功能名单：开着时开始记、随统计发出并从名单中去掉；关掉开关时删除名单、不再记；“查看内容”中说明这一项
+#[gpui_kit::test]
+fn feature_list_follows_the_switch(cx: &mut TestAppContext) {
+    let (route, bodies) = receiver();
+    let (state_file, features) = setup_with_features(cx, route);
+    let file = cx.update(|cx| AppState::global(cx).data_dir.usage_features());
+    poll_until(cx, "开着时开始记功能名单", |_| {
+        features.collecting() == Collecting::On
+    });
+    features.mark(Feature::Split);
+    features.mark(Feature::Compose);
+    poll_until(cx, "写进 usage-features.json", |_| file.exists());
+
+    // 查看内容：名单在正文中，并有这一项的说明
+    let (handle, _) = open(cx, |_, _| EmptyView);
+    let (_, json) = open_view(cx, handle);
+    assert!(
+        json.ends_with(r#","features":["split","compose"]}"#),
+        "{json}"
+    );
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("usage-view-close", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+
+    // 发出后从名单中去掉，文件删除
+    termlet_core::usage::mark_active();
+    cx.update(super::check);
+    let sent = bodies.recv_timeout(Duration::from_secs(20)).expect("发送");
+    assert_eq!(sent, json);
+    poll_until(cx, "发出的从名单中去掉", |_| {
+        features.pending() == 0 && !file.exists()
+    });
+    poll_until(cx, "记下发送的日期", |_| state_file.exists());
+
+    // 关掉：删除名单，不再记
+    features.mark(Feature::Sftp);
+    poll_until(cx, "再记一项", |_| file.exists());
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_local_settings(|s| s.usage.enabled = false)
+            .unwrap()
+    });
+    poll_until(cx, "关掉后删除名单", |_| {
+        features.collecting() == Collecting::Off && !file.exists() && !state_file.exists()
+    });
+    assert_eq!(features.pending(), 0);
+    features.mark(Feature::Ssh);
+    assert_eq!(features.pending(), 0, "关着时不记");
+
+    // 再打开：从空开始记
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_local_settings(|s| s.usage.enabled = true)
+            .unwrap()
+    });
+    poll_until(cx, "重新打开后开始记", |_| {
+        features.collecting() == Collecting::On
+    });
+    features.mark(Feature::Ssh);
+    assert_eq!(features.pending(), Feature::Ssh.bit());
+}
+
+// 被环境变量关掉时不记功能名单
+#[gpui_kit::test]
+fn feature_list_is_not_kept_when_turned_off_by_the_environment(cx: &mut TestAppContext) {
+    let (_, features) =
+        setup_with_features(cx, Route::EnvOff(termlet_core::usage::DO_NOT_TRACK_ENV));
+    poll_until(cx, "不收集", |_| {
+        features.collecting() == Collecting::Off
+    });
+    features.mark(Feature::Ssh);
+    assert_eq!(features.pending(), 0);
 }

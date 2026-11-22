@@ -234,6 +234,21 @@ pub fn mcp_lan_peer(caller: &str) -> Option<&str> {
         .filter(|ip| !ip.is_empty())
 }
 
+/// 命令行或 MCP 的一次调用在使用统计的功能名单中算哪一项：MCP 按接入方式（标准输入输出、HTTP、局域网），其余是
+/// termlet 命令。
+pub fn usage_feature(caller: &str) -> crate::usage::Feature {
+    use crate::usage::Feature;
+    if mcp_lan_peer(caller).is_some() {
+        Feature::McpLan
+    } else if mcp_over_http(caller) {
+        Feature::McpHttp
+    } else if mcp_client(caller).is_some() {
+        Feature::McpStdio
+    } else {
+        Feature::Cli
+    }
+}
+
 /// 一条审计记录。写入时 `id`、`source`、`partial`、`truncated`、`detail_size` 不用填。
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -1082,6 +1097,24 @@ mod tests {
             AuditSource::of(AuditAction::Upload, "bash"),
             AuditSource::Cli
         );
+    }
+
+    // 使用统计的功能名单：与审计日志的来源一致，MCP 再按接入方式分开
+    #[test]
+    fn usage_feature_follows_the_caller() {
+        use crate::usage::Feature;
+        for (caller, feature) in [
+            ("bash < node.exe", Feature::Cli),
+            ("", Feature::Cli),
+            ("mcpd < bash", Feature::Cli),
+            ("mcp:claude-code < claude.exe", Feature::McpStdio),
+            ("mcp < node.exe", Feature::McpStdio),
+            ("mcp:cursor < http < Cursor.exe", Feature::McpHttp),
+            ("mcp:codex-mcp-client < http", Feature::McpHttp),
+            ("mcp:cursor < http < lan:192.168.1.23", Feature::McpLan),
+        ] {
+            assert_eq!(usage_feature(caller), feature, "{caller}");
+        }
     }
 
     // 主机工具面板的写操作、MCP 与命令行的记录可以分开筛选、导出（来源由动作与调用方得出，旧记录同样适用）

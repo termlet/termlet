@@ -486,11 +486,11 @@ lock_ui.privacy.usage:
   ja: 匿名の使用状況の統計を送信
   ko: 익명 사용 통계 보내기
 lock_ui.privacy.usage_hint:
-  zh-CN: "每天最多一次，内容是版本、系统、CPU 架构、界面语言等，不含主机、命令、文件，也不带任何能识别这台电脑的标识。服务器另外按网络地址推断国家或地区（地址不保存），只保存每天的计数。为防滥用，Cloudflare 会按网络地址限制请求频率；被拦下的请求会在 Cloudflare 的安全日志中短期留下网络地址，Termlet 不读取、不保存。"
-  en: "At most once a day: things like the version, operating system, CPU architecture and interface language. No hosts, commands or files, and nothing that identifies this computer. The server also works out the country or region from the network address (without storing it) and keeps only daily counts. To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses."
-  zh-TW: "每天最多一次，內容是版本、系統、CPU 架構、介面語言等，不含主機、指令、檔案，也不帶任何能識別這台電腦的識別碼。伺服器另外依網路位址推斷國家或地區（位址不儲存），只儲存每天的計數。為防止濫用，Cloudflare 會依網路位址限制要求的頻率；被阻擋的要求會在 Cloudflare 的安全性記錄中短期留下網路位址，Termlet 不讀取、不儲存。"
-  ja: 送信は 1 日に 1 回までで、内容はバージョン、OS、CPU アーキテクチャ、表示言語などです。ホスト、コマンド、ファイルは含まず、このコンピューターを識別できる情報も一切含みません。サーバー側ではネットワークアドレスから国または地域を推定しますが（アドレスは保存しません）、保存するのは 1 日ごとの件数だけです。不正利用を防ぐため、Cloudflare はネットワークアドレスごとにリクエストの頻度を制限しています。ブロックされたリクエストは、Cloudflare のセキュリティログにネットワークアドレスが短期間残ることがあります。Termlet はそれを読み取ることも保存することもありません。
-  ko: 하루에 한 번까지 보내며, 내용은 버전, 운영 체제, CPU 아키텍처, 표시 언어 등입니다. 호스트, 명령, 파일은 포함하지 않으며 이 컴퓨터를 식별할 수 있는 정보도 전혀 포함하지 않습니다. 서버는 네트워크 주소로 국가 또는 지역을 추정하지만(주소는 저장하지 않음) 날마다의 횟수만 저장합니다. 남용을 막기 위해 Cloudflare는 네트워크 주소별로 요청 빈도를 제한하며, 차단된 요청은 Cloudflare 보안 로그에 네트워크 주소가 잠시 남을 수 있습니다. Termlet은 이를 읽거나 저장하지 않습니다.
+  zh-CN: "每天最多一次，内容是版本、系统、CPU 架构、界面语言等，以及上次发送以来用过哪些功能（只有名称），不含主机、命令、文件，也不带任何能识别这台电脑的标识。服务器另外按网络地址推断国家或地区（地址不保存），只保存每天的计数。为防滥用，Cloudflare 会按网络地址限制请求频率；被拦下的请求会在 Cloudflare 的安全日志中短期留下网络地址，Termlet 不读取、不保存。"
+  en: "At most once a day: things like the version, operating system, CPU architecture and interface language, plus which features were used since the last message (names only). No hosts, commands or files, and nothing that identifies this computer. The server also works out the country or region from the network address (without storing it) and keeps only daily counts. To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses."
+  zh-TW: "每天最多一次，內容是版本、系統、CPU 架構、介面語言等，以及上次傳送以來用過哪些功能（只有名稱），不含主機、指令、檔案，也不帶任何能識別這台電腦的識別碼。伺服器另外依網路位址推斷國家或地區（位址不儲存），只儲存每天的計數。為防止濫用，Cloudflare 會依網路位址限制要求的頻率；被阻擋的要求會在 Cloudflare 的安全性記錄中短期留下網路位址，Termlet 不讀取、不儲存。"
+  ja: 送信は 1 日に 1 回までで、内容はバージョン、OS、CPU アーキテクチャ、表示言語など、および前回の送信以降に使った機能（名前だけ）です。ホスト、コマンド、ファイルは含まず、このコンピューターを識別できる情報も一切含みません。サーバー側ではネットワークアドレスから国または地域を推定しますが（アドレスは保存しません）、保存するのは 1 日ごとの件数だけです。不正利用を防ぐため、Cloudflare はネットワークアドレスごとにリクエストの頻度を制限しています。ブロックされたリクエストは、Cloudflare のセキュリティログにネットワークアドレスが短期間残ることがあります。Termlet はそれを読み取ることも保存することもありません。
+  ko: 하루에 한 번까지 보내며, 내용은 버전, 운영 체제, CPU 아키텍처, 표시 언어 등과 지난 전송 이후 사용한 기능(이름만)입니다. 호스트, 명령, 파일은 포함하지 않으며 이 컴퓨터를 식별할 수 있는 정보도 전혀 포함하지 않습니다. 서버는 네트워크 주소로 국가 또는 지역을 추정하지만(주소는 저장하지 않음) 날마다의 횟수만 저장합니다. 남용을 막기 위해 Cloudflare는 네트워크 주소별로 요청 빈도를 제한하며, 차단된 요청은 Cloudflare 보안 로그에 네트워크 주소가 잠시 남을 수 있습니다. Termlet은 이를 읽거나 저장하지 않습니다.
 lock_ui.privacy.usage_view:
   zh-CN: "查看发送的内容…"
   en: "View what is sent…"

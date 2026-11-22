@@ -191,6 +191,7 @@ impl ComposeBar {
         self.confirm_danger(&checked, targets.len(), window, cx, move |window, cx| {
             // 命令内容不写进日志
             tracing::info!(lines = lines.len(), targets = targets.len(), "撰写栏：发送");
+            termlet_core::usage::mark(termlet_core::usage::Feature::Compose);
             let data: String = lines.iter().map(|l| format!("{l}\r")).collect();
             for panel in &targets {
                 panel.update(cx, |p, cx| p.send_text(&data, cx));
@@ -224,6 +225,7 @@ impl ComposeBar {
                 targets = targets.len(),
                 "撰写栏：执行并对比"
             );
+            termlet_core::usage::mark(termlet_core::usage::Feature::Compose);
             let command = lines.join("\n");
             let list: Vec<(EntityId, SharedString)> = targets
                 .iter()

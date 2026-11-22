@@ -129,6 +129,9 @@ impl Call {
         self.entry.duration_ms = self.elapsed_ms() as i64;
         self.entry.approval_wait_ms = self.approval_wait_ms().map(|ms| ms as i64);
         self.entry.source = AuditSource::of(self.entry.action, &self.entry.caller);
+        if self.entry.source != AuditSource::Panel {
+            crate::usage::mark(crate::audit::usage_feature(&self.entry.caller));
+        }
         if let Some(error) = error {
             self.entry.error_code = error.code.as_str().to_string();
         }
@@ -425,6 +428,7 @@ impl Ctx<'_> {
         let timeout = self.shared.approval_timeout;
         let (reply_tx, reply_rx) = oneshot::channel();
         let (done_tx, done_rx) = watch::channel(false);
+        crate::usage::mark(crate::usage::Feature::ApprovalPrompt);
         let request = ApprovalRequest {
             host_id: record.id.clone(),
             host_name: record.doc.name.clone(),

@@ -285,6 +285,7 @@ impl BackupPage {
                 this.busy = None;
                 match result {
                     Ok(Ok(_)) => {
+                        termlet_core::usage::mark(termlet_core::usage::Feature::Backup);
                         this.set_mode(Mode::Idle, window, cx);
                         this.full_message = Some(Message {
                             text: t!("backup_ui.page.created", path = path.display()),

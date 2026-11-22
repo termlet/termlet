@@ -178,6 +178,7 @@ impl HighlightPage {
         }
         let index = preset_insert_position(&rules, preset);
         self.insert_rule(index, &preset.rule(), window, cx);
+        termlet_core::usage::mark(termlet_core::usage::Feature::HighlightPresets);
         cx.notify();
     }
 

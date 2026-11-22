@@ -124,6 +124,8 @@ fn lifecycle() {
     assert!(lock.is_locked(), "密码错误应保持锁定");
     block_on(lock.unlock(&pw("secret-1"))).unwrap();
     assert!(!lock.is_locked());
+    // 使用统计的功能名单记下解锁过应用锁
+    assert!(crate::usage::features::global().contains(crate::usage::Feature::AppLock));
     assert_eq!(
         *events.borrow_and_update(),
         LockStatus {

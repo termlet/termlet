@@ -11,6 +11,7 @@ use gpui_kit::{
 };
 use termlet_core::model::{Group, Host, Snippet};
 use termlet_core::store::Position;
+use termlet_core::usage::Feature;
 use termlet_core::vault::MemoryKeyStore;
 use termlet_desktop::i18n::{self, Language};
 use termlet_desktop::{AppState, Workspace};
@@ -769,6 +770,9 @@ fn split_right_opens_a_pane_beside(cx: &mut TestAppContext) {
         }
     })
     .unwrap();
+    // 使用统计的功能名单：打开过本地终端、分屏过
+    assert!(feature_marked(Feature::LocalShell));
+    assert!(feature_marked(Feature::Split));
 }
 
 #[gpui_kit::test]
@@ -1805,6 +1809,10 @@ fn sync_input_tiles_terminals_and_types_into_all(cx: &mut TestAppContext) {
         assert_eq!(workspace.read(cx).terminal_count(), 2);
     })
     .unwrap();
+    assert!(
+        feature_marked(Feature::SyncInput),
+        "使用统计的功能名单记下同步输入"
+    );
 }
 
 #[gpui_kit::test]
@@ -1885,6 +1893,10 @@ fn snippet_bar_sends_to_the_terminal_and_filters_by_group(cx: &mut TestAppContex
         assert!(window.try_find("snippet-bar").is_none(), "× 隐藏");
     })
     .unwrap();
+    assert!(
+        feature_marked(Feature::QuickCommands),
+        "使用统计的功能名单记下快捷命令"
+    );
 }
 
 #[gpui_kit::test]
@@ -1937,6 +1949,10 @@ fn compose_bar_sends_to_all_terminals(cx: &mut TestAppContext) {
         }
         false
     });
+    assert!(
+        feature_marked(Feature::Compose),
+        "使用统计的功能名单记下撰写栏"
+    );
 }
 
 #[gpui_kit::test]
@@ -3324,4 +3340,9 @@ fn ssh_terminal_detects_the_remote_system(cx: &mut TestAppContext) {
         None,
         "关掉后不识别"
     );
+}
+
+/// 使用统计的功能名单（全局的那一份；测试中一直是“还没读到设置”，判定点照样记在内存中）记下过 `feature` 没有。
+fn feature_marked(feature: Feature) -> bool {
+    termlet_core::usage::features::global().contains(feature)
 }

@@ -230,11 +230,15 @@ impl ForwardManager {
     /// 失败的原因同时记在状态中（[`ForwardState::Failed`]），界面在列表中显示。
     pub async fn start(&self, request: StartRequest) -> Result<(), ForwardError> {
         let inner = self.0.clone();
-        join(crate::runtime::spawn(
+        let result = join(crate::runtime::spawn(
             async move { inner.start(request).await },
         ))
         .await
-        .unwrap_or(Err(ForwardError::Stopped))
+        .unwrap_or(Err(ForwardError::Stopped));
+        if result.is_ok() {
+            crate::usage::mark(crate::usage::Feature::PortForward);
+        }
+        result
     }
 
     /// 停止转发，清除失败的状态。规则不存在且没有在运行时返回 [`ForwardError::RuleNotFound`]。

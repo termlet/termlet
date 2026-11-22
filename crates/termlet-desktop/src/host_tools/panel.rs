@@ -1407,6 +1407,10 @@ impl HostToolsPanel {
 
 impl Render for HostToolsPanel {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // 使用统计：面板显示着一台主机的内容（一次原子操作，记过的直接返回）
+        if self.target.is_some() {
+            termlet_core::usage::mark(termlet_core::usage::Feature::HostTools);
+        }
         // 用户拖出的宽度，与侧边栏一样随界面大小缩放
         let width = px(self.width(window, cx));
         let reconnecting = self

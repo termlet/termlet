@@ -74,6 +74,7 @@ impl Workspace {
             return;
         }
         tracing::info!("打开录制文件回放");
+        termlet_core::usage::mark(termlet_core::usage::Feature::Recording);
         let load = replay::load(path.clone(), cx);
         cx.spawn_in(window, async move |this, cx| {
             let result = load.await;

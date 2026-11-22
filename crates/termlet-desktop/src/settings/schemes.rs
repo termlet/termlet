@@ -451,6 +451,9 @@ impl SchemesPage {
         cx: &mut Context<Self>,
     ) {
         let count = schemes.len();
+        if count > 0 {
+            termlet_core::usage::mark(termlet_core::usage::Feature::SchemeImport);
+        }
         for scheme in schemes {
             self.push_new(scheme);
         }

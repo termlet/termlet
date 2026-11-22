@@ -148,6 +148,11 @@ impl DataDir {
         self.root.join("usage.json")
     }
 
+    /// 使用统计中还没发出的功能名单（见 [`crate::usage::features`]；不在数据库中、不同步、不进备份）。
+    pub fn usage_features(&self) -> PathBuf {
+        self.root.join("usage-features.json")
+    }
+
     /// 创建数据目录与其中的 `run`、`logs`，并收紧 `run`。
     ///
     /// 目录无法创建时返回错误（Termlet 无法运行）；`run` 无法收紧时返回警告，由调用方记下后照常启动。

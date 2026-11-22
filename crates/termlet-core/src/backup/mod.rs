@@ -315,6 +315,7 @@ impl Backups {
             vault_reset,
             "已从完整备份恢复数据"
         );
+        crate::usage::mark(crate::usage::Feature::Backup);
         Ok(RestoreOutcome {
             summary: BackupSummary::of(&manifest),
             snapshot: before,

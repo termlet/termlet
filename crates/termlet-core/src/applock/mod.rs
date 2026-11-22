@@ -414,6 +414,7 @@ impl Inner {
 
     fn unlocked(&self, by: &str) {
         self.failures.store(0, Ordering::Relaxed);
+        crate::usage::mark(crate::usage::Feature::AppLock);
         if self
             .status
             .send_if_modified(|s| std::mem::replace(&mut s.locked, false))

@@ -108,6 +108,7 @@ pub(super) fn pop_out(
     source: &Window,
     cx: &mut App,
 ) -> Option<Entity<OverviewWindow>> {
+    termlet_core::usage::mark(termlet_core::usage::Feature::HostToolsPopout);
     let host = host_key(target);
     let open = live(cx);
     if let Some((_, handle, view)) = open.iter().find(|(h, _, _)| *h == host) {

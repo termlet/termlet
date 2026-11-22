@@ -1587,15 +1587,39 @@ Default shortcuts:
 ### Usage statistics
 
 - On by default; anonymous, at most once a day (UTC).
-- It contains the version, the operating system and its major version (such as Windows 11 25H2, without the build number), CPU architecture, interface language, a band for how long Termlet has been in use and two flags for "first this week / this month".
+- It contains the version, the operating system and its major version (such as Windows 11 25H2, without the build number), CPU architecture, interface language, a band for how long Termlet has been in use, two flags for "first this week / this month", and which features were used since the last message (see below).
 - No hosts, commands or files, and no device ID or anything else that identifies this computer.
 - The server also works out the country or region from the IP address, doesn't keep the address itself and stores only daily counts.
-- This computer keeps only two dates (`{data folder}/usage.json`: the first and the last message).
+- This computer keeps only two dates (`{data folder}/usage.json`: the first and the last message) and the feature list not yet sent (`{data folder}/usage-features.json`).
 - There is no pop-up about it; it is stated in the license agreement and the privacy policy on the website.
-- Turn it off any time under Settings → About → Privacy (which also deletes `usage.json`); "View what is sent…" shows the exact message.
+- Turn it off any time under Settings → About → Privacy (which also deletes both files and stops keeping the feature list); "View what is sent…" shows the exact message.
 - Each message sent is also written to the log.
 - The environment variables `TERMLET_USAGE_URL=off` or `DO_NOT_TRACK=1` turn it off too; the `termlet` command-line tool sends nothing itself.
 - To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses.
+- **Feature list** (`features` in the message):
+  - The features used since the last successful message: only the names in the table below, in table order, with no counts, times or order of use; empty if nothing was used.
+  - The message goes out the first time Termlet is used each day, so the list covers the time between the last message and this one and is sent with the next message; once sent, those names are removed from the list on this computer.
+  - The server only adds each name to that day's counts. It doesn't keep the list and doesn't combine it with the version, country or anything else.
+  - Automatic sync, scheduled backups and port forwards that start automatically count as used while they run; `agent_skill` and `vertical_tabs` reflect the current state.
+
+  | Name | What was used |
+  |---|---|
+  | `ssh`, `telnet`, `serial` | An SSH terminal (including quick connect and bastion launches), Telnet or serial session connected |
+  | `local_shell`, `wsl` | A local terminal (not WSL); a WSL terminal or WSL file manager |
+  | `x11`, `bastion` | A session with X11 forwarding connected; launched by a bastion or other program |
+  | `split`, `sync_input`, `compose` | Split panes, synchronized input, the compose bar (send or run and compare) |
+  | `quick_commands`, `command_suggest` | A quick command sent or inserted; a command suggestion accepted |
+  | `session_log`, `recording` | Session logging; session recording or replay |
+  | `vertical_tabs`, `highlight_presets`, `scheme_import` | Tabs on the left; a keyword highlighting preset added; a terminal color scheme imported |
+  | `sftp`, `open_in_editor` | The remote file manager (SFTP or SCP) connected; opened in VS Code / Zed |
+  | `port_forward`, `proxy_share` | A port forward started; the local proxy lent to a server |
+  | `host_tools`, `host_tools_popout`, `host_tools_action` | Host tools showed a host; the always-on-top window opened; a change made from host tools |
+  | `cli`, `mcp_stdio`, `mcp_http`, `mcp_lan` | A command run or file transferred through the termlet command or MCP (stdio, HTTP, LAN) |
+  | `agent_skill`, `approval_prompt` | The Agent Skill is installed on this computer; a dangerous-command approval prompt appeared |
+  | `sync`, `sync_s3`, `sync_gist` | Sync succeeded (the last two: through S3 or a Gist) |
+  | `backup`, `backup_scheduled` | A full backup created or restored by hand; a scheduled backup made |
+  | `app_lock`, `master_password` | The app lock unlocked; unlocked with the master password |
+  | `import_ssh_config`, `import_xshell`, `import_finalshell`, `import_mobaxterm`, `import_tabby`, `import_termora`, `import_windterm`, `import_electerm`, `import_netcatty`, `import_shellrs`, `import_nyaterm`, `import_nyaterm_snippets`, `import_termlet_file` | Imported from that source (`import_nyaterm_snippets` is quick commands exported from NyaTerm, `import_termlet_file` is a Termlet host file) |
 
 ### Diagnostics
 

@@ -535,6 +535,7 @@ impl BackupSchedule {
                     Err(e) => tracing::warn!("清理旧的定时备份失败：{e}"),
                 }
                 tracing::info!(manual, deleted = record.deleted, "定时备份完成");
+                crate::usage::mark(crate::usage::Feature::BackupScheduled);
             }
             Err(e) => {
                 tracing::warn!(manual, "定时备份失败：{e}");
@@ -897,6 +898,8 @@ mod tests {
         // 失败的原因可以序列化（存在本机，重启后显示）
         let json = serde_json::to_string(&record).unwrap();
         assert_eq!(serde_json::from_str::<RunRecord>(&json).unwrap(), record);
+        // 使用统计的功能名单记下定时备份
+        assert!(crate::usage::features::global().contains(crate::usage::Feature::BackupScheduled));
     }
 
     #[test]

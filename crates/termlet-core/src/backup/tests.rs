@@ -26,7 +26,12 @@ fn create(
 }
 
 fn restore(m: &Machine, path: &Path, password: &str) -> Result<RestoreOutcome, BackupError> {
-    block_on(m.backups.restore_backup(path.to_path_buf(), pw(password)))
+    let result = block_on(m.backups.restore_backup(path.to_path_buf(), pw(password)));
+    // 使用统计的功能名单记下恢复过完整备份
+    if result.is_ok() {
+        assert!(crate::usage::features::global().contains(crate::usage::Feature::Backup));
+    }
+    result
 }
 
 fn snapshots(m: &Machine) -> Vec<SnapshotInfo> {

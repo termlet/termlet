@@ -3,7 +3,8 @@
 //! 默认开，不另外提示（用户 2026-10-29 定）：安装包的许可说明第四节、官网的隐私说明与设置“关于 → 隐私”中写明。
 //!
 //! - **查看内容**（[`view`]）：今天要发送的 JSON 原文（与实际发出的是同一个函数生成的）、各字段的含义、接收地址与状态。
-//! - **设置**：“关于”页的“隐私”一组（`lock_ui::about`），保存后生效；关掉后删除本机的 `usage.json`。
+//! - **设置**：“关于”页的“隐私”一组（`lock_ui::about`），保存后生效；关掉后删除本机的 `usage.json` 与功能名单
+//!   `usage-features.json`，不再记功能名单（开着时才记，见 `termlet_core::usage::features`）。
 //! - **发送的时机**（[`check`]）：主窗口显示（解锁之后）、每小时（与检查更新共用 `lock_ui` 的定时器）、新的一个 UTC 日
 //!   第一次用到（窗口获得焦点、处理命令行工具的请求）、重新打开开关时检查一次；应用锁锁着时不检查。发送在核心的运行时上，
 //!   不阻塞界面。
@@ -13,10 +14,13 @@ mod tests;
 mod view;
 
 use std::cell::Cell;
+use std::sync::Arc;
 
 use gpui_kit::{App, AppContext as _, Global, Task};
 use termlet_core::store::StoreEvent;
-use termlet_core::usage::{CheckInput, Destination, ReporterOptions, Route, UsageReporter};
+use termlet_core::usage::{
+    CheckInput, Destination, FeatureLog, ReporterOptions, Route, UsageReporter,
+};
 
 use crate::app_state::AppState;
 
@@ -51,13 +55,16 @@ pub(crate) fn install(cx: &mut App) {
     );
 }
 
-/// UI 测试用：不发送（按调试构建处理）。在 `AppState::install_in_memory` 中调用。
+/// UI 测试用：不发送（按调试构建处理）；功能名单另用一份，不动全局的那一份（各功能的判定点仍记在全局的名单中，测试据此
+/// 核对）。在 `AppState::install_in_memory` 中调用。
 pub(crate) fn install_in_memory(cx: &mut App) {
     let reporter = UsageReporter::with(ReporterOptions {
         state_file: AppState::global(cx).data_dir.usage_state(),
         route: Route::DebugBuild,
         remote: None,
         builtin: termlet_core::usage::USAGE_URL.parse().expect("内置地址"),
+        features: Arc::new(FeatureLog::default()),
+        skill_installed: || false,
     });
     install_with(
         Setup {
@@ -74,6 +81,9 @@ pub(crate) fn install_with(setup: Setup, cx: &mut App) {
         follow_activity,
     } = setup;
     let enabled = AppState::store(cx).local_settings().usage.enabled;
+    mark_settings(cx);
+    // 开着时开始记功能名单（被环境变量关掉、调试构建时不记）：在检查、发送之前定下来，发送成功后才写得回名单
+    reporter.set_collecting(enabled);
     if !enabled {
         // 关着时本机不留统计用的记录（例如上次关闭时没删成）
         let reporter = reporter.clone();
@@ -155,21 +165,34 @@ pub(crate) fn check(cx: &mut App) {
     }));
 }
 
-/// 本机设置变了：关掉“发送匿名使用统计”时删除 `usage.json`，重新打开时检查一次。
+/// 功能名单中按设置记的项：Tab 放在左侧。
+fn mark_settings(cx: &App) {
+    let window = AppState::store(cx).local_settings().window;
+    if window.tab_position == termlet_core::model::TabPosition::Left {
+        termlet_core::usage::mark(termlet_core::usage::Feature::VerticalTabs);
+    }
+}
+
+/// 本机设置变了：关掉“发送匿名使用统计”时删除 `usage.json` 与功能名单、停止记名单，重新打开时开始记名单并检查一次。
 fn on_local_settings_changed(cx: &mut App) {
     let Some(ui) = ui(cx) else {
         return;
     };
+    mark_settings(cx);
     let enabled = AppState::store(cx).local_settings().usage.enabled;
     if ui.enabled.replace(enabled) == enabled {
         return;
     }
     tracing::info!(enabled, "使用统计的开关改变");
+    let reporter = ui.reporter.clone();
     if enabled {
+        reporter.set_collecting(true);
         check(cx);
     } else {
-        let reporter = ui.reporter.clone();
-        cx.background_spawn(async move { reporter.forget() })
-            .detach();
+        cx.background_spawn(async move {
+            reporter.set_collecting(false);
+            reporter.forget();
+        })
+        .detach();
     }
 }

@@ -449,6 +449,7 @@ impl Vault {
         open_with(&key, CHECK_AAD, &check).map_err(|_| CoreError::VaultKeyMismatch)?;
         *self.key.write().unwrap() = Some(key);
         *self.status.write().unwrap() = VaultStatus::Unlocked;
+        crate::usage::mark(crate::usage::Feature::MasterPassword);
         Ok(())
     }
 
@@ -462,6 +463,7 @@ impl Vault {
         }
         self.initialize_with_password(db, password)?;
         *self.status.write().unwrap() = VaultStatus::Unlocked;
+        crate::usage::mark(crate::usage::Feature::MasterPassword);
         Ok(())
     }
 
@@ -652,6 +654,8 @@ mod tests {
         ));
         reopened.unlock(&db, &password).unwrap();
         assert_eq!(&reopened.open_sealed(b"x", &blob).unwrap()[..], b"value");
+        // 使用统计的功能名单记下用主密码解锁过
+        assert!(crate::usage::features::global().contains(crate::usage::Feature::MasterPassword));
 
         let new_password = SecretString::new("battery staple");
         assert!(Vault::uses_password(&db).unwrap());

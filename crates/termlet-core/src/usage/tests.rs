@@ -168,9 +168,77 @@ impl ReceiverRules {
         }
         b("firstOfWeek")?;
         b("firstOfMonth")?;
+        // 功能名单（可选；客户端总是带）：最多 64 个、格式合格的名称，客户端只发接收端认识的
+        if let Some(features) = value.get("features") {
+            let list = features.as_array().ok_or("features 不是数组")?;
+            if list.len() > 64 {
+                return Err("features 太多".into());
+            }
+            let name = Regex::new(r"^[a-z][a-z0-9_]{0,31}$").unwrap();
+            for item in list {
+                let item = item.as_str().ok_or("features 中有非字符串")?;
+                if !name.is_match(item) || !RECEIVER_FEATURES.contains(&item) {
+                    return Err(format!("features：{item}"));
+                }
+            }
+        }
         Ok(())
     }
 }
+
+/// 接收端 `src/stats/features.ts` 的清单（名称与顺序），照搬过来：两边各写一份才核对得出来。
+const RECEIVER_FEATURES: [&str; 50] = [
+    "ssh",
+    "telnet",
+    "serial",
+    "local_shell",
+    "wsl",
+    "x11",
+    "bastion",
+    "split",
+    "sync_input",
+    "compose",
+    "quick_commands",
+    "command_suggest",
+    "session_log",
+    "recording",
+    "vertical_tabs",
+    "highlight_presets",
+    "scheme_import",
+    "sftp",
+    "open_in_editor",
+    "port_forward",
+    "proxy_share",
+    "host_tools",
+    "host_tools_popout",
+    "host_tools_action",
+    "cli",
+    "mcp_stdio",
+    "mcp_http",
+    "mcp_lan",
+    "agent_skill",
+    "approval_prompt",
+    "sync",
+    "sync_s3",
+    "sync_gist",
+    "backup",
+    "backup_scheduled",
+    "app_lock",
+    "master_password",
+    "import_ssh_config",
+    "import_xshell",
+    "import_finalshell",
+    "import_mobaxterm",
+    "import_tabby",
+    "import_termora",
+    "import_windterm",
+    "import_electerm",
+    "import_netcatty",
+    "import_shellrs",
+    "import_nyaterm",
+    "import_nyaterm_snippets",
+    "import_termlet_file",
+];
 
 #[test]
 fn body_has_exactly_the_agreed_fields_in_order() {
@@ -185,14 +253,27 @@ fn body_has_exactly_the_agreed_fields_in_order() {
         age: Age::M1,
         first_of_week: true,
         first_of_month: false,
+        features: Vec::new(),
     };
     let json = message.to_json();
+    // 方案 3.7 的例子加上（空的）功能名单：功能名单总是带，放在最后
     assert_eq!(
         json,
-        r#"{"v":1,"app":"0.1.0","os":"windows","osVersion":"11 25H2","arch":"x86_64","lang":"zh-CN","age":"m1","firstOfWeek":true,"firstOfMonth":false}"#
+        r#"{"v":1,"app":"0.1.0","os":"windows","osVersion":"11 25H2","arch":"x86_64","lang":"zh-CN","age":"m1","firstOfWeek":true,"firstOfMonth":false,"features":[]}"#
     );
-    assert_eq!(json.len(), 140, "与方案中的 Content-Length 相同");
+    assert_eq!(json.len(), 140 + r#","features":[]"#.len());
     ReceiverRules::new().check(&json).unwrap();
+    // 设计文档 3.1 的例子
+    let message = UsageMessage {
+        features: vec!["ssh", "split", "sftp", "port_forward", "host_tools", "cli"],
+        ..message
+    };
+    assert!(
+        message
+            .to_json()
+            .ends_with(r#""firstOfMonth":false,"features":["ssh","split","sftp","port_forward","host_tools","cli"]}"#)
+    );
+    ReceiverRules::new().check(&message.to_json()).unwrap();
 }
 
 #[test]
@@ -222,7 +303,7 @@ fn built_messages_pass_the_receiver_checks() {
         };
         for lang in ["zh-CN", "zh-TW", "en", "ja", "ko", "fr"] {
             for state in [None, Some(&state)] {
-                let message = build_message(&platform, lang, state, today);
+                let message = build_message(&platform, lang, state, today, 0);
                 rules.check(&message.to_json()).unwrap();
                 assert_eq!(message.app, crate::VERSION);
             }
@@ -233,7 +314,7 @@ fn built_messages_pass_the_receiver_checks() {
         os_version: "11 25H2".into(),
         arch: "x86_64".into(),
     };
-    let message = build_message(&platform, "zh-TW", Some(&state), today);
+    let message = build_message(&platform, "zh-TW", Some(&state), today, 0);
     assert_eq!(
         (
             message.lang.as_str(),
@@ -252,7 +333,7 @@ fn built_messages_pass_the_receiver_checks() {
         ("", "en"),
     ] {
         assert_eq!(
-            build_message(&platform, lang, None, today).lang,
+            build_message(&platform, lang, None, today, 0).lang,
             sent,
             "{lang}"
         );
@@ -260,10 +341,10 @@ fn built_messages_pass_the_receiver_checks() {
     // 客户端会发的语言接收端都认
     for lang in LANGS {
         rules
-            .check(&build_message(&platform, lang, None, today).to_json())
+            .check(&build_message(&platform, lang, None, today, 0).to_json())
             .unwrap();
     }
-    let fresh = build_message(&platform, "en", None, today);
+    let fresh = build_message(&platform, "en", None, today, 0);
     assert_eq!(
         (fresh.age, fresh.first_of_week, fresh.first_of_month),
         (Age::New, true, true)
@@ -279,7 +360,7 @@ fn this_computer_produces_a_valid_message() {
         rules.os_version_ok(&platform.os, &platform.os_version),
         "{platform:?}"
     );
-    let json = build_message(&platform, "zh-CN", None, date(2026, 10, 29)).to_json();
+    let json = build_message(&platform, "zh-CN", None, date(2026, 10, 29), 0).to_json();
     rules.check(&json).unwrap();
     // 不含构建号、补丁号：Windows 的完整版本号（10.0.26200.6899）不出现在正文中
     let full = &crate::diag::system_info().version;
@@ -552,6 +633,8 @@ fn reporter(dir: &tempfile::TempDir, builtin: Url) -> UsageReporter {
         route: Route::Default,
         remote: None,
         builtin,
+        features: Default::default(),
+        skill_installed: || false,
     })
 }
 
@@ -665,6 +748,8 @@ fn nothing_is_sent_when_turned_off_inactive_or_not_permitted() {
             route,
             remote: None,
             builtin: url.clone(),
+            features: Default::default(),
+            skill_installed: || false,
         })
     };
     let dnt = with_route(Route::EnvOff(DO_NOT_TRACK_ENV));
@@ -826,6 +911,8 @@ fn remote_config_can_pause_it_and_falls_back_to_the_builtin_address() {
         route: Route::Default,
         remote: Some(source),
         builtin: url.clone(),
+        features: Default::default(),
+        skill_installed: || false,
     });
     assert_eq!(usage.destination(), Destination::Url(url.to_string()));
     let publish = |text: &str, issued: i64| {
@@ -867,6 +954,8 @@ fn remote_config_can_pause_it_and_falls_back_to_the_builtin_address() {
             vec![key.public_key()],
         )),
         builtin: url,
+        features: Default::default(),
+        skill_installed: || false,
     });
     assert!(matches!(
         rt().block_on(offline.check(input(now))),
@@ -884,6 +973,8 @@ fn fixed_route_skips_the_remote_config() {
         route: Route::Fixed(url.clone()),
         remote: None,
         builtin: Url::parse(USAGE_URL).unwrap(),
+        features: Default::default(),
+        skill_installed: || false,
     });
     assert_eq!(usage.destination(), Destination::Url(url.to_string()));
     assert!(matches!(
@@ -891,4 +982,313 @@ fn fixed_route_skips_the_remote_config() {
         Outcome::Sent(_)
     ));
     assert!(requests.recv_timeout(Duration::from_secs(10)).is_ok());
+}
+
+// ---------------------------------------------------------------- 功能名单
+
+#[test]
+fn feature_list_matches_the_receiver() {
+    let names: Vec<&str> = Feature::ALL.into_iter().map(Feature::name).collect();
+    assert_eq!(names, RECEIVER_FEATURES, "名称与顺序都与接收端相同");
+    for (i, feature) in Feature::ALL.into_iter().enumerate() {
+        assert_eq!(
+            feature as usize, i,
+            "{feature:?} 的位置就是它在清单中的顺序"
+        );
+    }
+    assert!(Feature::ALL.len() <= 64, "位图只有 64 位");
+    // 每个导入来源各有一项，互不相同
+    let imports: std::collections::HashSet<Feature> = crate::import::Source::ALL
+        .into_iter()
+        .map(Feature::import)
+        .collect();
+    assert_eq!(imports.len(), crate::import::Source::ALL.len());
+    assert!(!imports.contains(&Feature::ImportTermletFile));
+    assert_eq!(
+        features::names(Feature::Sftp.bit() | Feature::Ssh.bit() | Feature::Cli.bit()),
+        ["ssh", "sftp", "cli"],
+        "按清单的顺序，不按记下的先后"
+    );
+    assert!(features::names(0).is_empty());
+    // 全部带上也在接收端以前的 1 KiB 之内
+    let platform = Platform {
+        os: "windows".into(),
+        os_version: "11 25H2".into(),
+        arch: "x86_64".into(),
+    };
+    let all = Feature::ALL.into_iter().fold(0, |bits, f| bits | f.bit());
+    let json = build_message(&platform, "zh-CN", None, date(2026, 11, 22), all).to_json();
+    assert!(json.len() < 1024, "{}", json.len());
+    ReceiverRules::new().check(&json).unwrap();
+}
+
+fn feature_file(dir: &tempfile::TempDir) -> std::path::PathBuf {
+    dir.path().join("usage-features.json")
+}
+
+/// 记在 `dir` 中的功能名单（还没开始收集）。
+fn feature_log(dir: &tempfile::TempDir) -> Arc<FeatureLog> {
+    let log = Arc::new(FeatureLog::default());
+    log.attach(feature_file(dir));
+    log
+}
+
+/// 写文件在后台：就地再写一次（写的总是那一刻的位图），之后读文件。
+fn written(log: &FeatureLog, dir: &tempfile::TempDir) -> Option<String> {
+    log.persist();
+    fs::read_to_string(feature_file(dir)).ok()
+}
+
+#[test]
+fn marks_are_kept_on_disk_until_sent_and_survive_a_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let log = feature_log(&dir);
+    // 读到设置之前只记在内存中，不写文件
+    log.mark(Feature::Sftp);
+    assert!(log.contains(Feature::Sftp));
+    assert_eq!(written(&log, &dir), None);
+    // 开始收集：把已记的写进文件
+    log.set_collecting(true);
+    assert_eq!(log.collecting(), Collecting::On);
+    log.mark(Feature::Ssh);
+    log.mark(Feature::Sftp);
+    assert_eq!(
+        written(&log, &dir).as_deref(),
+        Some(r#"{"v":1,"features":["ssh","sftp"]}"#),
+        "只有名称，按清单的顺序"
+    );
+    // 重启：读回还没发出的
+    let reopened = feature_log(&dir);
+    assert!(reopened.contains(Feature::Ssh) && reopened.contains(Feature::Sftp));
+    assert_eq!(reopened.pending(), Feature::Ssh.bit() | Feature::Sftp.bit());
+    // 文件中认不出的名称（更新的版本写的）忽略；格式不对的当作没有（另一个目录：上面的后台写入不会碰到它）
+    let other = tempfile::tempdir().unwrap();
+    fs::write(
+        feature_file(&other),
+        r#"{"v":1,"features":["cli","teleport","sync"]}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        feature_log(&other).pending(),
+        Feature::Cli.bit() | Feature::Sync.bit()
+    );
+    fs::write(feature_file(&other), "not json").unwrap();
+    assert_eq!(feature_log(&other).pending(), 0);
+}
+
+#[test]
+fn nothing_is_recorded_when_not_collecting() {
+    let dir = tempfile::tempdir().unwrap();
+    let log = feature_log(&dir);
+    log.mark(Feature::Compose);
+    // 读到设置：关着时清空内存中的，之后不再记
+    log.set_collecting(false);
+    assert_eq!(log.collecting(), Collecting::Off);
+    assert_eq!(log.pending(), 0);
+    log.mark(Feature::Ssh);
+    assert!(!log.contains(Feature::Ssh));
+    assert_eq!(written(&log, &dir), None);
+
+    // 被环境变量关掉、调试构建：开关开着也不记（不会发出去的不记）
+    for route in [
+        Route::EnvOff(DO_NOT_TRACK_ENV),
+        Route::EnvOff(USAGE_URL_ENV),
+        Route::DebugBuild,
+    ] {
+        let features = Arc::new(FeatureLog::default());
+        let usage = UsageReporter::with(ReporterOptions {
+            state_file: dir.path().join("usage.json"),
+            route: route.clone(),
+            remote: None,
+            builtin: Url::parse(USAGE_URL).unwrap(),
+            features: features.clone(),
+            skill_installed: || false,
+        });
+        usage.set_collecting(true);
+        assert_eq!(features.collecting(), Collecting::Off, "{route:?}");
+        features.mark(Feature::Ssh);
+        assert_eq!(features.pending(), 0, "{route:?}");
+    }
+}
+
+/// 发到 `url`、功能名单记在 `dir` 中的统计（已开始收集）。
+fn reporter_with_features(
+    dir: &tempfile::TempDir,
+    url: Url,
+    skill_installed: fn() -> bool,
+) -> (UsageReporter, Arc<FeatureLog>) {
+    let features = feature_log(dir);
+    let usage = UsageReporter::with(ReporterOptions {
+        state_file: dir.path().join("usage.json"),
+        route: Route::Fixed(url.clone()),
+        remote: None,
+        builtin: url,
+        features: features.clone(),
+        skill_installed,
+    });
+    usage.set_collecting(true);
+    (usage, features)
+}
+
+fn sent_features(body: &str) -> Vec<String> {
+    let sent: serde_json::Value = serde_json::from_str(body).unwrap();
+    sent["features"]
+        .as_array()
+        .expect("总是带功能名单")
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect()
+}
+
+#[test]
+fn sending_clears_what_was_sent() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, requests) = receiver(vec![204, 204]);
+    let (usage, features) = reporter_with_features(&dir, url, || false);
+    let day = date(2026, 11, 22);
+    features.mark(Feature::PortForward);
+    features.mark(Feature::Ssh);
+    let preview = usage.preview("zh-CN", noon(day)).unwrap();
+    let Outcome::Sent(body) = rt().block_on(usage.check(input(noon(day)))) else {
+        panic!("应发送");
+    };
+    assert_eq!(body, preview.json, "查看内容显示的名单就是发出的");
+    assert_eq!(sent_features(&body), ["ssh", "port_forward"]);
+    assert_eq!(
+        requests.recv_timeout(Duration::from_secs(10)).unwrap().body,
+        body
+    );
+    ReceiverRules::new().check(&body).unwrap();
+    // 发出去的从名单中去掉，文件删除
+    assert_eq!(features.pending(), 0);
+    assert_eq!(written(&features, &dir), None);
+    // 第二天什么都没用：照样带空的名单（接收端据此算占比的分母）
+    let Outcome::Sent(body) = rt().block_on(usage.check(input(noon(date(2026, 11, 23))))) else {
+        panic!("第二天应发送");
+    };
+    assert!(sent_features(&body).is_empty());
+    assert!(body.ends_with(r#","features":[]}"#), "{body}");
+}
+
+#[test]
+fn marks_during_a_send_are_kept_for_the_next_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let (gate_tx, gate_rx) = mpsc::channel();
+    let (url, requests) = receiver_with(vec![204], Some(gate_rx));
+    let (usage, features) = reporter_with_features(&dir, url, || false);
+    features.mark(Feature::Ssh);
+    let now = noon(date(2026, 11, 22));
+    let task = rt().spawn({
+        let usage = usage.clone();
+        async move { usage.check(input(now)).await }
+    });
+    // 接收端收到了、还没回答：这时又用了别的功能，也再用了一次已发出的
+    let request = requests.recv_timeout(Duration::from_secs(10)).unwrap();
+    assert_eq!(sent_features(&request.body), ["ssh"]);
+    features.mark(Feature::Compose);
+    gate_tx.send(()).unwrap();
+    assert!(matches!(rt().block_on(task).unwrap(), Outcome::Sent(_)));
+    assert_eq!(features.pending(), Feature::Compose.bit(), "只去掉发出去的");
+    assert_eq!(
+        written(&features, &dir).as_deref(),
+        Some(r#"{"v":1,"features":["compose"]}"#)
+    );
+}
+
+#[test]
+fn failed_sends_keep_the_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, _requests) = receiver(vec![500, 400]);
+    let (usage, features) = reporter_with_features(&dir, url, || false);
+    features.mark(Feature::Sync);
+    let day = date(2026, 11, 22);
+    assert_eq!(
+        rt().block_on(usage.check(input(noon(day)))),
+        Outcome::Failed(SendError::Status(500))
+    );
+    assert_eq!(features.pending(), Feature::Sync.bit());
+    assert_eq!(
+        rt().block_on(usage.check(input(noon(date(2026, 11, 23))))),
+        Outcome::Rejected(400)
+    );
+    assert_eq!(features.pending(), Feature::Sync.bit(), "被拒绝的也留着");
+    assert_eq!(
+        written(&features, &dir).as_deref(),
+        Some(r#"{"v":1,"features":["sync"]}"#)
+    );
+}
+
+#[test]
+fn turning_it_off_deletes_the_list_and_stops_recording() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, _requests) = receiver(Vec::new());
+    let (usage, features) = reporter_with_features(&dir, url, || false);
+    features.mark(Feature::Telnet);
+    assert!(written(&features, &dir).is_some());
+    // 设置中关掉：界面先停止收集，再 forget
+    usage.set_collecting(false);
+    usage.forget();
+    assert_eq!(features.pending(), 0);
+    assert_eq!(
+        fs::read_to_string(feature_file(&dir)).ok(),
+        None,
+        "本机不再保留名单"
+    );
+    features.mark(Feature::Serial);
+    assert_eq!(features.pending(), 0, "关着时不记");
+    // 重新打开：从空开始记
+    usage.set_collecting(true);
+    features.mark(Feature::Serial);
+    assert_eq!(features.pending(), Feature::Serial.bit());
+    // forget 本身也清掉名单（发送期间关掉的情形）
+    usage.forget();
+    assert_eq!(features.pending(), 0);
+    assert_eq!(written(&features, &dir), None);
+}
+
+#[test]
+fn agent_skill_is_checked_when_sending_and_never_stored() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, _requests) = receiver(vec![204]);
+    let (usage, features) = reporter_with_features(&dir, url, || true);
+    features.mark(Feature::Cli);
+    let preview = usage.preview("zh-CN", noon(date(2026, 11, 22))).unwrap();
+    assert_eq!(sent_features(&preview.json), ["cli", "agent_skill"]);
+    let Outcome::Sent(body) = rt().block_on(usage.check(input(noon(date(2026, 11, 22))))) else {
+        panic!("应发送");
+    };
+    assert_eq!(sent_features(&body), ["cli", "agent_skill"]);
+    assert!(
+        !features.contains(Feature::AgentSkill),
+        "按状态查，不记在名单中"
+    );
+    assert_eq!(features.pending(), 0);
+}
+
+#[test]
+fn feature_points_mark_the_global_list() {
+    // 全局的名单在测试中一直是“还没读到设置”：判定点照样记在内存中（不写文件）
+    let global = features::global();
+    assert_ne!(global.collecting(), Collecting::Off);
+    mark(Feature::HostToolsPopout);
+    assert!(global.contains(Feature::HostToolsPopout));
+}
+
+#[test]
+fn feature_list_is_written_in_the_background_even_before_the_folder_exists() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("data").join("usage-features.json");
+    let log = Arc::new(FeatureLog::default());
+    log.attach(file.clone());
+    log.set_collecting(true);
+    // 不就地写：等后台的那一次写好
+    log.mark(Feature::Split);
+    for _ in 0..200 {
+        if let Ok(text) = fs::read_to_string(&file) {
+            assert_eq!(text, r#"{"v":1,"features":["split"]}"#);
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    panic!("后台没有写出功能名单");
 }

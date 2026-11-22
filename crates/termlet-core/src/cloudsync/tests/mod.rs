@@ -103,7 +103,11 @@ impl Dev {
     /// 同步一次，应当完成（不需要用户决定）。
     pub fn sync(&self) -> SyncReport {
         match self.run() {
-            SyncOutcome::Done(report) => report,
+            SyncOutcome::Done(report) => {
+                // 使用统计的功能名单记下同步成功过
+                assert!(crate::usage::features::global().contains(crate::usage::Feature::Sync));
+                report
+            }
             other => panic!("应当同步完成：{other:?}"),
         }
     }

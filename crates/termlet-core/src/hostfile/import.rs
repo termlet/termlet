@@ -145,6 +145,7 @@ pub async fn import(
                 failures = report.failures.len(),
                 "导入主机文件"
             );
+            crate::usage::mark(crate::usage::Feature::ImportTermletFile);
             Ok(report)
         }
         Err(e) if e.is_panic() => std::panic::resume_unwind(e.into_panic()),

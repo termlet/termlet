@@ -1,11 +1,13 @@
 //! 匿名使用统计（方案见 `docs/rust/使用统计方案.md`，已由用户定稿）。
 //!
 //! - **发什么**：每个 UTC 日最多一条 `POST https://api.termlet.dev/v1/stats`，正文是 [`UsageMessage`] 的 9 个字段
-//!   （格式版本、Termlet 版本、系统、系统大版本、CPU 架构、界面语言、使用时长的档位、本周 / 本月第一次），没有任何 ID、
-//!   时间与时区。国家或地区由接收端按 Cloudflare 给出的代码另记，客户端不发。正文只由 [`UsageMessage::to_json`] 生成，
-//!   “查看内容”对话框显示的（[`UsageReporter::preview`]）与实际发出的是同一个函数的结果。
+//!   （格式版本、Termlet 版本、系统、系统大版本、CPU 架构、界面语言、使用时长的档位、本周 / 本月第一次）与功能名单
+//!   `features`（上次发送成功以来用到过的功能，只有名称，见 [`features`]），没有任何 ID、时间与时区。国家或地区由接收端
+//!   按 Cloudflare 给出的代码另记，客户端不发。正文只由 [`UsageMessage::to_json`] 生成，“查看内容”对话框显示的
+//!   （[`UsageReporter::preview`]）与实际发出的是同一个函数的结果。
 //! - **本机记什么**：`{数据目录}/usage.json` 只有两个 UTC 日期（[`UsageState`]：第一次与上次发送成功），不记时刻、
-//!   历史与服务器的回应；每次发送成功在程序日志中写一行，含发出的 JSON 原文。关闭后删除这个文件（[`UsageReporter::forget`]）。
+//!   历史与服务器的回应；`{数据目录}/usage-features.json` 只有还没发出的功能名单（[`FeatureLog`]，发送成功后去掉已发出的）。
+//!   每次发送成功在程序日志中写一行，含发出的 JSON 原文。关闭后删除这两个文件（[`UsageReporter::forget`]）。
 //! - **什么时候发**（[`UsageReporter::check`]，全部满足）：设置开着（默认开，不另外提示，安装包的许可说明、隐私说明与设置中写明）；
 //!   不是调试构建；没有被环境变量（[`DO_NOT_TRACK_ENV`]、[`USAGE_URL_ENV`]）或远程配置（`usageUrl`）关掉；今天用过
 //!   （[`mark_active`]：窗口获得焦点、处理命令行工具的请求）；今天还没有发送成功。“今天”按 UTC 算，与接收端计数的日期一致。
@@ -17,6 +19,7 @@
 //!
 //! 命令行工具 `termlet` 不发统计；由它拉起的后台 Termlet 处理请求时算作当天用过。
 
+pub mod features;
 #[cfg(test)]
 mod tests;
 
@@ -31,6 +34,8 @@ use chrono::{Datelike as _, NaiveDate};
 use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
 use url::Url;
+
+pub use features::{Collecting, Feature, FeatureLog};
 
 use crate::paths::DataDir;
 use crate::remote_config::{RemoteConfigSource, UsageEndpoint};
@@ -127,6 +132,8 @@ pub struct UsageMessage {
     pub age: Age,
     pub first_of_week: bool,
     pub first_of_month: bool,
+    /// 上次发送成功以来用到过的功能（[`Feature::name`]，按清单的顺序）；什么都没用到时为空数组，照样发
+    pub features: Vec<&'static str>,
 }
 
 impl UsageMessage {
@@ -163,12 +170,14 @@ impl Platform {
 /// 顺序反了，新客户端的统计整条被拒（400），当天不再发。`ja`、`ko` 是后加的，0.3.0 及以前的客户端按 `en` 发。
 pub const LANGS: [&str; 5] = ["zh-CN", "zh-TW", "en", "ja", "ko"];
 
-/// 生成今天（`today`，UTC）要发送的统计（纯函数）。`lang` 不在 [`LANGS`] 中时按 `en`。
+/// 生成今天（`today`，UTC）要发送的统计（纯函数）。`lang` 不在 [`LANGS`] 中时按 `en`；`features` 是功能名单的位图
+/// （[`Feature::bit`]）。
 pub fn build_message(
     platform: &Platform,
     lang: &str,
     state: Option<&UsageState>,
     today: NaiveDate,
+    features: u64,
 ) -> UsageMessage {
     let last_sent = state.map(|s| s.last_sent);
     let lang = if LANGS.contains(&lang) { lang } else { "en" };
@@ -182,7 +191,13 @@ pub fn build_message(
         age: age(state.map(|s| s.since), today),
         first_of_week: first_of_week(last_sent, today),
         first_of_month: first_of_month(last_sent, today),
+        features: features::names(features),
     }
+}
+
+/// 记下用到过 `feature`（全局的名单，见 [`features`]）：各功能的判定点调用，代价是一次原子操作；关掉使用统计时什么都不做。
+pub fn mark(feature: Feature) {
+    features::global().mark(feature);
 }
 
 // ---------------------------------------------------------------- 本机的两个日期
@@ -440,6 +455,10 @@ pub struct ReporterOptions {
     pub remote: Option<RemoteConfigSource>,
     /// 内置的接收地址
     pub builtin: Url,
+    /// 功能名单（正式运行是全局的那一份，[`features::global`]）
+    pub features: Arc<FeatureLog>,
+    /// 这台电脑上装着 Termlet 的 Agent Skill 没有（生成正文时调用，读几个小文件；测试中换成固定的结果）
+    pub skill_installed: fn() -> bool,
 }
 
 /// “查看内容”对话框显示的：今天要发送的正文与本机记的日期。
@@ -482,11 +501,15 @@ impl UsageReporter {
     pub fn new(data_dir: &DataDir) -> Self {
         let route = Route::from_env();
         let remote = (route == Route::Default).then(|| RemoteConfigSource::new(data_dir));
+        let features = features::global();
+        features.attach(data_dir.usage_features());
         Self::with(ReporterOptions {
             state_file: data_dir.usage_state(),
             route,
             remote,
             builtin: Url::parse(USAGE_URL).expect("内置的使用统计地址"),
+            features,
+            skill_installed: skill_installed_here,
         })
     }
 
@@ -503,6 +526,25 @@ impl UsageReporter {
 
     fn day(&self) -> std::sync::MutexGuard<'_, DayStatus> {
         self.inner.day.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// 按设置“发送匿名使用统计”开始或停止记功能名单：被环境变量关掉、调试构建时始终不记（不会发出去的不记）。
+    /// 界面在启动时与改了设置时调用；停止时清空名单、删除 `usage-features.json`。
+    pub fn set_collecting(&self, enabled: bool) {
+        let sends = matches!(self.inner.options.route, Route::Default | Route::Fixed(_));
+        self.inner.options.features.set_collecting(enabled && sends);
+    }
+
+    /// 这一次要带上的功能名单：还没发出的位图，加上生成正文时查到的 Agent Skill（[`Feature::AgentSkill`] 不记在位图中）。
+    /// 返回（要发的位图，其中记在位图中、发送成功后要去掉的部分）。
+    fn features_to_send(&self) -> (u64, u64) {
+        let pending = self.inner.options.features.pending();
+        let skill = if (self.inner.options.skill_installed)() {
+            Feature::AgentSkill.bit()
+        } else {
+            0
+        };
+        (pending | skill, pending)
     }
 
     /// 被环境变量关闭时为变量名（设置中的开关显示为关、不能改）。
@@ -539,17 +581,19 @@ impl UsageReporter {
         let platform = Platform::current()?;
         let today = utc_day(now_ms);
         let state = self.state();
+        let (features, _) = self.features_to_send();
         Some(Preview {
-            json: build_message(&platform, lang, state.as_ref(), today).to_json(),
+            json: build_message(&platform, lang, state.as_ref(), today, features).to_json(),
             last_sent: state.map(|s| s.last_sent),
             sent_today: state.is_some_and(|s| s.last_sent == today),
         })
     }
 
-    /// 关闭后：删除 `usage.json`（本机不再保留统计用的任何记录），正在进行的那一次发送成功后也不再写它。
-    /// 再打开时从头算（`age` 为 `new`）。
+    /// 关闭后：删除 `usage.json` 与功能名单（本机不再保留统计用的任何记录），正在进行的那一次发送成功后也不再写它们。
+    /// 再打开时从头算（`age` 为 `new`，名单从空开始）。
     pub fn forget(&self) {
         self.inner.generation.fetch_add(1, Ordering::SeqCst);
+        self.inner.options.features.forget();
         {
             let mut day = self.day();
             day.gave_up = None;
@@ -606,10 +650,13 @@ impl UsageReporter {
                 None => return Outcome::Paused,
             },
         };
-        let body = build_message(&platform, &input.lang, state.as_ref(), today).to_json();
+        let (features, recorded) = self.features_to_send();
+        let body = build_message(&platform, &input.lang, state.as_ref(), today, features).to_json();
         match send(&url, &body).await {
             Ok(()) => {
                 if self.inner.generation.load(Ordering::SeqCst) == generation {
+                    // 发出去的功能从名单中去掉，发送期间新记的留到下一次
+                    self.inner.options.features.sent(recorded);
                     let next = UsageState::after_sent(state.as_ref(), today);
                     let path = &self.inner.options.state_file;
                     let written = path
@@ -672,6 +719,17 @@ impl UsageReporter {
             }
         }
     }
+}
+
+/// 这台电脑上装着 Termlet 的 Agent Skill 没有（任一位置，已装或有更新），读几个小文件。
+fn skill_installed_here() -> bool {
+    use crate::proto::skill;
+    let Some(home) = std::env::home_dir().filter(|h| !h.as_os_str().is_empty()) else {
+        return false;
+    };
+    skill::targets(&home, &skill::system_env)
+        .iter()
+        .any(|target| target.status != skill::Status::Missing)
 }
 
 /// HTTP 客户端：走系统与环境变量中的代理（与检查更新相同），本机回环地址不走代理；不跟随重定向。

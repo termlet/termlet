@@ -212,7 +212,10 @@ fn read_file(path: &std::path::Path, password: Option<&str>) -> Result<HostFile,
 
 fn import_all(m: &Machine, file: &HostFile, on_duplicate: OnDuplicate) -> ImportReport {
     let keys = file.doc.hosts.iter().map(|h| h.id.clone()).collect();
-    block_on(import(m.backups.clone(), file.clone(), keys, on_duplicate)).unwrap()
+    let report = block_on(import(m.backups.clone(), file.clone(), keys, on_duplicate)).unwrap();
+    // 使用统计的功能名单记下导入过主机文件
+    assert!(crate::usage::features::global().contains(crate::usage::Feature::ImportTermletFile));
+    report
 }
 
 fn contains(data: &[u8], text: &str) -> bool {

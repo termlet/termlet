@@ -152,6 +152,17 @@ pub enum Service {
     Gist,
 }
 
+/// 使用统计的功能名单：同步成功过，S3、Gist 另记一项。
+fn mark_synced(service: Option<Service>) {
+    use crate::usage::{Feature, mark};
+    mark(Feature::Sync);
+    match service {
+        Some(Service::S3) => mark(Feature::SyncS3),
+        Some(Service::Gist) => mark(Feature::SyncGist),
+        _ => {}
+    }
+}
+
 impl SyncTarget {
     pub fn service(&self) -> Service {
         match self {
@@ -833,6 +844,7 @@ impl CloudSync {
                     conflicts = report.conflicts.len(),
                     "已同步"
                 );
+                mark_synced(self.status().config.as_ref().map(|c| c.target.service()));
                 let devices = devices.clone();
                 self.update_persisted(|p| {
                     p.last_error = None;

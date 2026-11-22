@@ -713,6 +713,10 @@ impl SftpPanel {
         }));
         let home = session.home().to_string();
         tracing::info!(sftp = %self.name, session = %session.id(), home = %home, "SFTP 已连接");
+        termlet_core::usage::mark(match self.target {
+            SftpTarget::Wsl { .. } => termlet_core::usage::Feature::Wsl,
+            _ => termlet_core::usage::Feature::Sftp,
+        });
         self.lease = Some(Rc::new(SessionLease {
             session,
             manager: self.manager.clone(),
