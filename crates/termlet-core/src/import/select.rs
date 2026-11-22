@@ -132,6 +132,7 @@ mod tests {
             jump: None,
             has_password: false,
             has_key: false,
+            profile: None,
             duplicate_of: duplicate.then(|| HostId::from_raw("h_1")),
             hints: Vec::new(),
             proxy_command: None,

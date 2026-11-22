@@ -8,25 +8,26 @@
 //!   某台主机、某把私钥失败时记在结果中，不影响其他的；整个导入的变更事件合并成一次发出。
 //!
 //! 新主机的认证依次取：私钥文件（来源中有它的密码时一并保存）、来源中的私钥（已存入密钥库）、来源中的密码、
-//! ssh-agent；都没有时为密码认证、不保存密码（连接时询问）。随主机导入的端口转发（Xshell 的隧道）在新建、合并后添加，
-//! 一律不自动启动；快捷命令（WindTerm）在主机之后添加，与已有的名称、内容都相同时不重复添加。合并时用导入的名称、分组、代理更新已有主机，保留已有的认证（选用凭据档案或沿用分组的、
-//! 已有凭据的；只有导入的是私钥文件时照旧改用它）、标签、收藏、备注、跳板机（导入的带跳板机时更新）、连接与终端参数；
-//! 已有主机还没有凭据时用来源中的补上。
+//! ssh-agent；都没有时为密码认证、不保存密码（连接时询问）。来源中的验证码密钥（NyaTerm）一并保存。随主机导入的
+//! 端口转发（Xshell、NyaTerm 的隧道）在新建、合并后添加，一律不自动启动；快捷命令（WindTerm、NyaTerm）在主机之后添加，
+//! 与已有的名称、内容都相同时不重复添加。合并时用导入的名称、分组、代理更新已有主机，保留已有的认证（选用凭据档案或
+//! 沿用分组的、已有凭据的；只有导入的是私钥文件时照旧改用它）、标签、收藏、备注、跳板机（导入的带跳板机时更新）、
+//! 连接与终端参数；已有主机还没有凭据、验证码密钥时用来源中的补上。
 //!
-//! 密码要用户同意才导入的来源（Electerm、Netcatty，[`super::Source::secrets_need_consent`]）只补不改：跳过重复的主机时，
+//! 密码要用户同意才导入的来源（FinalShell、Electerm、Netcatty，[`super::Source::secrets_need_consent`]）只补不改：跳过重复的主机时，
 //! 已有主机是密码认证、还没保存密码的，补上来源中的密码（计入 [`ImportReport::passwords_filled`]）；合并时代理的密码
 //! 也只在还没保存时写入。
 
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 
-use super::{Endpoint, Hint, ImportPlan, PlannedHost};
+use super::{Endpoint, Hint, ImportPlan, PlannedHost, PlannedProfileAuth};
 use crate::backup::{BackupError, Backups, SnapshotReason};
-use crate::id::{GroupId, HostId, KeyId};
+use crate::id::{GroupId, HostId, KeyId, ProfileId};
 use crate::keyvault::KeyVaultError;
 use crate::model::{
-    Auth, Forward, ForwardKind, Group, Host, Jump, KeySource, Profile, Protocol, SecretField,
-    Snippet, join_host_port,
+    Auth, Forward, ForwardKind, Group, Host, Jump, KeySource, Profile, ProfileAuth, Protocol,
+    SecretField, Snippet, join_host_port,
 };
 use crate::secret::SecretString;
 use crate::store::{Owner, Position, Store};
@@ -69,10 +70,12 @@ pub struct PreviewItem {
     pub tags: Vec<String>,
     /// 跳板机在来源中的名称
     pub jump: Option<String>,
-    /// 带登录密码（会一并导入）
+    /// 带登录密码（会一并导入；用凭据档案时为档案的）
     pub has_password: bool,
-    /// 带私钥（会存进密钥库或随主机保存）
+    /// 带私钥（会存进密钥库或随主机保存；用凭据档案时为档案的）
     pub has_key: bool,
+    /// 使用的凭据档案的名称
+    pub profile: Option<String>,
     /// 本机已有的相同主机
     pub duplicate_of: Option<HostId>,
     /// 需要提醒用户的事项（其他客户端的导入）
@@ -116,6 +119,8 @@ pub struct ImportReport {
     pub snippets_skipped: usize,
     /// 跳过的已有主机中补上了密码的数量（Electerm、Netcatty：已有主机还没保存密码时）
     pub passwords_filled: usize,
+    /// 新建的凭据档案数（名称、用户名都相同的已有档案直接使用，不计）
+    pub profiles_created: usize,
     /// 没能导入的项与原因：主机，以及随主机导入的私钥、凭据档案、分组默认值、端口转发、跳板机、快捷命令
     pub failures: Vec<ImportFailure>,
     /// 每台勾选的主机的结果（按导入的顺序）
@@ -247,15 +252,16 @@ pub fn preview(store: &Store, plan: &ImportPlan) -> ImportPreview {
             protocol: h.host.protocol,
             address: h.host.address.clone(),
             port: h.host.effective_port(),
-            username: h.host.username.clone(),
+            username: plan.username_of(h),
             group: h
                 .group
                 .map(|g| plan.group_path(g).into_iter().map(String::from).collect())
                 .unwrap_or_default(),
             tags: h.host.tags.clone(),
             jump: h.jump.as_ref().map(|j| j.name.clone()),
-            has_password: h.has_password(),
-            has_key: h.key().is_some(),
+            has_password: h.has_password() || profile_of(plan, h).is_some_and(|p| p.has_password()),
+            has_key: h.key().is_some() || profile_of(plan, h).is_some_and(|p| p.key().is_some()),
+            profile: profile_of(plan, h).map(|p| p.name.clone()),
             duplicate_of: existing.find(h.host.protocol, &h.endpoint()).cloned(),
             hints: h.hints.clone(),
             proxy_command: proxy_command(&h.host),
@@ -267,6 +273,10 @@ pub fn preview(store: &Store, plan: &ImportPlan) -> ImportPreview {
         items,
         skipped: plan.skipped,
     }
+}
+
+fn profile_of<'a>(plan: &'a ImportPlan, host: &PlannedHost) -> Option<&'a super::PlannedProfile> {
+    host.profile().and_then(|p| plan.profiles.get(p))
 }
 
 /// 主机的代理命令（写成一行）。
@@ -342,8 +352,24 @@ pub async fn apply(
         return Err(BackupError::NothingSelected);
     }
     let store = backups.store().clone();
+    // 勾选的主机用到的凭据档案
+    let needed_profiles: Vec<usize> = {
+        let mut seen = HashSet::new();
+        chosen
+            .iter()
+            .filter_map(|h| h.profile())
+            .filter(|p| p < &plan.profiles.len() && seen.insert(*p))
+            .collect()
+    };
     let needs_vault = chosen.iter().any(|h| {
-        h.has_password() || h.has_proxy_password() || h.passphrase().is_some() || h.key().is_some()
+        h.has_password()
+            || h.has_proxy_password()
+            || h.passphrase().is_some()
+            || h.totp().is_some()
+            || h.key().is_some()
+    }) || needed_profiles.iter().any(|&p| {
+        let p = &plan.profiles[p];
+        p.password().is_some() || p.passphrase().is_some() || p.key().is_some()
     });
     if needs_vault && store.vault_status() != VaultStatus::Unlocked {
         return Err(BackupError::VaultLocked);
@@ -353,6 +379,11 @@ pub async fn apply(
         chosen
             .iter()
             .filter_map(|h| h.key())
+            .chain(
+                needed_profiles
+                    .iter()
+                    .filter_map(|&p| plan.profiles[p].key()),
+            )
             .filter(|k| seen.insert(*k))
             .collect()
     };
@@ -386,6 +417,7 @@ pub async fn apply(
             &selected,
             on_duplicate,
             &key_ids,
+            &needed_profiles,
             &mut report,
         );
         report
@@ -399,6 +431,7 @@ pub async fn apply(
                 skipped = report.skipped,
                 snippets = report.snippets,
                 snippets_skipped = report.snippets_skipped,
+                profiles = report.profiles_created,
                 failures = report.failures.len(),
                 "导入主机"
             );
@@ -428,11 +461,13 @@ fn write_plan(
     selected: &HashSet<String>,
     on_duplicate: OnDuplicate,
     key_ids: &HashMap<usize, KeyId>,
+    needed_profiles: &[usize],
     report: &mut ImportReport,
 ) {
     // 密码要用户同意才导入的来源：已有主机的秘密只补不改
     let fill_only = plan.source.secrets_need_consent();
     store.batch(|| {
+        let profile_ids = write_profiles(store, plan, needed_profiles, key_ids, report);
         let mut groups = GroupIndex::load(store);
         let mut existing = ExistingHosts::load(store);
         // 跳板机在全部主机写完后再设置：被引用的主机可能排在后面
@@ -456,7 +491,8 @@ fn write_plan(
                 }
                 Ok(group) => {
                     let key = planned.key().and_then(|k| key_ids.get(&k).cloned());
-                    let doc = planned.to_host(key, None);
+                    let profile = planned.profile().and_then(|p| profile_ids.get(&p).cloned());
+                    let doc = planned.to_host(key, None, profile);
                     write_host(
                         store,
                         planned,
@@ -612,6 +648,9 @@ fn write_host(
     {
         secrets.push((SecretField::ProxyPassword, password.clone()));
     }
+    if let Some(totp) = planned.totp() {
+        secrets.push((SecretField::Totp, totp.clone()));
+    }
     let protocol = doc.protocol;
     match store.create(doc, group.map(|g| g.to_string()), Position::Last) {
         Ok(id) => {
@@ -625,6 +664,80 @@ fn write_host(
             HostOutcome::Failed
         }
     }
+}
+
+/// 勾选的主机用到的凭据档案：本机已有名称与用户名都相同的档案时直接用它（不改动），否则新建，连同来源中的
+/// 密码或私钥密码（与主机文件的导入相同）。档案用的私钥没能存进密钥库时改为密码认证。返回计划中的下标 → ID。
+fn write_profiles(
+    store: &Store,
+    plan: &ImportPlan,
+    needed: &[usize],
+    key_ids: &HashMap<usize, KeyId>,
+    report: &mut ImportReport,
+) -> HashMap<usize, ProfileId> {
+    let mut existing: Vec<(String, String, ProfileId)> = store
+        .list::<Profile>()
+        .into_iter()
+        .map(|p| {
+            (
+                p.doc.name.trim().to_string(),
+                p.doc.username.trim().to_string(),
+                p.id,
+            )
+        })
+        .collect();
+    let mut ids = HashMap::new();
+    for &index in needed {
+        let planned = &plan.profiles[index];
+        let (name, username) = (planned.name.trim(), planned.username.trim());
+        if let Some((_, _, id)) = existing.iter().find(|(n, u, _)| n == name && u == username) {
+            ids.insert(index, id.clone());
+            continue;
+        }
+        let auth = match &planned.auth {
+            PlannedProfileAuth::Password => ProfileAuth::Password,
+            PlannedProfileAuth::Key { key } => match key_ids.get(key) {
+                Some(key) => ProfileAuth::Key {
+                    source: KeySource::Library { key: key.clone() },
+                },
+                None => ProfileAuth::Password,
+            },
+            PlannedProfileAuth::KeyFile { path } => ProfileAuth::Key {
+                source: KeySource::file(path.clone()),
+            },
+            PlannedProfileAuth::Agent => ProfileAuth::Agent,
+        };
+        let secret = match &auth {
+            ProfileAuth::Password => planned.password().map(|p| (SecretField::Password, p)),
+            ProfileAuth::Key {
+                source: KeySource::File { .. },
+            } => planned.passphrase().map(|p| (SecretField::Passphrase, p)),
+            _ => None,
+        };
+        let doc = Profile {
+            name: planned.name.clone(),
+            username: planned.username.clone(),
+            auth,
+            ..Default::default()
+        };
+        let failure = || FailureSubject::Profile {
+            name: planned.name.clone(),
+        };
+        match store.create(doc, None, Position::Last) {
+            Ok(id) => {
+                report.profiles_created += 1;
+                if let Some((field, value)) = secret
+                    && let Err(e) = store.set_secret(&Owner::profile(&id), field, Some(value))
+                {
+                    report.fail(failure(), e);
+                }
+                existing.push((name.to_string(), username.to_string(), id.clone()));
+                ids.insert(index, id);
+            }
+            Err(e) => report.fail(failure(), e),
+        }
+    }
+    ids
 }
 
 /// 跳过的已有主机是密码认证、还没保存密码时，补上来源中的密码（导入的也是密码认证时）。
@@ -697,6 +810,12 @@ fn merge_planned(
         {
             secrets.push((SecretField::ProxyPassword, password.clone()));
         }
+    }
+    // 验证码密钥只补上还没有的
+    if let Some(totp) = planned.totp()
+        && !store.has_secret(&Owner::host(id), SecretField::Totp)
+    {
+        secrets.push((SecretField::Totp, totp.clone()));
     }
     store.update(id, next)?;
     move_into(store, id, old.parent.as_deref(), group)?;

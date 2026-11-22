@@ -226,6 +226,7 @@ impl ImportFrom {
             ImportFrom::Client(Source::Electerm) => t!("backup_ui.import.source.electerm"),
             ImportFrom::Client(Source::Netcatty) => t!("backup_ui.import.source.netcatty"),
             ImportFrom::Client(Source::NyaTerm) => t!("backup_ui.import.source.nyaterm"),
+            ImportFrom::Client(Source::NyaTermData) => t!("backup_ui.import.source.nyaterm_data"),
         }
     }
 
@@ -256,6 +257,9 @@ impl ImportFrom {
                 Some(t!("backup_ui.import.source_hint.netcatty"))
             }
             ImportFrom::Client(Source::NyaTerm) => Some(t!("backup_ui.import.source_hint.nyaterm")),
+            ImportFrom::Client(Source::NyaTermData) => {
+                Some(t!("backup_ui.import.source_hint.nyaterm_data"))
+            }
             _ => None,
         }
     }
@@ -270,12 +274,17 @@ impl ImportFrom {
         )
     }
 
-    /// 需要密码时密码框的提示与说明：主机文件是导出时设置的密码，WindTerm 是它的主密码。
+    /// 需要密码时密码框的提示与说明：主机文件是导出时设置的密码，WindTerm 是它的主密码，NyaTerm 的 `.nya` 是
+    /// 导出时设置的密码。
     fn password_texts(self) -> (SharedString, SharedString) {
         match self {
             ImportFrom::Client(Source::WindTerm) => (
                 t!("backup_ui.import.windterm_password_placeholder"),
                 t!("backup_ui.import.windterm_password_hint"),
+            ),
+            ImportFrom::Client(Source::NyaTermData) => (
+                t!("backup_ui.import.nyaterm_password_placeholder"),
+                t!("backup_ui.import.nyaterm_password_hint"),
             ),
             _ => (
                 t!("backup_ui.import.password_placeholder"),
@@ -337,10 +346,15 @@ impl Preview {
 #[derive(Clone, Debug, PartialEq)]
 enum Detail {
     Jump(String),
+    /// 使用的凭据档案的名称
+    Profile(String),
     Hint(SharedString),
     ProxyCommand(String),
     Startup(String),
-    ForwardsHeader { count: usize, merge: bool },
+    ForwardsHeader {
+        count: usize,
+        merge: bool,
+    },
     Forward(PreviewForward),
 }
 
@@ -349,6 +363,9 @@ fn details(item: &PreviewItem, source: &str, on_duplicate: OnDuplicate) -> Vec<D
     let mut lines = Vec::new();
     if let Some(jump) = &item.jump {
         lines.push(Detail::Jump(jump.clone()));
+    }
+    if let Some(profile) = &item.profile {
+        lines.push(Detail::Profile(profile.clone()));
     }
     lines.extend(
         item.hints
@@ -662,9 +679,10 @@ impl ImportDialog {
                             preview.items,
                             preview.skipped,
                         )),
-                        Ok(Err(import::ImportError::WindTermPasswordRequired)) => {
-                            Err(Failure::PasswordRequired)
-                        }
+                        Ok(Err(
+                            import::ImportError::WindTermPasswordRequired
+                            | import::ImportError::PasswordRequired,
+                        )) => Err(Failure::PasswordRequired),
                         Ok(Err(e)) => Err(Failure::Message(errors::describe_import(&e))),
                         Err(e) => Err(Failure::Message(e.to_string().into())),
                     }
@@ -1180,6 +1198,11 @@ impl ImportDialog {
                     .text_color(muted)
                     .child(t!("backup_ui.import.via", name = name))
                     .into_any_element(),
+                Detail::Profile(name) => base
+                    .truncate()
+                    .text_color(muted)
+                    .child(t!("backup_ui.import.uses_profile", name = name))
+                    .into_any_element(),
                 Detail::Hint(text) => with_tip(base, text, warning),
                 Detail::ProxyCommand(command) => with_tip(
                     base,
@@ -1379,6 +1402,15 @@ impl ImportDialog {
             Loaded::Plan(plan) => plan.snippets.len(),
             Loaded::HostFile(_) => 0,
         };
+        // 整个计划的说明（来源中的秘密都解不开等）
+        let notes: Vec<SharedString> = match &preview.loaded {
+            Loaded::Plan(plan) => plan
+                .notes
+                .iter()
+                .map(|note| errors::describe_note(note, preview.from.source_name()))
+                .collect(),
+            Loaded::HostFile(_) => Vec::new(),
+        };
         const MODES: [OnDuplicate; 2] = [OnDuplicate::Skip, OnDuplicate::Merge];
         v_flex()
             .gap_1p5()
@@ -1407,6 +1439,13 @@ impl ImportDialog {
                     count = preview.skipped
                 )))
             })
+            .children(notes.into_iter().enumerate().map(|(n, note)| {
+                div()
+                    .id(super::element_id("import-plan-note", n.to_string()))
+                    .test_support()
+                    .text_color(cx.theme().warning)
+                    .child(prose(note))
+            }))
             .when(snippets > 0, |this| {
                 this.child(
                     div()
@@ -1722,6 +1761,18 @@ impl ImportDialog {
                         ))),
                 )
             })
+            .when(report.profiles_created > 0, |this| {
+                this.child(
+                    div()
+                        .id("import-profiles-created")
+                        .test_support()
+                        .text_sm()
+                        .child(prose(t!(
+                            "backup_ui.import.profiles_created",
+                            count = report.profiles_created
+                        ))),
+                )
+            })
             .when(report.passwords_filled > 0, |this| {
                 this.child(
                     div()
@@ -1904,6 +1955,7 @@ mod tests {
             jump: None,
             has_password: false,
             has_key: false,
+            profile: None,
             duplicate_of: None,
             hints: Vec::new(),
             proxy_command: None,
@@ -1974,7 +2026,7 @@ mod tests {
     #[test]
     fn sources_pick_files_or_folders() {
         let all = ImportFrom::all();
-        assert_eq!(all.len(), 11);
+        assert_eq!(all.len(), 12);
         assert_eq!(all[0], ImportFrom::HostFile);
         let folders: Vec<_> = all.iter().filter(|f| f.picks_directory()).collect();
         assert_eq!(
@@ -1991,8 +2043,12 @@ mod tests {
             ImportFrom::Client(Source::Netcatty).source_name(),
             "Netcatty"
         );
-        // 只有 NyaTerm 是只有快捷命令的来源
+        // 只有 NyaTerm 导出的快捷命令是只有快捷命令的来源（它的数据库与备份中有主机）
         let snippets: Vec<_> = all.iter().filter(|f| f.snippets_only()).collect();
         assert_eq!(snippets, [&ImportFrom::Client(Source::NyaTerm)]);
+        assert_eq!(
+            ImportFrom::Client(Source::NyaTermData).source_name(),
+            "NyaTerm"
+        );
     }
 }

@@ -506,6 +506,131 @@ fn netcatty_passwords_need_consent(cx: &mut TestAppContext) {
     assert_eq!(saved_password(cx, "应用").as_deref(), Some("kept"));
 }
 
+// NyaTerm 的 .nya 备份：先要导出时设置的密码，不对时提示；对了才列出主机，密码、私钥、验证码与快捷命令一并导入。
+// 备份是 NyaTerm 自己写出的样例（见 termlet-core 的 import/nyaterm/data/tests.rs 中的说明，密码 nya-pass）
+#[gpui_kit::test]
+fn nyaterm_backup_asks_for_the_password(cx: &mut TestAppContext) {
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("nyaterm");
+    let backup = dir.path("nyaterm-encrypted.nya");
+    std::fs::copy(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../termlet-core/src/import/testdata/nyaterm/nyaterm-fixture.nya"),
+        &backup,
+    )
+    .unwrap();
+
+    let dialog = cx
+        .update_window(handle, |_, window, cx| {
+            let dialog = super::import::open(window, cx);
+            dialog.update(cx, |d, cx| {
+                d.switch_source(ImportFrom::Client(Source::NyaTermData), window, cx)
+            });
+            dialog
+        })
+        .unwrap();
+    cx.run_until_parked();
+    let path = backup.display().to_string();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        type_into(window, cx, "import-path", &path);
+        window.click("import-preview", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "要求输入备份的密码", |window, _| {
+        exists(window, "import-password")
+    });
+    let preview = |cx: &mut TestAppContext, password: &str| {
+        cx.update_window(handle, |_, window, cx| {
+            type_into(window, cx, "import-password", password);
+            window.render_frame(cx);
+            window.click("import-preview", cx);
+        })
+        .unwrap();
+    };
+    preview(cx, "不对的密码");
+    wait_until(cx, handle, "提示密码不对", |_, cx| {
+        dialog.read(cx).error_text().is_some()
+    });
+    assert_eq!(cx.read(|cx| dialog.read(cx).item_count()), None);
+    preview(cx, "nya-pass");
+    wait_until(
+        cx,
+        handle,
+        "预览列出 NyaTerm 的主机",
+        |window, cx| dialog.read(cx).item_count() == Some(6) && exists(window, "import-snippets"),
+    );
+    cx.update_window(handle, |_, window, cx| window.click("import-apply", cx))
+        .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_counts()),
+        Some((6, 0, 0, 0))
+    );
+    assert_eq!(saved_password(cx, "web-1").as_deref(), Some("pw-1"));
+    wait_until(
+        cx,
+        handle,
+        "结果写明新建的凭据档案",
+        |window, _| exists(window, "import-profiles-created"),
+    );
+    cx.update(|cx| {
+        let store = AppState::store(cx);
+        // NyaTerm 的账号导入成凭据档案：主机跟随档案的用户名，密码在档案中
+        let account = store
+            .list::<Host>()
+            .into_iter()
+            .find(|h| h.doc.name == "via-account")
+            .unwrap();
+        let termlet_core::model::Auth::Profile { profile } = &account.doc.auth else {
+            panic!("via-account 应使用凭据档案：{:?}", account.doc.auth);
+        };
+        assert_eq!(account.doc.username, "");
+        let doc = store
+            .get::<termlet_core::model::Profile>(profile)
+            .unwrap()
+            .doc;
+        assert_eq!(
+            (doc.name.as_str(), doc.username.as_str()),
+            ("运维账号", "ops")
+        );
+        let password = store
+            .secret(
+                &termlet_core::store::Owner::profile(profile),
+                termlet_core::model::SecretField::Password,
+            )
+            .unwrap();
+        assert_eq!(password.unwrap().expose(), "account-pw");
+        let db = store
+            .list::<Host>()
+            .into_iter()
+            .find(|h| h.doc.name == "db-1")
+            .unwrap();
+        let totp = store
+            .secret(
+                &termlet_core::store::Owner::host(&db.id),
+                termlet_core::model::SecretField::Totp,
+            )
+            .unwrap();
+        assert_eq!(totp.unwrap().expose(), "JBSWY3DPEHPK3PXP");
+        assert!(matches!(
+            db.doc.auth,
+            termlet_core::model::Auth::Key {
+                source: termlet_core::model::KeySource::Library { .. }
+            }
+        ));
+        assert_eq!(store.list::<termlet_core::model::KeyEntry>().len(), 2);
+        let snippets: Vec<String> = store
+            .list::<Snippet>()
+            .into_iter()
+            .map(|s| s.doc.name)
+            .collect();
+        assert_eq!(snippets, ["看磁盘"]);
+    });
+}
+
 // FinalShell 的数据目录：文件夹按 folder.json 的名称成为分组，回收站中的、RDP 连接不导入；保存的密码可以还原，
 // 同 Netcatty 要勾选“导入保存的密码”才导入。样例按 termlet-core 中 FinalShell 导入说明的格式手写
 #[gpui_kit::test]

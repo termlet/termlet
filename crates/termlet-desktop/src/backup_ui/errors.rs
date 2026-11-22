@@ -5,7 +5,7 @@ use std::io::ErrorKind;
 use gpui_kit::SharedString;
 use termlet_core::Invalid;
 use termlet_core::backup::BackupError;
-use termlet_core::import::{FailureReason, FailureSubject, Hint, ImportError, Source};
+use termlet_core::import::{FailureReason, FailureSubject, Hint, ImportError, PlanNote, Source};
 
 use crate::{store_errors, t};
 
@@ -21,7 +21,7 @@ pub(super) fn source_name(source: Source) -> &'static str {
         Source::WindTerm => "WindTerm",
         Source::Electerm => "Electerm",
         Source::Netcatty => "Netcatty",
-        Source::NyaTerm => "NyaTerm",
+        Source::NyaTerm | Source::NyaTermData => "NyaTerm",
     }
 }
 
@@ -115,6 +115,22 @@ pub(super) fn describe_import(error: &ImportError) -> SharedString {
         ImportError::ElectermEncrypted => t!("backup_ui.import_error.electerm_encrypted"),
         ImportError::NotNetcatty => t!("backup_ui.import_error.not_netcatty"),
         ImportError::NotNyaTerm(error) => t!("backup_ui.import_error.not_nyaterm", error = error),
+        ImportError::NyaTermNotFound => t!("backup_ui.import_error.nyaterm_not_found"),
+        ImportError::NyaTermInUse => t!("backup_ui.import_error.nyaterm_in_use"),
+        ImportError::NotNyaTermData(error) => {
+            t!("backup_ui.import_error.not_nyaterm_data", error = error)
+        }
+        ImportError::PasswordRequired => t!("backup_ui.import_error.password_required"),
+        ImportError::WrongPassword => t!("backup_ui.import_error.wrong_password"),
+    }
+}
+
+/// 整个导入计划的说明；`source` 是来源的名称（见 [`source_name`]）。
+pub(super) fn describe_note(note: &PlanNote, source: &str) -> SharedString {
+    match note {
+        PlanNote::SecretsUnreadable => {
+            t!("backup_ui.plan_note.secrets_unreadable", source = source)
+        }
     }
 }
 
@@ -203,6 +219,11 @@ pub(super) fn describe_hint(hint: &Hint, source: &str) -> SharedString {
             source = source,
             name = name
         ),
+        Hint::CertificateNotImported { name } => t!(
+            "backup_ui.hint.certificate_not_imported",
+            source = source,
+            name = name
+        ),
         Hint::UnknownPathPlaceholder { placeholder } => t!(
             "backup_ui.hint.unknown_path_placeholder",
             placeholder = placeholder
@@ -257,6 +278,7 @@ pub(super) fn describe_hint(hint: &Hint, source: &str) -> SharedString {
         Hint::SavedPasswordInvalid => {
             t!("backup_ui.hint.saved_password_invalid", source = source)
         }
+        Hint::TotpNotImported => t!("backup_ui.hint.totp_not_imported", source = source),
         Hint::CredentialProfileMissing => {
             t!("backup_ui.hint.credential_profile_missing", source = source)
         }
@@ -344,6 +366,12 @@ mod tests {
             ImportError::NotElecterm("bad json".into()),
             ImportError::ElectermEncrypted,
             ImportError::NotNetcatty,
+            ImportError::NotNyaTerm("bad json".into()),
+            ImportError::NyaTermNotFound,
+            ImportError::NyaTermInUse,
+            ImportError::NotNyaTermData("no table".into()),
+            ImportError::PasswordRequired,
+            ImportError::WrongPassword,
         ]
     }
 
@@ -360,6 +388,7 @@ mod tests {
             Hint::LibraryKeyUnusable {
                 name: "broken".into(),
             },
+            Hint::CertificateNotImported { name: "id".into() },
             Hint::UnknownPathPlaceholder {
                 placeholder: "%X%".into(),
             },
@@ -391,6 +420,7 @@ mod tests {
             Hint::SavedPasswordUnreadable,
             Hint::SavedPasswordEncrypted,
             Hint::SavedPasswordInvalid,
+            Hint::TotpNotImported,
             Hint::CredentialProfileMissing,
             Hint::JumpHostFor {
                 session: "app".into(),
@@ -434,6 +464,7 @@ mod tests {
             texts.extend(backup_errors().iter().map(describe_backup));
             texts.extend(import_errors().iter().map(describe_import));
             texts.extend(hints().iter().map(|h| describe_hint(h, "Tabby")));
+            texts.push(describe_note(&PlanNote::SecretsUnreadable, "NyaTerm"));
             let reasons = [
                 FailureReason::Invalid(Invalid::new("bindPort", "conflict")),
                 FailureReason::Invalid(Invalid::new("name", "too_long")),

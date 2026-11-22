@@ -35,6 +35,9 @@ use super::files::{LocalEnv, decode_text, newest_export, read_limited};
 use super::plan::{PlanBuilder, SnippetNotes, clip};
 use super::{ImportError, ImportPlan, Source};
 
+/// 主机：本机数据库与 `.nya` 备份（[`Source::NyaTermData`]）。
+pub(super) mod data;
+
 /// 文件的大小上限（与 NyaTerm 自己导入时相同）。
 const MAX_FILE: u64 = 4 << 20;
 /// 导出的默认文件名（小写），在“下载”等处找时按开头匹配（另存时可能带了序号）。
@@ -71,14 +74,23 @@ pub(super) fn default_path(env: &LocalEnv) -> Option<PathBuf> {
 }
 
 pub(super) fn parse(text: &str) -> Result<ImportPlan, ImportError> {
-    let not_nyaterm = |reason: &str| ImportError::NotNyaTerm(reason.to_string());
     let value: Value =
         serde_json::from_str(text).map_err(|e| ImportError::NotNyaTerm(e.to_string()))?;
+    let mut plan = PlanBuilder::new(Source::NyaTerm);
+    let skipped =
+        add_snippets(&mut plan, value).map_err(|r| ImportError::NotNyaTerm(r.to_string()))?;
+    plan.skip(skipped);
+    Ok(plan.finish())
+}
+
+/// 把 NyaTerm 的快捷命令（导出的文件，或数据库、备份中的快捷命令文档，两者结构相同）转换后加入 `plan`，
+/// 丢掉或改动的内容记入它的 [`SnippetNotes`]。返回跳过的条数；结构不对时返回原因。
+fn add_snippets(plan: &mut PlanBuilder, value: Value) -> Result<usize, &'static str> {
     let (categories, commands) = match value {
         Value::Array(commands) => (Vec::new(), commands),
         Value::Object(mut root) => {
             let Some(Value::Array(commands)) = root.remove("commands") else {
-                return Err(not_nyaterm("没有 commands 数组"));
+                return Err("没有 commands 数组");
             };
             let categories = match root.remove("categories") {
                 Some(Value::Array(categories)) => categories,
@@ -86,21 +98,21 @@ pub(super) fn parse(text: &str) -> Result<ImportPlan, ImportError> {
             };
             (categories, commands)
         }
-        _ => return Err(not_nyaterm("不是 JSON 对象或数组")),
+        _ => return Err("不是 JSON 对象或数组"),
     };
     let categories = Categories::new(&categories);
-    let mut plan = PlanBuilder::new(Source::NyaTerm);
+    let mut skipped = 0;
     // 分组按第一次出现的顺序，同一分组中置顶的在前，再按 sort_order、文件中的顺序
     let mut group_order: HashMap<String, usize> = HashMap::new();
     let mut items: Vec<((usize, bool, i64, usize), Snippet)> = Vec::new();
     let mut notes = SnippetNotes::default();
     for (index, value) in commands.iter().enumerate() {
         let Some(object) = value.as_object() else {
-            plan.skip(1);
+            skipped += 1;
             continue;
         };
         let Some(command) = command(object, &categories, &mut notes) else {
-            plan.skip(1);
+            skipped += 1;
             continue;
         };
         let next = group_order.len();
@@ -120,7 +132,7 @@ pub(super) fn parse(text: &str) -> Result<ImportPlan, ImportError> {
         plan.add_snippet(snippet);
     }
     *plan.snippet_notes_mut() = notes;
-    Ok(plan.finish())
+    Ok(skipped)
 }
 
 /// 文件中的分类：id → （名称，上级 id）。

@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::id::{HostId, KeyId};
+use crate::id::{HostId, KeyId, ProfileId};
 use crate::model::{Auth, Encoding, Forward, Host, Jump, KeySource, Snippet};
 use crate::secret::SecretString;
 
@@ -13,14 +13,19 @@ use super::Source;
 /// 计划只用自己内部的下标互相引用，写入存储时再换成真正的 ID：
 /// - 分组按"上级在前"的顺序排列，`parent` 总是指向更靠前的分组；
 /// - 主机的跳板机在计划内时是主机的下标，否则按地址、端口、用户名在已有主机中查找（见 [`JumpRef`]）；
-/// - 用密钥库中私钥的主机引用 `keys` 的下标（见 [`PlannedHost::key`]）。
+/// - 用密钥库中私钥的主机引用 `keys` 的下标（见 [`PlannedHost::key`]）；
+/// - 用凭据档案的主机引用 `profiles` 的下标（见 [`PlannedHost::profile`]），档案用私钥时也引用 `keys`。
 #[derive(Clone, Debug)]
 pub struct ImportPlan {
     pub source: Source,
     pub groups: Vec<PlannedGroup>,
     pub hosts: Vec<PlannedHost>,
-    /// 要存进密钥库的私钥（只有 Termora 有）
+    /// 要存进密钥库的私钥（Termora、Electerm、NyaTerm 等）
     pub keys: Vec<PlannedKey>,
+    /// 凭据档案（多台主机共用的用户名与认证，如 NyaTerm 的账号）：随用到它的勾选主机一起导入
+    pub profiles: Vec<PlannedProfile>,
+    /// 整个计划的说明（不针对某台主机），预览中各写一行
+    pub notes: Vec<PlanNote>,
     /// 快捷命令（WindTerm、NyaTerm）：随勾选的主机一起导入（NyaTerm 的文件中只有快捷命令），与已有的
     /// （名称、内容都相同）不重复导入
     pub snippets: Vec<Snippet>,
@@ -65,30 +70,52 @@ impl ImportPlan {
             groups: Vec::new(),
             hosts: Vec::new(),
             keys: Vec::new(),
+            profiles: Vec::new(),
+            notes: Vec::new(),
             snippets: Vec::new(),
             snippet_notes: SnippetNotes::default(),
             skipped: 0,
         }
     }
 
-    /// 计划中有来源保存的秘密（登录密码、私钥密码、代理密码或私钥）。
+    /// 计划中有来源保存的秘密（登录密码、私钥密码、代理密码、验证码密钥或私钥，主机或凭据档案的）。
     pub fn has_secrets(&self) -> bool {
         !self.keys.is_empty()
-            || self
-                .hosts
-                .iter()
-                .any(|h| h.has_password() || h.has_proxy_password() || h.passphrase().is_some())
+            || self.profiles.iter().any(PlannedProfile::has_secrets)
+            || self.hosts.iter().any(|h| {
+                h.has_password()
+                    || h.has_proxy_password()
+                    || h.passphrase().is_some()
+                    || h.totp().is_some()
+            })
     }
 
     /// 去掉来源中的秘密（用户没有同意导入保存的密码时，见 [`Source::secrets_need_consent`]）：主机照常导入，
-    /// 用来源中私钥的主机改为密码认证，连接时再输入。
+    /// 用来源中私钥的主机与凭据档案改为密码认证，连接时再输入。
     pub fn without_secrets(&self) -> ImportPlan {
         let mut plan = self.clone();
         plan.keys.clear();
         for host in &mut plan.hosts {
             host.credentials = Credentials::default();
         }
+        for profile in &mut plan.profiles {
+            profile.credentials = ProfileCredentials::default();
+            if matches!(profile.auth, PlannedProfileAuth::Key { .. }) {
+                profile.auth = PlannedProfileAuth::Password;
+            }
+        }
         plan
+    }
+
+    /// 主机实际使用的用户名：自己的，没有时为凭据档案的。
+    pub fn username_of(&self, host: &PlannedHost) -> String {
+        if !host.host.username.trim().is_empty() {
+            return host.host.username.clone();
+        }
+        host.profile
+            .and_then(|p| self.profiles.get(p))
+            .map(|p| p.username.clone())
+            .unwrap_or_default()
     }
 
     /// 分组从根开始的各级名称。
@@ -132,16 +159,22 @@ pub struct PlannedHost {
     /// 随主机导入的端口转发（Xshell 的隧道；`host` 在写入时设置）：导入后不自动启动，合并时添加到已有的主机上，
     /// 跳过已有的主机时不导入
     pub forwards: Vec<Forward>,
+    /// 使用的凭据档案（`ImportPlan::profiles` 的下标）：用户名与认证由档案提供，主机自己的用户名优先
+    profile: Option<usize>,
+    /// 档案的用户名（主机没有自己的用户名时用于判断重复）
+    profile_username: String,
     credentials: Credentials,
 }
 
-/// 来源中保存的凭据（Termora、WindTerm）。只有核心能取出明文。
+/// 来源中保存的凭据（Termora、WindTerm、NyaTerm 等）。只有核心能取出明文。
 #[derive(Clone, Debug, Default)]
 struct Credentials {
     password: Option<SecretString>,
     /// 私钥文件的密码（主机用私钥文件时保存）
     passphrase: Option<SecretString>,
     proxy_password: Option<SecretString>,
+    /// 验证码（TOTP）的密钥：Base32 或 `otpauth://` 链接（NyaTerm）
+    totp: Option<SecretString>,
     /// `ImportPlan::keys` 的下标
     key: Option<usize>,
 }
@@ -155,17 +188,32 @@ impl PlannedHost {
             jump: None,
             hints: Vec::new(),
             forwards: Vec::new(),
+            profile: None,
+            profile_username: String::new(),
             credentials: Credentials::default(),
         }
     }
 
-    /// 判断重复用的键。
+    /// 判断重复用的键：用户名是主机自己的，没有时为凭据档案的。
     pub fn endpoint(&self) -> Endpoint {
-        Endpoint::new(
-            &self.host.address,
-            self.host.effective_port(),
-            &self.host.username,
-        )
+        let username = if self.host.username.trim().is_empty() {
+            &self.profile_username
+        } else {
+            &self.host.username
+        };
+        Endpoint::new(&self.host.address, self.host.effective_port(), username)
+    }
+
+    /// 使用的凭据档案（`ImportPlan::profiles` 的下标）。
+    pub fn profile(&self) -> Option<usize> {
+        self.profile
+    }
+
+    /// 改用凭据档案（`index` 是 [`PlanBuilder::add_profile`] 返回的下标，`username` 是档案的用户名）：主机自己的
+    /// 用户名留空时用档案的。
+    pub(super) fn set_profile(&mut self, index: usize, username: &str) {
+        self.profile = Some(index);
+        self.profile_username = username.trim().to_string();
     }
 
     /// 来源中保存了登录密码，会一并导入。
@@ -198,6 +246,11 @@ impl PlannedHost {
         self.credentials.passphrase.as_ref()
     }
 
+    /// 验证码的密钥。
+    pub(crate) fn totp(&self) -> Option<&SecretString> {
+        self.credentials.totp.as_ref()
+    }
+
     pub(super) fn set_password(&mut self, password: SecretString) {
         self.credentials.password = Some(password).filter(|p| !p.is_empty());
     }
@@ -220,24 +273,127 @@ impl PlannedHost {
         self.credentials.proxy_password = Some(password).filter(|p| !p.is_empty());
     }
 
+    pub(super) fn set_totp(&mut self, secret: SecretString) {
+        self.credentials.totp = Some(secret).filter(|s| !s.is_empty());
+    }
+
     pub(super) fn set_key(&mut self, key: usize) {
         self.credentials.key = Some(key);
     }
 
     /// 写入时的主机内容：`key` 是私钥存进密钥库后的 ID（没有存进去时传 `None`，主机改用密码认证），
-    /// `jump` 是跳板机的 ID。
-    pub fn to_host(&self, key: Option<KeyId>, jump: Option<HostId>) -> Host {
+    /// `jump` 是跳板机的 ID，`profile` 是凭据档案的 ID（没能导入时传 `None`，主机改用密码认证）。
+    pub fn to_host(
+        &self,
+        key: Option<KeyId>,
+        jump: Option<HostId>,
+        profile: Option<ProfileId>,
+    ) -> Host {
         let mut host = self.host.clone();
         if let (Some(key), Some(_)) = (key, self.credentials.key) {
             host.auth = Auth::Key {
                 source: KeySource::Library { key },
             };
         }
+        if let (Some(profile), Some(_)) = (profile, self.profile) {
+            host.auth = Auth::Profile { profile };
+        }
         if let Some(jump) = jump {
             host.jump = Jump::Via { host: jump };
         }
         host
     }
+}
+
+/// 要导入的凭据档案。写入时本机已有名称与用户名都相同的档案就直接用它（不改动它），否则新建（与主机文件的
+/// 导入相同）。
+#[derive(Clone, Debug)]
+pub struct PlannedProfile {
+    pub name: String,
+    pub username: String,
+    pub auth: PlannedProfileAuth,
+    credentials: ProfileCredentials,
+}
+
+/// 凭据档案的认证。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PlannedProfileAuth {
+    /// 密码（来源中保存了时一并导入）
+    Password,
+    /// 计划中的私钥（`ImportPlan::keys` 的下标），写入时设为密钥库中的密钥；没能存进密钥库时改为密码
+    Key { key: usize },
+    /// 本机的私钥文件（私钥密码保存了时一并导入）
+    KeyFile { path: String },
+    /// ssh-agent / Pageant
+    Agent,
+}
+
+/// 凭据档案中来源保存的秘密。只有核心能取出明文。
+#[derive(Clone, Debug, Default)]
+struct ProfileCredentials {
+    password: Option<SecretString>,
+    passphrase: Option<SecretString>,
+}
+
+impl PlannedProfile {
+    /// 名称、用户名截到存储的长度上限；名称为空时用用户名。
+    pub(super) fn new(name: &str, username: &str, auth: PlannedProfileAuth) -> Self {
+        let username = clip(username.trim(), 128);
+        let name = match clip(name.trim(), 128) {
+            n if n.is_empty() => username.clone(),
+            n => n,
+        };
+        Self {
+            name,
+            username,
+            auth,
+            credentials: ProfileCredentials::default(),
+        }
+    }
+
+    /// 来源中保存了档案的密码（密码认证时）。
+    pub fn has_password(&self) -> bool {
+        self.auth == PlannedProfileAuth::Password && self.credentials.password.is_some()
+    }
+
+    /// 档案用计划中的私钥（存进密钥库的下标）。
+    pub fn key(&self) -> Option<usize> {
+        match self.auth {
+            PlannedProfileAuth::Key { key } => Some(key),
+            _ => None,
+        }
+    }
+
+    fn has_secrets(&self) -> bool {
+        self.credentials.password.is_some() || self.credentials.passphrase.is_some()
+    }
+
+    pub(crate) fn password(&self) -> Option<&SecretString> {
+        self.credentials.password.as_ref()
+    }
+
+    pub(crate) fn passphrase(&self) -> Option<&SecretString> {
+        self.credentials.passphrase.as_ref()
+    }
+
+    pub(super) fn set_password(&mut self, password: SecretString) {
+        self.credentials.password = Some(password).filter(|p| !p.is_empty());
+    }
+
+    /// 私钥文件的密码（[`PlannedProfileAuth::KeyFile`] 时）。现在的来源（NyaTerm 的账号）还没有用到，留给 ShellRS 等
+    /// 有私钥文件档案的来源。
+    #[allow(dead_code)]
+    pub(super) fn set_passphrase(&mut self, passphrase: SecretString) {
+        self.credentials.passphrase = Some(passphrase).filter(|p| !p.is_empty());
+    }
+}
+
+/// 整个计划的说明（不针对某台主机），界面按变体选用自己的文案。各来源按需要加变体。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PlanNote {
+    /// 来源中加密保存的秘密都解不开（NyaTerm 的本机数据来自另一台电脑，或用户目录改过名）：主机照常导入、
+    /// 不带密码与私钥，连接时再输入；可以改用来源导出的备份
+    SecretsUnreadable,
 }
 
 /// 判断重复用的键：地址（不区分大小写）、端口、用户名。三项都相同的主机视为同一台，导入时可以选择合并或跳过。
@@ -340,6 +496,8 @@ pub enum Hint {
     LibraryKeyMissing,
     /// 来源中的密钥 `name` 无法导入（格式不支持或已损坏），需要重新选择私钥（Termora）
     LibraryKeyUnusable { name: String },
+    /// 来源中的密钥 `name` 附带的 OpenSSH 证书没有导入，需要时在密钥库中为它添加（NyaTerm）
+    CertificateNotImported { name: String },
     /// 私钥路径中有无法识别的占位符，导入后需要确认私钥路径（MobaXterm）
     UnknownPathPlaceholder { placeholder: String },
     /// 来源中经多级跳板机连接，只导入了最后一跳作为跳板机，需要检查那台跳板机自己的跳板设置。
@@ -377,12 +535,15 @@ pub enum Hint {
     LoginScriptNotImported,
     /// 串口参数是按来源保存的编号换算的，导入后请核对；无法换算的流控按不流控导入（Xshell、WindTerm）
     SerialSettingsUnverified,
-    /// 来源中保存的密码没能解开（可能是用旧的主密码保存的），导入后连接时输入（WindTerm）
+    /// 来源中保存的密码没能解开（可能是用旧的主密码保存的，或数据来自另一台电脑、另一个用户），导入后连接时输入
+    /// （WindTerm、NyaTerm）
     SavedPasswordUnreadable,
     /// 来源导出的文件中这台主机的密码是密文（导出时没能解开），没有导入，连接时输入（Netcatty）
     SavedPasswordEncrypted,
     /// 来源中保存的密码格式不对，没能解开，没有导入，连接时输入（FinalShell）
     SavedPasswordInvalid,
+    /// 来源中的验证码没有导入（不是 TOTP、参数 Termlet 不支持，或密钥没能解开），需要时在主机设置中填写（NyaTerm）
+    TotpNotImported,
     /// 来源中用凭据档案登录，文件中没有这个档案，导入后需要设置登录方式（Electerm 的书签导出不含档案）
     CredentialProfileMissing,
     /// 这台主机是为来源中的主机 `session` 的跳板机新建的（Electerm 的跳板机写在书签里，不是另一个书签）
@@ -471,6 +632,19 @@ impl PlanBuilder {
     pub fn add_key(&mut self, key: PlannedKey) -> usize {
         self.plan.keys.push(key);
         self.plan.keys.len() - 1
+    }
+
+    /// 加入一个凭据档案，返回它的下标（主机用 [`PlannedHost::set_profile`] 引用）。
+    pub fn add_profile(&mut self, profile: PlannedProfile) -> usize {
+        self.plan.profiles.push(profile);
+        self.plan.profiles.len() - 1
+    }
+
+    /// 加入一条整个计划的说明（相同的只记一次）。
+    pub fn note(&mut self, note: PlanNote) {
+        if !self.plan.notes.contains(&note) {
+            self.plan.notes.push(note);
+        }
     }
 
     pub fn skip(&mut self, n: usize) {
@@ -595,7 +769,7 @@ mod tests {
 
         let key = KeyId::from_raw("k_1");
         let jump = HostId::from_raw("h_1");
-        let host = h.to_host(Some(key.clone()), Some(jump.clone()));
+        let host = h.to_host(Some(key.clone()), Some(jump.clone()), None);
         assert_eq!(
             host.auth,
             Auth::Key {
@@ -604,7 +778,7 @@ mod tests {
         );
         assert_eq!(host.jump, Jump::Via { host: jump });
         // 私钥没有存进密钥库时保持原来的认证方式
-        assert_eq!(h.to_host(None, None).auth, Auth::Password);
+        assert_eq!(h.to_host(None, None, None).auth, Auth::Password);
     }
 
     #[test]

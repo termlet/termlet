@@ -269,13 +269,14 @@ Notes:
   - WindTerm (its program folder, the `.wind` data folder or the `user.sessions` file in it; you enter the master password if one is set)
   - Electerm (exported bookmarks `.json`; for versions before 3.0 also its data folder)
   - Netcatty (the `.csv` exported from its hosts page)
-  - NyaTerm (the `.json` exported from its Quick Commands panel; snippets only, see below)
+  - NyaTerm (its local database `~/.nyaterm/nyaterm.redb`, or an encrypted `.nya` backup exported in its settings, which needs the password set when exporting)
+  - NyaTerm quick commands (the `.json` exported from its Quick Commands panel; snippets only, see below)
 - Preview:
   - The preview appears once you pick the source.
   - Hosts with the same address, port and user can be merged or skipped.
   - The preview can be searched and filtered by new / existing hosts, with Select all, Select none, Only new and Invert.
   - Click a row to select it and Shift+click to select a range.
-- Only host information is imported, not passwords (except Termora and WindTerm, and Electerm, Netcatty and FinalShell when you tick the option, see below). What is not imported is noted host by host in the preview.
+- Only host information is imported, not passwords (except Termora, WindTerm and NyaTerm, and Electerm, Netcatty and FinalShell when you tick the option, see below). What is not imported is noted host by host in the preview.
 - **ssh_config and Tabby**:
   - `ProxyJump` in ssh_config becomes a jump host, and `ProxyCommand` and Tabby's proxy commands become proxy commands (confirmed on first connection).
   - `ForwardX11` and `ForwardX11Trusted` in ssh_config become the X11 forwarding settings, and `CertificateFile` becomes the key file's certificate file.
@@ -314,9 +315,15 @@ Notes:
   - The CSV from Export on Netcatty's hosts page (`hosts_export_….csv`); the newest one in Downloads, Desktop or Documents is filled in. Netcatty keeps its data on the computer with the system's encryption, so only the export can be read.
   - SSH and Telnet hosts are imported with groups, tags, notes, key file paths, proxies (HTTP, SOCKS5, proxy commands) and jump hosts (only the last hop of a chain).
   - Keys in Netcatty's key library, identities and port forwards are not in the export.
+- **NyaTerm hosts**:
+  - Your local database is filled in (`~/.nyaterm/nyaterm.redb`; a moved data folder is found through `location.json`, and for the portable edition choose `data/config` next to the program). NyaTerm locks it while running, so quit NyaTerm first (including from the system tray); otherwise you're told to use a backup instead.
+  - You can also choose an encrypted backup (`.nya`) exported in NyaTerm's settings and enter the password set when exporting it before the preview. Use this on another computer.
+  - SSH, Telnet and serial connections are imported; local terminals, RDP, VNC, FTP and ADB are skipped. Groups (nested), notes, tags, encodings, X11, commands run after login, automatic recording, jump hosts, proxies (SOCKS5, HTTP, proxy commands), port forwards (not started automatically) and quick commands are imported too.
+  - Login passwords, proxy passwords and one-time code secrets go into the vault and private keys into the key library (attached OpenSSH certificates aren't imported; the preview notes them). NyaTerm "accounts" become credential profiles (an existing profile with the same name and username is used as it is), and hosts that log in with an account use the profile; Telnet hosts get the account's username and password. Agent forwarding is turned off after importing.
+  - NyaTerm encrypts its local data only with a key derived from your home folder (even with a master password), so any program on this computer can read it. On another computer, or after the home folder was renamed, it can't be decrypted; the hosts are imported without passwords.
 - **NyaTerm quick commands**:
   - The JSON from "Export Commands" at the top right of NyaTerm's Quick Commands panel (`nyaterm-quick-commands.json`); the one in NyaTerm's config folder (`~/.nyaterm`) is filled in, or else the newest one in Downloads, Desktop or Documents. "Import Snippets…" on the Snippets page (or in the command palette) opens the dialog with this source already chosen and the title "Import Snippets".
-  - NyaTerm doesn't export hosts (they are only in its encrypted full backup), so only the quick commands are imported. The preview lists all of them, with nothing to select; ones with the same name and content as an existing snippet aren't imported again, and ones with the same name but different content are added as new snippets (existing ones aren't replaced).
+  - Only the quick commands are imported here (for hosts, see the previous item). The preview lists all of them, with nothing to select; ones with the same name and content as an existing snippet aren't imported again, and ones with the same name but different content are added as new snippets (existing ones aren't replaced).
   - Categories become groups; nested categories are written as "Parent / Child". Pinned commands come first in their group.
   - Commands are converted following NyaTerm's rules: `\r` and `\n` become line breaks, `\t` a tab and `\\` a single backslash, other backslashes stay; a variable `{{name=default}}` becomes `{{name:default}}`; "execute" and line-by-line commands get a trailing line break (they run after sending), while "append to input" and character-by-character ones don't; commands NyaTerm sends as written are kept as they are.
   - Anything dropped or changed is listed in the preview: pauses `\p` (Termlet has no pauses, so the text is sent without waiting), option lists `{{name|a,b}}` (only the first option is kept, as the default), line-by-line or character-by-character intervals, variables Termlet doesn't recognize (sent as written), `{{…}}` in commands sent as written (Termlet treats them as parameters), descriptions, colors, icons, pinning and risk levels.

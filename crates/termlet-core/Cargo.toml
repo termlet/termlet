@@ -54,6 +54,9 @@ plist.workspace = true
 # 终端中的文件传输：trzsz 的 zlib 压缩、ZModem 的 CRC-32（flate2::Crc）、在输出中查找握手（都已在依赖树中）
 flate2 = "1"
 memchr = "2"
+# NyaTerm 导入：读它的本机数据库与 .nya 备份中的 redb（整个读进内存再打开，不碰原文件与它的锁）；
+# MIT OR Apache-2.0，Windows 上没有其他依赖。5.x 与 NyaTerm 用的 4.x 文件格式相同
+redb = "5.0"
 # 云同步的 WebDAV：精确固定版本（升级时逐项核对锁文件的变化；GPUI 用的 gpui-pre-reqwest 自己固定版本，与这里无关）；
 # 只开 rustls（ring）与系统根证书，不用 OpenSSL / native-tls；system-proxy：读 Windows 的代理设置
 # （更新与崩溃报告用；0.12.15 在 Windows 上总会读，新的 0.12.x 改为由这个特性控制）

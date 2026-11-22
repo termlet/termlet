@@ -277,6 +277,42 @@ backup_ui.import_error.windterm_wrong_password:
   zh-TW: WindTerm 的主密碼不正確，無法解開儲存的密碼。
   ja: WindTerm のマスターパスワードが正しくないため、保存されたパスワードを復号できません。
   ko: WindTerm 마스터 비밀번호가 올바르지 않아 저장된 비밀번호를 열 수 없습니다.
+backup_ui.import_error.nyaterm_not_found:
+  zh-CN: 这个目录中没有 NyaTerm 的数据库（nyaterm.redb）。请选 NyaTerm 的数据目录（默认是用户目录下的 .nyaterm）、其中的 nyaterm.redb，或导出的 .nya 备份。
+  en: There’s no NyaTerm database (nyaterm.redb) in this folder. Choose NyaTerm’s data folder (.nyaterm in your home folder by default), the nyaterm.redb in it, or an exported .nya backup.
+  zh-TW: 這個目錄中沒有 NyaTerm 的資料庫（nyaterm.redb）。請選擇 NyaTerm 的資料目錄（預設是使用者目錄下的 .nyaterm）、其中的 nyaterm.redb，或匯出的 .nya 備份。
+  ja: このフォルダーには NyaTerm のデータベース（nyaterm.redb）がありません。NyaTerm のデータフォルダー（既定ではユーザーフォルダーの .nyaterm）、その中の nyaterm.redb、またはエクスポートした .nya バックアップを選択してください。
+  ko: 이 폴더에 NyaTerm 데이터베이스(nyaterm.redb)가 없습니다. NyaTerm의 데이터 폴더(기본값은 사용자 폴더의 .nyaterm), 그 안의 nyaterm.redb, 또는 내보낸 .nya 백업을 선택하세요.
+backup_ui.import_error.nyaterm_in_use:
+  zh-CN: NyaTerm 正在运行，它的数据库读不了。请先退出 NyaTerm（包括托盘中的）再预览，或在 NyaTerm 的设置中导出加密的 .nya 备份后导入它。
+  en: NyaTerm is running, so its database can’t be read. Quit NyaTerm (including from the system tray) and preview again, or export an encrypted .nya backup in NyaTerm’s settings and import that.
+  zh-TW: NyaTerm 正在執行，它的資料庫讀不了。請先結束 NyaTerm（包括系統匣中的）再預覽，或在 NyaTerm 的設定中匯出加密的 .nya 備份後匯入它。
+  ja: NyaTerm が実行中のため、データベースを読み取れません。NyaTerm を終了してから（タスクトレイにある場合も含む）もう一度プレビューするか、NyaTerm の設定で暗号化された .nya バックアップをエクスポートしてそれをインポートしてください。
+  ko: NyaTerm이 실행 중이어서 데이터베이스를 읽을 수 없습니다. NyaTerm을 종료한 후(시스템 트레이에 있는 것 포함) 다시 미리 보거나, NyaTerm 설정에서 암호화된 .nya 백업을 내보낸 후 그것을 가져오세요.
+backup_ui.import_error.not_nyaterm_data:
+  zh-CN: 不是 NyaTerm 的数据库或 .nya 备份，或是不支持的版本：%{error}
+  en: "This isn’t a NyaTerm database or .nya backup, or its version isn’t supported: %{error}"
+  zh-TW: 不是 NyaTerm 的資料庫或 .nya 備份，或是不支援的版本：%{error}
+  ja: NyaTerm のデータベースや .nya バックアップではないか、対応していないバージョンです：%{error}
+  ko: "NyaTerm 데이터베이스나 .nya 백업이 아니거나 지원하지 않는 버전입니다: %{error}"
+backup_ui.import_error.password_required:
+  zh-CN: 这个来源是加密的，请输入密码后再预览。
+  en: This source is encrypted. Enter the password, then preview again.
+  zh-TW: 這個來源是加密的，請輸入密碼後再預覽。
+  ja: このソースは暗号化されています。パスワードを入力してからもう一度プレビューしてください。
+  ko: 이 원본은 암호화되어 있습니다. 비밀번호를 입력한 후 다시 미리 보세요.
+backup_ui.import_error.wrong_password:
+  zh-CN: 密码不对，解不开。请检查后重新输入。
+  en: The password is wrong, so it can’t be decrypted. Check it and enter it again.
+  zh-TW: 密碼不正確，無法解開。請檢查後重新輸入。
+  ja: パスワードが正しくないため復号できません。確認してもう一度入力してください。
+  ko: 비밀번호가 올바르지 않아 열 수 없습니다. 확인한 후 다시 입력하세요.
+backup_ui.plan_note.secrets_unreadable:
+  zh-CN: “%{source}”中保存的密码与私钥都解不开（数据可能来自另一台电脑，或用户目录改过名）：主机照常导入，不带密码与私钥，连接时再输入；也可以改用导出的备份。
+  en: The passwords and private keys saved in “%{source}” can’t be decrypted (the data may come from another computer, or the home folder was renamed). The hosts are imported without them; enter them when connecting, or import an exported backup instead.
+  zh-TW: 「%{source}」中儲存的密碼與私密金鑰都無法解開（資料可能來自另一台電腦，或使用者目錄改過名）：主機照常匯入，不帶密碼與私密金鑰，連線時再輸入；也可以改用匯出的備份。
+  ja: 「%{source}」に保存されたパスワードと秘密鍵はどれも復号できません（データが別のコンピューターのものか、ユーザーフォルダーの名前が変わった可能性があります）。ホストはパスワードと秘密鍵なしでインポートされるため、接続時に入力してください。エクスポートしたバックアップを代わりにインポートすることもできます。
+  ko: "'%{source}'에 저장된 비밀번호와 개인 키를 모두 열 수 없습니다(다른 컴퓨터의 데이터이거나 사용자 폴더 이름이 바뀌었을 수 있음). 호스트는 비밀번호와 개인 키 없이 가져오므로 연결할 때 입력하세요. 내보낸 백업을 대신 가져올 수도 있습니다."
 backup_ui.import_error.not_electerm:
   zh-CN: 不是 Electerm 的书签导出或数据目录：%{error}
   en: "This isn’t an Electerm bookmark export or data folder: %{error}"
@@ -429,6 +465,12 @@ backup_ui.hint.library_key_unusable:
   zh-TW: 「%{source}」中的金鑰「%{name}」無法匯入（格式不受支援或已損毀），請重新選擇私密金鑰。
   ja: 「%{source}」の鍵「%{name}」はインポートできません（形式に対応していないか、破損しています）。秘密鍵を選び直してください。
   ko: "'%{source}'의 '%{name}' 키를 가져올 수 없습니다(지원하지 않는 형식이거나 손상됨). 개인 키를 다시 선택하세요."
+backup_ui.hint.certificate_not_imported:
+  zh-CN: “%{source}”中私钥“%{name}”附带的 OpenSSH 证书没有导入，需要时在密钥库中为它添加。
+  en: The OpenSSH certificate attached to the private key “%{name}” in “%{source}” wasn’t imported. Add it to the key in the key library if you need it.
+  zh-TW: 「%{source}」中私密金鑰「%{name}」附帶的 OpenSSH 憑證沒有匯入，需要時在金鑰庫中為它新增。
+  ja: 「%{source}」の秘密鍵「%{name}」に付いている OpenSSH 証明書はインポートされていません。必要な場合は鍵ライブラリでこの鍵に追加してください。
+  ko: "'%{source}'의 개인 키 '%{name}'에 딸린 OpenSSH 인증서는 가져오지 않았습니다. 필요하면 키 라이브러리에서 이 키에 추가하세요."
 backup_ui.hint.unknown_path_placeholder:
   zh-CN: 私钥路径中有无法识别的占位符 %{placeholder}，导入后请确认私钥路径。
   en: The key path has an unknown placeholder %{placeholder}. Check the key path after importing.
@@ -538,11 +580,11 @@ backup_ui.hint.serial_settings_unverified:
   ja: シリアルポートのパラメーターは「%{source}」が保存している番号から換算したものです。インポート後にボーレート、データビット、パリティ、ストップビット、フロー制御を確認してください。
   ko: 직렬 포트 매개 변수는 '%{source}'에 저장된 번호를 변환한 것입니다. 가져온 후 보드 레이트, 데이터 비트, 패리티, 정지 비트, 흐름 제어를 확인하세요.
 backup_ui.hint.saved_password_unreadable:
-  zh-CN: “%{source}”中保存的密码没能解开（可能是用以前的主密码保存的），连接时再输入。
-  en: The password saved in “%{source}” couldn’t be decrypted (it may have been saved with an earlier master password). Enter it when connecting.
-  zh-TW: 「%{source}」中儲存的密碼未能解開（可能是用先前的主密碼儲存的），連線時再輸入。
-  ja: 「%{source}」に保存されたパスワードを復号できませんでした（以前のマスターパスワードで保存された可能性があります）。接続時に入力してください。
-  ko: "'%{source}'에 저장된 비밀번호를 열지 못했습니다(이전 마스터 비밀번호로 저장되었을 수 있습니다). 연결할 때 입력하세요."
+  zh-CN: “%{source}”中保存的密码没能解开（可能是用以前的主密码保存的，或数据来自另一台电脑、另一个用户），连接时再输入。
+  en: The password saved in “%{source}” couldn’t be decrypted (it may have been saved with an earlier master password, or the data comes from another computer or user). Enter it when connecting.
+  zh-TW: 「%{source}」中儲存的密碼未能解開（可能是用先前的主密碼儲存的，或資料來自另一台電腦、另一個使用者），連線時再輸入。
+  ja: 「%{source}」に保存されたパスワードを復号できませんでした（以前のマスターパスワードで保存されたか、別のコンピューターや別のユーザーのデータである可能性があります）。接続時に入力してください。
+  ko: "'%{source}'에 저장된 비밀번호를 열지 못했습니다(이전 마스터 비밀번호로 저장되었거나 다른 컴퓨터나 사용자의 데이터일 수 있습니다). 연결할 때 입력하세요."
 backup_ui.hint.saved_password_encrypted:
   zh-CN: “%{source}”导出时没能解开这台主机的密码（文件中是密文），没有导入，连接时再输入。
   en: “%{source}” couldn’t decrypt this host’s password when exporting (the file has it encrypted), so it wasn’t imported. Enter it when connecting.
@@ -555,6 +597,12 @@ backup_ui.hint.saved_password_invalid:
   zh-TW: 「%{source}」中儲存的密碼格式不對，未能解開，沒有匯入，連線時再輸入。
   ja: 「%{source}」に保存されたパスワードは形式が正しくないため復号できず、インポートしていません。接続時に入力してください。
   ko: "'%{source}'에 저장된 비밀번호는 형식이 맞지 않아 열지 못했으며, 가져오지 않았습니다. 연결할 때 입력하세요."
+backup_ui.hint.totp_not_imported:
+  zh-CN: “%{source}”中这台主机的验证码没有导入（不是基于时间的验证码、参数不支持，或密钥没能解开），需要时在主机设置的“验证码”中填写。
+  en: This host’s one-time code in “%{source}” wasn’t imported (it isn’t time-based, its settings aren’t supported, or its secret couldn’t be decrypted). Enter it under One-time code in the host settings if you need it.
+  zh-TW: 「%{source}」中這台主機的驗證碼沒有匯入（不是以時間為基礎的驗證碼、參數不支援，或金鑰未能解開），需要時在主機設定的「驗證碼」中填寫。
+  ja: 「%{source}」にあるこのホストのワンタイムコードはインポートされていません（時間ベースではない、設定に対応していない、またはシークレットを復号できなかった）。必要な場合はホスト設定の「ワンタイムコード」に入力してください。
+  ko: "'%{source}'에 있는 이 호스트의 일회용 코드는 가져오지 않았습니다(시간 기반이 아니거나, 설정을 지원하지 않거나, 비밀 키를 열지 못함). 필요하면 호스트 설정의 '일회용 코드'에 입력하세요."
 backup_ui.hint.credential_profile_missing:
   zh-CN: “%{source}”中这台主机用凭据档案登录，文件中没有这个档案（“导出全部数据”的文件中才有），导入后请设置登录方式。
   en: This host signs in with a credential profile in “%{source}”, but the file doesn’t include it (only an “export all data” file does). Set how it signs in after importing.
@@ -581,11 +629,11 @@ backup_ui.import.title_snippets:
   ja: スニペットをインポート
   ko: 스니펫 가져오기
 backup_ui.import.hint:
-  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm 除外；Electerm、Netcatty、FinalShell 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
-  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora and WindTerm; for Electerm, Netcatty and FinalShell, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
-  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm 除外；Electerm、Netcatty、FinalShell 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
-  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
-  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
+  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm、NyaTerm 除外；Electerm、Netcatty、FinalShell 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
+  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora, WindTerm and NyaTerm; for Electerm, Netcatty and FinalShell, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
+  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm、NyaTerm 除外；Electerm、Netcatty、FinalShell 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
+  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm、NyaTerm を除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
+  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm, NyaTerm 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
 backup_ui.import.hint_snippets:
   zh-CN: 导入其他程序导出的快捷命令：分组、名称与内容按 Termlet 的写法转换，转换时丢掉或改动的内容在预览中列出。与已有快捷命令的名称、内容都相同的不重复导入。
   en: Imports snippets exported from another program. Groups, names and contents are converted to Termlet’s format, and anything dropped or changed is listed in the preview. Snippets with the same name and content as existing ones aren’t imported again.
@@ -658,6 +706,12 @@ backup_ui.import.source.netcatty:
   zh-TW: Netcatty 主機（匯出的 .csv）
   ja: Netcatty のホスト（エクスポートした .csv）
   ko: Netcatty 호스트(내보낸 .csv)
+backup_ui.import.source.nyaterm_data:
+  zh-CN: NyaTerm（本机数据或 .nya 备份）
+  en: NyaTerm (local data or .nya backup)
+  zh-TW: NyaTerm（本機資料或 .nya 備份）
+  ja: NyaTerm（このコンピューターのデータまたは .nya バックアップ）
+  ko: NyaTerm(이 컴퓨터의 데이터 또는 .nya 백업)
 backup_ui.import.source.nyaterm:
   zh-CN: NyaTerm 快捷命令（导出的 .json）
   en: NyaTerm quick commands (exported .json)
@@ -712,12 +766,18 @@ backup_ui.import.source_hint.netcatty:
   zh-TW: 在 Netcatty 的主機頁點「匯出」，再選擇匯出的 CSV 檔案（hosts_export_….csv）。Netcatty 本機的資料用系統加密儲存，只能讀匯出的檔案。匯入 SSH 與 Telnet 主機，群組、標籤、備註、私密金鑰檔案路徑、代理與跳板機一併匯入；Netcatty 金鑰庫中的私密金鑰、身分與連接埠轉送不在匯出的檔案中。
   ja: Netcatty のホストページで「エクスポート」をクリックし、エクスポートした CSV ファイル（hosts_export_….csv）を選択してください。Netcatty はこのコンピューター上のデータをシステムの暗号化で保存しているため、読み取れるのはエクスポートしたファイルだけです。SSH と Telnet のホストをインポートし、グループ、タグ、メモ、秘密鍵ファイルのパス、プロキシ、踏み台ホストも一緒にインポートします。Netcatty の鍵ライブラリにある秘密鍵、ID、ポート転送はエクスポートしたファイルに含まれません。
   ko: Netcatty의 호스트 페이지에서 '내보내기'를 클릭한 다음 내보낸 CSV 파일(hosts_export_….csv)을 선택하세요. Netcatty는 이 컴퓨터의 데이터를 시스템 암호화로 저장하므로 내보낸 파일만 읽을 수 있습니다. SSH와 Telnet 호스트를 가져오며 그룹, 태그, 메모, 개인 키 파일 경로, 프록시, 점프 호스트도 함께 가져옵니다. Netcatty 키 라이브러리의 개인 키, ID, 포트 포워딩은 내보낸 파일에 들어 있지 않습니다.
+backup_ui.import.source_hint.nyaterm_data:
+  zh-CN: 默认填入本机 NyaTerm 的数据库（数据目录 ~/.nyaterm 中的 nyaterm.redb），读取前请先退出 NyaTerm；也可以选在 NyaTerm 设置中导出的加密 .nya 备份，并输入导出时设置的密码。导入 SSH、Telnet 与串口连接，分组、备注、标签、跳板机、代理、端口转发（不会自动启动）、验证码与快捷命令一并导入；登录密码与私钥存进保险库和密钥库，账号导入为凭据档案。本机的数据只用从用户目录派生的密钥加密，本机任何程序都能读出其中的密码；换了电脑时请用 .nya 备份。
+  en: Your local NyaTerm database (nyaterm.redb in the data folder ~/.nyaterm) is filled in; quit NyaTerm before reading it. You can also choose an encrypted .nya backup exported in NyaTerm’s settings and enter the password set when exporting it. SSH, Telnet and serial connections are imported with groups, notes, tags, jump hosts, proxies, port forwards (not started automatically), one-time codes and quick commands; login passwords and private keys go into the vault and the key library, and accounts become credential profiles. NyaTerm encrypts its local data with a key derived from your home folder, so any program on this computer can read the passwords in it. On another computer, use a .nya backup.
+  zh-TW: 預設填入本機 NyaTerm 的資料庫（資料目錄 ~/.nyaterm 中的 nyaterm.redb），讀取前請先結束 NyaTerm；也可以選擇在 NyaTerm 設定中匯出的加密 .nya 備份，並輸入匯出時設定的密碼。匯入 SSH、Telnet 與序列埠連線，群組、備註、標籤、跳板機、代理、連接埠轉送（不會自動啟動）、驗證碼與快捷命令一併匯入；登入密碼與私密金鑰存進保險庫和金鑰庫，帳號匯入為認證資訊設定檔。本機的資料只用從使用者目錄衍生的金鑰加密，本機任何程式都能讀出其中的密碼；換了電腦時請用 .nya 備份。
+  ja: このコンピューターの NyaTerm のデータベース（データフォルダー ~/.nyaterm の nyaterm.redb）が入力されています。読み取る前に NyaTerm を終了してください。NyaTerm の設定でエクスポートした暗号化された .nya バックアップを選択し、エクスポート時に設定したパスワードを入力することもできます。SSH、Telnet、シリアルポートの接続をインポートし、グループ、メモ、タグ、踏み台、プロキシ、ポート転送（自動では開始されません）、ワンタイムコード、クイックコマンドも一緒にインポートします。ログインパスワードと秘密鍵は保管庫と鍵ライブラリに保存し、アカウントは認証プロファイルとしてインポートします。NyaTerm はこのコンピューターのデータをユーザーフォルダーから導いた鍵だけで暗号化しているため、このコンピューター上のどのプログラムでもパスワードを読み出せます。別のコンピューターでは .nya バックアップを使ってください。
+  ko: 이 컴퓨터의 NyaTerm 데이터베이스(데이터 폴더 ~/.nyaterm의 nyaterm.redb)가 입력되어 있습니다. 읽기 전에 NyaTerm을 종료하세요. NyaTerm 설정에서 내보낸 암호화된 .nya 백업을 선택하고 내보낼 때 설정한 비밀번호를 입력할 수도 있습니다. SSH, Telnet, 직렬 포트 연결을 가져오며 그룹, 메모, 태그, 점프 호스트, 프록시, 포트 포워딩(자동으로 시작되지 않음), 일회용 코드, 빠른 명령도 함께 가져옵니다. 로그인 비밀번호와 개인 키는 보관함과 키 라이브러리에 저장하고, 계정은 자격 증명 프로필로 가져옵니다. NyaTerm은 이 컴퓨터의 데이터를 사용자 폴더에서 만든 키로만 암호화하므로 이 컴퓨터의 어떤 프로그램이든 그 안의 비밀번호를 읽을 수 있습니다. 다른 컴퓨터에서는 .nya 백업을 사용하세요.
 backup_ui.import.source_hint.nyaterm:
-  zh-CN: 在 NyaTerm 的快捷命令面板右上角点“导出快捷命令”，再选择导出的 JSON 文件（nyaterm-quick-commands.json，默认保存在 NyaTerm 的配置目录 ~/.nyaterm 中）。NyaTerm 不导出主机，这里只导入快捷命令与它们的分类。
-  en: In NyaTerm, click “Export Commands” at the top right of the Quick Commands panel, then choose the exported JSON file (nyaterm-quick-commands.json, saved in NyaTerm’s config folder ~/.nyaterm by default). NyaTerm doesn’t export hosts, so only the quick commands and their categories are imported.
-  zh-TW: 在 NyaTerm 的快捷命令面板右上角按一下「匯出快捷命令」，再選擇匯出的 JSON 檔案（nyaterm-quick-commands.json，預設儲存在 NyaTerm 的設定目錄 ~/.nyaterm 中）。NyaTerm 不匯出主機，這裡只匯入快捷命令與它們的分類。
-  ja: NyaTerm のクイックコマンドパネル右上の「コマンドをエクスポート」をクリックし、エクスポートした JSON ファイル（nyaterm-quick-commands.json。既定では NyaTerm の設定フォルダー ~/.nyaterm に保存されます）を選択してください。NyaTerm はホストをエクスポートしないため、クイックコマンドとそのカテゴリだけをインポートします。
-  ko: NyaTerm의 빠른 명령 패널 오른쪽 위에서 '명령 내보내기'를 클릭한 후 내보낸 JSON 파일(nyaterm-quick-commands.json, 기본적으로 NyaTerm 설정 폴더 ~/.nyaterm에 저장됨)을 선택하세요. NyaTerm은 호스트를 내보내지 않으므로 빠른 명령과 그 범주만 가져옵니다.
+  zh-CN: 在 NyaTerm 的快捷命令面板右上角点“导出快捷命令”，再选择导出的 JSON 文件（nyaterm-quick-commands.json，默认保存在 NyaTerm 的配置目录 ~/.nyaterm 中）。这里只导入快捷命令与它们的分类；主机请在导入主机中选“NyaTerm（本机数据或 .nya 备份）”。
+  en: In NyaTerm, click “Export Commands” at the top right of the Quick Commands panel, then choose the exported JSON file (nyaterm-quick-commands.json, saved in NyaTerm’s config folder ~/.nyaterm by default). Only the quick commands and their categories are imported; for hosts, choose “NyaTerm (local data or .nya backup)” under Import Hosts.
+  zh-TW: 在 NyaTerm 的快捷命令面板右上角按一下「匯出快捷命令」，再選擇匯出的 JSON 檔案（nyaterm-quick-commands.json，預設儲存在 NyaTerm 的設定目錄 ~/.nyaterm 中）。這裡只匯入快捷命令與它們的分類；主機請在匯入主機中選擇「NyaTerm（本機資料或 .nya 備份）」。
+  ja: NyaTerm のクイックコマンドパネル右上の「コマンドをエクスポート」をクリックし、エクスポートした JSON ファイル（nyaterm-quick-commands.json。既定では NyaTerm の設定フォルダー ~/.nyaterm に保存されます）を選択してください。ここではクイックコマンドとそのカテゴリだけをインポートします。ホストは「ホストをインポート」で「NyaTerm（このコンピューターのデータまたは .nya バックアップ）」を選択してください。
+  ko: NyaTerm의 빠른 명령 패널 오른쪽 위에서 '명령 내보내기'를 클릭한 후 내보낸 JSON 파일(nyaterm-quick-commands.json, 기본적으로 NyaTerm 설정 폴더 ~/.nyaterm에 저장됨)을 선택하세요. 여기서는 빠른 명령과 그 범주만 가져옵니다. 호스트는 '호스트 가져오기'에서 'NyaTerm(이 컴퓨터의 데이터 또는 .nya 백업)'을 선택하세요.
 backup_ui.import.path_placeholder:
   zh-CN: 文件或文件夹的路径
   en: File or folder path
@@ -760,6 +820,30 @@ backup_ui.import.windterm_password_hint:
   zh-TW: WindTerm 設了主密碼，輸入後才能解開儲存的密碼。
   ja: WindTerm にマスターパスワードが設定されています。入力すると、保存されたパスワードを復号できます。
   ko: WindTerm에 마스터 비밀번호가 설정되어 있습니다. 입력해야 저장된 비밀번호를 열 수 있습니다.
+backup_ui.import.nyaterm_password_placeholder:
+  zh-CN: 导出 .nya 时设置的密码
+  en: Password set when exporting the .nya
+  zh-TW: 匯出 .nya 時設定的密碼
+  ja: .nya のエクスポート時に設定したパスワード
+  ko: .nya를 내보낼 때 설정한 비밀번호
+backup_ui.import.nyaterm_password_hint:
+  zh-CN: 这是加密的 NyaTerm 备份，输入导出时设置的密码后才能读取。
+  en: This is an encrypted NyaTerm backup. Enter the password set when exporting it to read it.
+  zh-TW: 這是加密的 NyaTerm 備份，輸入匯出時設定的密碼後才能讀取。
+  ja: これは暗号化された NyaTerm のバックアップです。エクスポート時に設定したパスワードを入力すると読み取れます。
+  ko: 암호화된 NyaTerm 백업입니다. 내보낼 때 설정한 비밀번호를 입력해야 읽을 수 있습니다.
+backup_ui.import.uses_profile:
+  zh-CN: 使用凭据档案“%{name}”
+  en: Uses credential profile “%{name}”
+  zh-TW: 使用認證資訊設定檔「%{name}」
+  ja: 認証プロファイル「%{name}」を使用
+  ko: "자격 증명 프로필 '%{name}' 사용"
+backup_ui.import.profiles_created:
+  zh-CN: 新建 %{count} 个凭据档案（名称、用户名都相同的已有档案直接使用）。
+  en: "Credential profiles created: %{count} (existing ones with the same name and username are used as they are)."
+  zh-TW: 新增 %{count} 個認證資訊設定檔（名稱、使用者名稱都相同的現有設定檔直接使用）。
+  ja: 認証プロファイルを %{count} 件作成しました（名前とユーザー名が同じ既存のプロファイルはそのまま使います）。
+  ko: 자격 증명 프로필 %{count}개를 만들었습니다(이름과 사용자 이름이 모두 같은 기존 프로필은 그대로 사용).
 backup_ui.import.hostfile_info:
   zh-CN: 导出于 %{time}（Termlet %{app}），共 %{count} 台主机
   en: Exported on %{time} (Termlet %{app}), %{count} hosts

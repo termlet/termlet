@@ -1,13 +1,15 @@
 //! 从其他客户端导入主机：OpenSSH 的 `~/.ssh/config`、Xshell、FinalShell、MobaXterm、Tabby、Termora 2.x、WindTerm、
-//! Electerm、Netcatty；以及 NyaTerm 导出的快捷命令（文件中只有快捷命令，没有主机）。
+//! Electerm、Netcatty、NyaTerm（本机数据库或 `.nya` 备份）；以及 NyaTerm 导出的快捷命令（文件中只有快捷命令，没有主机）。
 //!
 //! 解析结果是与来源无关的导入计划（[`ImportPlan`]）：分组树、主机、主机之间的跳板引用、每台主机的提示、
-//! 随主机导入的端口转发（Xshell）、快捷命令（WindTerm、NyaTerm）与转换时丢掉或改动的内容，以及（Termora、WindTerm 有的）登录密码、代理密码、
-//! 私钥密码与要存进密钥库的私钥。计划只用自己内部的下标互相引用，写入存储时再换成真正的 ID。
+//! 随主机导入的端口转发（Xshell、NyaTerm）、快捷命令（WindTerm、NyaTerm）与转换时丢掉或改动的内容，以及（Termora、
+//! WindTerm、NyaTerm 等有的）登录密码、代理密码、私钥密码、验证码密钥与要存进密钥库的私钥。计划只用自己内部的下标
+//! 互相引用，写入存储时再换成真正的 ID。
 //!
 //! 一般只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），**不导入密码**：其他工具的密码
-//! 以各自私有的方式加密。例外是 Termora 2.x 与 WindTerm：Termora 的数据只用保存在同一个文件中的密钥加密，
-//! WindTerm 用主密码（没设时为空）派生的密钥加密，密码、私钥一并导入。Electerm 的书签导出、Netcatty 的 CSV 导出中
+//! 以各自私有的方式加密。例外是 Termora 2.x、WindTerm 与 NyaTerm：Termora 的数据只用保存在同一个文件中的密钥加密，
+//! WindTerm 用主密码（没设时为空）派生的密钥加密，NyaTerm 的本机数据用从主目录路径派生的密钥加密、`.nya` 备份用
+//! 导出时输入的密码加密，密码、私钥一并导入。Electerm 的书签导出、Netcatty 的 CSV 导出中
 //! 密码是明文（Electerm 本机的旧数据是可逆的移位，FinalShell 保存的密码是不需要用户输入就能还原的 DES 加密），
 //! 只有用户明确同意后才导入（[`Source::secrets_need_consent`]，
 //! 不同意时界面用 [`ImportPlan::without_secrets`]）；这几个来源重复导入时只给已有主机补上还没保存的密码，不覆盖。
@@ -54,8 +56,8 @@ pub use apply::{
 };
 pub use mobaxterm::MOBAXTERM_REGISTRY_PATH;
 pub use plan::{
-    Endpoint, Hint, ImportPlan, JumpRef, KeyAlgorithm, PlannedGroup, PlannedHost, PlannedKey,
-    SnippetNotes,
+    Endpoint, Hint, ImportPlan, JumpRef, KeyAlgorithm, PlanNote, PlannedGroup, PlannedHost,
+    PlannedKey, PlannedProfile, PlannedProfileAuth, SnippetNotes,
 };
 
 use files::LocalEnv;
@@ -90,10 +92,12 @@ pub enum Source {
     Netcatty,
     /// NyaTerm 在快捷命令面板导出的 JSON（`nyaterm-quick-commands.json`）：只有快捷命令
     NyaTerm,
+    /// NyaTerm 的本机数据库（`~/.nyaterm/nyaterm.redb`）或设置中导出的加密完整备份（`.nya`）：主机与快捷命令
+    NyaTermData,
 }
 
 impl Source {
-    pub const ALL: [Source; 10] = [
+    pub const ALL: [Source; 11] = [
         Source::SshConfig,
         Source::Xshell,
         Source::FinalShell,
@@ -103,6 +107,7 @@ impl Source {
         Source::WindTerm,
         Source::Electerm,
         Source::Netcatty,
+        Source::NyaTermData,
         Source::NyaTerm,
     ];
 
@@ -119,6 +124,7 @@ impl Source {
             Source::Electerm => "electerm",
             Source::Netcatty => "netcatty",
             Source::NyaTerm => "nyaterm",
+            Source::NyaTermData => "nyaterm_data",
         }
     }
 
@@ -163,6 +169,7 @@ impl Source {
             Source::Electerm => electerm::default_path(&env),
             Source::Netcatty => netcatty::default_path(&env),
             Source::NyaTerm => nyaterm::default_path(&env),
+            Source::NyaTermData => nyaterm::data::default_path(&env),
         }
     }
 }
@@ -172,7 +179,8 @@ pub fn parse(source: Source, path: &Path) -> Result<ImportPlan, ImportError> {
     parse_with_password(source, path, None)
 }
 
-/// 同 [`parse`]；`password` 是来源的主密码（WindTerm 设了主密码时需要，其他来源不用）。
+/// 同 [`parse`]；`password` 是来源的主密码（WindTerm 设了主密码时），或加密来源的密码（NyaTerm 的 `.nya` 是导出时
+/// 设置的密码；来源要密码时返回 [`ImportError::PasswordRequired`]，界面按来源说明是什么密码），其他来源不用。
 pub fn parse_with_password(
     source: Source,
     path: &Path,
@@ -190,6 +198,7 @@ pub fn parse_with_password(
         Source::Electerm => electerm::read(path, &env)?,
         Source::Netcatty => netcatty::read(path, &env)?,
         Source::NyaTerm => nyaterm::read(path, &env)?,
+        Source::NyaTermData => nyaterm::data::read(path, &env, password)?,
     };
     tracing::info!(
         source = source.name(),
@@ -302,6 +311,27 @@ pub enum ImportError {
     /// 不是 NyaTerm 导出的快捷命令（不是 JSON，或没有 `commands`）
     #[error("不是 NyaTerm 导出的快捷命令：{0}")]
     NotNyaTerm(String),
+
+    /// 选的目录中没有 NyaTerm 的数据库（`nyaterm.redb`，或 `location.json` 指向的数据目录中的）
+    #[error("没有找到 NyaTerm 的数据库（nyaterm.redb）")]
+    NyaTermNotFound,
+
+    /// NyaTerm 正在运行，锁住了它的数据库（Windows 上别的进程读不了）：需要先退出 NyaTerm，或改用 `.nya` 备份
+    #[error("NyaTerm 正在使用它的数据库，需要先退出 NyaTerm")]
+    NyaTermInUse,
+
+    /// 不是 NyaTerm 的数据库或 `.nya` 备份（或是不支持的版本）
+    #[error("不是 NyaTerm 的数据库或备份：{0}")]
+    NotNyaTermData(String),
+
+    /// 来源是加密的，需要输入密码（NyaTerm 的 `.nya` 是导出时设置的密码）；界面按来源说明要输入什么密码，
+    /// 再用 [`read_with_password`] 读
+    #[error("这个来源是加密的，需要输入密码")]
+    PasswordRequired,
+
+    /// 输入的密码解不开来源
+    #[error("密码不对")]
+    WrongPassword,
 }
 
 #[cfg(test)]

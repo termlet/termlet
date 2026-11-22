@@ -311,6 +311,53 @@ fn secrets_are_saved_or_filled_in() {
     assert_eq!(m.password(&empty).as_deref(), Some("filled"));
 }
 
+// 验证码密钥（NyaTerm）：新建时保存；合并时只补上还没有的
+#[test]
+fn totp_secrets() {
+    let m = Machine::new();
+    let totp = |id: &HostId| {
+        m.store
+            .secret(&Owner::host(id), SecretField::Totp)
+            .unwrap()
+            .map(|s| s.expose().to_string())
+    };
+    let kept = m
+        .store
+        .create(host("kept", "10.0.6.1", 22, "u"), None, Position::Last)
+        .unwrap();
+    m.store
+        .set_secret(
+            &Owner::host(&kept),
+            SecretField::Totp,
+            Some(&SecretString::new("KEEPKEEPKEEPKEEP")),
+        )
+        .unwrap();
+    let filled = m
+        .store
+        .create(host("filled", "10.0.6.2", 22, "u"), None, Position::Last)
+        .unwrap();
+    let with_totp = |key: &str, h: Host, secret: &str| {
+        let mut p = planned(key, h);
+        p.set_totp(SecretString::new(secret));
+        p
+    };
+    let plan = plan_of(vec![
+        with_totp("n", host("new", "10.0.6.3", 22, "u"), "JBSWY3DPEHPK3PXP"),
+        with_totp("k", host("kept", "10.0.6.1", 22, "u"), "OTHEROTHEROTHER2"),
+        with_totp("f", host("filled", "10.0.6.2", 22, "u"), "FILLFILLFILLFILL"),
+    ]);
+    assert!(plan.has_secrets());
+    assert!(!plan.without_secrets().has_secrets());
+    let report = run(&m, plan, OnDuplicate::Merge);
+    assert_eq!(counts(&report), (1, 2, 0, 0));
+    assert_eq!(
+        totp(&m.host_named("new").id).as_deref(),
+        Some("JBSWY3DPEHPK3PXP")
+    );
+    assert_eq!(totp(&kept).as_deref(), Some("KEEPKEEPKEEPKEEP"));
+    assert_eq!(totp(&filled).as_deref(), Some("FILLFILLFILLFILL"));
+}
+
 // 密码要用户同意才导入的来源（Electerm、Netcatty）：跳过重复的主机时补上它还没保存的密码，已保存的不覆盖；
 // 合并时已保存的代理密码不覆盖；不同意时（without_secrets）什么秘密都不写
 #[test]
@@ -626,6 +673,137 @@ fn ssh_config_preview_and_apply() {
     let snapshots = block_on(m.backups.snapshots()).unwrap();
     assert_eq!(snapshots.len(), 1);
     assert_eq!(snapshots[0].reason, SnapshotReason::Import);
+}
+
+// 凭据档案：本机已有名称与用户名都相同的直接用（不改动，也不写秘密），否则新建，连同密码；用计划中私钥的档案
+// 设为密钥库中的密钥，私钥没能存进去时改为密码；没有勾选的主机用到的档案不导入。主机自己的用户名优先，判断重复用档案的
+#[test]
+fn credential_profiles() {
+    use crate::id::ProfileId;
+    use crate::import::{PlannedProfile, PlannedProfileAuth};
+    use crate::model::ProfileAuth;
+
+    let m = Machine::new();
+    let kept = m
+        .store
+        .create(
+            Profile {
+                name: "运维".into(),
+                username: "ops".into(),
+                ..Default::default()
+            },
+            None,
+            Position::Last,
+        )
+        .unwrap();
+    let key = crate::sshkey::generate(KeyKind::Ed25519, "").unwrap();
+    let mut b = PlanBuilder::new(Source::NyaTermData);
+    let good = b.add_key(PlannedKey::new(
+        "deploy".into(),
+        KeyAlgorithm::Ed25519,
+        key.to_openssh().unwrap(),
+    ));
+    let bad = b.add_key(PlannedKey::new(
+        "broken".into(),
+        KeyAlgorithm::Rsa,
+        SecretString::new("not a key"),
+    ));
+    let mut existing = PlannedProfile::new("运维", "ops", PlannedProfileAuth::Password);
+    existing.set_password(SecretString::new("not written"));
+    let existing = b.add_profile(existing);
+    let mut fresh = PlannedProfile::new("数据库", "dba", PlannedProfileAuth::Password);
+    fresh.set_password(SecretString::new("db-pw"));
+    let fresh = b.add_profile(fresh);
+    let keyed = b.add_profile(PlannedProfile::new(
+        "",
+        "deploy",
+        PlannedProfileAuth::Key { key: good },
+    ));
+    let broken = b.add_profile(PlannedProfile::new(
+        "坏钥匙",
+        "x",
+        PlannedProfileAuth::Key { key: bad },
+    ));
+    let unused = b.add_profile(PlannedProfile::new(
+        "没用到",
+        "u",
+        PlannedProfileAuth::Agent,
+    ));
+    let with = |key: &str, h: Host, profile: usize, username: &str| {
+        let mut p = planned(key, h);
+        p.set_profile(profile, username);
+        p
+    };
+    b.push(with("a", host("a", "10.0.7.1", 22, ""), existing, "ops"));
+    b.push(with("b", host("b", "10.0.7.2", 22, ""), fresh, "dba"));
+    b.push(with("c", host("c", "10.0.7.3", 22, "own"), keyed, "deploy"));
+    b.push(with("d", host("d", "10.0.7.4", 22, ""), broken, "x"));
+    b.push(with("e", host("e", "10.0.7.5", 22, ""), unused, "u"));
+    let plan = b.finish();
+    assert_eq!(
+        plan.hosts[0].endpoint(),
+        Endpoint::new("10.0.7.1", 22, "ops")
+    );
+    assert_eq!(
+        plan.hosts[2].endpoint(),
+        Endpoint::new("10.0.7.3", 22, "own")
+    );
+    let items = preview(&m.store, &plan).items;
+    assert_eq!(items[0].profile.as_deref(), Some("运维"));
+    assert_eq!(items[0].username, "ops");
+    assert!(items[1].has_password);
+    assert!(items[2].has_key);
+    assert_eq!(
+        items[2].profile.as_deref(),
+        Some("deploy"),
+        "名称为空时用用户名"
+    );
+
+    let keys = ["a", "b", "c", "d"].map(String::from).to_vec();
+    let report = block_on(apply(m.backups.clone(), plan, keys, OnDuplicate::Skip)).unwrap();
+    assert_eq!(report.profiles_created, 3);
+    assert_eq!(report.failures.len(), 1, "坏的私钥");
+    let profile_of = |name: &str| -> ProfileId {
+        match m.host_named(name).doc.auth {
+            Auth::Profile { profile } => profile,
+            other => panic!("{name} 的认证是 {other:?}"),
+        }
+    };
+    assert_eq!(profile_of("a"), kept, "名称、用户名都相同的已有档案直接用");
+    assert_eq!(
+        m.store
+            .secret(&Owner::profile(&kept), SecretField::Password)
+            .unwrap(),
+        None,
+        "已有的档案不改动"
+    );
+    let db = profile_of("b");
+    assert_eq!(
+        m.store
+            .secret(&Owner::profile(&db), SecretField::Password)
+            .unwrap()
+            .unwrap()
+            .expose(),
+        "db-pw"
+    );
+    let c = m.host_named("c");
+    assert_eq!(c.doc.username, "own", "主机自己的用户名优先");
+    let deploy = m.store.get::<Profile>(&profile_of("c")).unwrap().doc;
+    assert!(matches!(
+        deploy.auth,
+        ProfileAuth::Key {
+            source: KeySource::Library { .. }
+        }
+    ));
+    let broken = m.store.get::<Profile>(&profile_of("d")).unwrap().doc;
+    assert_eq!(broken.auth, ProfileAuth::Password);
+    assert!(
+        m.store
+            .list::<Profile>()
+            .iter()
+            .all(|p| p.doc.name != "没用到"),
+        "没有勾选的主机用到的档案不导入"
+    );
 }
 
 // 来源中的私钥存进密钥库（同一把只存一次），主机改用它；存不进去的记下，用它的主机改用密码认证

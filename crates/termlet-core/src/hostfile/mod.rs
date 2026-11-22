@@ -438,6 +438,7 @@ pub fn preview(store: &Store, file: &HostFile) -> ImportPreview {
             jump: doc.effective_jump(h).map(|j| j.host.name.clone()),
             has_password: doc.has_password(h),
             has_key: doc.has_key(h),
+            profile: doc.host_profile(h).map(|p| p.profile.name.clone()),
             duplicate_of: existing.find(h.host.protocol, &doc.endpoint(h)).cloned(),
             hints: if h.host.ssh.agent_forward {
                 vec![Hint::AgentForwardDisabled]
