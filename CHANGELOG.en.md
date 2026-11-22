@@ -4,6 +4,21 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
+## 0.3.3 (unreleased)
+
+### Changed
+
+- The command-line tool (`termlet exec`, `upload`, `download`) and MCP now warn you too when a login certificate is about to expire: when an OpenSSH certificate (including one used for a jump host) expires in less than an hour, the command runs as usual and a line on stderr says when it expires and about how many minutes are left, naming the jump host for a jump host's certificate (the same warning the terminal shows). The JSON gets an `expiringCertificates` field listing each certificate's expiry time and minutes left (plus `jump` for a jump host's), left out when no certificate is about to expire, and MCP results warn you the same way. Before, only the terminal warned you, so command-line and AI calls found out only once the certificate had expired and they couldn't connect.
+- When a host's name resolves to both IPv6 and IPv4 addresses, both are now tried in parallel (Happy Eyeballs): the address your system prefers goes first, and if it hasn't connected within 250 milliseconds the other kind is tried at the same time; whichever connects first is used. Before, addresses were tried one at a time with up to 15 seconds each, so with broken IPv6 on your computer you waited for it to time out before IPv4 was tried; the connection timeout is now 15 seconds in total. This applies to SSH, Telnet, connecting to proxies, port forwarding and "Lend Local Proxy" connecting to targets on this computer, and X11 forwarding connecting to your X server, so writing `localhost` for something that listens on IPv4 only no longer costs about 2 seconds on Windows either.
+- The local address of local and dynamic forwarding can now be `::` (all IPv6 addresses), with the same warning as 0.0.0.0 that other devices on the network can reach it; 0.0.0.0 listens on IPv4 only and `::` on IPv6 only, so you can add one rule for each on the same port. Before, only loopback addresses and 0.0.0.0 were accepted.
+
+### Fixed
+
+- The buttons in the find bar of terminals and replays, in the replay toolbar, the encoding and "proxy" buttons on the terminal's status bar, and the buttons in the file transfer bar: while a drop-down or context menu next to them was open, moving the pointer over them showed their tooltips on top of the menu.
+- The "recording" and "root" badges on tabs: if the pointer rested on a badge while its tab's context menu was open, the tooltip didn't show after the menu closed until you moved the pointer off the badge and back.
+- With "Right-click in the terminal" set to show a menu, right-clicking the terminal area or a replay showed no menu (right-clicking the tab worked). When a program has turned on mouse reporting, right-clicks still go to the program.
+- When you first connected to a host at an IPv6 address on a port other than 22, the title of the fingerprint dialog read "::1:2222", so you couldn't tell which part was the port; it now reads "[::1]:2222".
+
 ## 0.3.2 (2026-11-19)
 
 ### Changed

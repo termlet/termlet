@@ -98,6 +98,22 @@ where
         .unwrap_or_default()
 }
 
+/// RFC 3339 的本地时间，到秒、带时区偏移：`2026-11-19T20:30:00+08:00`（命令行工具的 JSON 输出用：程序读得懂，
+/// 人也看得懂）；没有时间时为空。
+pub fn format_rfc3339_local(ms: i64) -> String {
+    format_rfc3339_in(ms, &chrono::Local)
+}
+
+/// [`format_rfc3339_local`] 按指定的时区（测试用固定的时区）。
+pub fn format_rfc3339_in<Tz: chrono::TimeZone>(ms: i64, tz: &Tz) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    at(ms, tz)
+        .map(|t| t.to_rfc3339_opts(chrono::SecondsFormat::Secs, false))
+        .unwrap_or_default()
+}
+
 /// `now_ms` 所在的本地日期开始了多少秒（“今天”的日志用）。
 pub fn seconds_since_local_midnight(now_ms: i64) -> u64 {
     seconds_since_midnight_in(now_ms, &chrono::Local)
@@ -238,6 +254,9 @@ mod tests {
         assert_eq!(format_log_time_in(utc, &tz), "11-04 09:47:12");
         assert_eq!(format_log_time_in(utc, &Utc), "11-04 01:47:12");
         assert_eq!(format_log_time_in(0, &tz), "");
+        assert_eq!(format_rfc3339_in(utc, &tz), "2026-11-04T09:47:12+08:00");
+        assert_eq!(format_rfc3339_in(utc, &Utc), "2026-11-04T01:47:12+00:00");
+        assert_eq!(format_rfc3339_in(0, &tz), "");
         assert_eq!(seconds_since_midnight_in(utc, &tz), 9 * 3600 + 47 * 60 + 12);
         assert_eq!(seconds_since_midnight_in(utc, &Utc), 3600 + 47 * 60 + 12);
     }

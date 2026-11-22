@@ -1485,6 +1485,7 @@ impl DockerPage {
                     container_op_label(op),
                     false,
                     false,
+                    window,
                     cx,
                 )
                 .on_click(cx.listener(move |this, _, window, cx| {
@@ -1494,6 +1495,7 @@ impl DockerPage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-container-row-more-{}", c.id)),
                     self.menu_builder(info, c, cx),
+                    window,
                     cx,
                 );
                 Some(vec![primary, more])
@@ -2009,6 +2011,7 @@ impl DockerPage {
         let more = shared::more_button(
             "tools-container-detail-more",
             self.menu_builder(info, &c, cx),
+            window,
             cx,
         );
         let header = shared::detail_header(
@@ -2325,6 +2328,7 @@ impl DockerPage {
                     },
                     true,
                     !item.removable,
+                    window,
                     cx,
                 )
                 .on_click(cx.listener(move |this, _, window, cx| {
@@ -2334,6 +2338,7 @@ impl DockerPage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-item-more-{key}")),
                     self.item_menu_builder(engine, item, cx),
+                    window,
                     cx,
                 );
                 Some(vec![remove, more])

@@ -1058,6 +1058,7 @@ impl ServicePage {
                         shared::op_tip(op_label(op), locked),
                         false,
                         false,
+                        window,
                         cx,
                     )
                     .on_click(cx.listener(move |this, _, window, cx| {
@@ -1067,6 +1068,7 @@ impl ServicePage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-service-row-more-{unit}")),
                     self.menu_builder(service, locked, cx),
+                    window,
                     cx,
                 );
                 Some(vec![primary, more])
@@ -1229,6 +1231,7 @@ impl ServicePage {
                         shared::op_tip(op_label(op), locked),
                         op == ServiceOp::Stop,
                         false,
+                        window,
                         cx,
                     )
                     .on_click(cx.listener(move |this, _, window, cx| {
@@ -1238,6 +1241,7 @@ impl ServicePage {
                 let more = shared::more_button(
                     SharedString::from(format!("tools-timer-row-more-{unit}")),
                     self.timer_menu_builder(timer, locked, cx),
+                    window,
                     cx,
                 );
                 Some(vec![primary, more])
@@ -1551,6 +1555,7 @@ impl ServicePage {
         let more = shared::more_button(
             "tools-timer-detail-more",
             self.timer_menu_builder(timer, locked, cx),
+            window,
             cx,
         );
         let header = shared::detail_header(
@@ -1732,6 +1737,7 @@ impl ServicePage {
         let more = shared::more_button(
             "tools-service-detail-more",
             self.menu_builder(&service, locked, cx),
+            window,
             cx,
         );
         let header = shared::detail_header(

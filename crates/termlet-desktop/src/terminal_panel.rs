@@ -1575,7 +1575,7 @@ impl TerminalPanel {
             now,
         );
         for (jump, expiry) in expiring {
-            let minutes = ((expiry - now) / 60).max(1);
+            let minutes = termlet_core::sshcert::minutes_left(expiry, now);
             let time = crate::ssh_errors::cert_time(expiry);
             tracing::info!(session = %self.name, jump = jump.is_some(), minutes, "登录用的证书快过期，提醒");
             let notice = match &jump {
@@ -2438,6 +2438,8 @@ impl TerminalPanel {
         let muted = theme.muted_foreground;
         let border = theme.border;
         let id = cx.entity_id().as_u64() as usize;
+        // 状态条的右键菜单、编码的下拉菜单开着时按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let encoding_button = has_encoding.then(|| {
             let encoding = self.current_encoding();
             let label = ENCODINGS
@@ -2450,7 +2452,7 @@ impl TerminalPanel {
                 .ghost()
                 .xsmall()
                 .label(label)
-                .tooltip(t!("terminal.encoding"))
+                .when(!menu_open, |this| this.tooltip(t!("terminal.encoding")))
                 .dropdown_menu(move |menu, _, _| {
                     ENCODINGS.iter().fold(menu, |menu, (value, _, label)| {
                         let this = this.clone();
@@ -2474,11 +2476,13 @@ impl TerminalPanel {
                 .xsmall()
                 .icon(IconName::Globe)
                 .label(t!("terminal.proxy.bar", port = lend.share.port()))
-                .tooltip(t!(
-                    "terminal.proxy.bar_tooltip",
-                    port = lend.share.port(),
-                    local = lend.share.local().display()
-                ))
+                .when(!menu_open, |this| {
+                    this.tooltip(t!(
+                        "terminal.proxy.bar_tooltip",
+                        port = lend.share.port(),
+                        local = lend.share.local().display()
+                    ))
+                })
                 .on_click(move |_, window, cx| {
                     crate::proxy_share::open(terminal.clone(), window, cx)
                 })
@@ -2536,12 +2540,10 @@ impl TerminalPanel {
         // 精简样式只有数字，不带进度条与网速的小柱
         let meters = fit.meters && style == termlet_core::model::MonitorBar::Full;
         let gap = rems(0.75).to_pixels(window.rem_size());
-        // 状态条的右键菜单开着时各项不挂悬停提示（会浮在菜单上）
-        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let shown: Vec<AnyElement> = items
             .iter()
             .take(fit.count)
-            .map(|item| monitor_bar::item(item, meters, id, menu_open, cx))
+            .map(|item| monitor_bar::item(item, meters, id, cx))
             .collect();
         let message = self.resources.message();
         let hover = cx.theme().secondary_hover;
@@ -3086,22 +3088,18 @@ impl Drop for TerminalPanel {
     }
 }
 
-/// 要提醒的快过期的登录证书：经过的跳板机的（从第一跳起，带跳板机的名称）在前，目标主机的（`None`）在后；
-/// 已经提醒过的（同一跳、同一个失效时间）不再提醒。
+/// 要提醒的快过期的登录证书：经过的跳板机的（从第一跳起，带跳板机的名称）在前，目标主机的（`None`）在后
+/// （与命令行工具按同一个判断，见 [`termlet_core::sshcert::expiring`]）；已经提醒过的（同一跳、同一个失效时间）
+/// 不再提醒。
 fn expiring_certificates(
     jumps: Vec<(String, i64)>,
     target: Option<i64>,
     warned: &[(Option<String>, i64)],
     now: i64,
 ) -> Vec<(Option<String>, i64)> {
-    jumps
+    termlet_core::sshcert::expiring(jumps, target, now)
         .into_iter()
-        .map(|(jump, expiry)| (Some(jump), expiry))
-        .chain(target.map(|expiry| (None, expiry)))
-        .filter(|(jump, expiry)| {
-            termlet_core::sshcert::expires_soon(*expiry, now)
-                && !warned.iter().any(|(j, e)| j == jump && e == expiry)
-        })
+        .filter(|(jump, expiry)| !warned.iter().any(|(j, e)| j == jump && e == expiry))
         .collect()
 }
 
@@ -3273,7 +3271,7 @@ impl Panel for TerminalPanel {
     fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Tab 上写创建时的名称（主机名、本地 shell 等，与 SFTP 的 Tab 一致），不随远端程序设置的标题变化
         let program_title = self.tab_tooltip(cx);
-        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
         // 自己的关闭按钮（Dock 自带的不显示）：有连接时按设置先确认
         let close_id = ("tab-close", cx.entity_id().as_u64() as usize);
@@ -3287,10 +3285,10 @@ impl Panel for TerminalPanel {
                 gpui_kit::MouseButton::Left,
                 cx.listener(|this, _, window, cx| this.focus_handle(cx).focus(window, cx)),
             )
-            .when_some(program_title.filter(|_| !menu_open), |this, title| {
-                this.tooltip(move |window, cx| {
+            .when_some(program_title, |this, title| {
+                this.tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                     gpui_kit::component::tooltip::Tooltip::new(title.clone()).build(window, cx)
-                })
+                }))
             })
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({

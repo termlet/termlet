@@ -20,7 +20,7 @@ use crate::model::{Forward, ForwardKind, Host, join_host_port};
 use crate::ssh::prompt::PromptFuture;
 use crate::ssh::{
     Answer, Connection, ConnectionPool, ForwardedChannel, Prompt, Prompter, SshError, TerminalSpec,
-    connect, remembering,
+    connect, dial, remembering,
 };
 use crate::store::Store;
 
@@ -703,27 +703,31 @@ impl Runner {
             "服务器转来一个连接"
         );
         let target = self.rule.target_address();
-        let connecting =
-            TcpStream::connect((self.rule.target_host.as_str(), self.rule.target_port));
+        // 目标是 localhost 等双栈的名称时并发连接 IPv6 与 IPv4（见 crate::ssh::dial）
+        let connecting = dial::connect_host(
+            &self.rule.target_host,
+            self.rule.target_port,
+            self.options.channel_timeout,
+        );
         let local = tokio::select! {
-            result = tokio::time::timeout(self.options.channel_timeout, connecting) => result,
+            result = connecting => result,
             _ = self.stopped() => return,
         };
         let local = match local {
-            Ok(Ok(local)) => local,
-            Ok(Err(error)) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
+            Ok(local) => local,
+            Err(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
                 return self.set_last_error(TargetError::LocalRefused { target });
             }
-            Ok(Err(error)) => {
-                return self.set_last_error(TargetError::Local {
-                    target,
-                    reason: error.to_string(),
-                });
-            }
-            Err(_) => {
+            Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
                 return self.set_last_error(TargetError::Local {
                     target,
                     reason: "超时".into(),
+                });
+            }
+            Err(error) => {
+                return self.set_last_error(TargetError::Local {
+                    target,
+                    reason: error.to_string(),
                 });
             }
         };

@@ -136,6 +136,16 @@ impl Connection {
         expiries
     }
 
+    /// 登录用的证书（经过的跳板机的与目标主机的）中，在 `now`（Unix 秒）时快过期的，见 [`crate::sshcert::expiring`]：
+    /// 命令行工具据此在结果中提醒。
+    pub fn expiring_certificates(&self, now: i64) -> Vec<(Option<String>, i64)> {
+        crate::sshcert::expiring(
+            self.jump_certificate_expiries(),
+            self.certificate_expiry,
+            now,
+        )
+    }
+
     pub fn is_closed(&self) -> bool {
         self.handle.is_closed()
     }

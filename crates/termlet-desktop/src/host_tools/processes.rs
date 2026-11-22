@@ -1659,6 +1659,7 @@ impl ProcessPage {
                     shared::op_tip(t!("tools.process.term"), locked),
                     true,
                     false,
+                    window,
                     cx,
                 )
                 .on_click(cx.listener(move |this, _, window, cx| {
@@ -1668,6 +1669,7 @@ impl ProcessPage {
                 let more = shared::more_button(
                     ("tools-process-row-more", pid as usize),
                     self.menu_builder(process, data, docker, cx),
+                    window,
                     cx,
                 );
                 Some(vec![term, more])
@@ -2317,6 +2319,7 @@ impl ProcessPage {
         let more = shared::more_button(
             "tools-process-detail-more",
             self.menu_builder(process, data, docker.as_deref(), cx),
+            window,
             cx,
         );
         let status = state_label(process.state).map(|label| (label, state_tone(process.state)));

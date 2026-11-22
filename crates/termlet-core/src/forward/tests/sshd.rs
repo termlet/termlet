@@ -1,5 +1,6 @@
 //! 对真实 sshd 的集成测试（转发到容器内 sshd 自身的 127.0.0.1:22）：
-//! 设置 `TERMLET_TEST_SSH=127.0.0.1:2222`（testing/sshd 的测试容器，账号 termlet / termlet-e2e）后运行，否则跳过。
+//! 设置 `TERMLET_TEST_SSH=127.0.0.1:2222`（testing/sshd 的测试容器，账号 termlet / termlet-e2e；经 IPv6 时写成
+//! `[::1]:2222`）后运行，否则跳过。
 //!
 //! 测试容器的 sshd：`AllowTcpForwarding yes`、`GatewayPorts no`（远程转发只监听容器内的回环地址）。
 
@@ -196,6 +197,37 @@ fn docker_remote_port_in_use_denied() {
                 address: "127.0.0.1:22".into()
             })
         );
+    });
+}
+
+/// IPv6 的本地转发：本机监听 [::1]，目标是容器内 IPv6 回环上的 sshd（::1:22）。`TERMLET_TEST_SSH=[::1]:2222` 时
+/// SSH 连接本身也经 IPv6。本机没有 IPv6 回环时跳过。
+#[test]
+fn docker_forward_over_ipv6() {
+    let Some(env) = docker_env() else {
+        return;
+    };
+    if std::net::TcpListener::bind("[::1]:0").is_err() {
+        eprintln!("本机没有 IPv6 回环，跳过");
+        return;
+    }
+    block_on(async {
+        let id = env.rule(Forward {
+            bind_host: "[::1]".into(),
+            bind_port: free_port(),
+            target_host: "::1".into(),
+            target_port: 22,
+            ..Default::default()
+        });
+        let addr = env.bind(&id);
+        assert!(addr.starts_with("[::1]:"), "{addr}");
+        env.start(&id, "w1").await.unwrap();
+        let banner = read_banner(&addr).await.unwrap();
+        assert!(
+            banner.starts_with("SSH-2.0"),
+            "应经 IPv6 的转发读到 SSH 横幅：{banner}"
+        );
+        wait_until_async("统计", || env.status(&id).accepted == 1).await;
     });
 }
 

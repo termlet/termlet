@@ -22,11 +22,12 @@ mod transfer;
 use std::io::{self, IsTerminal, Read, Write};
 
 use termlet_proto::{
-    ExecRequest, ExitCode, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request, Response, TransferRequest,
+    ExecRequest, ExecResponse, ExitCode, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request, Response,
+    TransferRequest, TransferResponse,
 };
 
 use crate::i18n::Lang;
-use crate::output::{Output, table};
+use crate::output::{Output, expiring_notes, table};
 
 fn main() {
     let args: Vec<String> = std::env::args_os()
@@ -245,8 +246,15 @@ fn cmd_exec(out: &mut Output<'_>, host: String, command: String, terminal: bool)
         Ok(other) => return unexpected(out, other),
         Err(code) => return code,
     };
+    print_exec(out, &response);
+    response.exit_code
+}
+
+/// `exec` 的结果：JSON 原样输出；可读文本模式下远程命令的输出照原样写到标准输出、标准错误，截断与证书快过期的
+/// 提醒写在标准错误。
+fn print_exec(out: &mut Output<'_>, response: &ExecResponse) {
     if out.json {
-        out.print_json(&response);
+        out.print_json(response);
     } else {
         let _ = out.stdout.write_all(response.stdout.as_bytes());
         let _ = out.stderr.write_all(response.stderr.as_bytes());
@@ -254,8 +262,19 @@ fn cmd_exec(out: &mut Output<'_>, host: String, command: String, terminal: bool)
             let note = messages::TRUNCATED.fill(out.lang, &[&OUTPUT_LIMIT]);
             let _ = out.stderr.write_all(note.as_bytes());
         }
+        let notes = expiring_notes(&response.expiring_certificates, out.lang);
+        // 远程命令的标准错误没有以换行结尾时，提醒另起一行
+        if !notes.is_empty()
+            && !response.truncated
+            && !response.stderr.is_empty()
+            && !response.stderr.ends_with('\n')
+        {
+            let _ = writeln!(out.stderr);
+        }
+        for note in notes {
+            let _ = writeln!(out.stderr, "[termlet] {note}");
+        }
     }
-    response.exit_code
 }
 
 fn cmd_transfer(out: &mut Output<'_>, mut request: TransferRequest, upload: bool) -> i32 {
@@ -270,8 +289,13 @@ fn cmd_transfer(out: &mut Output<'_>, mut request: TransferRequest, upload: bool
         Ok(other) => return unexpected(out, other),
         Err(code) => return code,
     };
+    print_transfer(out, &response, upload)
+}
+
+/// 上传、下载的结果：JSON 原样输出；可读文本模式下标准输出只有结果，改用 SCP 与证书快过期的说明写在标准错误。
+fn print_transfer(out: &mut Output<'_>, response: &TransferResponse, upload: bool) -> i32 {
     if out.json {
-        return out.print_json(&response);
+        return out.print_json(response);
     }
     let lang = out.lang;
     let (done, target) = if upload {
@@ -291,6 +315,10 @@ fn cmd_transfer(out: &mut Output<'_>, mut request: TransferRequest, upload: bool
     // 服务器没有 SFTP、改用了 SCP：说明写在标准错误，标准输出照旧只有结果
     if response.protocol == termlet_proto::TRANSFER_SCP {
         let _ = writeln!(out.stderr, "[termlet] {}", messages::VIA_SCP.get(lang));
+    }
+    // 登录用的证书快过期：同样写在标准错误
+    for note in expiring_notes(&response.expiring_certificates, lang) {
+        let _ = writeln!(out.stderr, "[termlet] {note}");
     }
     ExitCode::Success.into()
 }
@@ -439,6 +467,76 @@ mod tests {
         let body: serde_json::Value = serde_json::from_slice(&c.stdout).unwrap();
         assert_eq!(body["error"], "usage");
         assert!(body["message"].as_str().unwrap().contains("teleport"));
+    }
+
+    fn expiring() -> Vec<termlet_proto::ExpiringCertificate> {
+        vec![
+            termlet_proto::ExpiringCertificate {
+                jump: Some("bastion".into()),
+                expires_at: "2026-11-19T20:30:00+08:00".into(),
+                minutes_left: 25,
+            },
+            termlet_proto::ExpiringCertificate {
+                jump: None,
+                expires_at: "2026-11-19T20:40:00+08:00".into(),
+                minutes_left: 35,
+            },
+        ]
+    }
+
+    // 登录用的证书快过期：可读文本模式下在标准错误另起一行提醒（跳板机的写明哪一台），标准输出照旧；
+    // JSON 中多一个 expiringCertificates，没有时不输出
+    #[test]
+    fn exec_mentions_expiring_certificates() {
+        let response = ExecResponse {
+            stdout: "hi\n".into(),
+            stderr: "warn".into(),
+            expiring_certificates: expiring(),
+            ..Default::default()
+        };
+        let mut c = output::tests::Captured::new();
+        print_exec(&mut c.output(false, Lang::Zh), &response);
+        assert_eq!(c.stdout(), "hi\n");
+        assert_eq!(
+            c.stderr(),
+            "warn\n[termlet] 跳板机 bastion 登录用的证书将于 2026-11-19 20:30 过期（还剩约 25 分钟），过期后无法再经它连接，请及时重新签发。\n[termlet] 登录用的证书将于 2026-11-19 20:40 过期（还剩约 35 分钟），过期后无法再连接这台主机，请及时重新签发。\n"
+        );
+        let mut c = output::tests::Captured::new();
+        print_exec(&mut c.output(true, Lang::En), &response);
+        let body: serde_json::Value = serde_json::from_slice(&c.stdout).unwrap();
+        assert_eq!(
+            body["expiringCertificates"],
+            serde_json::json!([
+                {"jump": "bastion", "expiresAt": "2026-11-19T20:30:00+08:00", "minutesLeft": 25},
+                {"expiresAt": "2026-11-19T20:40:00+08:00", "minutesLeft": 35},
+            ])
+        );
+        assert!(c.stderr.is_empty());
+        let mut c = output::tests::Captured::new();
+        print_exec(&mut c.output(true, Lang::En), &ExecResponse::default());
+        assert!(!c.stdout().contains("expiringCertificates"), "没有时不输出");
+    }
+
+    #[test]
+    fn transfer_mentions_expiring_certificates() {
+        let response = TransferResponse {
+            local: "D:\\a.txt".into(),
+            remote: "/tmp/a.txt".into(),
+            bytes: 2048,
+            duration_ms: 1500,
+            protocol: termlet_proto::TRANSFER_SFTP.into(),
+            expiring_certificates: expiring()[1..].to_vec(),
+        };
+        let mut c = output::tests::Captured::new();
+        assert_eq!(
+            print_transfer(&mut c.output(false, Lang::En), &response, true),
+            0
+        );
+        assert_eq!(c.stdout(), "Uploaded 2.0 KB → /tmp/a.txt (1.5s)\n");
+        assert_eq!(
+            c.stderr(),
+            "[termlet] The certificate used to log in expires at 2026-11-19 20:40 (about 35 min left). After that you won't be able to connect to this host, so get a new one issued in time.\n"
+        );
     }
 
     // 命令行工具是薄客户端，不链接核心（SQLite、SSH、钥匙串、异步运行时）

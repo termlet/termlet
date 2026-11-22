@@ -162,11 +162,17 @@ forward.bind_loopback6:
   ja: ::1（このコンピューターのみ、IPv6）
   ko: ::1(이 컴퓨터만, IPv6)
 forward.bind_any:
-  zh-CN: 0.0.0.0（局域网可访问）
-  en: 0.0.0.0 (reachable from the LAN)
-  zh-TW: 0.0.0.0（區域網路可存取）
-  ja: 0.0.0.0（LAN からアクセス可能）
-  ko: 0.0.0.0(LAN에서 접근 가능)
+  zh-CN: 0.0.0.0（局域网可访问，仅 IPv4）
+  en: 0.0.0.0 (reachable from the LAN, IPv4 only)
+  zh-TW: 0.0.0.0（區域網路可存取，僅限 IPv4）
+  ja: 0.0.0.0（LAN からアクセス可能、IPv4 のみ）
+  ko: 0.0.0.0(LAN에서 접근 가능, IPv4만)
+forward.bind_any6:
+  zh-CN: "::（局域网可访问，仅 IPv6）"
+  en: ":: (reachable from the LAN, IPv6 only)"
+  zh-TW: "::（區域網路可存取，僅限 IPv6）"
+  ja: "::（LAN からアクセス可能、IPv6 のみ）"
+  ko: "::(LAN에서 접근 가능, IPv6만)"
 forward.remote_bind_loopback:
   zh-CN: 127.0.0.1（仅服务器本机）
   en: 127.0.0.1 (the server only)
@@ -180,11 +186,11 @@ forward.remote_bind_any:
   ja: 0.0.0.0（サーバーのすべてのネットワークインターフェイス）
   ko: 0.0.0.0(서버의 모든 네트워크 인터페이스)
 forward.any_warning:
-  zh-CN: 监听 0.0.0.0 时，局域网内的其他设备也能经本机访问该目标，且无需任何认证。请只在可信网络中使用。
-  en: When listening on 0.0.0.0, other devices on your network can reach the target through this computer without any authentication. Use it only on trusted networks.
-  zh-TW: 監聽 0.0.0.0 時，區域網路內的其他裝置也能經本機存取該目標，且不需任何驗證。請只在受信任的網路中使用。
-  ja: 0.0.0.0 で待ち受けると、LAN 内の他のデバイスもこのコンピューターを経由して転送先に、認証なしでアクセスできます。信頼できるネットワークでのみ使用してください。
-  ko: 0.0.0.0에서 수신 대기하면 LAN의 다른 장치도 인증 없이 이 컴퓨터를 거쳐 대상에 접근할 수 있습니다. 신뢰할 수 있는 네트워크에서만 사용하세요.
+  zh-CN: 监听 %{address} 时，局域网内的其他设备也能经本机访问该目标，且无需任何认证。请只在可信网络中使用。
+  en: When listening on %{address}, other devices on your network can reach the target through this computer without any authentication. Use it only on trusted networks.
+  zh-TW: 監聽 %{address} 時，區域網路內的其他裝置也能經本機存取該目標，且不需任何驗證。請只在受信任的網路中使用。
+  ja: "%{address} で待ち受けると、LAN 内の他のデバイスもこのコンピューターを経由して転送先に、認証なしでアクセスできます。信頼できるネットワークでのみ使用してください。"
+  ko: "%{address}에서 수신 대기하면 LAN의 다른 장치도 인증 없이 이 컴퓨터를 거쳐 대상에 접근할 수 있습니다. 신뢰할 수 있는 네트워크에서만 사용하세요."
 forward.remote_any_warning:
   zh-CN: 监听服务器的所有网卡时，能访问服务器的设备都能经它连到本机的目标，且无需任何认证；服务器还需开启 GatewayPorts，否则仍只监听服务器本机。
   en: When listening on all server interfaces, anything that can reach the server can reach the target on this computer without any authentication. The server must also enable GatewayPorts; otherwise it still listens on loopback only.
@@ -192,11 +198,11 @@ forward.remote_any_warning:
   ja: サーバーのすべてのネットワークインターフェイスで待ち受けると、サーバーにアクセスできるデバイスはすべて、サーバーを経由してこのコンピューターの転送先に認証なしで接続できます。また、サーバーで GatewayPorts を有効にする必要があり、そうでない場合はサーバー自身でのみ待ち受けます。
   ko: 서버의 모든 네트워크 인터페이스에서 수신 대기하면 서버에 접근할 수 있는 모든 장치가 인증 없이 서버를 거쳐 이 컴퓨터의 대상에 연결할 수 있습니다. 또한 서버에서 GatewayPorts를 켜야 하며, 그렇지 않으면 여전히 서버 자신에서만 수신 대기합니다.
 forward.any_badge:
-  zh-CN: 监听 0.0.0.0，局域网内的其他设备也能访问
-  en: Listening on 0.0.0.0; other devices on the LAN can reach it
-  zh-TW: 監聽 0.0.0.0，區域網路內的其他裝置也能存取
-  ja: 0.0.0.0 で待ち受け中。LAN 内の他のデバイスもアクセスできます
-  ko: 0.0.0.0에서 수신 대기 중. LAN의 다른 장치도 접근할 수 있음
+  zh-CN: 监听 %{address}，局域网内的其他设备也能访问
+  en: Listening on %{address}; other devices on the LAN can reach it
+  zh-TW: 監聽 %{address}，區域網路內的其他裝置也能存取
+  ja: "%{address} で待ち受け中。LAN 内の他のデバイスもアクセスできます"
+  ko: "%{address}에서 수신 대기 중. LAN의 다른 장치도 접근할 수 있음"
 forward.remote_any_badge:
   zh-CN: 监听服务器的所有网卡，能访问服务器的设备都能经它连到本机的目标
   en: Listening on all server interfaces; anything that can reach the server can reach the target through it

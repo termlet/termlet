@@ -128,6 +128,26 @@ fn validity() {
     assert!(expires_soon(NOW + 600, NOW));
     assert!(!expires_soon(NOW + EXPIRING_SOON_SECS, NOW));
     assert!(!expires_soon(NOW - 1, NOW), "已过期的不算快过期");
+    assert_eq!(minutes_left(NOW + 1500, NOW), 25);
+    assert_eq!(minutes_left(NOW + 30, NOW), 1, "不足一分钟的算一分钟");
+}
+
+// 要提醒的快过期的证书：跳板机的在前、带上是哪一跳，目标主机的在后；还早的、已过期的不算
+#[test]
+fn expiring_certificates_of_jumps_and_target() {
+    let soon = NOW + 600;
+    let later = NOW + 5 * HOUR as i64;
+    let jumps = vec![
+        ("bastion".to_string(), soon),
+        ("inner".to_string(), later),
+        ("old".to_string(), NOW - 1),
+    ];
+    assert_eq!(
+        expiring(jumps, Some(soon), NOW),
+        [(Some("bastion".to_string()), soon), (None, soon)]
+    );
+    assert!(expiring(Vec::new(), Some(later), NOW).is_empty());
+    assert!(expiring(Vec::new(), None, NOW).is_empty());
 }
 
 // 被拒绝时的说明：过期、未生效、用户名不在允许的列表中；看不出原因时说多半不信任 CA

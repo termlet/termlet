@@ -25,7 +25,7 @@ use crate::sshkey::{self, KeyKind};
 use crate::store::{Owner, Position, Store};
 use crate::testkit::memory_store;
 
-fn new_key() -> PrivateKey {
+pub(crate) fn new_key() -> PrivateKey {
     sshkey::generate(KeyKind::Ed25519, "")
         .unwrap()
         .into_ssh_private_key()
@@ -284,7 +284,7 @@ async fn connect_host(
 }
 
 /// 把私钥写进临时目录（`name`），旁边按需放 `name-cert.pub`。
-fn write_key(
+pub(crate) fn write_key(
     dir: &Path,
     name: &str,
     key: &PrivateKey,
@@ -908,7 +908,7 @@ fn sign(key: &PrivateKey, hash: Option<HashAlg>, data: &[u8]) -> Vec<u8> {
 // ---------------------------------------------------------------- 真实的 OpenSSH（testing/sshcert）
 
 /// 证书测试容器的 sshd（`TERMLET_TEST_CERT=127.0.0.1:2227`）；没有设置时为 `None`，测试跳过。
-fn cert_server() -> Option<(String, u16)> {
+pub(crate) fn cert_server() -> Option<(String, u16)> {
     let value = std::env::var("TERMLET_TEST_CERT").ok()?;
     let (host, port) = value.rsplit_once(':')?;
     Some((host.to_string(), port.parse().ok()?))
@@ -950,7 +950,7 @@ fn docker_exec(args: &[&str], input: &str) -> String {
 }
 
 /// 用容器里的 ssh-keygen 现场签发用户证书（`validity` 是 `ssh-keygen -V` 的写法）。
-fn sign_in_container(key: &PrivateKey, principals: &str, validity: &str) -> Certificate {
+pub(crate) fn sign_in_container(key: &PrivateKey, principals: &str, validity: &str) -> Certificate {
     let public = key.public_key().to_openssh().unwrap();
     let text = docker_exec(&["sign-user", principals, validity], &format!("{public}\n"));
     sshcert::parse(&text).unwrap()

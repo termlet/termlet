@@ -159,6 +159,23 @@ pub struct ExecResponse {
     /// 命中危险命令规则、在 Termlet 中等用户批准了多久；没有询问用户（较早版本的应用不发送）时没有
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub approval_wait_ms: Option<u64>,
+    /// 这次连接登录用的证书中快过期的（见 [`ExpiringCertificate`]）；没有时（较早版本的应用不发送）为空，不输出
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub expiring_certificates: Vec<ExpiringCertificate>,
+}
+
+/// 登录用的 OpenSSH 证书快过期（剩下不到一小时）：命令行工具每次新建连接，过期后就连不上了，结果中提醒调用方。
+/// `exec --terminal` 用的是已打开的终端的连接，不在这里（终端里已经提醒过）。
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpiringCertificate {
+    /// 经过的跳板机的证书：跳板机的名称；目标主机自己的证书没有
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jump: Option<String>,
+    /// 失效时间：本地时间的 RFC 3339（到秒、带时区偏移，如 `2026-11-19T20:30:00+08:00`）
+    pub expires_at: String,
+    /// 连接时还剩几分钟（不足一分钟的算一分钟）
+    pub minutes_left: u64,
 }
 
 /// `upload` / `download` 的请求。语义与 scp 相同：上传时 `remote` 是已存在的目录（或以 `/` 结尾）则放入该目录，
@@ -186,6 +203,9 @@ pub struct TransferResponse {
     /// 旧版的应用不发送，为空
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub protocol: String,
+    /// 同 [`ExecResponse::expiring_certificates`]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub expiring_certificates: Vec<ExpiringCertificate>,
 }
 
 /// [`TransferResponse::protocol`] 的取值。
@@ -285,6 +305,7 @@ mod tests {
             truncated: false,
             duration_ms: 12,
             approval_wait_ms: None,
+            expiring_certificates: Vec::new(),
         })
         .unwrap();
         assert_eq!(
@@ -305,12 +326,14 @@ mod tests {
         )
         .unwrap();
         assert_eq!(old.approval_wait_ms, None);
+        assert!(old.expiring_certificates.is_empty());
         let transfer = serde_json::to_value(TransferResponse {
             local: "D:\\a".into(),
             remote: "/tmp/a".into(),
             bytes: 7,
             duration_ms: 5,
             protocol: TRANSFER_SCP.into(),
+            expiring_certificates: Vec::new(),
         })
         .unwrap();
         assert_eq!(transfer["durationMs"], 5);
@@ -320,6 +343,41 @@ mod tests {
         let old: TransferResponse =
             serde_json::from_str(r#"{"local":"a","remote":"b","bytes":1,"durationMs":2}"#).unwrap();
         assert!(old.protocol.is_empty());
+        assert!(old.expiring_certificates.is_empty());
+        assert!(
+            transfer.get("expiringCertificates").is_none(),
+            "没有时不输出"
+        );
+    }
+
+    // 快过期的证书：哪一跳（目标主机的没有 jump）、失效时间、还剩几分钟；没有时不输出这个字段（见上）
+    #[test]
+    fn expiring_certificates_field_names() {
+        let exec = ExecResponse {
+            expiring_certificates: vec![
+                ExpiringCertificate {
+                    jump: Some("bastion".into()),
+                    expires_at: "2026-11-19T20:30:00+08:00".into(),
+                    minutes_left: 25,
+                },
+                ExpiringCertificate {
+                    jump: None,
+                    expires_at: "2026-11-19T20:40:00+08:00".into(),
+                    minutes_left: 35,
+                },
+            ],
+            ..Default::default()
+        };
+        let value = serde_json::to_value(&exec).unwrap();
+        assert_eq!(
+            value["expiringCertificates"],
+            serde_json::json!([
+                {"jump": "bastion", "expiresAt": "2026-11-19T20:30:00+08:00", "minutesLeft": 25},
+                {"expiresAt": "2026-11-19T20:40:00+08:00", "minutesLeft": 35},
+            ])
+        );
+        let back: ExecResponse = serde_json::from_value(value).unwrap();
+        assert_eq!(back, exec);
     }
 
     // 不认识的字段、请求类型：字段忽略；类型解析失败（服务端回答"请求无效"）

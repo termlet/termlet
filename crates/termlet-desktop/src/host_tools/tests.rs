@@ -24,10 +24,11 @@ use termlet_core::id::HostId;
 use super::model::{ConnChip, Page, ProcSort, conn_keys};
 use super::panel::{HostToolsEvent, HostToolsPanel};
 use super::processes::ProcView;
+use super::shared::row_tooltip;
 use super::shared::{Cached, ToolPage as _};
-use super::shared::{HiddenTooltip, menu_is_open, row_tooltip};
 use super::target::{ToolsState, ToolsTarget};
 use crate::app_state::AppState;
+use crate::menu_tooltip::{is_quiet, menu_open};
 use crate::t;
 use crate::testkit::{poll_until, test_server, wait_until};
 
@@ -1384,7 +1385,8 @@ fn docker_item_rows_keep_both_lines_inside(cx: &mut TestAppContext) {
     .unwrap();
 }
 
-/// 行的右键菜单打开期间，行上的悬停提示不显示（菜单打开时还在等待显示的提示也一样），菜单关闭后恢复。
+/// 行的右键菜单打开期间，行上的悬停提示不显示（菜单打开时还在等待显示的提示也一样），菜单关闭后恢复：行上的提示
+/// 经 `crate::menu_tooltip::quiet` 包过，右键菜单打开期间算作窗口中开着菜单（`quiet` 本身的行为见它的测试）。
 #[gpui_kit::test]
 fn row_tooltips_stay_hidden_while_the_menu_is_open(cx: &mut TestAppContext) {
     let (handle, panel, _) = open(cx);
@@ -1425,15 +1427,15 @@ fn row_tooltips_stay_hidden_while_the_menu_is_open(cx: &mut TestAppContext) {
         &panel,
         Some(target(id, ToolsState::Reconnecting)),
     );
-    let tooltip_hidden = |cx: &mut TestAppContext| {
-        cx.update_window(handle, |_, window, cx| {
-            row_tooltip("0.0.0.0:8080".into())(window, cx)
-                .downcast::<HiddenTooltip>()
-                .is_ok()
-        })
-        .unwrap()
+    let menu_shown = |cx: &mut TestAppContext| {
+        cx.update_window(handle, |_, window, cx| menu_open(window, cx))
+            .unwrap()
     };
-    assert!(!tooltip_hidden(cx), "平时照常显示");
+    cx.update_window(handle, |_, window, cx| {
+        assert!(is_quiet(row_tooltip("0.0.0.0:8080".into())(window, cx)));
+    })
+    .unwrap();
+    assert!(!menu_shown(cx), "平时照常显示");
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
         window.within("host-tools-pages").click(4usize, cx);
@@ -1448,8 +1450,7 @@ fn row_tooltips_stay_hidden_while_the_menu_is_open(cx: &mut TestAppContext) {
         assert!(window.try_find("popup-menu").is_some(), "右键菜单打开了");
     })
     .unwrap();
-    assert!(cx.read(menu_is_open));
-    assert!(tooltip_hidden(cx), "菜单打开期间不显示");
+    assert!(menu_shown(cx), "菜单打开期间不显示");
 
     cx.update_window(handle, |_, window, cx| window.press("escape", cx))
         .unwrap();
@@ -1459,8 +1460,7 @@ fn row_tooltips_stay_hidden_while_the_menu_is_open(cx: &mut TestAppContext) {
         assert!(window.try_find("popup-menu").is_none());
     })
     .unwrap();
-    assert!(!cx.read(menu_is_open), "菜单关闭后恢复");
-    assert!(!tooltip_hidden(cx));
+    assert!(!menu_shown(cx), "菜单关闭后恢复");
 }
 
 /// 失败的服务：详情直接显示失败的原因（结果与退出码）与运行信息，另读最近几行日志（终端重连中时说明读不了）；
@@ -3006,7 +3006,10 @@ fn selected_rows_stay_above_the_detail(cx: &mut TestAppContext) {
         })
         .unwrap();
     cx.run_until_parked();
-    assert!(cx.read(menu_is_open));
+    assert!(
+        cx.update_window(handle, |_, window, cx| menu_open(window, cx))
+            .unwrap()
+    );
     assert_eq!(cx.read(|cx| page.read(cx).selected()), None);
     cx.update_window(handle, |_, window, cx| {
         window.press("escape", cx);
@@ -3014,7 +3017,10 @@ fn selected_rows_stay_above_the_detail(cx: &mut TestAppContext) {
     })
     .unwrap();
     cx.run_until_parked();
-    assert!(!cx.read(menu_is_open));
+    assert!(
+        !cx.update_window(handle, |_, window, cx| menu_open(window, cx))
+            .unwrap()
+    );
     cx.update_window(handle, |_, window, cx| {
         window.click(row.clone(), cx);
         window.render_frame(cx);
@@ -3154,7 +3160,7 @@ fn rows_show_actions_on_hover_and_keyboard_focus(cx: &mut TestAppContext) {
     cx.run_until_parked();
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
-        assert!(menu_is_open(cx), "⋯ 打开右键菜单");
+        assert!(menu_open(window, cx), "⋯ 打开右键菜单");
         window.hover("host-tools-title", cx);
         window.render_frame(cx);
         assert!(window.try_find(actions).is_some(), "菜单打开期间照样显示");
@@ -4457,6 +4463,8 @@ fn browser_rules_are_reused_and_take_free_ports(cx: &mut TestAppContext) {
         "https://127.0.0.1:8443/"
     );
     assert_eq!(browser_url(false, "::1", 3000), "http://[::1]:3000/");
+    // :: 只监听 IPv6：浏览器连 IPv6 回环
+    assert_eq!(browser_url(false, "::", 3000), "http://[::1]:3000/");
 }
 
 /// 连真实的 sshd：“在浏览器中打开”转发到本机（共用终端的连接），交给浏览器的是本机的链接（测试中记录下来，不真的打开），

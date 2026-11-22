@@ -345,10 +345,23 @@ fn texts(prompt: &Prompt) -> (SharedString, SharedString, SharedString) {
     }
 }
 
+/// 默认端口只写主机，否则 `主机:端口`（IPv6 加方括号，`::1:2222` 分不清哪段是端口）。
 fn host_label(host: &str, port: u16) -> String {
     if port == 22 {
         host.to_string()
     } else {
-        format!("{host}:{port}")
+        termlet_core::model::join_host_port(host, port)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn host_label_brackets_ipv6_with_a_port() {
+        assert_eq!(host_label("::1", 22), "::1");
+        assert_eq!(host_label("::1", 2222), "[::1]:2222");
+        assert_eq!(host_label("db", 2222), "db:2222");
     }
 }

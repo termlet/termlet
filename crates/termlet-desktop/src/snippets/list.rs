@@ -23,7 +23,6 @@ use termlet_core::store::{Record, StoreEvent};
 use super::{confirm_delete, editor};
 use crate::app_state::AppState;
 use crate::i18n::LocalizedPlaceholder as _;
-use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::t;
 
@@ -121,7 +120,7 @@ impl SnippetList {
         groups.into_iter().collect()
     }
 
-    /// `menu_open`：窗口中开着右键菜单，这一行与其中的按钮不挂悬停提示（见 [`crate::menu_tooltip`]）。
+    /// `menu_open`：窗口中开着右键菜单，这一行中的按钮不挂悬停提示（行自己的提示经 [`crate::menu_tooltip::quiet`]）。
     fn render_row(
         &self,
         snippet: &Record<Snippet>,
@@ -195,9 +194,9 @@ impl SnippetList {
                             }),
                     ),
             )
-            .tooltip_unless_menu(menu_open, move |window, cx| {
+            .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                 Tooltip::new(content.clone()).build(window, cx)
-            })
+            }))
             .on_click(cx.listener({
                 let id = id.clone();
                 move |_, _: &ClickEvent, _, cx| {

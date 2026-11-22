@@ -181,6 +181,16 @@ msg!(
     "服务器没有 SFTP，已改用 SCP 传输（不能断点续传，失败后要从头再传）",
     "The server has no SFTP, so the file went over SCP instead (no resuming; a failed transfer starts over)"
 );
+msg!(
+    CERT_EXPIRING,
+    "登录用的证书将于 {} 过期（还剩约 {} 分钟），过期后无法再连接这台主机，请及时重新签发。",
+    "The certificate used to log in expires at {} (about {} min left). After that you won't be able to connect to this host, so get a new one issued in time."
+);
+msg!(
+    JUMP_CERT_EXPIRING,
+    "跳板机 {} 登录用的证书将于 {} 过期（还剩约 {} 分钟），过期后无法再经它连接，请及时重新签发。",
+    "The certificate used to log in to the jump host {} expires at {} (about {} min left). After that you won't be able to connect through it, so get a new one issued in time."
+);
 msg!(SECONDS, "{} 秒", "{}s");
 msg!(
     SKILL_WRITTEN,

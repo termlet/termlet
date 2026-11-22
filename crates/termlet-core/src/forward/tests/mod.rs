@@ -357,6 +357,40 @@ fn round_trip_and_stop() {
     });
 }
 
+// 监听 IPv6 的任意地址（::）：经 IPv6 回环能用，IPv4 的连接不归它（只监听 IPv6），同一端口的 0.0.0.0 可以同时监听
+#[test]
+fn ipv6_any_listens_only_on_ipv6() {
+    if std::net::TcpListener::bind("[::1]:0").is_err() {
+        eprintln!("本机没有 IPv6 回环，跳过");
+        return;
+    }
+    block_on(async {
+        let server = TestServer::start().await;
+        let env = Env::new(Some(&server));
+        let target = echo_server().await;
+        let port = free_port();
+        let rule = |bind: &str| Forward {
+            bind_host: bind.into(),
+            bind_port: port,
+            target_host: "127.0.0.1".into(),
+            target_port: target,
+            ..Default::default()
+        };
+        let v6 = env.rule(rule("[::]"));
+        assert_eq!(env.bind(&v6), format!("[::]:{port}"));
+        env.start(&v6, "w1").await.unwrap();
+        round_trip(&format!("[::1]:{port}"), "over ipv6").await;
+
+        let v4 = env.rule(rule("0.0.0.0"));
+        env.start(&v4, "w1").await.unwrap();
+        round_trip(&format!("127.0.0.1:{port}"), "over ipv4").await;
+        wait_until_async("两条规则各接到自己协议的一个连接", || {
+            env.status(&v6).accepted == 1 && env.status(&v4).accepted == 1
+        })
+        .await;
+    });
+}
+
 #[test]
 fn port_in_use() {
     block_on(async {

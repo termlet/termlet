@@ -21,7 +21,9 @@ use gpui_kit::{
     Subscription, Task, WeakEntity, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::{ForwardId, HostId};
-use termlet_core::model::{Forward, ForwardKind, Host, Protocol};
+use termlet_core::model::{
+    ANY_IPV4, ANY_IPV6, Forward, ForwardKind, Host, Protocol, is_any_address,
+};
 use termlet_core::store::{Position, Store};
 
 use crate::app_state::AppState;
@@ -134,7 +136,8 @@ fn bind_choices(kind: ForwardKind, current: &str) -> Vec<Choice<String>> {
         _ => vec![
             Choice::new(t!("forward.bind_loopback"), "127.0.0.1".to_string()),
             Choice::new(t!("forward.bind_loopback6"), "::1".to_string()),
-            Choice::new(t!("forward.bind_any"), "0.0.0.0".to_string()),
+            Choice::new(t!("forward.bind_any"), ANY_IPV4.to_string()),
+            Choice::new(t!("forward.bind_any6"), ANY_IPV6.to_string()),
         ],
     };
     if !current.is_empty() && !choices.iter().any(|c| c.value == current) {
@@ -360,7 +363,7 @@ impl ForwardForm {
         let current = chosen(&self.bind, cx).unwrap_or_default();
         let keep = match kind {
             ForwardKind::Remote => ["127.0.0.1", "0.0.0.0"].contains(&current.as_str()),
-            _ => ["127.0.0.1", "::1", "0.0.0.0"].contains(&current.as_str()),
+            _ => ["127.0.0.1", "::1", ANY_IPV4, ANY_IPV6].contains(&current.as_str()),
         };
         let value = if keep {
             current
@@ -550,7 +553,8 @@ impl Render for ForwardForm {
                     this.set_kind(*kind, window, cx);
                 }
             }));
-        let any = chosen(&self.bind, cx).is_some_and(|b| b == "0.0.0.0");
+        // 选了任意地址（0.0.0.0、::）时提示风险，写明是哪一个
+        let any = chosen(&self.bind, cx).filter(|b| is_any_address(b));
         let shared = self.shared_terminal(cx).is_some();
         let can_detect = kind == ForwardKind::Local && shared;
         let detected = self.detected.clone();
@@ -606,14 +610,14 @@ impl Render for ForwardForm {
                                         Input::new(&self.bind_port).id("forward-bind-port"),
                                     )),
                             )
-                            .when(any, |this| {
-                                this.child(div().text_xs().text_color(warning).child(
+                            .when_some(any, |this, address| {
+                                this.child(div().text_xs().text_color(warning).child(prose(
                                     if kind == ForwardKind::Remote {
                                         t!("forward.remote_any_warning")
                                     } else {
-                                        t!("forward.any_warning")
+                                        t!("forward.any_warning", address = address)
                                     },
-                                ))
+                                )))
                             }),
                     ),
             )

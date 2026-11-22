@@ -231,6 +231,26 @@ pub fn expires_soon(expires_at: i64, now: i64) -> bool {
     now < expires_at && expires_at - now < EXPIRING_SOON_SECS
 }
 
+/// 登录用的证书中快过期的（[`expires_soon`]）：经过的跳板机的（`jumps`，从第一跳起，带跳板机显示用的名称）在前，
+/// 目标主机的（`target`，结果中为 `None`）在后。终端与命令行工具都按它提醒。
+pub fn expiring(
+    jumps: Vec<(String, i64)>,
+    target: Option<i64>,
+    now: i64,
+) -> Vec<(Option<String>, i64)> {
+    jumps
+        .into_iter()
+        .map(|(jump, expiry)| (Some(jump), expiry))
+        .chain(target.map(|expiry| (None, expiry)))
+        .filter(|(_, expiry)| expires_soon(*expiry, now))
+        .collect()
+}
+
+/// 证书剩下的分钟数（提醒中的“还剩约几分钟”）：不足一分钟的算一分钟。
+pub fn minutes_left(expires_at: i64, now: i64) -> i64 {
+    ((expires_at - now) / 60).max(1)
+}
+
 /// 证书没能用来登录的原因（连接失败的说明）。时间都是 Unix 秒。
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CertProblem {

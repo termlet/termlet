@@ -14,17 +14,16 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-use tokio::net::TcpStream;
 use tokio::sync::{mpsc, watch};
 
 use super::TargetError;
 use super::pipe::pipe;
 use crate::model::join_host_port;
-use crate::ssh::{Connection, ForwardedChannel};
+use crate::ssh::{Connection, ForwardedChannel, dial};
 
 /// 服务器上监听的地址（只监听回环地址）。
 pub const SHARE_BIND: &str = "127.0.0.1";
-/// 连接本机代理的超时。
+/// 连接本机代理的超时（写成 localhost 时 IPv6、IPv4 并发连接，见 crate::ssh::dial）。
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 /// 取消服务器上的监听最多等多久。
 const CANCEL_TIMEOUT: Duration = Duration::from_secs(5);
@@ -337,15 +336,12 @@ impl Shared {
             s.connections += 1;
         });
         let local = tokio::select! {
-            result = tokio::time::timeout(
-                CONNECT_TIMEOUT,
-                TcpStream::connect((self.local.host.as_str(), self.local.port)),
-            ) => result,
+            result = dial::connect_host(&self.local.host, self.local.port, CONNECT_TIMEOUT) => result,
             _ = self.stopped() => return,
         };
         let target = self.local.display();
         let failure = match local {
-            Ok(Ok(local)) => {
+            Ok(local) => {
                 let _ = local.set_nodelay(true);
                 tokio::select! {
                     _ = pipe(remote, local, &self.bytes_out, &self.bytes_in) => {}
@@ -353,16 +349,18 @@ impl Shared {
                 }
                 None
             }
-            Ok(Err(error)) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
+            Err(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
                 Some(TargetError::LocalRefused { target })
             }
-            Ok(Err(error)) => Some(TargetError::Local {
+            Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                Some(TargetError::Local {
+                    target,
+                    reason: "超时".into(),
+                })
+            }
+            Err(error) => Some(TargetError::Local {
                 target,
                 reason: error.to_string(),
-            }),
-            Err(_) => Some(TargetError::Local {
-                target,
-                reason: "超时".into(),
             }),
         };
         if let Some(error) = &failure {

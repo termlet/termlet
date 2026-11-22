@@ -163,6 +163,27 @@ fn replay_tab_seeks_and_closes(cx: &mut TestAppContext) {
     assert!(cx.update(|cx| workspace.read(cx).live_replays().is_empty()));
 }
 
+// 右键回放区弹出菜单（复制、全选、查找），与终端的右键设置无关
+#[gpui_kit::test]
+fn right_click_in_the_replay_opens_the_menu(cx: &mut TestAppContext) {
+    let handle = open_workspace(cx);
+    let workspace = workspace_of(cx, handle);
+    let tmp = test_dir(cx);
+    let path = write_sample(&tmp, "web-1-20261109-130000.cast");
+    open_replay(cx, handle, &workspace, &path);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.right_click("terminal", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("popup-menu").is_some(), "弹出回放的菜单");
+    })
+    .unwrap();
+}
+
 // 拖进窗口的文件只打开 .cast；读不了的文件不开 Tab
 #[gpui_kit::test]
 fn dropped_files_open_only_recordings(cx: &mut TestAppContext) {

@@ -246,8 +246,8 @@ impl TerminalPanel {
         }
     }
 
-    /// Tab 上的录制标记：红点与时长（文件还在建时只有红点）。悬停的说明在 Tab 的右键菜单开着时不显示
-    /// （[`crate::menu_tooltip::quiet`]：标记也放在竖排 Tab 的行里，那里拿不到窗口）。
+    /// Tab 上的录制标记：红点与时长（文件还在建时只有红点）。悬停的说明在 Tab 的右键菜单开着时不显示，菜单关上后
+    /// 照常（[`crate::menu_tooltip::quiet`]）。
     pub(super) fn render_record_badge(&self, cx: &Context<Self>) -> Option<AnyElement> {
         if !self.is_recording() {
             return None;

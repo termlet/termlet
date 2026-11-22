@@ -343,7 +343,7 @@ mod tests {
         .env_clear()
         .envs(launch.env.iter().map(|(k, v)| (k, v)))
         .current_dir(&launch.cwd);
-        let out = crate::localshell::tests::output_of(cmd);
+        let out = crate::localshell::tests::output_of(&distro, cmd);
         assert!(out.contains("[termlet-wsltest-2]"), "{out}");
     }
 }

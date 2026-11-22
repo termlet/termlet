@@ -3,6 +3,7 @@
 mod algorithms;
 mod auth;
 mod connection;
+pub(crate) mod dial;
 mod error;
 mod exec;
 mod handler;
@@ -39,7 +40,7 @@ pub use terminal::{
 pub use x11::{X11Notice, X11Options, X11Problem, X11Status};
 
 #[cfg(test)]
-mod cert_tests;
+pub(crate) mod cert_tests;
 #[cfg(test)]
 mod proxy_x11_tests;
 #[cfg(test)]

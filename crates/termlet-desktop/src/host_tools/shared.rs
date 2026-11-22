@@ -30,7 +30,7 @@ use gpui_kit::component::{
 };
 use gpui_kit::{
     AnyElement, AnyView, App, AppContext as _, ClickEvent, ClipboardItem, Context, DismissEvent,
-    DragMoveEvent, ElementId, Entity, EntityId, FocusHandle, Focusable as _, Global, Hsla,
+    DragMoveEvent, ElementId, Entity, EntityId, FocusHandle, Focusable as _, Hsla,
     InteractiveElement as _, IntoElement, KeyDownEvent, MouseButton, ParentElement as _, Pixels,
     Render, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled, Subscription,
     Task, TestSupportExt as _, WeakEntity, Window, anchored, canvas, deferred, div,
@@ -463,56 +463,21 @@ pub(super) fn resume<P: ToolPage>(page: &mut P, cx: &mut Context<P>) {
     cx.notify();
 }
 
-/// 打开着的行的右键菜单（各页在菜单建好时经 [`on_menu_dismiss`] 记下）：打开期间行上的悬停提示不显示
-/// （[`row_tooltip`]）。
-#[derive(Default)]
-struct OpenMenu(Option<EntityId>);
-
-impl Global for OpenMenu {}
-
-pub(super) fn menu_is_open(cx: &App) -> bool {
-    cx.try_global::<OpenMenu>().is_some_and(|m| m.0.is_some())
-}
-
-/// 行上的悬停提示（地址、容器名等）：右键菜单打开期间不显示。GPUI 的悬停提示在鼠标按下时只清掉已经显示的，
-/// 正在等待显示的（鼠标刚停到行上就右键）照样会在菜单打开之后出现，挡住菜单的第一项；菜单打开后鼠标还在行上，
-/// 移动一下也会重新等待显示。这时给一个什么也不画的提示。
+/// 行上的悬停提示（地址、容器名等）：右键菜单打开期间不显示（见 [`crate::menu_tooltip::quiet`]）。
 pub(super) fn row_tooltip(
     text: SharedString,
 ) -> impl Fn(&mut Window, &mut App) -> AnyView + 'static {
-    move |window, cx| {
-        if menu_is_open(cx) {
-            return cx.new(|_| HiddenTooltip).into();
-        }
-        Tooltip::new(text.clone()).build(window, cx)
-    }
+    crate::menu_tooltip::quiet(move |window, cx| Tooltip::new(text.clone()).build(window, cx))
 }
 
-/// 右键菜单打开期间代替悬停提示：什么也不画。
-pub(super) struct HiddenTooltip;
-
-impl Render for HiddenTooltip {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        gpui_kit::Empty
-    }
-}
-
-/// 行的右键菜单建好时调用（各页 `context_menu` 的回调中）：记下菜单打开着（行上的悬停提示不显示，见
-/// [`row_tooltip`]），关闭时清除并调用 `on_close`（菜单建好之后才能订阅它的事件）。
+/// 行的右键菜单建好时调用（各页 `context_menu` 的回调中）：菜单关闭时调用 `on_close`（菜单建好之后才能订阅它的
+/// 事件）。
 pub(super) fn on_menu_dismiss(
     window: &Window,
     menu: &mut Context<PopupMenu>,
     on_close: impl Fn(&mut App) + 'static,
 ) {
-    let id = menu.entity_id();
-    menu.set_global(OpenMenu(Some(id)));
-    let on_close = Rc::new(move |cx: &mut App| {
-        // 换了一行的菜单时，前一个的关闭不清掉后一个
-        if cx.try_global::<OpenMenu>().is_some_and(|m| m.0 == Some(id)) {
-            cx.set_global(OpenMenu(None));
-        }
-        on_close(cx);
-    });
+    let on_close = Rc::new(on_close);
     // 菜单所在的行滚出可视区、页收起时菜单直接被释放，不发 DismissEvent；释放时再通知一次（之后执行，不在释放中更新别的实体）
     let on_release = on_close.clone();
     menu.on_release(move |_, cx| cx.defer(move |cx| on_release(cx)))
@@ -1697,18 +1662,19 @@ pub(super) fn detail_header(
         .into_any_element()
 }
 
-/// 详情头部与行右端的 ⋯：次要操作的菜单（与行的右键菜单是同一个）。行的右键菜单开着时不挂悬停提示（按钮的
-/// 提示只在按下左键时收起，会浮在菜单上）。
+/// 详情头部与行右端的 ⋯：次要操作的菜单（与行的右键菜单是同一个）。窗口中开着右键菜单时不挂悬停提示（按钮的
+/// 提示只在按下左键时收起，会浮在菜单上，见 [`crate::menu_tooltip`]）。
 pub(super) fn more_button(
     id: impl Into<ElementId>,
     build: impl Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu + 'static,
+    window: &Window,
     cx: &App,
 ) -> AnyElement {
     Button::new(id)
         .ghost()
         .xsmall()
         .icon(IconName::Ellipsis)
-        .when(!menu_is_open(cx), |this| {
+        .when(!crate::menu_tooltip::menu_open(window, cx), |this| {
             this.tooltip(t!("tools.detail.more"))
         })
         .dropdown_menu(build)
@@ -2159,13 +2125,15 @@ pub(super) fn row_actions(
         .into_any_element()
 }
 
-/// 行右端的主要操作：图标按钮（破坏性的用危险色的图标），悬停看名称（行的右键菜单开着时不挂）；进行中时不能点。
+/// 行右端的主要操作：图标按钮（破坏性的用危险色的图标），悬停看名称（窗口中开着右键菜单时不挂，见
+/// [`crate::menu_tooltip`]）；进行中时不能点。
 pub(super) fn row_action_button(
     id: impl Into<ElementId>,
     icon: IconName,
     label: SharedString,
     danger: bool,
     busy: bool,
+    window: &Window,
     cx: &App,
 ) -> Button {
     let icon = if danger && !busy {
@@ -2177,7 +2145,9 @@ pub(super) fn row_action_button(
         .ghost()
         .xsmall()
         .icon(icon)
-        .when(!menu_is_open(cx), |this| this.tooltip(label))
+        .when(!crate::menu_tooltip::menu_open(window, cx), |this| {
+            this.tooltip(label)
+        })
         .disabled(busy)
 }
 

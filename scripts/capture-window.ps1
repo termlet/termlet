@@ -1,7 +1,12 @@
 # 把某个进程的主窗口内容保存为 PNG，供开发时检查界面（锁屏时也能用：PrintWindow 直接取窗口的渲染内容）。
 # 用法：powershell -NoProfile -File scripts/capture-window.ps1 -Process termlet-desktop -Out shot.png
+#       powershell -NoProfile -File scripts/capture-window.ps1 -Pid 12345 -Out shot.png
+# 按进程名找时取第一个有窗口的；用户自己开着 Termlet、或同时开着几个测试实例时用 -Pid 指定进程号，免得截错窗口。
+[CmdletBinding(DefaultParameterSetName = 'Name')]
 param(
-    [Parameter(Mandatory = $true)][string]$Process,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Name')][string]$Process,
+    # $PID 是 PowerShell 的自动变量，参数名用 ProcessId，-Pid 是它的别名
+    [Parameter(Mandatory = $true, ParameterSetName = 'Id')][Alias('Pid')][int]$ProcessId,
     [Parameter(Mandatory = $true)][string]$Out
 )
 
@@ -16,11 +21,16 @@ public static class CaptureNative {
 }
 "@
 
-$target = Get-Process -Name $Process -ErrorAction SilentlyContinue |
-    Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } |
-    Select-Object -First 1
+if ($PSCmdlet.ParameterSetName -eq 'Id') {
+    $found = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    $missing = "没有找到进程 $ProcessId 的窗口"
+} else {
+    $found = Get-Process -Name $Process -ErrorAction SilentlyContinue
+    $missing = "没有找到 $Process 的窗口"
+}
+$target = $found | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } | Select-Object -First 1
 if (-not $target) {
-    Write-Error "没有找到 $Process 的窗口"
+    Write-Error $missing
     exit 1
 }
 

@@ -439,8 +439,7 @@ impl NetworkPage {
     ) -> impl Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu + 'static {
         let context = self.context.clone();
         let ssh = self.context.ssh_host.is_some();
-        move |menu, window, cx| {
-            shared::on_menu_dismiss(window, cx, |_| {});
+        move |menu, _, _| {
             let (conn, owner, processes, copy): (Option<Conn>, &Owner, Vec<ConnProcess>, _) =
                 match &row {
                     MenuRow::Conn(conn, owner) => (
@@ -597,12 +596,14 @@ impl NetworkPage {
             )
     }
 
-    /// “进程 / 容器”一格：容器、进程是可以点的（跳过去），没有进程时写套接字的用户。
+    /// “进程 / 容器”一格：容器、进程是可以点的（跳过去），没有进程时写套接字的用户。`menu_open`：窗口中开着右键
+    /// 菜单，按钮不挂悬停提示（按钮的提示只在按下左键时收起，会浮在菜单上，见 [`crate::menu_tooltip`]）。
     fn render_owner(
         &self,
         key: &str,
         owner: &Owner,
         processes: &[ConnProcess],
+        menu_open: bool,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let muted = cx.theme().muted_foreground;
@@ -651,8 +652,7 @@ impl NetworkPage {
             .xsmall()
             .compact()
             .label(label)
-            // 行的右键菜单开着时不挂（按钮的提示只在按下左键时收起，会浮在菜单上）
-            .when(!shared::menu_is_open(cx), |this| this.tooltip(tooltip))
+            .when(!menu_open, |this| this.tooltip(tooltip))
             .on_click(cx.listener(move |this, _, window, cx| this.show_owner(&target, window, cx)));
         let button = if matches!(owner, Owner::Container { .. }) {
             button.icon(IconName::Container)
@@ -684,7 +684,9 @@ impl NetworkPage {
             conn.user.as_ref(),
             ports,
         );
-        let owner_cell = self.render_owner(key, &owner, &conn.processes, cx);
+        // 窗口中开着右键菜单时行内的按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
+        let owner_cell = self.render_owner(key, &owner, &conn.processes, menu_open, cx);
         let menu = self.menu_builder(MenuRow::Conn(conn.clone(), owner));
         let theme = cx.theme();
         let muted = theme.muted_foreground;
@@ -722,7 +724,7 @@ impl NetworkPage {
                         .xsmall()
                         .flex_none()
                         .icon(IconName::Globe)
-                        .when(!shared::menu_is_open(cx), |this| {
+                        .when(!menu_open, |this| {
                             this.tooltip(t!(
                                 "tools.network.open_browser_hint",
                                 port = conn.local_port
@@ -862,7 +864,9 @@ impl NetworkPage {
             row.user.as_ref(),
             ports,
         );
-        let owner_cell = self.render_owner(key, &owner, &row.processes, cx);
+        // 窗口中开着右键菜单时行内的按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
+        let owner_cell = self.render_owner(key, &owner, &row.processes, menu_open, cx);
         // 看起来是网页的端口（常见的 HTTP、HTTPS 端口）：范围后面直接有“在浏览器中打开”
         let browser = forward
             .clone()
@@ -874,7 +878,7 @@ impl NetworkPage {
                     .xsmall()
                     .flex_none()
                     .icon(IconName::Globe)
-                    .when(!shared::menu_is_open(cx), |this| {
+                    .when(!menu_open, |this| {
                         this.tooltip(t!("tools.network.open_browser_hint", port = row.port))
                     })
                     .on_click(move |_, _, cx| open_browser(&context, &conn, cx))

@@ -14,7 +14,7 @@ use gpui_kit::{
     Window, div, prelude::FluentBuilder as _,
 };
 use termlet_core::id::ForwardId;
-use termlet_core::model::{ANY_IPV4, Forward, ForwardKind, Kind};
+use termlet_core::model::{Forward, ForwardKind, Kind, is_any_address};
 use termlet_core::store::{Record, Store, StoreEvent};
 
 use crate::app_state::AppState;
@@ -35,7 +35,7 @@ enum Exposure {
 fn exposure(rule: &Forward) -> Option<Exposure> {
     if rule.listens_on_all_interfaces() {
         Some(Exposure::Lan)
-    } else if rule.kind == ForwardKind::Remote && rule.bind_host == ANY_IPV4 {
+    } else if rule.kind == ForwardKind::Remote && is_any_address(&rule.bind_host) {
         Some(Exposure::Server)
     } else {
         None
@@ -124,6 +124,7 @@ impl ForwardList {
             format!("{} · {host}", forwards::route(&rule.doc))
         };
         let exposed = exposure(&rule.doc);
+        let bind_host = rule.doc.bind_host.clone();
         let active = status.state.is_active();
         let (toggle_id, edit_id) = (id.clone(), id.clone());
         let delete_rule = rule.clone();
@@ -163,7 +164,9 @@ impl ForwardList {
                                 .child(Icon::new(IconName::TriangleAlert).xsmall())
                                 .tooltip(move |window, cx| {
                                     let text = match exposed {
-                                        Exposure::Lan => t!("forward.any_badge"),
+                                        Exposure::Lan => {
+                                            t!("forward.any_badge", address = bind_host.as_str())
+                                        }
                                         Exposure::Server => t!("forward.remote_any_badge"),
                                     };
                                     Tooltip::new(text).build(window, cx)
@@ -354,6 +357,8 @@ impl Render for ForwardList {
 
 #[cfg(test)]
 mod tests {
+    use termlet_core::model::{ANY_IPV4, ANY_IPV6};
+
     use super::*;
 
     fn rule(kind: ForwardKind, bind_host: &str) -> Forward {
@@ -379,12 +384,22 @@ mod tests {
             exposure(&rule(ForwardKind::Remote, ANY_IPV4)),
             Some(Exposure::Server)
         );
+        // IPv6 的任意地址同样
+        assert_eq!(
+            exposure(&rule(ForwardKind::Local, ANY_IPV6)),
+            Some(Exposure::Lan)
+        );
+        assert_eq!(
+            exposure(&rule(ForwardKind::Remote, ANY_IPV6)),
+            Some(Exposure::Server)
+        );
         for kind in [
             ForwardKind::Local,
             ForwardKind::Dynamic,
             ForwardKind::Remote,
         ] {
             assert_eq!(exposure(&rule(kind, "127.0.0.1")), None, "{kind:?}");
+            assert_eq!(exposure(&rule(kind, "::1")), None, "{kind:?}");
         }
     }
 }

@@ -1,5 +1,6 @@
 # 开发时向某个进程的主窗口投递输入（锁屏时也能用：消息直接发给窗口，不经过系统输入）。
 # 用法（坐标都是窗口客户区坐标，物理像素）：
+#   powershell -File scripts/post-input.ps1 -Process termlet-desktop -Move 640,420    # 只移动指针（看悬停提示）
 #   powershell -File scripts/post-input.ps1 -Process termlet-desktop -Click 640,420
 #   powershell -File scripts/post-input.ps1 -Process termlet-desktop -DoubleClick 640,420
 #   powershell -File scripts/post-input.ps1 -Process termlet-desktop -RightClick 640,420
@@ -9,8 +10,15 @@
 #   powershell -File scripts/post-input.ps1 -Process termlet-desktop -Resize 736,520     # 改窗口大小（窗口管理接口）
 #   powershell -File scripts/post-input.ps1 -Process termlet-desktop -Key Enter   # 另有 Tab、Escape、方向键、Home、End、PageUp、PageDown、F2、F5、F7、Apps（菜单键）、单个字母或数字等
 # 带修饰键的快捷键投递不了（窗口查询的是真实的键盘状态），用 UI 测试。
+# 按进程名找时取第一个有窗口的；用户自己开着 Termlet、或同时开着几个测试实例时用 -Pid 指定进程号（代替 -Process），
+# 免得投错窗口：
+#   powershell -File scripts/post-input.ps1 -Pid 12345 -Click 640,420
+[CmdletBinding(DefaultParameterSetName = 'Name')]
 param(
-    [Parameter(Mandatory = $true)][string]$Process,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Name')][string]$Process,
+    # $PID 是 PowerShell 的自动变量，参数名用 ProcessId，-Pid 是它的别名
+    [Parameter(Mandatory = $true, ParameterSetName = 'Id')][Alias('Pid')][int]$ProcessId,
+    [string]$Move,
     [string]$Click,
     [string]$DoubleClick,
     [string]$RightClick,
@@ -30,9 +38,15 @@ public static class PostNative {
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
 }
 "@
-$target = Get-Process -Name $Process -ErrorAction SilentlyContinue |
-    Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } | Select-Object -First 1
-if (-not $target) { Write-Error "没有找到 $Process 的窗口"; exit 1 }
+if ($PSCmdlet.ParameterSetName -eq 'Id') {
+    $found = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    $missing = "没有找到进程 $ProcessId 的窗口"
+} else {
+    $found = Get-Process -Name $Process -ErrorAction SilentlyContinue
+    $missing = "没有找到 $Process 的窗口"
+}
+$target = $found | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } | Select-Object -First 1
+if (-not $target) { Write-Error $missing; exit 1 }
 $hwnd = $target.MainWindowHandle
 
 function Point([int]$x, [int]$y) { [IntPtr](($y -shl 16) -bor ($x -band 0xFFFF)) }
@@ -68,6 +82,10 @@ if ($Wheel) {
         Post 0x020A ($delta -shl 16) (Point $p.X $p.Y)
         if ($left -ne 0) { Start-Sleep -Milliseconds 20 }
     }
+}
+if ($Move) {
+    $x, $y = $Move.Split(',') | ForEach-Object { [int]$_ }
+    Post 0x0200 0 (Point $x $y)
 }
 if ($Click) {
     $x, $y = $Click.Split(',') | ForEach-Object { [int]$_ }

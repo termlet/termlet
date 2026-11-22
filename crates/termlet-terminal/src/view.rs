@@ -148,7 +148,8 @@ pub enum RightClick {
     #[default]
     Auto,
     Paste,
-    /// 由应用弹出菜单（视图发出 [`TerminalViewEvent::ContextMenu`]）
+    /// 由应用弹出菜单：视图发出 [`TerminalViewEvent::ContextMenu`]，并让按下事件接着冒泡给外层
+    /// （例如 gpui-kit 的 `context_menu`）；程序开了鼠标上报时右键仍交给程序
     Menu,
 }
 
@@ -1281,32 +1282,34 @@ impl TerminalView {
         }
     }
 
+    /// 鼠标按下；返回终端是否处理了它。没有处理的（右键设为 [`RightClick::Menu`] 时）由元素放行，
+    /// 交给外层弹出菜单。
     pub(crate) fn mouse_down(
         &mut self,
         event: &MouseDownEvent,
         window: &mut Window,
         cx: &mut Context<Self>,
-    ) {
+    ) -> bool {
         let Some((point, side, row, column)) = self.grid_point(event.position) else {
-            return;
+            return true;
         };
         if event.button == MouseButton::Left && self.on_scrollbar(event.position) {
             self.pointer = Pointer::Scrollbar;
             self.drag_scrollbar(event.position, cx);
-            return;
+            return true;
         }
         if event.button == MouseButton::Left
             && event.modifiers.secondary(cx)
             && let Some(link) = self.link_at(point)
         {
             cx.open_url(&link.uri);
-            return;
+            return true;
         }
         let button = match event.button {
             MouseButton::Left => mouse::MouseButton::Left,
             MouseButton::Middle => mouse::MouseButton::Middle,
             MouseButton::Right => mouse::MouseButton::Right,
-            _ => return,
+            _ => return true,
         };
         // 远端开启了鼠标模式时上报（按住 Shift 强制本地选择）
         if !self.replay
@@ -1322,7 +1325,7 @@ impl TerminalView {
             ) {
                 self.pointer = Pointer::Reporting(button);
             }
-            return;
+            return true;
         }
         match event.button {
             MouseButton::Left => {
@@ -1352,10 +1355,14 @@ impl TerminalView {
                     None => Self::request_paste(window, cx),
                 },
                 RightClick::Paste => Self::request_paste(window, cx),
-                RightClick::Menu => cx.emit(TerminalViewEvent::ContextMenu(event.position)),
+                RightClick::Menu => {
+                    cx.emit(TerminalViewEvent::ContextMenu(event.position));
+                    return false;
+                }
             },
             _ => {}
         }
+        true
     }
 
     /// 鼠标移动（窗口中每个可见的终端都会收到）：`hovered` 是指针在不在这个终端上。

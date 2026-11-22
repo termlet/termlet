@@ -10,7 +10,7 @@
 
 - [Installation](#installation): [Downloads](#downloads) · [Windows](#windows) · [Windows portable](#windows-portable) · [macOS](#macos) · [Linux](#linux) · [Data folder](#data-folder) · [Lost master key](#lost-master-key) · [Checking your download](#checking-your-download)
 - [Hosts](#hosts): [Host list](#host-list) · [Identifying the remote system](#identifying-the-remote-system) · [Host dialog](#host-dialog) · [Copying the address and duplicating hosts](#copying-the-address-and-duplicating-hosts) · [Profiles and group defaults](#profiles-and-group-defaults) · [Test connection](#test-connection) · [Telnet and serial ports](#telnet-and-serial-ports) · [Importing hosts](#importing-hosts)
-- [Connection and authentication](#connection-and-authentication): [Authentication](#authentication) · [OpenSSH certificates](#openssh-certificates) · [Verification codes (TOTP)](#verification-codes-totp) · [Proxy](#proxy) · [Proxy command (ProxyCommand)](#proxy-command-proxycommand) · [Jump hosts](#jump-hosts) · [Legacy devices](#legacy-devices) · [Agent forwarding](#agent-forwarding) · [X11 forwarding](#x11-forwarding) · [Host keys](#host-keys) · [Quick connect](#quick-connect) · [Connection not responding](#connection-not-responding) · [Automatic reconnection](#automatic-reconnection)
+- [Connection and authentication](#connection-and-authentication): [Authentication](#authentication) · [OpenSSH certificates](#openssh-certificates) · [Verification codes (TOTP)](#verification-codes-totp) · [Proxy](#proxy) · [Proxy command (ProxyCommand)](#proxy-command-proxycommand) · [Jump hosts](#jump-hosts) · [Legacy devices](#legacy-devices) · [Agent forwarding](#agent-forwarding) · [X11 forwarding](#x11-forwarding) · [Host keys](#host-keys) · [Quick connect](#quick-connect) · [IPv6 and dual stack](#ipv6-and-dual-stack) · [Connection not responding](#connection-not-responding) · [Automatic reconnection](#automatic-reconnection)
 - [Terminal](#terminal): [Shortcuts](#shortcuts) · [Command palette](#command-palette) · [Tab menu and right-click](#tab-menu-and-right-click) · [Paste protection](#paste-protection) · [sudo password filling](#sudo-password-filling) · [Session logs](#session-logs) · [Session recording and playback](#session-recording-and-playback) · [New output and notifications](#new-output-and-notifications) · [Pasting screenshots](#pasting-screenshots) · [Encoding](#encoding) · [Commands after login](#commands-after-login) · [Snippets](#snippets) · [Command history](#command-history) · [Command suggestions](#command-suggestions) · [Tabs, panes and workspaces](#tabs-panes-and-workspaces) · [Vertical tabs](#vertical-tabs) · [Sync input](#sync-input) · [Compose bar (broadcast input)](#compose-bar-broadcast-input) · [Keyword highlighting](#keyword-highlighting) · [Terminal color schemes](#terminal-color-schemes) · [Resource monitor and network latency](#resource-monitor-and-network-latency) · [File transfers in the terminal](#file-transfers-in-the-terminal) · [Reconnecting and closing](#reconnecting-and-closing)
 - [Local terminals and WSL](#local-terminals-and-wsl): [Local shells](#local-shells) · [WSL](#wsl)
 - [SFTP](#sftp): [Opening](#opening) · [Opening as root](#opening-as-root) · [Remote file name encoding](#remote-file-name-encoding) · [Two panes](#two-panes) · [Following the terminal folder](#following-the-terminal-folder) · [File operations](#file-operations) · [Keyboard](#keyboard) · [Browsing](#browsing) · [Columns](#columns) · [Changing permissions](#changing-permissions) · [Transfers](#transfers) · [Clearing and summaries](#clearing-and-summaries) · [Transfer progress on the taskbar](#transfer-progress-on-the-taskbar) · [Resuming and reconnecting](#resuming-and-reconnecting) · [Editing remote files](#editing-remote-files) · [Opening in VS Code / Zed](#opening-in-vs-code--zed) · [SCP when the server has no SFTP](#scp-when-the-server-has-no-sftp)
@@ -337,7 +337,7 @@ Notes:
 - Identities with certificates in ssh-agent are tried along with plain keys, in the order the agent lists them.
 - When a certificate can't be used to log in, the reason is shown: it expired ("The certificate expired at 11-10 10:30. Get a new one issued."), isn't valid yet, doesn't list the username, was issued by a CA the server doesn't trust, or doesn't match the private key.
 - When the certificate expires in less than an hour, the terminal says so once after connecting. The same goes for certificates used to log in to jump hosts, naming the jump host.
-- The CLI and MCP authenticate the same way.
+- The CLI and MCP authenticate the same way, and their results warn you the same way when a certificate is about to expire (see the CLI's [Output](#output)).
 
 ### Verification codes (TOTP)
 
@@ -433,6 +433,13 @@ Notes:
 - A dialog asks for the password when the server wants one; keys in ssh-agent are tried first.
 - Like connections opened by bastion hosts, it also accepts legacy algorithms (secure ones still come first).
 - "Save to Host List…" in the tab menu keeps it as a host (with the address, port and user filled in).
+
+### IPv6 and dual stack
+
+- Host addresses, jump hosts and proxies can be IPv6 addresses (such as `::1`).
+- When a name resolves to both IPv6 and IPv4 addresses, both are tried in parallel (Happy Eyeballs): the address your system prefers goes first, and if it hasn't connected within 250 milliseconds the other kind is tried at the same time; whichever connects first is used. If IPv6 is broken on your computer, you no longer wait for it to time out before IPv4 is tried.
+- The connection timeout of 15 seconds is for the whole attempt, not 15 seconds for each address.
+- The same goes for port forwarding connecting to a target on this computer, "Lend Local Proxy" connecting to your local proxy, and X11 forwarding connecting to your X server: when you write `localhost` and the other side listens on IPv4 only, there's no wait for IPv6 to fail first (about 2 seconds on Windows).
 
 ### Connection not responding
 
@@ -1018,7 +1025,9 @@ Default shortcuts:
   - **Local** (`ssh -L`): local address and port → target address and port as seen from the server (for example `127.0.0.1:5432` on the server itself).
   - **Dynamic** (`ssh -D`): just a local port. This computer gets a SOCKS proxy (SOCKS5, also accepting SOCKS4 / 4a; no authentication) whose connections leave from the server, with names resolved by the server.
   - **Remote** (`ssh -R`): listening address and port on the server → a target reachable from this computer. Listening on all of the server's interfaces also needs GatewayPorts on the server.
-- The local address can be 127.0.0.1 (default), ::1 or 0.0.0.0. With 0.0.0.0, other devices on the network can reach the target through this computer without authentication, and the interface warns you.
+- The local address can be 127.0.0.1 (default), ::1, 0.0.0.0 or :: (for dynamic forwarding too).
+  - 0.0.0.0 listens on IPv4 only and :: on IPv6 only, so you can add one rule for each on the same port to accept both.
+  - With 0.0.0.0 or ::, other devices on the network can reach the target through this computer without authentication, and the interface warns you.
 - Saving checks that no other rule already listens on the address.
 
 ### Status and reconnection
@@ -1645,6 +1654,11 @@ termlet version
 
 - Readable text in a terminal, JSON when captured by a pipe or program (field names and error codes are always English).
 - Readable text follows `TERMLET_LANG=en|zh` > `LC_ALL` / `LC_MESSAGES` / `LANG` > the system display language > Chinese (Simplified Chinese and English only; a Traditional Chinese system gets Simplified Chinese).
+- When an OpenSSH certificate used to log in (including those for jump hosts) expires in less than an hour, `exec`, `upload` and `download` still finish as usual and also warn you (once it expires, they can't connect any more):
+  - the readable output adds a line on stderr saying when it expires and about how many minutes are left, naming the jump host for a jump host's certificate; stdout is unchanged;
+  - the JSON gets an `expiringCertificates` field with one entry per certificate: `expiresAt` is the local expiry time (RFC 3339, such as `2026-11-19T20:30:00+08:00`), `minutesLeft` the minutes left, and a jump host's entry also has `jump` (the jump host's name); without such certificates the field is left out;
+  - MCP results warn you too;
+  - `exec --terminal` uses the connection of the open terminal, which already warned you when it connected, so its result has no such warning.
 
 ### Exit codes
 

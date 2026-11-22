@@ -414,8 +414,8 @@ struct Listing {
     /// 窗口里只有一个 Tab（停靠区不让拖动它，换成只能拖到另一个窗口上的载体）
     sole: bool,
     highlighted: Option<PanelId>,
-    /// 列表中打开的右键菜单开着，或窗口中开着别的弹出菜单（这时各行与列表头不显示悬停提示，免得盖住菜单，
-    /// 见 [`crate::menu_tooltip`]）
+    /// 窗口中开着弹出菜单（列表中打开的右键菜单等）：这时各行与列表头的按钮不挂悬停提示，免得盖住菜单（各行与窄栏
+    /// 的提示经 [`crate::menu_tooltip::quiet`]）
     menu_open: bool,
     /// 画焦点框的一行（列表有焦点时的当前行）
     ring: Option<usize>,
@@ -545,8 +545,7 @@ impl Workspace {
             }
         }
         let highlighted = self.highlighted_tab(window, cx);
-        let menu_open =
-            self.tab_list_menu_open(window, cx) || crate::menu_tooltip::menu_open(window, cx);
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let mut faces = self.tab_faces(cx);
         // 不是这几种 Tab 的（不会有）：用面板的名字
         for (id, view) in &views {
@@ -642,7 +641,7 @@ impl Workspace {
         }
     }
 
-    /// 从列表中打开的右键菜单还开着（焦点在菜单里）。
+    /// 从列表中打开的右键菜单还开着（焦点在菜单里）：这时浮出的列表不收起。
     fn tab_list_menu_open(&self, window: &Window, cx: &App) -> bool {
         self.tab_list
             .menu
@@ -1620,9 +1619,9 @@ impl Workspace {
                     el.hover(|s| s.bg(hover))
                 }
             })
-            .when(!listing.menu_open, |el| {
-                el.tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
-            })
+            .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
+                Tooltip::new(tip.clone()).build(window, cx)
+            }))
             .child(div().flex_none().flex().items_center().child(face.icon))
             .child(div().flex_1().min_w_0().truncate().child(face.name))
             .children(
@@ -1766,7 +1765,6 @@ impl Workspace {
                 let id = panel.as_u64() as usize;
                 let highlighted = listing.highlighted == Some(panel);
                 let tip = rail_tooltip(&face.name, &face.status);
-                let menu_open = listing.menu_open;
                 items.push(
                     div()
                         .id(("vtab-rail", id))
@@ -1788,11 +1786,9 @@ impl Workspace {
                                 el.hover(|s| s.bg(hover))
                             }
                         })
-                        .when(!menu_open, |el| {
-                            el.tooltip(move |window, cx| {
-                                Tooltip::new(tip.clone()).build(window, cx)
-                            })
-                        })
+                        .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
+                            Tooltip::new(tip.clone()).build(window, cx)
+                        }))
                         .child(face.rail_icon)
                         .children(face.status.first().map(|status| {
                             rail_status(id, status, if highlighted { active } else { rail_bg })

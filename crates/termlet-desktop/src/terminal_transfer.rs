@@ -297,10 +297,12 @@ pub fn describe_error(error: &XferError) -> SharedString {
 }
 
 impl Render for TransferBar {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let Some(info) = self.info.clone() else {
             return div().into_any_element();
         };
+        // 终端的右键菜单开着时按钮不挂悬停提示（按钮的提示只在按下左键时收起，会浮在菜单上，见 crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let theme = cx.theme();
         let (muted, foreground) = (theme.muted_foreground, theme.foreground);
         let tint = match &info.state {
@@ -371,7 +373,7 @@ impl Render for TransferBar {
                                 .primary()
                                 .xsmall()
                                 .label(t!("transfer.save_to", dir = name))
-                                .tooltip(full)
+                                .when(!menu_open, |this| this.tooltip(full))
                                 .on_click(
                                     cx.listener(move |this, _, _, cx| {
                                         this.save_to(dir.clone(), cx)
@@ -464,9 +466,9 @@ impl Render for TransferBar {
                             .truncate()
                             .child(prose(text))
                             .when(!skipped.is_empty(), |this| {
-                                this.tooltip(move |window, cx| {
+                                this.tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                                     Tooltip::new(skipped.clone()).build(window, cx)
-                                })
+                                }))
                             }),
                     )
                     .when_some(first.filter(|_| !info.upload), |this, first| {
@@ -496,7 +498,7 @@ impl Render for TransferBar {
                     .ghost()
                     .small()
                     .icon(IconName::Close)
-                    .tooltip(t!("common.close"))
+                    .when(!menu_open, |this| this.tooltip(t!("common.close")))
                     .on_click(cx.listener(|this, _, _, cx| this.close(cx))),
             );
         }

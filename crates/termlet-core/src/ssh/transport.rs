@@ -9,9 +9,9 @@ use tokio::net::TcpStream;
 use zeroize::Zeroizing;
 
 use crate::model::ProxyKind;
-use crate::ssh::SshError;
 use crate::ssh::plan::ProxyPlan;
 use crate::ssh::proxy_command::{self, ProxyWatch};
+use crate::ssh::{SshError, dial};
 
 /// 任意的双向字节流。
 pub trait Stream: AsyncRead + AsyncWrite + Unpin + Send {}
@@ -19,13 +19,14 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> Stream for T {}
 
 pub type BoxStream = Box<dyn Stream>;
 
-/// TCP 连接的超时。
+/// TCP 连接的超时（解析出几个地址时是总的时长，见 [`dial::connect_any`]）。
 pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 /// TCP keepalive 的空闲时间与探测间隔（与 Go `net.Dialer` 的默认值相同）：空闲时断网、对方没有发 RST，
 /// 也能在几分钟内判定断线（Telnet 没有自己的保活，SSH 的保活之外多一层）。
 const TCP_KEEPALIVE: Duration = Duration::from_secs(15);
 
-/// 直连 TCP（先单独解析域名，区分"解析失败"与"连不上"）。连上后关闭 Nagle、开启 TCP keepalive。
+/// 直连 TCP（先单独解析域名，区分"解析失败"与"连不上"）。解析出 IPv6、IPv4 几个地址时并发连接
+/// （Happy Eyeballs，见 [`dial`]）。连上后关闭 Nagle、开启 TCP keepalive。
 pub async fn tcp(host: &str, port: u16) -> Result<TcpStream, SshError> {
     let started = std::time::Instant::now();
     let addresses: Vec<_> = tokio::net::lookup_host((host, port))
@@ -51,42 +52,26 @@ pub async fn tcp(host: &str, port: u16) -> Result<TcpStream, SshError> {
             reason: "没有地址".into(),
         });
     }
-    let mut last_error = None;
-    for address in addresses {
-        match tokio::time::timeout(CONNECT_TIMEOUT, TcpStream::connect(address)).await {
-            Ok(Ok(stream)) => {
-                let _ = stream.set_nodelay(true);
-                let keepalive = socket2::TcpKeepalive::new()
-                    .with_time(TCP_KEEPALIVE)
-                    .with_interval(TCP_KEEPALIVE);
-                if let Err(e) = socket2::SockRef::from(&stream).set_tcp_keepalive(&keepalive) {
-                    tracing::debug!("开启 TCP keepalive 失败：{e}");
-                }
-                tracing::debug!(
-                    host,
-                    %address,
-                    elapsed_ms = started.elapsed().as_millis() as u64,
-                    "TCP 已连接"
-                );
-                return Ok(stream);
-            }
-            Ok(Err(e)) => {
-                tracing::debug!(host, %address, "TCP 连接失败：{e}");
-                last_error = Some(SshError::from_io(host, port, &e))
-            }
-            Err(_) => {
-                tracing::debug!(host, %address, timeout_s = CONNECT_TIMEOUT.as_secs(), "TCP 连接超时");
-                last_error = Some(SshError::Timeout {
-                    host: host.into(),
-                    port,
-                })
-            }
-        }
+    let (stream, address) = dial::connect_any(&addresses, CONNECT_TIMEOUT)
+        .await
+        .map_err(|e| {
+            tracing::debug!(host, port, "TCP 连接失败：{e}");
+            SshError::from_io(host, port, &e)
+        })?;
+    let _ = stream.set_nodelay(true);
+    let keepalive = socket2::TcpKeepalive::new()
+        .with_time(TCP_KEEPALIVE)
+        .with_interval(TCP_KEEPALIVE);
+    if let Err(e) = socket2::SockRef::from(&stream).set_tcp_keepalive(&keepalive) {
+        tracing::debug!("开启 TCP keepalive 失败：{e}");
     }
-    Err(last_error.unwrap_or(SshError::Timeout {
-        host: host.into(),
-        port,
-    }))
+    tracing::debug!(
+        host,
+        %address,
+        elapsed_ms = started.elapsed().as_millis() as u64,
+        "TCP 已连接"
+    );
+    Ok(stream)
 }
 
 /// 到第一跳的流：有代理时经代理，否则直连。经代理命令时另外返回查看命令进程的一端（连接失败时说明原因）；

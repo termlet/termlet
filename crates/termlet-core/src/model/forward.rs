@@ -1,14 +1,15 @@
 //! 端口转发规则。
 //!
 //! 校验与规范化：
-//! - 本地、动态转发在本机监听，地址只能是回环地址（127.0.0.0/8、::1、localhost）或 0.0.0.0；空值与 localhost
-//!   统一为 127.0.0.1（避免不同系统把 localhost 解析成 IPv4 / IPv6 不一致）。
+//! - 本地、动态转发在本机监听，地址只能是回环地址（127.0.0.0/8、::1、localhost）或任意地址（0.0.0.0、::）；
+//!   空值与 localhost 统一为 127.0.0.1（避免不同系统把 localhost 解析成 IPv4 / IPv6 不一致）。0.0.0.0 只监听 IPv4，
+//!   :: 只监听 IPv6（监听时总是设 IPV6_V6ONLY：Windows 默认如此，Linux 默认是双栈，统一成一样）。
 //! - 远程转发在服务器上监听：空值与 localhost 为 127.0.0.1，`*` 为 0.0.0.0，其余只接受 IP 地址。监听回环以外的地址
 //!   需要服务器的 GatewayPorts 允许，否则服务器只监听回环地址或拒绝。
 //! - 目标是 IP 或主机名（本地转发由服务器解析，远程转发由本机解析），不允许空白与控制字符。
 //! - 同一个监听地址只能有一条规则（见 [`Forward::conflicts_with`]，保存时由存储检查）。
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +21,13 @@ use crate::id::HostId;
 pub const DEFAULT_BIND_HOST: &str = "127.0.0.1";
 /// 所有 IPv4 网卡：局域网内的其他设备也能访问（界面提示风险）。
 pub const ANY_IPV4: &str = "0.0.0.0";
+/// 所有 IPv6 网卡：同样是局域网内的其他设备也能访问，只监听 IPv6。
+pub const ANY_IPV6: &str = "::";
+
+/// 是不是任意地址（0.0.0.0 或 ::，已规范化的写法）。
+pub fn is_any_address(host: &str) -> bool {
+    host == ANY_IPV4 || host == ANY_IPV6
+}
 
 /// 名称的最大长度（字符数）。
 const MAX_NAME_LEN: usize = 64;
@@ -33,7 +41,7 @@ pub struct Forward {
     /// 经由哪台主机（删除主机时一并删除规则）
     pub host: Option<HostId>,
     pub name: String,
-    /// 本地转发、动态转发为本机的监听地址（回环地址或 0.0.0.0）；远程转发为服务器上的监听地址
+    /// 本地转发、动态转发为本机的监听地址（回环地址、0.0.0.0 或 ::）；远程转发为服务器上的监听地址
     pub bind_host: String,
     pub bind_port: u16,
     /// 目标（本地转发从服务器的角度访问；远程转发从本机的角度访问）；动态转发没有
@@ -76,8 +84,8 @@ pub enum ForwardKind {
 impl Forward {
     /// 校验并规范化：补默认值、统一监听地址与目标地址的写法。
     ///
-    /// 失败的字段与原因：`name` too_long；`host` required；`bindHost` not_local（本地、动态转发不是回环地址或
-    /// 0.0.0.0）/ not_ip（远程转发不是 IP）；`bindPort` invalid；`targetHost` required / too_long / invalid；
+    /// 失败的字段与原因：`name` too_long；`host` required；`bindHost` not_local（本地、动态转发不是回环地址、
+    /// 0.0.0.0 或 ::）/ not_ip（远程转发不是 IP）；`bindPort` invalid；`targetHost` required / too_long / invalid；
     /// `targetPort` invalid。
     pub(crate) fn normalize(&mut self) -> Result<(), Invalid> {
         trimmed(&mut self.name, "name", MAX_NAME_LEN)?;
@@ -103,9 +111,9 @@ impl Forward {
         Ok(())
     }
 
-    /// 本机监听所有网卡：局域网内的其他设备无需认证即可经本机访问目标。
+    /// 本机监听所有网卡（0.0.0.0 或 ::）：局域网内的其他设备无需认证即可经本机访问目标。
     pub fn listens_on_all_interfaces(&self) -> bool {
-        self.kind != ForwardKind::Remote && self.bind_host == ANY_IPV4
+        self.kind != ForwardKind::Remote && is_any_address(&self.bind_host)
     }
 
     /// 监听地址 `host:port`（IPv6 带方括号）。
@@ -122,8 +130,9 @@ impl Forward {
     }
 
     /// 两条规则能否同时使用（都已规范化）：端口相同且地址相同，或其中一个是 0.0.0.0、另一个是 IPv4 地址
-    /// （0.0.0.0 已包含全部 IPv4 地址）时冲突。本地、动态转发监听在本机，彼此冲突；远程转发监听在各自的服务器上，
-    /// 只与同一台主机的远程转发冲突。
+    /// （0.0.0.0 已包含全部 IPv4 地址），或其中一个是 ::、另一个是 IPv6 地址时冲突；0.0.0.0 与 :: 互不冲突
+    /// （各监听一种协议）。本地、动态转发监听在本机，彼此冲突；远程转发监听在各自的服务器上，只与同一台主机的远程转发
+    /// 冲突（服务器上 :: 是否同时监听 IPv4 由服务器决定，这里不管）。
     pub fn conflicts_with(&self, other: &Forward) -> bool {
         let remote = self.kind == ForwardKind::Remote;
         if self.bind_port != other.bind_port || remote != (other.kind == ForwardKind::Remote) {
@@ -135,9 +144,12 @@ impl Forward {
         if self.bind_host == other.bind_host {
             return true;
         }
-        let is_v4 = |h: &str| h.parse::<Ipv4Addr>().is_ok();
-        (self.bind_host == ANY_IPV4 && is_v4(&other.bind_host))
-            || (other.bind_host == ANY_IPV4 && is_v4(&self.bind_host))
+        let covers = |any: &str, host: &str| match any {
+            ANY_IPV4 => host.parse::<Ipv4Addr>().is_ok(),
+            ANY_IPV6 => host.parse::<Ipv6Addr>().is_ok(),
+            _ => false,
+        };
+        covers(&self.bind_host, &other.bind_host) || covers(&other.bind_host, &self.bind_host)
     }
 }
 
@@ -158,15 +170,14 @@ fn strip(host: &str) -> &str {
         .unwrap_or(host)
 }
 
-/// 本机的监听地址：回环地址或 0.0.0.0；IPv6 的任意地址（::）、局域网地址、主机名都不接受。
+/// 本机的监听地址：回环地址或任意地址（0.0.0.0、::，`[::]` 同样）；局域网地址、主机名都不接受。
 fn normalize_local_bind(host: &str) -> Result<String, Invalid> {
     let host = strip(host);
     if host.is_empty() || host.eq_ignore_ascii_case("localhost") {
         return Ok(DEFAULT_BIND_HOST.into());
     }
     match host.parse::<IpAddr>() {
-        Ok(IpAddr::V4(ip)) if ip.is_unspecified() => Ok(ANY_IPV4.into()),
-        Ok(ip) if ip.is_loopback() => Ok(ip.to_string()),
+        Ok(ip) if ip.is_unspecified() || ip.is_loopback() => Ok(ip.to_string()),
         _ => Err(Invalid::new("bindHost", "not_local")),
     }
 }
@@ -244,6 +255,22 @@ mod tests {
         rule.bind_host = "0.0.0.0".into();
         rule.normalize().unwrap();
         assert!(rule.listens_on_all_interfaces());
+        // IPv6 的任意地址同样是所有网卡
+        rule.bind_host = "[::]".into();
+        rule.normalize().unwrap();
+        assert_eq!(rule.bind_host, ANY_IPV6);
+        assert!(rule.listens_on_all_interfaces());
+        rule.bind_host = "::1".into();
+        rule.normalize().unwrap();
+        assert!(!rule.listens_on_all_interfaces());
+        // 动态转发（SOCKS）同样可以监听 ::
+        let mut socks = Forward {
+            kind: ForwardKind::Dynamic,
+            bind_host: "::".into(),
+            ..rule
+        };
+        socks.normalize().unwrap();
+        assert!(socks.listens_on_all_interfaces());
     }
 
     #[test]
@@ -264,7 +291,7 @@ mod tests {
     /// 可以接受的写法与规范化的结果。
     #[test]
     fn normalize_accepts() {
-        let cases: [(&str, fn(&mut Forward), &str, &str); 7] = [
+        let cases: [(&str, fn(&mut Forward), &str, &str); 9] = [
             ("默认监听 127.0.0.1", |_| {}, "127.0.0.1", "127.0.0.1"),
             (
                 "localhost 统一为 127.0.0.1",
@@ -288,6 +315,18 @@ mod tests {
                 "0.0.0.0",
                 |r| r.bind_host = "0.0.0.0".into(),
                 "0.0.0.0",
+                "127.0.0.1",
+            ),
+            (
+                "IPv6 任意地址",
+                |r| r.bind_host = "::".into(),
+                "::",
+                "127.0.0.1",
+            ),
+            (
+                "IPv6 任意地址（带方括号、全写）",
+                |r| r.bind_host = " [0:0:0:0:0:0:0:0] ".into(),
+                "::",
                 "127.0.0.1",
             ),
             (
@@ -326,8 +365,8 @@ mod tests {
                 "not_local",
             ),
             (
-                "监听 IPv6 任意地址",
-                |r| r.bind_host = "::".into(),
+                "监听 IPv6 局域网地址",
+                |r| r.bind_host = "fe80::1".into(),
                 "bindHost",
                 "not_local",
             ),
@@ -393,6 +432,13 @@ mod tests {
             (local("0.0.0.0", 80), local("127.0.0.1", 80), true),
             (local("127.0.0.1", 80), local("0.0.0.0", 80), true),
             (local("0.0.0.0", 80), local("::1", 80), false),
+            // :: 包含全部 IPv6 地址；0.0.0.0 与 :: 各监听一种协议，同一端口可以并存
+            (local("::", 80), local("::1", 80), true),
+            (local("::1", 80), local("::", 80), true),
+            (local("::", 80), local("::", 80), true),
+            (local("::", 80), local("127.0.0.1", 80), false),
+            (local("::", 80), local("0.0.0.0", 80), false),
+            (local("::", 80), local("::1", 81), false),
         ];
         for (a, b, want) in cases {
             assert_eq!(

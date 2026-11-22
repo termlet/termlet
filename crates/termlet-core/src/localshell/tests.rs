@@ -6,33 +6,92 @@ use std::sync::{Arc, mpsc};
 
 use super::*;
 
-/// 运行命令，取标准输出与标准错误（最多等 60 秒）。
-pub(super) fn output_of(mut cmd: Command) -> String {
+/// 等一个程序结束的最长时间。
+const RUN_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// 运行命令，取标准输出与标准错误（最多等 [`RUN_TIMEOUT`]）。没有结束时结束它与它启动的进程（不留下还在运行、占着
+/// 测试输出的进程），返回 `None`。
+fn try_output_of(mut cmd: Command) -> Option<String> {
     cmd.stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     #[cfg(windows)]
     cmd.creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW);
     let child = cmd.spawn().expect("启动程序");
+    let pid = child.id();
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
         let _ = tx.send(child.wait_with_output());
     });
-    let out = rx
-        .recv_timeout(Duration::from_secs(60))
-        .expect("程序 60 秒内没有结束")
-        .expect("运行程序");
-    String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr)
+    let Ok(out) = rx.recv_timeout(RUN_TIMEOUT) else {
+        kill_tree(pid);
+        return None;
+    };
+    let out = out.expect("运行程序");
+    Some(String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr))
 }
 
-/// 按启动描述的程序、环境变量与起始目录运行，参数另给（终端的参数是交互式的，测试中换成执行一条命令）。
-fn run_like(launch: &Launch, args: &[&str]) -> String {
+/// 结束进程与它启动的进程（Windows 上连同子进程，其他系统上只结束它自己）。
+fn kill_tree(pid: u32) {
+    let pid = pid.to_string();
+    let mut kill = if cfg!(windows) {
+        let mut taskkill = Command::new("taskkill");
+        taskkill.args(["/T", "/F", "/PID", pid.as_str()]);
+        taskkill
+    } else {
+        let mut kill = Command::new("kill");
+        kill.args(["-KILL", pid.as_str()]);
+        kill
+    };
+    let _ = kill.stdout(Stdio::null()).stderr(Stdio::null()).status();
+}
+
+/// 同 [`try_output_of`]，没有结束时测试失败，写明是哪个程序（`what`）、什么命令。
+pub(super) fn output_of(what: &str, cmd: Command) -> String {
+    let line = command_line(&cmd);
+    try_output_of(cmd)
+        .unwrap_or_else(|| panic!("{what}（{line}）{} 秒内没有结束", RUN_TIMEOUT.as_secs()))
+}
+
+/// 命令行（程序与参数，失败时的说明用）。
+fn command_line(cmd: &Command) -> String {
+    std::iter::once(cmd.get_program())
+        .chain(cmd.get_args())
+        .map(|a| a.to_string_lossy())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// 按启动描述的程序、环境变量与起始目录运行的命令，参数另给（终端的参数是交互式的，测试中换成执行一条命令）。
+fn command_like(launch: &Launch, args: &[&str]) -> Command {
     let mut cmd = Command::new(&launch.program);
     cmd.args(args)
         .env_clear()
         .envs(launch.env.iter().map(|(k, v)| (k, v)))
         .current_dir(&launch.cwd);
-    output_of(cmd)
+    cmd
+}
+
+#[cfg(unix)]
+fn run_like(launch: &Launch, args: &[&str]) -> String {
+    output_of(
+        &launch.program.display().to_string(),
+        command_like(launch, args),
+    )
+}
+
+/// Windows arm64 上的 Git Bash、MSYS2、Cygwin：都是 MSYS / Cygwin 运行时的 x64 程序，在 x64 仿真下运行。GitHub 的
+/// windows-11-arm 运行器上它们偶尔启动不了（没有任何输出就结束）、卡住，或者慢到几十秒：同一个 job 中前后两次启动
+/// Git Bash，一次正常、一次什么也没输出（actions/partner-runner-images#169）；同一个测试在 x64 的运行器上约 6–8 秒，
+/// 在 arm64 上要 64–78 秒。只有这几种、只在 arm64 上，没有在时限内结束或没有任何输出时跳过并说明；x64 上照常要求
+/// 能运行，命令提示符、PowerShell 在哪里都照常要求。
+#[cfg(windows)]
+fn flaky_under_emulation(kind: ShellKind) -> bool {
+    cfg!(target_arch = "aarch64")
+        && matches!(
+            kind,
+            ShellKind::GitBash | ShellKind::Msys2 | ShellKind::Cygwin
+        )
 }
 
 fn fake(id: &str, path: PathBuf) -> Profile {
@@ -301,7 +360,7 @@ fn detect_and_run_windows() {
         .env_clear()
         .envs(launch.env.iter().map(|(k, v)| (k, v)))
         .current_dir(&launch.cwd);
-    let out = output_of(run);
+    let out = output_of(&cmd.name, run);
     assert!(
         out.contains("[%CARGO_MANIFEST_DIR%]"),
         "不应继承进程的变量：{out}"
@@ -353,10 +412,34 @@ fn detect_and_run_windows() {
         };
         let launch = p.launch().unwrap();
         let args: Vec<&str> = args.iter().map(String::as_str).collect();
-        let out = run_like(&launch, &args);
+        let line = format!("{} {}", launch.program.display(), args.join(" "));
+        let started = std::time::Instant::now();
+        let out = try_output_of(command_like(&launch, &args));
+        let elapsed = started.elapsed().as_millis();
+        // 每一个的用时都打印出来（CI 中通过时也列出，见 .config/nextest.toml）：慢的是哪一个一看便知
+        println!("{} 用时 {elapsed} ms", p.name);
+        let problem = match &out {
+            None => Some(format!("{} 秒内没有结束", RUN_TIMEOUT.as_secs())),
+            Some(out) if out.trim().is_empty() => Some("没有任何输出".to_string()),
+            Some(_) => None,
+        };
+        if let Some(problem) = problem {
+            assert!(
+                flaky_under_emulation(p.kind),
+                "{}（{line}）{problem}",
+                p.name
+            );
+            println!(
+                "跳过 {}（{line}）：{problem}。Windows arm64 上它在 x64 仿真下运行，GitHub 的运行器上偶尔启动不了或卡住\
+                 （actions/partner-runner-images#169），只在 arm64 上跳过",
+                p.name
+            );
+            continue;
+        }
+        let out = out.unwrap_or_default();
         assert!(
             out.contains(&want),
-            "{} 的输出中没有 {want:?}：{out}",
+            "{}（{line}）的输出中没有 {want:?}：{out}",
             p.name
         );
     }
@@ -403,7 +486,7 @@ fn custom_shell_windows() {
         .env_clear()
         .envs(launch.env.iter().map(|(k, v)| (k, v)))
         .current_dir(&launch.cwd);
-    let out = output_of(run);
+    let out = output_of(&shell.name, run);
     assert!(
         out.contains("custom-ok-42"),
         "应带着参数与环境变量启动：{out}"

@@ -48,6 +48,7 @@ impl Fake {
                     truncated: false,
                     duration_ms: 20,
                     approval_wait_ms: None,
+                    expiring_certificates: Vec::new(),
                 }),
                 _ => Response::Ok,
             })

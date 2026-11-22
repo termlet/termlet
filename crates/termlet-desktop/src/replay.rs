@@ -31,8 +31,8 @@ use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _,
 use gpui_kit::{
     App, AppContext as _, ClickEvent, ClipboardItem, Context, Entity, EventEmitter, FocusHandle,
     Focusable, InteractiveElement as _, IntoElement, KeyBinding, OperatingSystem,
-    ParentElement as _, Render, SharedString, Styled as _, Subscription, Task, TestSupportExt as _,
-    Window, actions, div, prelude::FluentBuilder as _,
+    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _,
+    Subscription, Task, TestSupportExt as _, Window, actions, div, prelude::FluentBuilder as _,
 };
 use termlet_core::recording::cast::{self, Cast, CastError, CastTheme};
 use termlet_core::recording::player::{DEFAULT_IDLE_LIMIT, Playhead, SPEEDS, Seek, Timeline};
@@ -43,7 +43,6 @@ use termlet_terminal::{
 
 use self::keyframes::{Keyframes, Pending as PendingKeyframe, feed_events, output_bytes};
 use crate::app_state::AppState;
-use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_colors::{self, SchemeLevels};
@@ -656,7 +655,9 @@ impl ReplayPanel {
         cx.notify();
     }
 
-    fn render_toolbar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    /// 播放的工具条。`menu_open`：窗口中开着弹出菜单（倍速的下拉菜单、回放区的右键菜单等），按钮不挂悬停提示
+    /// （按钮的提示只在按下左键时收起，会浮在菜单上，见 [`crate::menu_tooltip`]）。
+    fn render_toolbar(&self, menu_open: bool, cx: &mut Context<Self>) -> impl IntoElement {
         let playing = self.head.is_playing();
         let speed = self.head.speed();
         let this = cx.entity().downgrade();
@@ -665,7 +666,7 @@ impl ReplayPanel {
             .xsmall()
             .dropdown_caret(true)
             .label(speed_label(speed))
-            .tooltip(t!("replay.speed"))
+            .when(!menu_open, |this| this.tooltip(t!("replay.speed")))
             .dropdown_menu({
                 let this = this.clone();
                 move |menu, _, _| {
@@ -705,15 +706,17 @@ impl ReplayPanel {
                     } else {
                         IconName::Play
                     })
-                    .tooltip_with_action(
-                        if playing {
-                            t!("replay.pause")
-                        } else {
-                            t!("replay.play")
-                        },
-                        &TogglePlay,
-                        Some(terminal_context().as_str()),
-                    )
+                    .when(!menu_open, |this| {
+                        this.tooltip_with_action(
+                            if playing {
+                                t!("replay.pause")
+                            } else {
+                                t!("replay.play")
+                            },
+                            &TogglePlay,
+                            Some(terminal_context().as_str()),
+                        )
+                    })
                     .on_click(cx.listener(|this, _, window, cx| {
                         this.toggle_play(window, cx);
                         this.focus_terminal(window, cx);
@@ -746,7 +749,9 @@ impl ReplayPanel {
                     .icon(IconName::FastForward)
                     .label(t!("replay.skip_idle"))
                     .selected(self.skip_idle)
-                    .tooltip(t!("replay.skip_idle_hint", seconds = limit))
+                    .when(!menu_open, |this| {
+                        this.tooltip(t!("replay.skip_idle_hint", seconds = limit))
+                    })
                     .on_click(cx.listener(|this, _, window, cx| {
                         let skip = !this.skip_idle;
                         this.set_skip_idle(skip, window, cx);
@@ -762,7 +767,9 @@ impl ReplayPanel {
                         .icon(IconName::Palette)
                         .label(t!("replay.recorded_colors"))
                         .selected(self.uses_recorded_colors())
-                        .tooltip(t!("replay.recorded_colors_hint"))
+                        .when(!menu_open, |this| {
+                            this.tooltip(t!("replay.recorded_colors_hint"))
+                        })
                         .on_click(cx.listener(|this, _, window, cx| {
                             let on = !this.uses_recorded_colors();
                             this.set_recorded_colors(on, cx);
@@ -775,11 +782,13 @@ impl ReplayPanel {
                     .ghost()
                     .small()
                     .icon(IconName::Search)
-                    .tooltip_with_action(
-                        t!("terminal.menu.find"),
-                        &OpenSearch,
-                        Some(termlet_terminal::view::KEY_CONTEXT),
-                    )
+                    .when(!menu_open, |this| {
+                        this.tooltip_with_action(
+                            t!("terminal.menu.find"),
+                            &OpenSearch,
+                            Some(termlet_terminal::view::KEY_CONTEXT),
+                        )
+                    })
                     .on_click(
                         cx.listener(|this, _, window, cx| {
                             this.open_search(&OpenSearch, window, cx)
@@ -860,7 +869,7 @@ impl ReplayPanel {
 impl Panel for ReplayPanel {
     fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let id = cx.entity_id().as_u64() as usize;
-        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let tip: SharedString = self.path.display().to_string().into();
         h_flex()
@@ -870,9 +879,9 @@ impl Panel for ReplayPanel {
                     .id(("replay-tab-title", id))
                     .test_support()
                     .gap_1()
-                    .tooltip_unless_menu(menu_open, move |window, cx| {
+                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                         Tooltip::new(tip.clone()).build(window, cx)
-                    })
+                    }))
                     // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
                     .context_menu({
                         let this = cx.entity().downgrade();
@@ -958,8 +967,9 @@ impl Panel for ReplayPanel {
 }
 
 impl Render for ReplayPanel {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus = self.view.focus_handle(cx);
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let area = div()
             .id("replay-area")
             .relative()
@@ -1006,7 +1016,7 @@ impl Render for ReplayPanel {
             .on_action(cx.listener(Self::open_search))
             // gpui-kit 的 Root 把 Ctrl+C 绑给了输入框的复制：回放中就是复制选中的文字
             .on_action(cx.listener(|this, _: &text_input::Copy, _, cx| this.copy_selection(cx)))
-            .child(self.render_toolbar(cx))
+            .child(self.render_toolbar(menu_open, cx))
             .child(area)
             .child(self.render_status(cx))
     }

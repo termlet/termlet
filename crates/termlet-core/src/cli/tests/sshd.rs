@@ -1,5 +1,6 @@
 //! 连真实 sshd 的命令行服务测试：设置 `TERMLET_TEST_SSH=127.0.0.1:2222`（testing/sshd 的测试容器，账号 termlet /
-//! termlet-e2e）后运行，否则跳过。
+//! termlet-e2e）后运行，否则跳过。证书快过期的提醒连 testing/sshcert 的临时容器（`TERMLET_TEST_CERT`，见
+//! `crate::ssh::cert_tests`）。
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -353,4 +354,80 @@ fn client_exit_terminates_remote_command() {
     std::thread::sleep(Duration::from_millis(500));
     let check = exec_ok(f.exec("e2e", &format!("cat {marker}; rm -f {marker}")));
     assert_eq!(check.stdout, "term\n", "远程命令应收到 SIGTERM");
+}
+
+// 登录用的证书快过期（容器里现场签发、半小时后过期）：exec 与传输的结果中列出它（目标主机的没有 jump）；
+// 经用证书登录的跳板机时写明哪一跳，还早的证书不列
+#[test]
+fn expiring_certificates_are_reported() {
+    use crate::model::{Auth, Jump, KeySource};
+    use crate::ssh::cert_tests::{cert_server, new_key, sign_in_container, write_key};
+    let Some(server) = cert_server() else {
+        eprintln!("没有设置 TERMLET_TEST_CERT，跳过");
+        return;
+    };
+    let f = Fixture::new();
+    let dir = tempfile::tempdir().unwrap();
+    let with_certificate = |name: &str, validity: &str, address: (String, u16)| {
+        let key = new_key();
+        let cert = sign_in_container(&key, SSH_USER, validity);
+        let path = write_key(dir.path(), name, &key, Some(&cert));
+        let id = add_server_at(&f, address, name, None);
+        let mut doc = f.store.get::<Host>(&id).unwrap().doc;
+        doc.auth = Auth::Key {
+            source: KeySource::file(path.display().to_string()),
+        };
+        f.store.update(&id, doc).unwrap();
+        id
+    };
+
+    let id = with_certificate("certified", "-5m:+30m", server.clone());
+    trust(&f, &id);
+    let r = exec_ok(f.exec("certified", "whoami"));
+    assert_eq!(r.stdout, format!("{SSH_USER}\n"));
+    let [expiring] = r.expiring_certificates.as_slice() else {
+        panic!("{:?}", r.expiring_certificates);
+    };
+    assert_eq!(expiring.jump, None);
+    assert!((25..=30).contains(&expiring.minutes_left), "{expiring:?}");
+    // 本地时间的 RFC 3339，到秒、带时区偏移
+    assert_eq!(expiring.expires_at.len(), 25, "{expiring:?}");
+    assert_eq!(&expiring.expires_at[10..11], "T");
+    let out = dir.path().join("out");
+    std::fs::create_dir(&out).unwrap();
+    let down = match transfer(
+        &f,
+        false,
+        "certified",
+        &out.display().to_string(),
+        "/etc/hostname",
+    ) {
+        Response::Transfer(t) => t,
+        other => panic!("{other:?}"),
+    };
+    // 还剩几分钟可能已经少了一分钟
+    let [downloaded] = down.expiring_certificates.as_slice() else {
+        panic!("{:?}", down.expiring_certificates);
+    };
+    assert_eq!(
+        (&downloaded.jump, &downloaded.expires_at),
+        (&expiring.jump, &expiring.expires_at)
+    );
+
+    // 同一个容器既当跳板机（证书快过期）又当目标主机（在容器里连自己的 22 端口，证书还有三小时）
+    let bastion = with_certificate("bastion", "-5m:+20m", server.clone());
+    trust(&f, &bastion);
+    let inner = with_certificate("inner", "-5m:+3h", ("127.0.0.1".into(), 22));
+    let mut doc = f.store.get::<Host>(&inner).unwrap().doc;
+    doc.jump = Jump::Via {
+        host: bastion.clone(),
+    };
+    f.store.update(&inner, doc).unwrap();
+    trust(&f, &inner);
+    let r = exec_ok(f.exec("inner", "true"));
+    let [expiring] = r.expiring_certificates.as_slice() else {
+        panic!("{:?}", r.expiring_certificates);
+    };
+    assert_eq!(expiring.jump.as_deref(), Some("bastion"));
+    assert!((15..=20).contains(&expiring.minutes_left), "{expiring:?}");
 }

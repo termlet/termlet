@@ -30,9 +30,11 @@ docker build -t termlet-linux-build:1.99.1 testing/linux   # 本机在 Docker �
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/capture-window.ps1 -Process termlet-desktop -Out shot.png
                                                    # 截取窗口画面检查界面（锁屏时也能用）
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/post-input.ps1 -Process termlet-desktop -Click 640,451
-                                                   # 向窗口投递点击（-Click / -DoubleClick / -RightClick / -Drag x1,y1,x2,y2）、文字（-Text）、按键（-Key Enter）、
-                                                   # 滚轮（-Wheel x,y,格数，负数向下），改窗口大小（-Resize 宽,高，用窗口管理接口）
+                                                   # 向窗口投递点击（-Click / -DoubleClick / -RightClick / -Drag x1,y1,x2,y2）、只移动指针（-Move，看悬停提示）、
+                                                   # 文字（-Text）、按键（-Key Enter）、滚轮（-Wheel x,y,格数，负数向下），改窗口大小（-Resize 宽,高，用窗口管理接口）
                                                    # 带修饰键的快捷键投递不了，用 UI 测试；截图坐标换算成客户区坐标：x 减 8
+                                                   # 两个脚本按进程名找时取第一个有窗口的：用户开着自己的 Termlet、或同时开着几个测试实例时，改用 -Pid <进程号>
+                                                   # （代替 -Process），免得截错、投错窗口；Git Bash 中直接 `程序 &` 启动的，进程号是 `cat /proc/$!/winpid`
 cargo test -p termlet-terminal --release throughput -- --ignored --nocapture   # 终端解析吞吐
 TERMLET_TEST_SSH=127.0.0.1:2222 cargo test -p termlet-core --release --lib sftp::tests::bench -- --ignored --nocapture --test-threads 1
                                                    # SFTP / SCP / 命令行传输的吞吐（同一文件连续传 5 次，打印每次的 MB/s；TERMLET_BENCH_MB 等见 bench.rs）

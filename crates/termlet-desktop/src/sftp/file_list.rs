@@ -1067,8 +1067,6 @@ impl FileList {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let row = self.rows[ix].clone();
-        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
-        let popup_open = crate::menu_tooltip::menu_open(window, cx);
         let selected = self.selection.contains(&row.name);
         let is_cursor = self.selection.cursor.as_deref() == Some(row.name.as_str());
         let ring = is_cursor && self.shows_focus(window);
@@ -1208,10 +1206,10 @@ impl FileList {
                     .truncate()
                     .text_xs()
                     .text_color(muted)
-                    .when(!modified_full.is_empty() && !popup_open, |this| {
-                        this.tooltip(move |window, cx| {
+                    .when(!modified_full.is_empty(), |this| {
+                        this.tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                             Tooltip::new(modified_full.clone()).build(window, cx)
-                        })
+                        }))
                     })
                     .child(modified),
             )

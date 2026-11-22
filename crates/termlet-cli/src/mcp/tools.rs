@@ -441,11 +441,15 @@ fn transfer_outcome(done: &TransferResponse, upload: bool, lang: Lang) -> Outcom
         text.push('\n');
         text.push_str(messages::VIA_SCP.get(lang));
     }
+    for note in output::expiring_notes(&done.expiring_certificates, lang) {
+        text.push('\n');
+        text.push_str(&note);
+    }
     Outcome::ok(text, serde_json::to_value(done).ok())
 }
 
 /// 执行结果的文本：退出码与用时（等用户批准过的另说明等了多久），标准输出、标准错误（太长时只留开头与结尾），
-/// 截断的说明。
+/// 截断的说明，登录用的证书快过期的提醒。
 fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
     let (out_limit, err_limit) = budgets(exec.stdout.len(), exec.stderr.len(), OUTPUT_BUDGET);
     let (stdout, out_omitted) = clip(&exec.stdout, out_limit);
@@ -487,6 +491,9 @@ fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
     if exec.truncated {
         text.push_str(&messages::MCP_APP_TRUNCATED.fill(lang, &[&OUTPUT_LIMIT]));
         text.push('\n');
+    }
+    for note in output::expiring_notes(&exec.expiring_certificates, lang) {
+        text.push_str(&format!("[termlet] {note}\n"));
     }
     text
 }
@@ -566,6 +573,7 @@ mod tests {
             truncated: false,
             duration_ms: 1500,
             approval_wait_ms: None,
+            expiring_certificates: Vec::new(),
         };
         assert_eq!(
             exec_text(&exec, false, Lang::En),
@@ -604,6 +612,7 @@ mod tests {
             truncated: true,
             duration_ms: 10,
             approval_wait_ms: None,
+            expiring_certificates: Vec::new(),
         };
         let text = exec_text(&exec, false, Lang::En);
         assert!(text.len() < OUTPUT_BUDGET + 1024, "{}", text.len());
@@ -627,6 +636,7 @@ mod tests {
             bytes: 2048,
             duration_ms: 1500,
             protocol: termlet_proto::TRANSFER_SFTP.into(),
+            expiring_certificates: Vec::new(),
         };
         let text = transfer_outcome(&done, true, Lang::En).text;
         assert_eq!(text, "Uploaded 2.0 KB → /tmp/a.txt (1.5s)");
@@ -641,6 +651,54 @@ mod tests {
         assert!(outcome.text.starts_with("已下载 2.0 KB → D:\\a.txt"));
         assert!(outcome.text.contains("改用 SCP"), "{}", outcome.text);
         assert_eq!(outcome.structured.unwrap()["protocol"], "scp");
+    }
+
+    // 登录用的证书快过期：执行与传输的结果末尾提醒，跳板机的写明哪一台；传输的结构化结果中也有
+    #[test]
+    fn results_mention_expiring_certificates() {
+        let expiring = vec![
+            termlet_proto::ExpiringCertificate {
+                jump: Some("bastion".into()),
+                expires_at: "2026-11-19T20:30:00+08:00".into(),
+                minutes_left: 25,
+            },
+            termlet_proto::ExpiringCertificate {
+                jump: None,
+                expires_at: "2026-11-19T20:40:00+08:00".into(),
+                minutes_left: 35,
+            },
+        ];
+        let exec = ExecResponse {
+            stdout: "hi\n".into(),
+            expiring_certificates: expiring.clone(),
+            ..Default::default()
+        };
+        let text = exec_text(&exec, false, Lang::Zh);
+        assert!(
+            text.ends_with(
+                "hi\n[termlet] 跳板机 bastion 登录用的证书将于 2026-11-19 20:30 过期（还剩约 25 分钟），过期后无法再经它连接，请及时重新签发。\n[termlet] 登录用的证书将于 2026-11-19 20:40 过期（还剩约 35 分钟），过期后无法再连接这台主机，请及时重新签发。\n"
+            ),
+            "{text}"
+        );
+        let done = TransferResponse {
+            local: "D:\\a.txt".into(),
+            remote: "/tmp/a.txt".into(),
+            bytes: 2048,
+            duration_ms: 1500,
+            protocol: termlet_proto::TRANSFER_SFTP.into(),
+            expiring_certificates: expiring,
+        };
+        let outcome = transfer_outcome(&done, true, Lang::En);
+        assert!(
+            outcome
+                .text
+                .starts_with("Uploaded 2.0 KB → /tmp/a.txt (1.5s)\nThe certificate used to log in to the jump host bastion"),
+            "{}",
+            outcome.text
+        );
+        let structured = outcome.structured.unwrap();
+        assert_eq!(structured["expiringCertificates"][0]["jump"], "bastion");
+        assert_eq!(structured["expiringCertificates"][1]["minutesLeft"], 35);
     }
 
     #[test]

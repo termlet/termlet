@@ -24,8 +24,9 @@ pub mod client;
 
 pub use error::{ErrorCode, ExitCode};
 pub use message::{
-    ClientHello, ErrorBody, ExecRequest, ExecResponse, HostSummary, Lang, LaunchFile, Request,
-    Response, TRANSFER_SCP, TRANSFER_SFTP, TransferRequest, TransferResponse, Welcome,
+    ClientHello, ErrorBody, ExecRequest, ExecResponse, ExpiringCertificate, HostSummary, Lang,
+    LaunchFile, Request, Response, TRANSFER_SCP, TRANSFER_SFTP, TransferRequest, TransferResponse,
+    Welcome,
 };
 
 /// 协议版本：客户端与服务端都支持的最高版本。

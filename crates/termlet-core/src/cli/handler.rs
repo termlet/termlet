@@ -9,8 +9,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use termlet_proto::{
-    ErrorBody, ErrorCode, ExecRequest, ExecResponse, HostSummary, Lang, OUTPUT_LIMIT, Request,
-    Response, TransferRequest, TransferResponse,
+    ErrorBody, ErrorCode, ExecRequest, ExecResponse, ExpiringCertificate, HostSummary, Lang,
+    OUTPUT_LIMIT, Request, Response, TransferRequest, TransferResponse,
 };
 use tokio::sync::{oneshot, watch};
 
@@ -300,26 +300,32 @@ impl Ctx<'_> {
             self.check_vault()?;
         }
         let status = self.check_rules(call, &record, &request.command).await?;
-        let (exit_code, stdout, stderr, truncated) = if request.terminal {
+        // 在终端中执行用的是终端的连接：快过期的证书在连接时已在终端里提醒过
+        let (exit_code, stdout, stderr, truncated, expiring_certificates) = if request.terminal {
             let output = self.run_in_terminal(&record, &request.command).await?;
             (
                 output.exit_code,
                 output.output,
                 String::new(),
                 output.truncated,
+                Vec::new(),
             )
         } else {
-            let ExecOutput {
-                exit_code,
-                stdout,
-                stderr,
-                truncated,
-            } = self.run_exec(&record, &request.command).await?;
+            let (
+                ExecOutput {
+                    exit_code,
+                    stdout,
+                    stderr,
+                    truncated,
+                },
+                expiring,
+            ) = self.run_exec(&record, &request.command).await?;
             (
                 exit_code,
                 String::from_utf8_lossy(&stdout).into_owned(),
                 String::from_utf8_lossy(&stderr).into_owned(),
                 truncated,
+                expiring,
             )
         };
         Ok((
@@ -330,6 +336,7 @@ impl Ctx<'_> {
                 truncated,
                 duration_ms: call.elapsed_ms(),
                 approval_wait_ms: call.approval_wait_ms(),
+                expiring_certificates,
             },
             status,
         ))
@@ -490,14 +497,19 @@ impl Ctx<'_> {
         result.map_err(|e| from_terminal(&e, self.lang))
     }
 
-    /// 新建连接执行，用完即断开。
-    async fn run_exec(&self, record: &Record<Host>, command: &str) -> Result<ExecOutput, CliError> {
+    /// 新建连接执行，用完即断开。另返回登录用的证书中快过期的（结果中提醒）。
+    async fn run_exec(
+        &self,
+        record: &Record<Host>,
+        command: &str,
+    ) -> Result<(ExecOutput, Vec<ExpiringCertificate>), CliError> {
         let mut cancel = self.cancel.clone();
         let (connection, _) =
             connect::connect(self.shared.store.clone(), &record.id, &mut cancel).await?;
+        let expiring = expiring_certificates(&connection);
         let result = connect::exec(&connection, command, OUTPUT_LIMIT, &mut cancel).await;
         disconnect_later(connection);
-        result
+        result.map(|output| (output, expiring))
     }
 
     // ---------------------------------------------------------------- 传输
@@ -562,6 +574,7 @@ impl Ctx<'_> {
         let mut cancel = self.cancel.clone();
         let (connection, refused) =
             connect::connect(self.shared.store.clone(), &record.id, &mut cancel).await?;
+        let expiring_certificates = expiring_certificates(&connection);
         // 取消时由传输自己删除临时文件再返回（直接丢弃会在远程或本机留下临时文件）
         let stopped = std::sync::atomic::AtomicBool::new(false);
         let stop = async {
@@ -602,6 +615,7 @@ impl Ctx<'_> {
                 sftp::Protocol::Scp => termlet_proto::TRANSFER_SCP,
             }
             .to_string(),
+            expiring_certificates,
         })
     }
 
@@ -640,6 +654,29 @@ impl Ctx<'_> {
             ),
         }
     }
+}
+
+/// 连接登录用的证书（经过的跳板机的与目标主机的）中快过期的，与终端里的提醒按同一个判断
+/// （[`crate::ssh::Connection::expiring_certificates`]）。
+fn expiring_certificates(connection: &crate::ssh::Connection) -> Vec<ExpiringCertificate> {
+    let now = crate::sshcert::now_secs();
+    let expiring: Vec<ExpiringCertificate> = connection
+        .expiring_certificates(now)
+        .into_iter()
+        .map(|(jump, expiry)| ExpiringCertificate {
+            jump,
+            expires_at: crate::time::format_rfc3339_local(expiry.saturating_mul(1000)),
+            minutes_left: crate::sshcert::minutes_left(expiry, now) as u64,
+        })
+        .collect();
+    if !expiring.is_empty() {
+        tracing::info!(
+            count = expiring.len(),
+            jump = expiring.iter().any(|c| c.jump.is_some()),
+            "命令行连接登录用的证书快过期，结果中提醒"
+        );
+    }
+    expiring
 }
 
 /// 在后台断开（不让命令行等它）。

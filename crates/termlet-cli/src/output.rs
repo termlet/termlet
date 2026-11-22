@@ -4,7 +4,7 @@
 use std::io::Write;
 
 use serde::Serialize;
-use termlet_proto::{ErrorBody, ExitCode};
+use termlet_proto::{ErrorBody, ExitCode, ExpiringCertificate};
 use unicode_width::UnicodeWidthStr;
 
 use crate::i18n::Lang;
@@ -84,6 +84,30 @@ pub fn human_text(lang: Lang, code: &str, message: &str) -> String {
         message.to_string()
     } else {
         format!("{text}: {message}")
+    }
+}
+
+/// 登录用的证书快过期的提醒，每张证书一句（写法与 Termlet 终端里的提醒相同）。可读文本模式写在标准错误，MCP 写进结果。
+pub fn expiring_notes(certificates: &[ExpiringCertificate], lang: Lang) -> Vec<String> {
+    certificates
+        .iter()
+        .map(|c| {
+            let time = to_minute(&c.expires_at);
+            match &c.jump {
+                Some(jump) => {
+                    messages::JUMP_CERT_EXPIRING.fill(lang, &[jump, &time, &c.minutes_left])
+                }
+                None => messages::CERT_EXPIRING.fill(lang, &[&time, &c.minutes_left]),
+            }
+        })
+        .collect()
+}
+
+/// 应用给的失效时间（本地时间的 RFC 3339，`2026-11-19T20:30:00+08:00`）写到分钟：`2026-11-19 20:30`；认不出的原样。
+fn to_minute(rfc3339: &str) -> String {
+    match (rfc3339.get(..10), rfc3339.get(10..11), rfc3339.get(11..16)) {
+        (Some(date), Some("T"), Some(time)) => format!("{date} {time}"),
+        _ => rfc3339.to_string(),
     }
 }
 
@@ -200,6 +224,38 @@ pub(crate) mod tests {
             human_text(Lang::Zh, "cli_disabled", ""),
             messages::human("cli_disabled").unwrap().zh
         );
+    }
+
+    // 快过期的证书：写到分钟的失效时间、还剩几分钟，跳板机的写明哪一台
+    #[test]
+    fn expiring_certificate_notes() {
+        let certificates = [
+            ExpiringCertificate {
+                jump: Some("bastion".into()),
+                expires_at: "2026-11-19T20:30:00+08:00".into(),
+                minutes_left: 25,
+            },
+            ExpiringCertificate {
+                jump: None,
+                expires_at: "2026-11-19T20:40:59-05:00".into(),
+                minutes_left: 1,
+            },
+        ];
+        assert_eq!(
+            expiring_notes(&certificates, Lang::Zh),
+            [
+                "跳板机 bastion 登录用的证书将于 2026-11-19 20:30 过期（还剩约 25 分钟），过期后无法再经它连接，请及时重新签发。",
+                "登录用的证书将于 2026-11-19 20:40 过期（还剩约 1 分钟），过期后无法再连接这台主机，请及时重新签发。",
+            ]
+        );
+        let en = expiring_notes(&certificates, Lang::En);
+        assert!(
+            en[0].starts_with(
+                "The certificate used to log in to the jump host bastion expires at 2026-11-19 20:30 (about 25 min left)."
+            ),
+            "{en:?}"
+        );
+        assert_eq!(to_minute("soon"), "soon", "认不出的原样");
     }
 
     #[test]

@@ -49,7 +49,6 @@ use crate::app_state::AppState;
 use crate::brand_icons;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::local_shell::LocalTarget;
-use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::settings::{self, Page as SettingsPage};
 use crate::terminal_panel::SessionStatus;
@@ -156,7 +155,7 @@ pub struct HostTree {
     /// 正在拖动本树中的条目（显示"未分组"作为放置位置）
     dragging: bool,
     drop_target: Option<DropTarget>,
-    /// 窗口中开着弹出菜单（右键菜单等）：这一帧的行与其中的按钮不挂悬停提示（见 [`crate::menu_tooltip`]）
+    /// 窗口中开着弹出菜单（右键菜单等）：这一帧行中的按钮不挂悬停提示（行自己的提示经 [`crate::menu_tooltip::quiet`]）
     menu_open: bool,
     _auto_expand: Option<Task<()>>,
     _detect: Option<Task<()>>,
@@ -1365,9 +1364,9 @@ impl HostTree {
                             .text_color(theme.muted_foreground)
                             .child(t!("workspace.panes", count = panes)),
                     )
-                    .tooltip_unless_menu(self.menu_open, |window, cx| {
+                    .tooltip(crate::menu_tooltip::quiet(|window, cx| {
                         Tooltip::new(t!("workspace.open_hint")).build(window, cx)
-                    })
+                    }))
                     .on_click(cx.listener({
                         let key = row.key.clone();
                         let id = id.clone();
@@ -1629,7 +1628,7 @@ impl HostTree {
                             ),
                     )
                 })
-                .tooltip_unless_menu(self.menu_open, {
+                .tooltip(crate::menu_tooltip::quiet({
                     // 识别出系统时带上系统的名称（不认识的标志也知道是什么）
                     let endpoint = SharedString::from(match os {
                         Some(os) => t!(
@@ -1641,7 +1640,7 @@ impl HostTree {
                         None => endpoint,
                     });
                     move |window, cx| Tooltip::new(endpoint.clone()).build(window, cx)
-                })
+                }))
                 .on_click(cx.listener({
                     let key = row.key.clone();
                     let id = id.clone();
@@ -1744,9 +1743,9 @@ impl HostTree {
                     }
                     SessionStatus::Disconnected => this.bg(color).border_1().border_color(ring),
                 })
-                .tooltip_unless_menu(self.menu_open, move |window, cx| {
+                .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                     Tooltip::new(tip.clone()).build(window, cx)
-                })
+                }))
                 .on_click(cx.listener(move |_, _, _, cx| {
                     cx.stop_propagation();
                     cx.emit(HostTreeEvent::RevealHost(id.clone()));

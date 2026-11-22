@@ -32,9 +32,9 @@ use gpui_kit::component::{
 use gpui_kit::{
     App, AppContext as _, ClickEvent, ClipboardItem, Context, Entity, EntityId, EventEmitter,
     FocusHandle, Focusable, HighlightStyle, InteractiveElement as _, IntoElement,
-    ParentElement as _, Pixels, Point, Render, SharedString, Styled as _, Subscription, Task,
-    TestSupportExt as _, WeakEntity, Window, canvas, div, point, prelude::FluentBuilder as _, px,
-    rems,
+    ParentElement as _, Pixels, Point, Render, SharedString, StatefulInteractiveElement as _,
+    Styled as _, Subscription, Task, TestSupportExt as _, WeakEntity, Window, canvas, div, point,
+    prelude::FluentBuilder as _, px, rems,
 };
 use termlet_core::hosttools::{
     HostTools, LogCursor, LogLevel, LogLine, LogPriority, LogQuery, LogResult, LogSource, Target,
@@ -44,7 +44,6 @@ use termlet_core::hosttools::{
 use super::errors;
 use super::log_model::{Filter, LinesChoice, LogDisplay, RangeChoice, append_lines, build_display};
 use crate::i18n::LocalizedPlaceholder as _;
-use crate::menu_tooltip::TooltipExt as _;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
@@ -1143,7 +1142,7 @@ impl LogPanel {
 impl Panel for LogPanel {
     fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let id = cx.entity_id().as_u64() as usize;
-        // 右键菜单开着时不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
+        // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let tip = self.tab_tooltip();
         h_flex()
@@ -1153,9 +1152,9 @@ impl Panel for LogPanel {
                     .id(("log-tab-title", id))
                     .test_support()
                     .gap_1()
-                    .tooltip_unless_menu(menu_open, move |window, cx| {
+                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                         Tooltip::new(tip.clone()).build(window, cx)
-                    })
+                    }))
                     // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
                     .context_menu({
                         let this = cx.entity().downgrade();

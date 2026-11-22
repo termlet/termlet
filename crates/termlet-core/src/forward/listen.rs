@@ -3,6 +3,7 @@
 //! - 端口被占用、被系统保留或没有权限、本机没有这个地址分别报告，界面据此写文案。
 //! - Windows 上独占监听（`SO_EXCLUSIVEADDRUSE`）：否则别的程序可以在同一端口上绑定更具体的地址，
 //!   悄悄截走发往转发端口的连接；Unix 上与 Go、标准库相同地设 `SO_REUSEADDR`（停止后能立即重新监听）。
+//! - IPv6 地址（`::1`、`::`）只监听 IPv6（`IPV6_V6ONLY`）：`::` 不顺带接收 IPv4，与 `0.0.0.0` 可以同时使用。
 
 use std::io;
 use std::net::{IpAddr, SocketAddr};
@@ -28,7 +29,10 @@ fn open(addr: SocketAddr) -> io::Result<TcpListener> {
     let socket = if addr.is_ipv4() {
         TcpSocket::new_v4()?
     } else {
-        TcpSocket::new_v6()?
+        let socket = TcpSocket::new_v6()?;
+        // `::` 只监听 IPv6（Windows 默认如此；Linux 默认双栈，会与同一端口的 0.0.0.0 冲突），各系统一致
+        socket2::SockRef::from(&socket).set_only_v6(true)?;
+        socket
     };
     #[cfg(windows)]
     exclusive(&socket)?;

@@ -436,7 +436,7 @@ fn browser_rule(
             && r.doc.target_port == request.port
             && matches!(
                 r.doc.bind_host.as_str(),
-                "127.0.0.1" | "localhost" | "0.0.0.0" | "::1"
+                "127.0.0.1" | "localhost" | "0.0.0.0" | "::1" | "::"
             )
     })
 }
@@ -473,10 +473,10 @@ fn pick_port(store: &Store, rule: &Forward, preferred: u16) -> Option<u16> {
     })
 }
 
-/// 浏览器打开的地址：回环地址或全部地址都用 127.0.0.1，IPv6 回环用 `[::1]`。
+/// 浏览器打开的地址：IPv4 的回环地址或全部地址用 127.0.0.1，IPv6 的（`::1`、`::`，只监听 IPv6）用 `[::1]`。
 pub fn browser_url(https: bool, bind_host: &str, port: u16) -> String {
     let scheme = if https { "https" } else { "http" };
-    let host = if bind_host == "::1" {
+    let host = if bind_host.contains(':') {
         "[::1]"
     } else {
         "127.0.0.1"

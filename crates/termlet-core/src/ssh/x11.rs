@@ -790,7 +790,8 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> LocalStream for T {}
 async fn connect_local(display: &Display) -> std::io::Result<Box<dyn LocalStream>> {
     match &display.target {
         DisplayTarget::Tcp { host, port } => {
-            let stream = tokio::net::TcpStream::connect((host.as_str(), *port)).await?;
+            // localhost：X 服务器多半只监听 IPv4，并发连接不用等 ::1 失败（Windows 上要约 2 秒）
+            let stream = super::dial::connect_host(host, *port, CONNECT_TIMEOUT).await?;
             let _ = stream.set_nodelay(true);
             Ok(Box::new(stream))
         }

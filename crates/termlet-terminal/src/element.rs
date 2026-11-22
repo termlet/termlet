@@ -457,9 +457,12 @@ impl TerminalElement {
         window.on_mouse_event(move |event: &MouseDownEvent, phase, window, cx| {
             if phase.bubble() && hitbox.is_hovered(window) {
                 focus.focus(window, cx);
-                window.capture_pointer(hitbox.id);
-                view.update(cx, |view, cx| view.mouse_down(event, window, cx));
-                cx.stop_propagation();
+                // 终端不处理的按下（右键设为由应用弹出菜单时）接着冒泡：外层的右键菜单在子元素之前注册监听器，
+                // 冒泡时排在终端之后，截住就收不到了
+                if view.update(cx, |view, cx| view.mouse_down(event, window, cx)) {
+                    window.capture_pointer(hitbox.id);
+                    cx.stop_propagation();
+                }
             }
         });
         let view = self.view.clone();

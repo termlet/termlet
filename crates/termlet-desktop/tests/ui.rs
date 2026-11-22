@@ -355,6 +355,50 @@ fn local_terminal_opens_and_search_bar_toggles(cx: &mut TestAppContext) {
     .unwrap();
 }
 
+/// 在终端上右键，返回终端的右键菜单有没有弹出来（弹出来的按 Esc 关掉）。
+fn right_click_terminal_opens_menu(cx: &mut TestAppContext, handle: AnyWindowHandle) -> bool {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.right_click("terminal", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        let opened = window.try_find("popup-menu").is_some();
+        if opened {
+            window.press("escape", cx);
+        }
+        opened
+    })
+    .unwrap()
+}
+
+// “终端中右键”设为弹出菜单时，右键终端区域弹出菜单；默认（有选中时复制，否则粘贴）不弹
+#[gpui_kit::test]
+fn right_click_in_the_terminal_opens_the_menu_only_when_set(cx: &mut TestAppContext) {
+    use termlet_core::model::RightClick;
+    let handle = open_workspace(cx);
+    start_local_terminal(cx, handle);
+    assert!(!right_click_terminal_opens_menu(cx, handle), "默认不弹菜单");
+
+    cx.update(|cx| {
+        AppState::store(cx).update_settings(|s| s.terminal.right_click = RightClick::Menu)
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert!(right_click_terminal_opens_menu(cx, handle), "弹出菜单");
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert_eq!(
+            window.find("terminal").focused(),
+            Some(true),
+            "菜单关掉后焦点回到终端"
+        );
+    })
+    .unwrap();
+}
+
 // 焦点在终端上时 Tab / Shift+Tab 交给终端（shell 补全），不被 gpui-kit 的 Root 拿去切换焦点；对话框中照旧切换焦点
 #[gpui_kit::test]
 fn tab_goes_to_the_terminal_and_still_moves_focus_in_dialogs(cx: &mut TestAppContext) {
@@ -2148,7 +2192,7 @@ fn forwards_listening_on_all_interfaces_are_marked(cx: &mut TestAppContext) {
     use termlet_core::model::{Forward, ForwardKind};
     let handle = open_workspace(cx);
     i18n::set_language(Language::ZhCn);
-    let [local_any, remote_any, local_only] = cx.update(|cx| {
+    let [local_any, local_any6, remote_any, local_only] = cx.update(|cx| {
         let store = AppState::store(cx);
         let host = store
             .create(
@@ -2181,6 +2225,7 @@ fn forwards_listening_on_all_interfaces_are_marked(cx: &mut TestAppContext) {
         };
         [
             add(ForwardKind::Local, "0.0.0.0", 15433),
+            add(ForwardKind::Local, "::", 15436),
             add(ForwardKind::Remote, "0.0.0.0", 15434),
             add(ForwardKind::Local, "127.0.0.1", 15435),
         ]
@@ -2190,7 +2235,7 @@ fn forwards_listening_on_all_interfaces_are_marked(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.within("sidebar-pages").click(3usize, cx);
         window.render_frame(cx);
-        for id in [&local_any, &remote_any] {
+        for id in [&local_any, &local_any6, &remote_any] {
             assert!(
                 window.try_find(format!("forward-exposed-{id}")).is_some(),
                 "监听所有网卡的 {id} 应带警示标记"

@@ -75,6 +75,11 @@ pub(crate) const SSH_PASSWORD: &str = "termlet-e2e";
 fn address_from_env(name: &str) -> Option<(String, u16)> {
     let value = std::env::var(name).ok()?;
     let (host, port) = value.rsplit_once(':')?;
+    // IPv6 写成 [::1]:2222
+    let host = host
+        .strip_prefix('[')
+        .and_then(|h| h.strip_suffix(']'))
+        .unwrap_or(host);
     Some((host.to_string(), port.parse().ok()?))
 }
 

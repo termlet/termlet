@@ -11,7 +11,7 @@ use gpui_kit::{
 use termlet_terminal::view::CURSOR_BLINK_INTERVAL;
 use termlet_terminal::{
     CloseReason, CommandSuggestions, CursorShape, EngineOptions, GridSize, HighlightColor,
-    HighlightRuleSpec, Highlighter, IoEvent, MouseTracking, SearchQuery, ShellEvent,
+    HighlightRuleSpec, Highlighter, IoEvent, MouseTracking, RightClick, SearchQuery, ShellEvent,
     TerminalEngine, TerminalInput, TerminalIo, TerminalStyle, TerminalView, TerminalViewEvent,
 };
 
@@ -49,6 +49,15 @@ fn open(cx: &mut TestAppContext) -> Fixture {
 }
 
 fn open_with(cx: &mut TestAppContext, style: TerminalStyle) -> Fixture {
+    open_in(cx, style, |view, _| view)
+}
+
+/// 打开终端；`root` 给出窗口的根视图（终端本身，或套着终端的视图）。
+fn open_in<V: gpui_kit::Render>(
+    cx: &mut TestAppContext,
+    style: TerminalStyle,
+    root: impl FnOnce(Entity<TerminalView>, &mut gpui_kit::App) -> Entity<V>,
+) -> Fixture {
     // 引擎线程是真实的系统线程，会在测试调度器运行时唤醒界面的任务
     cx.executor().allow_parking();
     cx.update(gpui_kit::init);
@@ -60,7 +69,8 @@ fn open_with(cx: &mut TestAppContext, style: TerminalStyle) -> Fixture {
         input: recorder.clone(),
     };
     let (window, view) = cx.update(|cx| {
-        gpui_kit::open_window(
+        let mut terminal = None;
+        let (window, _) = gpui_kit::open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::new(
                     Default::default(),
@@ -71,10 +81,13 @@ fn open_with(cx: &mut TestAppContext, style: TerminalStyle) -> Fixture {
             cx,
             |window, cx| {
                 let engine = TerminalEngine::new(io, EngineOptions::default());
-                cx.new(|cx| TerminalView::new(engine, style, window, cx))
+                let view = cx.new(|cx| TerminalView::new(engine, style, window, cx));
+                terminal = Some(view.clone());
+                root(view, cx)
             },
         )
-        .expect("打开测试窗口")
+        .expect("打开测试窗口");
+        (window, terminal.expect("已建好终端视图"))
     });
     Fixture {
         window,
@@ -197,6 +210,118 @@ fn right_click_pastes_through_the_paste_action(cx: &mut TestAppContext) {
     });
     let pasted = [pasted.unwrap(), fixture.recorder.take()].concat();
     assert_eq!(pasted, b"whoami");
+}
+
+/// 终端外面套一层 gpui-kit 的右键菜单（与桌面端的终端区域相同）。
+struct WithMenu {
+    terminal: Entity<TerminalView>,
+}
+
+impl gpui_kit::Render for WithMenu {
+    fn render(
+        &mut self,
+        _: &mut gpui_kit::Window,
+        _: &mut gpui_kit::Context<Self>,
+    ) -> impl gpui_kit::IntoElement {
+        use gpui_kit::component::menu::ContextMenuExt as _;
+        use gpui_kit::prelude::*;
+        gpui_kit::div()
+            .id("terminal-area")
+            .size_full()
+            .child(self.terminal.clone())
+            .context_menu(|menu, _, _| menu.menu("Copy", Box::new(termlet_terminal::view::Copy)))
+    }
+}
+
+/// 打开套着右键菜单的终端，右键的行为按 `right_click`。
+fn open_with_menu(cx: &mut TestAppContext, right_click: RightClick) -> Fixture {
+    let style = TerminalStyle {
+        right_click,
+        ..TerminalStyle::default()
+    };
+    open_in(cx, style, |terminal, cx| cx.new(|_| WithMenu { terminal }))
+}
+
+/// 在终端上右键，返回菜单有没有弹出来。
+fn right_click_opens_menu(cx: &mut TestAppContext, fixture: &Fixture) -> bool {
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.render_frame(cx);
+        window.right_click("terminal", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.render_frame(cx);
+        let opened = window.try_find("popup-menu").is_some();
+        if opened {
+            window.press("escape", cx);
+        }
+        opened
+    })
+    .unwrap()
+}
+
+// 右键设为弹出菜单时，终端不截住右键，外层的菜单弹得出来（gpui-kit 0.8 起外层先注册监听器，冒泡时排在终端之后）；
+// 选区照旧保留给菜单中的复制；程序开了鼠标上报时右键照旧交给程序，不弹菜单
+#[gpui_kit::test]
+fn right_click_reaches_the_outer_menu_only_in_menu_mode(cx: &mut TestAppContext) {
+    let fixture = open_with_menu(cx, RightClick::Menu);
+    fixture
+        .output
+        .send_blocking(IoEvent::Output(b"hello world".to_vec()))
+        .unwrap();
+    eventually(cx, |cx| {
+        fixture
+            .view
+            .read_with(cx, |view, _| view.screen_text().contains("hello"))
+    });
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("terminal", cx);
+        window.dispatch_action(Box::new(termlet_terminal::view::SelectAll), cx);
+    })
+    .unwrap();
+    assert!(right_click_opens_menu(cx, &fixture), "弹出菜单");
+    assert!(
+        fixture
+            .view
+            .read_with(cx, |view, _| view.selection_text().is_some()),
+        "右键不清掉选区"
+    );
+    assert_eq!(fixture.recorder.take(), b"", "右键不写给远端");
+
+    fixture
+        .output
+        .send_blocking(IoEvent::Output(b"\x1b[?1000h\x1b[?1006h".to_vec()))
+        .unwrap();
+    eventually(cx, |cx| {
+        fixture.view.read_with(cx, |view, _| {
+            view.engine().modes().mouse_tracking != MouseTracking::Off
+        })
+    });
+    assert!(!right_click_opens_menu(cx, &fixture), "鼠标上报时不弹菜单");
+    let reported = String::from_utf8(fixture.recorder.take()).unwrap();
+    assert!(reported.starts_with("\x1b[<2;"), "上报右键：{reported:?}");
+}
+
+// 其他设置下右键照旧粘贴，外层的菜单不弹出
+#[gpui_kit::test]
+fn right_click_pastes_instead_of_opening_the_outer_menu(cx: &mut TestAppContext) {
+    let fixture = open_with_menu(cx, RightClick::Auto);
+    cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("whoami".into())));
+    for right_click in [RightClick::Auto, RightClick::Paste] {
+        fixture.view.update(cx, |view, cx| {
+            view.set_style(
+                TerminalStyle {
+                    right_click,
+                    ..TerminalStyle::default()
+                },
+                cx,
+            )
+        });
+        assert!(!right_click_opens_menu(cx, &fixture), "{right_click:?}");
+        assert_eq!(fixture.recorder.take(), b"whoami", "{right_click:?}");
+    }
 }
 
 /// 推进测试时钟一拍光标闪烁的间隔，返回光标这一拍画不画出。

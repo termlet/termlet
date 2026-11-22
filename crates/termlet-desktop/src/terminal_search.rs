@@ -10,7 +10,7 @@ use gpui_kit::component::{ActiveTheme as _, Selectable as _, Sizable as _, h_fle
 use gpui_kit::{
     AppContext as _, Context, Entity, EventEmitter, FocusHandle, Focusable,
     InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Render, Styled as _,
-    Subscription, Task, Window, actions, div,
+    Subscription, Task, Window, actions, div, prelude::FluentBuilder as _,
 };
 use termlet_terminal::{SearchQuery, SearchSummary, TerminalView};
 
@@ -190,14 +190,17 @@ impl SearchBar {
 }
 
 impl Render for SearchBar {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // 输入框、终端的右键菜单开着时按钮不挂悬停提示（按钮的提示只在按下左键时收起，会浮在菜单上，见
+        // crate::menu_tooltip）
+        let menu_open = crate::menu_tooltip::menu_open(window, cx);
         let toggle = |id: &'static str, icon: IconName, on: bool, tooltip| {
             Button::new(id)
                 .ghost()
                 .small()
                 .icon(icon)
                 .selected(on)
-                .tooltip(tooltip)
+                .when(!menu_open, |this| this.tooltip(tooltip))
         };
         h_flex()
             .key_context(KEY_CONTEXT)
@@ -247,7 +250,9 @@ impl Render for SearchBar {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronUp)
-                    .tooltip(t!("terminal.search.previous"))
+                    .when(!menu_open, |this| {
+                        this.tooltip(t!("terminal.search.previous"))
+                    })
                     .on_click(cx.listener(|this, _, _, cx| this.step(false, cx))),
             )
             .child(
@@ -255,7 +260,7 @@ impl Render for SearchBar {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronDown)
-                    .tooltip(t!("terminal.search.next"))
+                    .when(!menu_open, |this| this.tooltip(t!("terminal.search.next")))
                     .on_click(cx.listener(|this, _, _, cx| this.step(true, cx))),
             )
             .child(
@@ -263,7 +268,7 @@ impl Render for SearchBar {
                     .ghost()
                     .small()
                     .icon(IconName::Close)
-                    .tooltip(t!("terminal.search.close"))
+                    .when(!menu_open, |this| this.tooltip(t!("terminal.search.close")))
                     .on_click(cx.listener(|this, _, _, cx| this.close(cx))),
             )
     }

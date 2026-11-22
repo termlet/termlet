@@ -15,3 +15,9 @@ retries = 0
 [[profile.ci.overrides]]
 filter = 'test(skips_unreadable)'
 success-output = "final"
+
+# 本机的 shell 逐个运行：通过时也列出各自的用时与跳过的原因（Windows arm64 上仿真运行的 Git Bash、MSYS2 偶尔卡住，
+# 见 localshell/tests.rs 的 flaky_under_emulation），在 CI 的日志中看得到慢的是哪一个
+[[profile.ci.overrides]]
+filter = 'test(detect_and_run_windows)'
+success-output = "final"
