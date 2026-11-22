@@ -12,6 +12,7 @@ publish = false
 
 [workspace.dependencies]
 termlet-proto = { path = "crates/termlet-proto" }
+termlet-mcp = { path = "crates/termlet-mcp" }
 termlet-core = { path = "crates/termlet-core" }
 termlet-terminal = { path = "crates/termlet-terminal" }
 termlet-io = { path = "crates/termlet-io" }

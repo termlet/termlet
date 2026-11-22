@@ -24,44 +24,38 @@ pub const APP_ENV: &str = "TERMLET_APP";
 /// 等 Termlet 启动的最长时间。
 const START_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// 连不上 Termlet 的原因（输出为错误）。
-#[derive(Debug)]
-pub struct Failure {
-    pub exit: ExitCode,
-    pub code: String,
-    pub message: String,
+/// 连不上 Termlet 的原因（输出为错误）。与 MCP 服务共用（`termlet-mcp` 的 `Backend` 返回它）。
+pub use termlet_mcp::Failure;
+
+/// 连接、通信失败。
+fn connect_error(message: String) -> Failure {
+    Failure {
+        exit: ExitCode::Failed,
+        code: ErrorCode::ConnectFailed.as_str().into(),
+        message,
+    }
 }
 
-impl Failure {
-    fn connect(message: String) -> Self {
-        Self {
-            exit: ExitCode::Failed,
-            code: ErrorCode::ConnectFailed.as_str().into(),
-            message,
-        }
+/// Termlet 没有运行、又不允许自动启动（退出码与“外部命令行已关闭”相同：都要用户先在 Termlet 中处理）。
+fn not_running(lang: Lang) -> Failure {
+    Failure {
+        exit: ExitCode::CliDisabled,
+        code: ErrorCode::AppNotRunning.as_str().into(),
+        message: messages::APP_NOT_RUNNING.get(lang).into(),
     }
+}
 
-    /// Termlet 没有运行、又不允许自动启动（退出码与“外部命令行已关闭”相同：都要用户先在 Termlet 中处理）。
-    fn not_running(lang: Lang) -> Self {
-        Self {
-            exit: ExitCode::CliDisabled,
-            code: ErrorCode::AppNotRunning.as_str().into(),
-            message: messages::APP_NOT_RUNNING.get(lang).into(),
-        }
-    }
-
-    fn api(body: ErrorBody) -> Self {
-        Self {
-            exit: ExitCode::for_error(&body.code),
-            code: body.code,
-            message: body.message,
-        }
+fn api_error(body: ErrorBody) -> Failure {
+    Failure {
+        exit: ExitCode::for_error(&body.code),
+        code: body.code,
+        message: body.message,
     }
 }
 
 /// 通信失败的说明。
 pub fn call_failure(error: &CallError, lang: Lang) -> Failure {
-    Failure::connect(match error {
+    connect_error(match error {
         CallError::Io(e) => messages::CONNECT_IO.fill(lang, &[e]),
         CallError::Closed => messages::CLOSED.get(lang).into(),
         CallError::Protocol(e) => messages::PROTOCOL.fill(lang, &[e]),
@@ -70,11 +64,11 @@ pub fn call_failure(error: &CallError, lang: Lang) -> Failure {
 
 fn connect_failure(error: ConnectError, lang: Lang) -> Failure {
     match error {
-        ConnectError::Rejected(body) => Failure::api(body),
-        ConnectError::NotRunning => Failure::connect(messages::APP_TIMEOUT.get(lang).into()),
-        ConnectError::Impostor => Failure::connect(messages::IMPOSTOR.get(lang).into()),
-        ConnectError::Io(e) => Failure::connect(messages::CONNECT_IO.fill(lang, &[&e])),
-        ConnectError::Protocol(e) => Failure::connect(messages::PROTOCOL.fill(lang, &[&e])),
+        ConnectError::Rejected(body) => api_error(body),
+        ConnectError::NotRunning => connect_error(messages::APP_TIMEOUT.get(lang).into()),
+        ConnectError::Impostor => connect_error(messages::IMPOSTOR.get(lang).into()),
+        ConnectError::Io(e) => connect_error(messages::CONNECT_IO.fill(lang, &[&e])),
+        ConnectError::Protocol(e) => connect_error(messages::PROTOCOL.fill(lang, &[&e])),
     }
 }
 
@@ -82,7 +76,7 @@ fn connect_failure(error: ConnectError, lang: Lang) -> Failure {
 pub fn connect(lang: Lang) -> Result<Client, Failure> {
     let app = app_path();
     let data_dir = data_dir_of(app.as_deref())
-        .map_err(|e| Failure::connect(messages::DATA_DIR.fill(lang, &[&e])))?;
+        .map_err(|e| connect_error(messages::DATA_DIR.fill(lang, &[&e])))?;
     let endpoint = Endpoint::for_data_dir(&data_dir.path);
     crate::debug::debug!(
         "数据目录 {}{}",
@@ -110,13 +104,13 @@ pub fn connect(lang: Lang) -> Result<Client, Failure> {
     // Termlet 在运行，但命令行服务没有启动：再拉起一个也没用
     if let Some(reason) = unavailable(&endpoint) {
         crate::debug::debug!("Termlet 在运行，但命令行服务没有启动：{reason}");
-        return Err(Failure::connect(
+        return Err(connect_error(
             messages::CLI_UNAVAILABLE.fill(lang, &[&reason]),
         ));
     }
     if !endpoint.launch_config().auto_start {
         crate::debug::debug!("Termlet 没有运行，设置中不允许自动启动");
-        return Err(Failure::not_running(lang));
+        return Err(not_running(lang));
     }
     crate::debug::debug!("Termlet 没有运行，以无窗口模式拉起");
     launch(app.as_deref(), lang)?;
@@ -131,12 +125,12 @@ pub fn connect(lang: Lang) -> Result<Client, Failure> {
             return Ok(client);
         }
         if let Some(reason) = unavailable(&endpoint) {
-            return Err(Failure::connect(
+            return Err(connect_error(
                 messages::CLI_UNAVAILABLE.fill(lang, &[&reason]),
             ));
         }
         if Instant::now() >= deadline {
-            return Err(Failure::connect(messages::APP_TIMEOUT.get(lang).into()));
+            return Err(connect_error(messages::APP_TIMEOUT.get(lang).into()));
         }
         std::thread::sleep(Duration::from_millis(100));
     }
@@ -157,7 +151,7 @@ fn data_dir_of(app: Option<&Path>) -> Result<endpoint::ResolvedDataDir, endpoint
 
 /// 以 headless 模式拉起 Termlet（不随命令行工具退出）。
 fn launch(app: Option<&Path>, lang: Lang) -> Result<(), Failure> {
-    let app = app.ok_or_else(|| Failure::connect(messages::APP_NOT_FOUND.get(lang).into()))?;
+    let app = app.ok_or_else(|| connect_error(messages::APP_NOT_FOUND.get(lang).into()))?;
     crate::debug::debug!("启动 {} --headless", app.display());
     let mut command = Command::new(app);
     command
@@ -180,7 +174,7 @@ fn launch(app: Option<&Path>, lang: Lang) -> Result<(), Failure> {
     command
         .spawn()
         .map(drop)
-        .map_err(|e| Failure::connect(messages::APP_START.fill(lang, &[&e])))
+        .map_err(|e| connect_error(messages::APP_START.fill(lang, &[&e])))
 }
 
 /// Termlet 程序的位置（见模块说明）。

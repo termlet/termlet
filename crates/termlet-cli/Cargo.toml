@@ -11,9 +11,10 @@ publish.workspace = true
 name = "termlet"
 path = "src/main.rs"
 
-# 只依赖协议与几个轻量的 crate：不链接核心（SQLite、SSH、加密），体积小、启动快
+# 只依赖协议、MCP 的分发与几个轻量的 crate：不链接核心（SQLite、SSH、加密），体积小、启动快
 [dependencies]
 termlet-proto.workspace = true
+termlet-mcp.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 # 跟随系统界面语言（Windows 的首选界面语言）
@@ -21,11 +22,10 @@ sys-locale.workspace = true
 # 主机列表按显示宽度对齐（中文占两列）
 unicode-width.workspace = true
 
-# 调用方进程（审计）、Termlet 进程是否还在运行
+# Termlet 进程是否还在运行（调用方的进程链在 termlet-proto 中）
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
-    "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_Threading",
 ] }
 

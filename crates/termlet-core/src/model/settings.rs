@@ -417,6 +417,8 @@ pub struct CliSettings {
     pub enabled: bool,
     /// Termlet 没有运行时，`termlet` 命令自动在后台（不开窗口）启动它，默认允许；关掉后提示先打开 Termlet
     pub auto_start: bool,
+    /// MCP 的 HTTP 接入（应用自己在本机监听），与 `enabled` 都开着时才监听
+    pub http: CliHttpSettings,
     #[serde(flatten)]
     pub extra: Extra,
 }
@@ -426,6 +428,35 @@ impl Default for CliSettings {
         Self {
             enabled: false,
             auto_start: true,
+            http: CliHttpSettings::default(),
+            extra: Extra::default(),
+        }
+    }
+}
+
+/// MCP 的 HTTP 接入：只在 127.0.0.1 上监听（见 `cli::http`）。令牌不在这里：它的摘要与经保险库加密的原文在本机的
+/// `meta` 表中（设置对话框保存时会整组写回本机设置，放在这里会被打开对话框时的旧值覆盖）。
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CliHttpSettings {
+    /// 默认关闭
+    pub enabled: bool,
+    /// 监听的端口，被占用时不自动换（AI 工具的配置中写着它）
+    pub port: u16,
+    #[serde(flatten)]
+    pub extra: Extra,
+}
+
+impl CliHttpSettings {
+    /// 默认端口：调试构建加 1，与同时开着的正式版不冲突。
+    pub const DEFAULT_PORT: u16 = if cfg!(debug_assertions) { 47801 } else { 47800 };
+}
+
+impl Default for CliHttpSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: Self::DEFAULT_PORT,
             extra: Extra::default(),
         }
     }

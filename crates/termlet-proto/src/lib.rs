@@ -13,6 +13,7 @@
 //! - **取消**：客户端在请求进行中断开（`termlet` 被结束）时，服务端中止这次请求（远程命令收到 SIGTERM）。
 //! - **版本**：只加新的请求、响应变体或带默认值的字段时不升版本；双方都忽略不认识的字段。
 
+pub mod caller;
 pub mod endpoint;
 mod error;
 pub mod frame;

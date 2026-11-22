@@ -1,8 +1,6 @@
 //! `upload` / `download`：解析参数（本机路径按当前目录解析为绝对路径）、上传前检查本机文件、输出结果。
 
-use std::io;
-
-use termlet_proto::{ErrorCode, ExitCode, TransferRequest};
+use termlet_proto::{ExitCode, TransferRequest};
 
 use crate::i18n::Lang;
 use crate::messages;
@@ -44,48 +42,8 @@ pub fn check_upload_source(out: &mut Output<'_>, local: &str) -> Option<i32> {
     Some(out.fail(ExitCode::Usage, code, &message))
 }
 
-/// 本机要上传的文件的问题：（错误码，说明）；是普通文件时为 `None`。命令行工具与 MCP 服务共用。
-pub fn upload_source_problem(local: &str, lang: Lang) -> Option<(&'static str, String)> {
-    match std::fs::metadata(local) {
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            Some((ErrorCode::PathNotFound.as_str(), local.to_string()))
-        }
-        Err(e) if e.kind() == io::ErrorKind::PermissionDenied => {
-            Some((ErrorCode::PermissionDenied.as_str(), local.to_string()))
-        }
-        Err(e) => Some((messages::CODE_USAGE, e.to_string())),
-        Ok(meta) if meta.is_dir() => Some((
-            messages::CODE_USAGE,
-            messages::UPLOAD_IS_DIR.fill(lang, &[&local]),
-        )),
-        Ok(meta) if !meta.is_file() => Some((
-            messages::CODE_USAGE,
-            messages::UPLOAD_NOT_REGULAR.fill(lang, &[&local]),
-        )),
-        Ok(_) => None,
-    }
-}
-
-/// 以 1024 为进位格式化字节数，如 `512 B`、`12.3 MB`。
-pub fn format_bytes(n: u64) -> String {
-    if n < 1024 {
-        return format!("{n} B");
-    }
-    let mut value = n as f64;
-    let mut unit = "";
-    for u in ["KB", "MB", "GB", "TB"] {
-        value /= 1024.0;
-        unit = u;
-        if value < 1024.0 {
-            break;
-        }
-    }
-    format!("{value:.1} {unit}")
-}
-
-pub fn format_duration(ms: u64, lang: Lang) -> String {
-    messages::SECONDS.fill(lang, &[&format!("{:.1}", ms as f64 / 1000.0)])
-}
+// 上传前对本机文件的检查、字节数与用时的写法与 MCP 服务共用
+pub use termlet_mcp::text::{format_bytes, format_duration, upload_source_problem};
 
 #[cfg(test)]
 mod tests {
@@ -164,25 +122,5 @@ mod tests {
             Some(1)
         );
         assert!(c.stderr().contains("只支持上传单个文件"), "{}", c.stderr());
-    }
-
-    #[test]
-    fn formats_bytes() {
-        for (n, want) in [
-            (0, "0 B"),
-            (512, "512 B"),
-            (1024, "1.0 KB"),
-            (1536, "1.5 KB"),
-            (12_900_000, "12.3 MB"),
-            (5 * 1024 * 1024 * 1024, "5.0 GB"),
-        ] {
-            assert_eq!(format_bytes(n), want, "{n}");
-        }
-    }
-
-    #[test]
-    fn formats_duration() {
-        assert_eq!(format_duration(1234, Lang::Zh), "1.2 秒");
-        assert_eq!(format_duration(1234, Lang::En), "1.2s");
     }
 }

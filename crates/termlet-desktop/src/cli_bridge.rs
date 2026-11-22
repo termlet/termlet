@@ -134,6 +134,8 @@ pub fn start(cx: &mut App) {
         config.locked = crate::lock_ui::is_locked(cx) || crate::lock_ui::is_unavailable(cx);
         match CliService::start(config) {
             Ok((started, events)) => {
+                // MCP 的 HTTP 接入按界面语言写工具结果中的说明（界面语言在这之前已经设好）
+                started.set_language(mcp_language(i18n::language()));
                 service = Some(started);
                 cx.spawn(async move |cx| {
                     while let Ok(event) = events.recv().await {
@@ -166,7 +168,11 @@ pub fn start(cx: &mut App) {
                 let bridge = cx.global::<Bridge>();
                 // 长时间的执行、上传下载进行中：做完再退出
                 let busy = bridge.service.as_ref().is_some_and(|s| s.in_flight() > 0);
-                let idle = bridge.closing || bridge.last_activity.elapsed() >= HEADLESS_IDLE;
+                // 最近的活动：交给界面的事件，以及命令行服务收到的请求（含通过鉴权的 MCP 的 HTTP 请求）
+                let last = bridge.service.as_ref().map_or(bridge.last_activity, |s| {
+                    s.last_request().max(bridge.last_activity)
+                });
+                let idle = bridge.closing || last.elapsed() >= HEADLESS_IDLE;
                 live_windows(cx).is_empty() && !busy && idle && !bridge.in_dock
             });
             if quit {
@@ -177,6 +183,23 @@ pub fn start(cx: &mut App) {
         }
     })
     .detach();
+}
+
+/// 界面语言对应的 MCP 工具说明的语言：简体、繁体中文用中文，其余用英文（核心中的说明只有这两种）。
+fn mcp_language(language: i18n::Language) -> termlet_core::proto::Lang {
+    match language {
+        i18n::Language::ZhCn | i18n::Language::ZhTw => termlet_core::proto::Lang::Zh,
+        i18n::Language::En | i18n::Language::Ja | i18n::Language::Ko => {
+            termlet_core::proto::Lang::En
+        }
+    }
+}
+
+/// 界面语言变了：MCP 的 HTTP 接入的工具说明随之换（命名管道上的请求按命令行工具自己的语言）。
+pub(crate) fn set_language(language: i18n::Language, cx: &App) {
+    if let Some(service) = cx.try_global::<Bridge>().and_then(|b| b.service.as_ref()) {
+        service.set_language(mcp_language(language));
+    }
 }
 
 /// 登记应用锁、更新模块要的钩子：“重启并安装”前确认未保存的文件与未完成的传输，诊断信息中补上会话的数量；

@@ -3,34 +3,8 @@
 
 pub use termlet_proto::Lang;
 
-/// 一条中英文对照的文本。
-#[derive(Clone, Copy, Debug)]
-pub struct Msg {
-    pub zh: &'static str,
-    pub en: &'static str,
-}
-
-impl Msg {
-    pub fn get(self, lang: Lang) -> &'static str {
-        lang.pick(self.zh, self.en)
-    }
-
-    /// 依次把文本中的 `{}` 换成参数。
-    pub fn fill(self, lang: Lang, args: &[&dyn std::fmt::Display]) -> String {
-        let mut out = String::new();
-        let mut rest = self.get(lang);
-        let mut args = args.iter();
-        while let Some(i) = rest.find("{}") {
-            out.push_str(&rest[..i]);
-            if let Some(arg) = args.next() {
-                out.push_str(&arg.to_string());
-            }
-            rest = &rest[i + 2..];
-        }
-        out.push_str(rest);
-        out
-    }
-}
+/// 一条中英文对照的文本（与 MCP 服务共用）。
+pub use termlet_mcp::text::Msg;
 
 /// 按以下顺序决定语言：
 /// 1. `TERMLET_LANG=en|zh`（便于测试与用户强制指定）；

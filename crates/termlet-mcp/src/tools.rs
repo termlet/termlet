@@ -2,29 +2,32 @@
 //!
 //! 说明与 Schema 用英文写（给 AI 看）；参数错误、失败的说明与命令行工具一样跟随语言（简体中文或英文），并带上固定的
 //! 英文错误码（与 `termlet` 的 JSON 输出中的 `error` 相同）。
+//!
+//! 一次调用分三步：[`request`] 检查参数、写成发给 Termlet 的请求（与命令行工具的请求相同）；交给 Termlet；
+//! [`outcome`] 把回答写成工具的结果。`termlet mcp` 用 [`call`] 经 [`Backend`] 同步地走完三步，应用内的 HTTP 服务
+//! 在异步运行时上直接处理请求，只用第一步与第三步。
 
 use std::borrow::Cow;
 use std::path::Path;
 
 use serde_json::{Map, Value, json};
 use termlet_proto::{
-    ErrorCode, ExecRequest, ExecResponse, HostSummary, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request,
-    Response, TransferRequest, TransferResponse,
+    ErrorCode, ExecRequest, ExecResponse, HostSummary, Lang, MAX_STDIN_COMMAND, OUTPUT_LIMIT,
+    Request, Response, TransferRequest, TransferResponse,
 };
 
-use super::{AbortSlot, Backend};
-use crate::i18n::Lang;
-use crate::{messages, output, transfer};
+use crate::backend::{AbortSlot, Backend, Failure};
+use crate::text::{self as messages, upload_source_problem};
 
 /// 执行命令时返回给 AI 的输出上限（标准输出与标准错误合计，字节），超出时保留开头与结尾。Termlet 本身每路最多返回
 /// 1MB（[`OUTPUT_LIMIT`]）；Claude Code 在工具结果超过约 1 万 token 时提醒，32KB 的文本大致在这以内。
-pub(super) const OUTPUT_BUDGET: usize = 32 * 1024;
+pub const OUTPUT_BUDGET: usize = 32 * 1024;
 
 /// 截断时开头保留的比例（其余留给结尾：错误信息、命令的结果通常在最后）。
 const HEAD_SHARE: usize = 4;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Tool {
+pub enum Tool {
     ListHosts,
     RunCommand,
     UploadFile,
@@ -40,7 +43,7 @@ impl Tool {
         Tool::DownloadFile,
     ];
 
-    pub(super) fn name(self) -> &'static str {
+    pub fn name(self) -> &'static str {
         match self {
             Tool::ListHosts => "list_hosts",
             Tool::RunCommand => "run_command",
@@ -49,7 +52,7 @@ impl Tool {
         }
     }
 
-    pub(super) fn parse(name: &str) -> Option<Tool> {
+    pub fn parse(name: &str) -> Option<Tool> {
         Self::ALL.into_iter().find(|tool| tool.name() == name)
     }
 
@@ -191,7 +194,7 @@ impl Tool {
 }
 
 /// `tools/list` 中的工具。`annotations`、`title` 按协议版本（较早的版本没有这些字段）。
-pub(super) fn list(annotations: bool, title: bool) -> Value {
+pub fn list(annotations: bool, title: bool) -> Value {
     Value::Array(
         Tool::ALL
             .into_iter()
@@ -201,7 +204,7 @@ pub(super) fn list(annotations: bool, title: bool) -> Value {
 }
 
 /// 一次工具调用用到的东西。
-pub(super) struct Context<'a> {
+pub struct Context<'a> {
     pub backend: &'a dyn Backend,
     pub lang: Lang,
     /// 审计与批准框中的调用方（`mcp:<客户端名>` 与祖先进程）
@@ -211,7 +214,7 @@ pub(super) struct Context<'a> {
 
 /// 工具的结果。
 #[derive(Debug, PartialEq)]
-pub(super) struct Outcome {
+pub struct Outcome {
     text: String,
     /// `structuredContent`（较早的协议版本不发）；执行命令的结果没有：只看它的客户端会看不到输出
     structured: Option<Value>,
@@ -238,7 +241,7 @@ impl Outcome {
                 format!("{hint}: {message}")
             }
         } else {
-            output::human_text(lang, code, message)
+            messages::human_text(lang, code, message)
         };
         Self {
             text: format!("[{code}] {text}"),
@@ -252,8 +255,13 @@ impl Outcome {
         Self::error(ErrorCode::BadRequest.as_str(), &message, lang)
     }
 
+    /// 是否是工具执行错误（`isError`）。
+    pub fn is_error(&self) -> bool {
+        self.is_error
+    }
+
     /// `CallToolResult`（不含 `resultType`、`_meta`）。
-    pub(super) fn into_result(self, structured: bool) -> Map<String, Value> {
+    pub fn into_result(self, structured: bool) -> Map<String, Value> {
         let mut result = Map::new();
         result.insert(
             "content".into(),
@@ -268,14 +276,34 @@ impl Outcome {
 }
 
 /// 调用一个工具：检查参数，把请求交给 Termlet，写出结果。
-pub(super) fn call(tool: Tool, arguments: &Map<String, Value>, context: &Context<'_>) -> Outcome {
+pub fn call(tool: Tool, arguments: &Map<String, Value>, context: &Context<'_>) -> Outcome {
     let lang = context.lang;
-    let request = match request(tool, arguments, context) {
+    let request = match request(tool, arguments, lang, context.callers) {
         Ok(request) => request,
         Err(outcome) => return outcome,
     };
-    let terminal = matches!(&request, Request::Exec(r) if r.terminal);
-    let response = match context.backend.call(request, context.slot) {
+    let terminal = in_terminal(&request);
+    outcome(
+        tool,
+        terminal,
+        context.backend.call(request, context.slot),
+        lang,
+    )
+}
+
+/// 请求是否在已打开的终端中执行（结果中两路输出合在一起）。
+pub fn in_terminal(request: &Request) -> bool {
+    matches!(request, Request::Exec(r) if r.terminal)
+}
+
+/// Termlet 的回答（或连不上的原因）写成工具的结果。`terminal` 见 [`in_terminal`]。
+pub fn outcome(
+    tool: Tool,
+    terminal: bool,
+    response: Result<Response, Failure>,
+    lang: Lang,
+) -> Outcome {
+    let response = match response {
         Ok(Response::Error(body)) => return Outcome::error(&body.code, &body.message, lang),
         Ok(response) => response,
         Err(failure) => return Outcome::error(&failure.code, &failure.message, lang),
@@ -295,19 +323,20 @@ pub(super) fn call(tool: Tool, arguments: &Map<String, Value>, context: &Context
     }
 }
 
-/// 检查参数，写成发给 Termlet 的请求（与命令行工具的请求相同，调用方换成 MCP 的）。
-fn request(
+/// 检查参数，写成发给 Termlet 的请求（与命令行工具的请求相同，调用方换成 MCP 的：`callers`）。参数不对时为
+/// 工具执行错误（AI 可以改了重试），不发请求。
+pub fn request(
     tool: Tool,
     arguments: &Map<String, Value>,
-    context: &Context<'_>,
+    lang: Lang,
+    callers: &[String],
 ) -> Result<Request, Outcome> {
-    let lang = context.lang;
     let args = Args {
         map: arguments,
         lang,
     };
     args.only(tool.arguments())?;
-    let caller = context.callers.to_vec();
+    let caller = callers.to_vec();
     Ok(match tool {
         Tool::ListHosts => Request::ListHosts {
             query: args.optional_string("query")?.unwrap_or_default(),
@@ -333,7 +362,7 @@ fn request(
             let host = args.required("host")?;
             let local = args.absolute_path("local_path")?;
             let remote = args.required("remote_path")?;
-            if let Some((code, message)) = transfer::upload_source_problem(&local, lang) {
+            if let Some((code, message)) = upload_source_problem(&local, lang) {
                 let code = if code == messages::CODE_USAGE {
                     ErrorCode::BadRequest.as_str()
                 } else {
@@ -432,16 +461,16 @@ fn transfer_outcome(done: &TransferResponse, upload: bool, lang: Lang) -> Outcom
     let mut text = message.fill(
         lang,
         &[
-            &transfer::format_bytes(done.bytes),
+            &messages::format_bytes(done.bytes),
             target,
-            &transfer::format_duration(done.duration_ms, lang),
+            &messages::format_duration(done.duration_ms, lang),
         ],
     );
     if done.protocol == termlet_proto::TRANSFER_SCP {
         text.push('\n');
         text.push_str(messages::VIA_SCP.get(lang));
     }
-    for note in output::expiring_notes(&done.expiring_certificates, lang) {
+    for note in messages::expiring_notes(&done.expiring_certificates, lang) {
         text.push('\n');
         text.push_str(&note);
     }
@@ -454,14 +483,14 @@ fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
     let (out_limit, err_limit) = budgets(exec.stdout.len(), exec.stderr.len(), OUTPUT_BUDGET);
     let (stdout, out_omitted) = clip(&exec.stdout, out_limit);
     let (stderr, err_omitted) = clip(&exec.stderr, err_limit);
-    let took = transfer::format_duration(exec.duration_ms, lang);
+    let took = messages::format_duration(exec.duration_ms, lang);
     let mut text = match exec.approval_wait_ms {
         Some(waited) => messages::MCP_EXIT_APPROVED.fill(
             lang,
             &[
                 &exec.exit_code,
                 &took,
-                &transfer::format_duration(waited, lang),
+                &messages::format_duration(waited, lang),
             ],
         ),
         None => messages::MCP_EXIT.fill(lang, &[&exec.exit_code, &took]),
@@ -492,7 +521,7 @@ fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
         text.push_str(&messages::MCP_APP_TRUNCATED.fill(lang, &[&OUTPUT_LIMIT]));
         text.push('\n');
     }
-    for note in output::expiring_notes(&exec.expiring_certificates, lang) {
+    for note in messages::expiring_notes(&exec.expiring_certificates, lang) {
         text.push_str(&format!("[termlet] {note}\n"));
     }
     text

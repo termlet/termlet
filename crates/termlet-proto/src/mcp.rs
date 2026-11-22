@@ -1,6 +1,6 @@
 //! MCP 服务（`termlet mcp`）在 AI 工具中的配置：设置的「AI 与自动化」页按 AI 工具（Claude Code、Codex、Cursor、
-//! VS Code、Gemini CLI、Claude Desktop，以及通用的 JSON）给出配置片段。服务本身在命令行工具中（`termlet-cli` 的
-//! `mcp` 模块），只有 stdio 传输。
+//! VS Code、Gemini CLI、Claude Desktop，以及通用的 JSON）给出配置片段。协议的分发与工具在 `termlet-mcp` 中，
+//! 两种传输共用：stdio 在命令行工具中（`termlet-cli` 的 `mcp` 模块），HTTP 由应用监听（`termlet-core` 的 `cli::http`）。
 
 /// 配置中的服务名（AI 工具中显示为 `termlet`，Claude Code 的工具名因此是 `mcp__termlet__…`）。
 pub const SERVER_NAME: &str = "termlet";
@@ -11,6 +11,10 @@ pub const SUBCOMMAND: &str = "mcp";
 /// MCP 服务写在请求的调用方最前面的一项：`mcp:<客户端名>`（客户端自报的名字），客户端没有报名字时只有 `mcp`。
 /// 审计日志据此把 MCP 的调用与命令行分开。
 pub const CALLER_MARKER: &str = "mcp";
+
+/// 经 HTTP 的 MCP 调用在调用方中紧跟 [`CALLER_MARKER`] 的一项（`["mcp:<客户端名>", "http", <进程链…>]`），
+/// 审计据此写明传输方式；stdio 的调用没有这一项。
+pub const CALLER_HTTP: &str = "http";
 
 /// Codex 中工具调用的超时（秒）：默认 60 秒，等用户批准危险命令（最多 60 秒）再执行时会超时。
 pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 300;

@@ -1,9 +1,10 @@
-//! 调用方：`termlet` 的祖先进程名（由近到远，不含自身），审计日志据此区分是用户手动执行还是 AI 工具调用。
+//! 调用方的进程链，审计日志据此区分是用户手动执行还是 AI 工具调用：命令行工具（`termlet`、`termlet mcp`）记自己的
+//! 祖先进程名（由近到远，不含自身）；应用内的 HTTP 服务按 TCP 对端找到发起连接的进程，记它与它的祖先。
 //! 取不到时为空，不影响命令执行。Windows 用进程快照，Linux 读 `/proc`，其他平台不记录。
 
 use std::collections::HashSet;
 
-/// 最多记录的祖先进程层数。
+/// 最多记录的进程层数。
 const MAX_DEPTH: usize = 5;
 
 /// 一个进程的父进程号与进程名。
@@ -19,6 +20,23 @@ pub fn chain() -> Vec<String> {
         Some(lookup) => walk(std::process::id(), &lookup, MAX_DEPTH),
         None => Vec::new(),
     }
+}
+
+/// 进程 `pid` 自己与它的祖先的进程名（由近到远，合计最多 [`MAX_DEPTH`] 个）；查不到这个进程时为空。
+pub fn process_chain(pid: u32) -> Vec<String> {
+    let Some(lookup) = imp::lookup() else {
+        return Vec::new();
+    };
+    let Some(me) = lookup(pid) else {
+        return Vec::new();
+    };
+    let mut names = Vec::new();
+    if !me.name.is_empty() {
+        names.push(me.name);
+    }
+    let rest = MAX_DEPTH.saturating_sub(names.len());
+    names.extend(walk(pid, &lookup, rest));
+    names
 }
 
 /// 从 `pid` 开始沿父进程链向上，收集最多 `limit` 个祖先的进程名。查不到、遇到 0 号进程或出现循环时停止
@@ -225,5 +243,24 @@ mod tests {
         let me = std::env::current_exe().unwrap();
         let me = me.file_name().unwrap().to_string_lossy();
         assert!(!chain[0].eq_ignore_ascii_case(&me), "不应包含自身");
+    }
+
+    // 按进程号查：第一个是这个进程自己，后面与它的祖先相同
+    #[test]
+    fn process_chain_starts_with_the_process() {
+        let chain = process_chain(std::process::id());
+        if cfg!(not(any(windows, target_os = "linux"))) {
+            assert!(chain.is_empty());
+            return;
+        }
+        let me = std::env::current_exe().unwrap();
+        let me = me.file_name().unwrap().to_string_lossy().to_string();
+        // Linux 的进程名（comm）最多 15 个字符
+        assert!(
+            me.to_lowercase().starts_with(&chain[0].to_lowercase()),
+            "{chain:?} / {me}"
+        );
+        assert!(chain.len() <= MAX_DEPTH);
+        assert_eq!(chain[1..], super::chain()[..chain.len() - 1]);
     }
 }

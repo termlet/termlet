@@ -647,6 +647,18 @@ cli_ui.audit.source_mcp_client:
   zh-TW: MCP（%{client}）
   ja: MCP（%{client}）
   ko: MCP(%{client})
+cli_ui.audit.source_mcp_client_http:
+  zh-CN: MCP（%{client}，HTTP）
+  en: MCP (%{client}, HTTP)
+  zh-TW: MCP（%{client}，HTTP）
+  ja: MCP（%{client}、HTTP）
+  ko: MCP(%{client}, HTTP)
+cli_ui.audit.source_mcp_http:
+  zh-CN: MCP（HTTP）
+  en: MCP (HTTP)
+  zh-TW: MCP（HTTP）
+  ja: MCP（HTTP）
+  ko: MCP(HTTP)
 cli_ui.audit.source_panel:
   zh-CN: 主机工具
   en: Host tools

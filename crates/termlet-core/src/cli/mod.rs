@@ -1,5 +1,5 @@
 //! 命令行工具（`termlet`）的服务：监听本机通道，替命令行工具列出主机、执行命令、传输文件。
-//! 协议见 `termlet-proto`。
+//! 协议见 `termlet-proto`。MCP 的 HTTP 接入（[`http`]）也挂在这里，与本机通道共用下面的检查与审计。
 //!
 //! # 安全模型
 //!
@@ -15,6 +15,8 @@
 //! - **审计**：每次执行、传输都写入审计日志（含被拦截、失败的调用），见 [`crate::audit`]；运行日志中不记命令内容。
 //! - **通道**：Windows 命名管道只允许当前用户与 SYSTEM，属主为当前用户，拒绝远程客户端，只建第一个实例（名字被占用时
 //!   启动失败而不是共用）；Unix 套接字在 0700 的 `run/` 中。由操作系统做用户隔离，不需要 token。
+//! - **MCP 的 HTTP 接入**：默认关；与外部 CLI 的开关都开着才在 127.0.0.1 上监听，校验 Host、拒绝带 Origin 的请求、
+//!   要 Bearer 令牌（TCP 回环没有用户隔离）。见 [`http`]。
 //!
 //! # 界面怎么接
 //!
@@ -35,10 +37,14 @@
 //! 5. **设置**：外部命令行的开关在 `LocalSettings::cli.enabled`；危险命令规则与"询问 / 拦截"在 `Settings::guard`；
 //!    规则测试用 `guard::Guard::from_settings` 加 `check`。主机的访问与专用凭据在主机对话框中（`Host::cli`）。
 //! 6. **停止**：退出前调用 [`CliService::stop`]（或丢弃它）：不再接受连接，进行中的请求被取消。
-//! 7. **第二个实例**：拿不到单实例锁时，用 `proto::client::Client` 连上已有实例、发送 `Request::Activate`（带上启动参数）
+//! 7. **MCP 的 HTTP 接入**：本机设置 `cli.http` 保存后服务自己对照设置启停、换端口；界面显示实际状态
+//!    （[`CliService::http_status`]、[`CliService::subscribe_http`]），端口被占用后可以 [`CliService::refresh_http`] 重试；
+//!    令牌用 [`CliService::http_token`] 显示、[`CliService::regenerate_http_token`] 重新生成；界面语言变了时调用
+//!    [`CliService::set_language`]。无窗口模式按 [`CliService::last_request`] 计算空闲。
+//! 8. **第二个实例**：拿不到单实例锁时，用 `proto::client::Client` 连上已有实例、发送 `Request::Activate`（带上启动参数）
 //!    后退出。`termlet` 连不上时以 `Termlet --headless` 拉起应用（不开窗口），等待它的命令行服务最多 10 秒；设置中关闭了
 //!    自动启动（`LocalSettings::cli.auto_start`，应用写进 `proto::endpoint::LaunchConfig`）时返回 `app_not_running`（退出码 7）。
-//! 8. **Agent Skill 与 PATH**：安装位置与状态见 `proto::skill`（`targets`、`install`、`remove`），
+//! 9. **Agent Skill 与 PATH**：安装位置与状态见 `proto::skill`（`targets`、`install`、`remove`），
 //!    命令行工具的目录与 PATH 见 [`crate::userpath`]（应用启动时调用 `userpath::follow`）。
 //!
 //! 所有 I/O 在核心的 tokio 运行时上，界面线程不阻塞；事件中的回答用 `tokio::sync` 的通道，在任何执行器上都能用。
@@ -47,10 +53,12 @@ mod connect;
 mod error;
 mod events;
 mod handler;
+pub mod http;
 mod listen;
 mod service;
 #[cfg(test)]
 mod tests;
 
 pub use events::{ApprovalRequest, CliEvent, TerminalRequest};
+pub use http::{HttpError, HttpStatus, TokenView};
 pub use service::{APPROVAL_TIMEOUT, CliConfig, CliService};

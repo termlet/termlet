@@ -35,7 +35,7 @@
 
 mod detect;
 mod error;
-mod listen;
+pub(crate) mod listen;
 mod manager;
 mod pipe;
 mod runner;

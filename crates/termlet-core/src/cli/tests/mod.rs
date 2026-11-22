@@ -13,6 +13,7 @@ use termlet_proto::{
     TransferRequest,
 };
 
+use super::http::HttpOptions;
 use super::*;
 use crate::audit::{AuditAction, AuditEntry, AuditLog, AuditQuery, AuditStatus, ExportFormat};
 use crate::db::Database;
@@ -59,7 +60,7 @@ pub(super) struct Desktop {
 }
 
 impl Desktop {
-    fn set_approve(&self, approve: Approve) {
+    pub(super) fn set_approve(&self, approve: Approve) {
         *self.approve.lock().unwrap() = Some(approve);
     }
 
@@ -70,7 +71,7 @@ impl Desktop {
         *self.terminal.lock().unwrap() = Some(Arc::new(f));
     }
 
-    fn asked(&self) -> Vec<String> {
+    pub(super) fn asked(&self) -> Vec<String> {
         self.asked.lock().unwrap().clone()
     }
 
@@ -151,6 +152,11 @@ impl Fixture {
     }
 
     pub fn with(store: Arc<Store>, approval_timeout: Duration) -> Self {
+        Self::with_http(store, approval_timeout, HttpOptions::default())
+    }
+
+    /// 另给 MCP 的 HTTP 接入的参数（HTTP 的开关仍在本机设置中，默认关）。
+    pub fn with_http(store: Arc<Store>, approval_timeout: Duration, http: HttpOptions) -> Self {
         store
             .update_local_settings(|s| s.cli.enabled = true)
             .unwrap();
@@ -160,6 +166,7 @@ impl Fixture {
         let audit = Arc::new(AuditLog::new(store.clone()).unwrap());
         let mut config = CliConfig::new(data_dir, store.clone(), audit.clone());
         config.approval_timeout = approval_timeout;
+        config.http = http;
         let (service, events) = CliService::start(config).unwrap();
         let desktop = Arc::new(Desktop::default());
         let handler = desktop.clone();

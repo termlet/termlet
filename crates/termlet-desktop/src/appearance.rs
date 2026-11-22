@@ -18,10 +18,11 @@ pub fn language_of(setting: LanguageSetting) -> Language {
     }
 }
 
-/// 切换界面语言，界面字体随之换成这种语言的（见 [`ui_font_candidates`]）。
+/// 切换界面语言，界面字体随之换成这种语言的（见 [`ui_font_candidates`]），MCP 的 HTTP 接入的说明也随之换。
 pub fn set_language(language: Language, cx: &mut App) {
     i18n::set_language(language);
     apply_ui_font(language, cx);
+    crate::cli_bridge::set_language(language, cx);
 }
 
 /// gpui-kit 默认的界面字体（GPUI 换成系统的界面字体）。

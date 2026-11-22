@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 termlet-proto.workspace = true
+termlet-mcp.workspace = true
 termlet-io.workspace = true
 portable-pty.workspace = true
 async-channel.workspace = true
@@ -59,6 +60,11 @@ memchr = "2"
 reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls-native-roots", "system-proxy"] }
 # 自动更新与远程配置的签名校验（minisign 格式）；MIT，没有依赖
 minisign-verify = "0.3"
+# MCP 的 HTTP 接入（cli::http，只有 HTTP/1.1、只在 127.0.0.1 上）：reqwest 已带来的同一版本，只多开服务端的特性
+# （hyper 的 server 多带来 httpdate 一个小包，MIT / Apache-2.0，没有依赖）
+hyper = { version = "1.12", features = ["server", "http1"] }
+hyper-util = { version = "0.1.21", features = ["tokio"] }
+http-body-util = "0.1.5"
 
 [target.'cfg(windows)'.dependencies]
 windows-registry.workspace = true
@@ -66,6 +72,8 @@ windows-sys = { workspace = true, features = [
     "Win32_Devices_Communication",
     "Win32_Devices_DeviceAndDriverInstallation",
     "Win32_Foundation",
+    # MCP 的 HTTP 接入按 TCP 对端查发起连接的进程（GetExtendedTcpTable）
+    "Win32_NetworkManagement_IpHelper",
     "Win32_Networking_WinSock",
     "Win32_Security",
     "Win32_Security_Authorization",

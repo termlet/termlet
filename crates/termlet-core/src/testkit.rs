@@ -64,6 +64,26 @@ pub(crate) fn memory_store() -> Arc<Store> {
     Arc::new(Store::open(db, vault).unwrap())
 }
 
+/// 保险库没有解锁的存储（钥匙串不可用、还没有设主密码）：秘密读写不了，其余照常。
+pub(crate) fn locked_store() -> Arc<Store> {
+    struct NoKeyring;
+    impl KeyStore for NoKeyring {
+        fn load(&self) -> Result<Option<Zeroizing<[u8; KEY_LEN]>>> {
+            Ok(None)
+        }
+        fn store(&self, _key: &[u8; KEY_LEN]) -> Result<()> {
+            Err(crate::CoreError::Keyring("测试中没有钥匙串".into()))
+        }
+        fn delete(&self) -> Result<()> {
+            Ok(())
+        }
+    }
+    let db = Database::open_in_memory().unwrap();
+    let vault = Vault::open(&db, Box::new(NoKeyring)).unwrap();
+    assert!(!vault.is_unlocked());
+    Arc::new(Store::open(db, vault).unwrap())
+}
+
 // ---------------------------------------------------------------- 真实 sshd 的测试容器
 
 /// 测试容器的账号（另有以 root 打开 SFTP 用的 sudo-* 账号，密码相同）。

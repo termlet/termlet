@@ -195,12 +195,18 @@ pub(super) fn source_label(source: AuditSource) -> SharedString {
     }
 }
 
-/// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`）。
+/// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`），经 HTTP 的另写明（`MCP（Cursor，HTTP）`）。
 pub(super) fn entry_source(entry: &AuditEntry) -> SharedString {
+    let http = termlet_core::audit::mcp_over_http(&entry.caller);
     match termlet_core::audit::mcp_client(&entry.caller) {
         Some(client) if entry.source == AuditSource::Mcp && !client.is_empty() => {
-            t!("cli_ui.audit.source_mcp_client", client = client)
+            if http {
+                t!("cli_ui.audit.source_mcp_client_http", client = client)
+            } else {
+                t!("cli_ui.audit.source_mcp_client", client = client)
+            }
         }
+        Some(_) if entry.source == AuditSource::Mcp && http => t!("cli_ui.audit.source_mcp_http"),
         _ => source_label(entry.source),
     }
 }
@@ -1256,12 +1262,19 @@ mod tests {
         assert_eq!(entry_source(&mcp), "MCP（claude-code）");
         mcp.caller = "mcp < node.exe".into();
         assert_eq!(entry_source(&mcp), "MCP");
+        // 经 HTTP 的写明传输方式
+        mcp.caller = "mcp:Cursor < http < Cursor.exe".into();
+        assert_eq!(entry_source(&mcp), "MCP（Cursor，HTTP）");
+        mcp.caller = "mcp < http".into();
+        assert_eq!(entry_source(&mcp), "MCP（HTTP）");
         let cli = AuditEntry {
             caller: "bash".into(),
             ..Default::default()
         };
         assert_eq!(entry_source(&cli), "命令行");
         i18n::set_language(Language::En);
+        mcp.caller = "mcp:Cursor < http".into();
+        assert_eq!(entry_source(&mcp), "MCP (Cursor, HTTP)");
         assert_eq!(status_label(AuditStatus::Denied), "Denied");
         assert_eq!(action_label(AuditAction::Terminal), "Run in terminal");
         i18n::set_language(original);

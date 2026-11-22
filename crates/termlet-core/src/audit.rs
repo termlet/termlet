@@ -20,7 +20,7 @@ use regex::Regex;
 use rusqlite::{Connection, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
-use crate::proto::mcp::CALLER_MARKER;
+use crate::proto::mcp::{CALLER_HTTP, CALLER_MARKER};
 use crate::store::Store;
 use crate::{CoreError, Result};
 
@@ -213,6 +213,13 @@ pub fn mcp_client(caller: &str) -> Option<&str> {
         return Some("");
     }
     first.strip_prefix(CALLER_MARKER)?.strip_prefix(':')
+}
+
+/// 经 HTTP 的 MCP 调用：调用方的第一项是 MCP 的标记，第二项是 `http`（stdio 的第二项是祖先进程名）。
+pub fn mcp_over_http(caller: &str) -> bool {
+    let mut items = caller.split(" < ");
+    let first = items.next().unwrap_or_default();
+    mcp_client(first).is_some() && items.next() == Some(CALLER_HTTP)
 }
 
 /// 一条审计记录。写入时 `id`、`source`、`partial`、`truncated`、`detail_size` 不用填。
@@ -1025,6 +1032,17 @@ mod tests {
         ] {
             assert_eq!(mcp_client(caller), None, "{caller}");
         }
+        // 经 HTTP 的调用：第二项是 http
+        assert!(mcp_over_http("mcp:cursor < http < Cursor.exe"));
+        assert!(mcp_over_http("mcp < http"));
+        assert_eq!(mcp_client("mcp:cursor < http < Cursor.exe"), Some("cursor"));
+        for caller in ["mcp:cursor < Cursor.exe", "bash < http", "http", "mcp:x"] {
+            assert!(!mcp_over_http(caller), "{caller}");
+        }
+        assert_eq!(
+            AuditSource::of(AuditAction::Exec, "mcp:codex < http"),
+            AuditSource::Mcp
+        );
         assert_eq!(
             AuditSource::of(AuditAction::Exec, "mcp:codex"),
             AuditSource::Mcp

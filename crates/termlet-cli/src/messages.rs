@@ -1,8 +1,9 @@
 //! 人类可读文本的中英文对照。JSON 输出不使用这里的文本（错误的 `message` 除外：服务端没有补充说明时用错误码的说明）。
 
-use termlet_proto::ErrorCode;
-
 use crate::i18n::Msg;
+
+// 与 MCP 服务共用的文本（工具结果中的说明与命令行的输出相同）
+pub use termlet_mcp::text::{CODE_USAGE, DOWNLOADED, NO_HOSTS, PROTOCOL, UPLOADED, VIA_SCP};
 
 macro_rules! msg {
     ($name:ident, $zh:expr, $en:expr) => {
@@ -143,23 +144,8 @@ msg!(
     "无法解析本地路径 {}: {}",
     "cannot resolve local path {}: {}"
 );
-msg!(
-    UPLOAD_IS_DIR,
-    "{} 是目录，目前只支持上传单个文件；可先打包（如 tar czf dir.tar.gz dir）再上传",
-    "{} is a directory; only single files can be uploaded for now. Archive it first (e.g. tar czf dir.tar.gz dir)"
-);
-msg!(
-    UPLOAD_NOT_REGULAR,
-    "{} 不是普通文件",
-    "{} is not a regular file"
-);
 
 // 运行结果
-msg!(
-    NO_HOSTS,
-    "没有允许 CLI 访问的主机。请在 Termlet 中编辑主机，勾选“允许 AI 工具与脚本使用这台主机”。",
-    "No hosts allow CLI access. Edit a host in Termlet and turn on “Allow AI tools and scripts to use this host”."
-);
 msg!(
     HOSTS_HEADER,
     "ID\t名称\t地址\t用户\t协议",
@@ -170,28 +156,6 @@ msg!(
     "\n[termlet] 输出超过 {} 字节，已截断\n",
     "\n[termlet] output exceeded {} bytes and was truncated\n"
 );
-msg!(UPLOADED, "已上传 {} → {}（{}）", "Uploaded {} → {} ({})");
-msg!(
-    DOWNLOADED,
-    "已下载 {} → {}（{}）",
-    "Downloaded {} → {} ({})"
-);
-msg!(
-    VIA_SCP,
-    "服务器没有 SFTP，已改用 SCP 传输（不能断点续传，失败后要从头再传）",
-    "The server has no SFTP, so the file went over SCP instead (no resuming; a failed transfer starts over)"
-);
-msg!(
-    CERT_EXPIRING,
-    "登录用的证书将于 {} 过期（还剩约 {} 分钟），过期后无法再连接这台主机，请及时重新签发。",
-    "The certificate used to log in expires at {} (about {} min left). After that you won't be able to connect to this host, so get a new one issued in time."
-);
-msg!(
-    JUMP_CERT_EXPIRING,
-    "跳板机 {} 登录用的证书将于 {} 过期（还剩约 {} 分钟），过期后无法再经它连接，请及时重新签发。",
-    "The certificate used to log in to the jump host {} expires at {} (about {} min left). After that you won't be able to connect through it, so get a new one issued in time."
-);
-msg!(SECONDS, "{} 秒", "{}s");
 msg!(
     SKILL_WRITTEN,
     "已安装 termlet 技能文件: {}",
@@ -245,11 +209,6 @@ msg!(
     "failed to connect to Termlet: {}"
 );
 msg!(
-    PROTOCOL,
-    "Termlet 的回答不符合协议: {}",
-    "unexpected answer from Termlet: {}"
-);
-msg!(
     CLOSED,
     "Termlet 在回答前关闭了连接",
     "Termlet closed the connection before answering"
@@ -271,65 +230,12 @@ msg!(
     "termlet mcp 是给 AI 工具（Claude Code、Claude Desktop、Cursor、Codex 等）启动的 MCP 服务，从标准输入读取 JSON-RPC 消息；配置方法见 Termlet 设置中的「AI 与自动化」。按 Ctrl+C 退出。",
     "termlet mcp is an MCP server for AI tools (Claude Code, Claude Desktop, Cursor, Codex and others) to start; it reads JSON-RPC messages from stdin. See Settings → AI & automation in Termlet for the setup. Press Ctrl+C to quit."
 );
-msg!(MCP_ARG_MISSING, "缺少参数 {}", "missing argument: {}");
-msg!(
-    MCP_ARG_STRING,
-    "参数 {} 必须是字符串",
-    "argument {} must be a string"
-);
-msg!(
-    MCP_ARG_BOOL,
-    "参数 {} 必须是 true 或 false",
-    "argument {} must be true or false"
-);
-msg!(
-    MCP_ARG_EMPTY,
-    "参数 {} 不能为空",
-    "argument {} must not be empty"
-);
-msg!(
-    MCP_ARG_UNKNOWN,
-    "不认识的参数 {}（这个工具的参数：{}）",
-    "unknown argument {} (this tool takes: {})"
-);
-msg!(
-    MCP_NOT_ABSOLUTE,
-    "{} 必须是这台电脑上的绝对路径：{}",
-    "{} must be an absolute path on this computer: {}"
-);
-msg!(
-    MCP_COMMAND_TOO_LARGE,
-    "命令超过 1MB，未执行；较大的脚本请先用 upload_file 上传到服务器再执行",
-    "the command exceeds 1MB; nothing was run. Upload larger scripts with upload_file first, then run them"
-);
-msg!(
-    MCP_HOST_NOT_FOUND,
-    "主机不存在，请先调用 list_hosts 查看可用的主机",
-    "host not found; call list_hosts to see the available hosts"
-);
-msg!(MCP_EXIT, "退出码 {}，用时 {}", "exit code {}, took {}");
-msg!(
-    MCP_EXIT_APPROVED,
-    "退出码 {}，用时 {}（另等待用户批准 {}）",
-    "exit code {}, took {} (plus {} waiting for the user's approval)"
-);
-msg!(MCP_NO_OUTPUT, "（没有输出）", "(no output)");
-msg!(
-    MCP_CLIPPED,
-    "[termlet] 输出较长，只返回了开头与结尾（合计约 {} KB）。需要完整的输出时，把它重定向到服务器上的文件再分段读取（head、tail、grep 等），或用 download_file 下载。",
-    "[termlet] The output was long, so only its beginning and end are shown (about {} KB in total). For the full output, redirect it to a file on the server and read it in parts (head, tail, grep and so on), or fetch it with download_file."
-);
-msg!(
-    MCP_APP_TRUNCATED,
-    "[termlet] 标准输出或标准错误超过 {} 字节，超出的部分没有返回。",
-    "[termlet] stdout or stderr exceeded {} bytes; the rest was not returned."
-);
 
 /// 命令行工具自己产生的错误码（不经过 Termlet）。
-pub const CODE_USAGE: &str = "usage";
 pub const CODE_SKILL_INSTALL_FAILED: &str = "skill_install_failed";
 
-/// 错误码对应的说明，文本模式下显示在服务端补充的说明前面。
+/// 错误码对应的说明，文本模式下显示在服务端补充的说明前面：Termlet 返回的错误码与 MCP 服务共用一张表，
+/// 这里补上命令行工具自己的。
 pub fn human(code: &str) -> Option<Msg> {
     if code == CODE_SKILL_INSTALL_FAILED {
         return Some(Msg {
@@ -337,123 +243,13 @@ pub fn human(code: &str) -> Option<Msg> {
             en: "failed to install the skill file",
         });
     }
-    use ErrorCode::*;
-    let (zh, en) = match ErrorCode::parse(code)? {
-        HostNotFound => (
-            "主机不存在，请先运行 termlet ls 查看可用主机",
-            "host not found; run termlet ls to see available hosts",
-        ),
-        HostNotAllowed => (
-            "该主机未允许 CLI 访问，请在 Termlet 中编辑这台主机，勾选“允许 AI 工具与脚本使用这台主机”",
-            "this host does not allow CLI access; edit it in Termlet and turn on “Allow AI tools and scripts to use this host”",
-        ),
-        CommandBlocked => (
-            "命令命中危险命令规则被拦截，可在 Termlet 设置中的「AI 与自动化」中查看规则",
-            "command blocked by a dangerous-command rule; see the rules under Settings → AI & automation in Termlet",
-        ),
-        CommandDenied => (
-            "命令命中危险命令规则，未获得批准（在 Termlet 中被拒绝或等待超时），不要尝试绕过，请让用户在终端中手动执行",
-            "command matches a dangerous-command rule and was not approved in Termlet (denied or timed out); do not try to bypass it, ask the user to run it manually",
-        ),
-        AppLocked => (
-            "Termlet 已锁定，请先在 Termlet 中解锁",
-            "Termlet is locked; unlock it in Termlet first",
-        ),
-        CliDisabled => (
-            "外部 CLI 已关闭，请在 Termlet 设置中的「AI 与自动化」中开启",
-            "External CLI is turned off; turn it on in Termlet under Settings → AI & automation",
-        ),
-        AppNotRunning => ("Termlet 没有运行", "Termlet is not running"),
-        ConnectFailed => ("连接或执行失败", "connection or execution failed"),
-        BadRequest => ("请求无效", "invalid request"),
-        VaultLocked => (
-            "Termlet 的凭据已锁定，请先在 Termlet 中输入主密码",
-            "Termlet credentials are locked; enter the master password in Termlet first",
-        ),
-        VaultNeedsSetup => (
-            "系统钥匙串不可用，请先在 Termlet 中设置主密码",
-            "the system keychain is unavailable; set a master password in Termlet first",
-        ),
-        VaultKeyLost => (
-            "系统钥匙串中的主密钥丢失，已保存的凭据无法解密，请在 Termlet 中重新录入",
-            "the master key in the system keychain is missing and saved credentials cannot be decrypted; re-enter them in Termlet",
-        ),
-        CredentialMissing => (
-            "主机还没有凭据，请先在 Termlet 中编辑主机",
-            "the host has no credentials; edit the host in Termlet first",
-        ),
-        HostKeyUnknown => (
-            "尚未确认该主机的指纹，请先在 Termlet 中连接一次并确认",
-            "the host key has not been confirmed; connect once in Termlet and accept it first",
-        ),
-        HostKeyMismatch => (
-            "主机指纹与记录不一致，可能存在中间人攻击，已拒绝连接。如确认服务器已重装，请在 Termlet 中连接该主机，按提示删除旧记录",
-            "the host key does not match the recorded one (possible man-in-the-middle attack); connection refused. If the server was reinstalled, connect to it in Termlet and remove the old record when prompted",
-        ),
-        HostKeyRejected => ("主机指纹被拒绝", "the host key was rejected"),
-        AuthFailed => (
-            "认证失败，请检查用户名与凭据",
-            "authentication failed; check the username and credentials",
-        ),
-        AuthInteractionRequired => (
-            "该主机需要输入验证码等交互认证，CLI 无法完成，请在 Termlet 中使用",
-            "this host requires interactive authentication (e.g. a verification code) that the CLI cannot complete; use Termlet instead",
-        ),
-        ProxyCommandUnconfirmed => (
-            "该主机经代理命令连接，这条命令还没有在这台电脑上确认过，请先在 Termlet 中连接一次并允许执行",
-            "this host connects through a proxy command that hasn't been confirmed on this computer; connect once in Termlet and allow it first",
-        ),
-        KeyPassphraseRequired => (
-            "私钥已加密但没有保存私钥密码，请在 Termlet 中编辑主机或改用密钥库中的密钥",
-            "the private key is encrypted but no passphrase is saved; edit the host in Termlet or use a key from the key library",
-        ),
-        KeyWrongPassphrase => (
-            "保存的私钥密码不正确，请在 Termlet 中编辑主机",
-            "the saved key passphrase is incorrect; edit the host in Termlet",
-        ),
-        KeyInvalid => (
-            "私钥内容无效或已损坏",
-            "the private key is invalid or corrupted",
-        ),
-        KeyUnsupported => (
-            "不支持的私钥格式或算法",
-            "unsupported private key format or algorithm",
-        ),
-        AlgorithmMismatch => (
-            "与服务器没有共同的加密算法，请在 Termlet 中为主机勾选「兼容旧设备」",
-            "no common encryption algorithm with the server; enable \"Legacy devices\" for the host in Termlet",
-        ),
-        TerminalNotOpen => (
-            "这台主机没有在 Termlet 中打开的终端，请先在 Termlet 中打开",
-            "this host has no terminal open in Termlet; open one in Termlet first",
-        ),
-        TerminalBusy => (
-            "终端正忙（正在运行程序或全屏程序），请回到 shell 提示符后重试",
-            "the terminal is busy (a program or full-screen app is running); return to the shell prompt and try again",
-        ),
-        PathNotFound => ("路径不存在", "path not found"),
-        PathExists => ("路径已存在", "path already exists"),
-        PermissionDenied => ("没有权限", "permission denied"),
-        SftpUnavailable => (
-            "服务器上不能使用 SFTP，也不能改用 SCP，无法传输文件",
-            "neither SFTP nor SCP can be used on the server; cannot transfer files",
-        ),
-        ProtocolMismatch => (
-            "termlet 与 Termlet 的版本不一致，请重新安装 Termlet",
-            "termlet and Termlet versions do not match; reinstall Termlet",
-        ),
-        Internal => (
-            "Termlet 内部错误，请查看 Termlet 日志",
-            "internal Termlet error; check the Termlet logs",
-        ),
-        NotFound => ("要找的记录不存在", "not found"),
-        Canceled => ("已取消", "canceled"),
-    };
-    Some(Msg { zh, en })
+    termlet_mcp::text::human(code)
 }
 
 #[cfg(test)]
 mod tests {
+    use termlet_proto::ErrorCode;
+
     use super::*;
 
     #[test]

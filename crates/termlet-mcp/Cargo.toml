@@ -1,0 +1,19 @@
+[package]
+name = "termlet-mcp"
+description = "Termlet 的 MCP 服务：两代协议的分发、工具的定义与结果的写法，stdio（termlet mcp）与应用内的 HTTP 共用"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# 命令行工具也依赖它：只依赖协议与 serde_json，不链接核心
+[dependencies]
+termlet-proto.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -10,7 +10,6 @@
 //! `termlet mcp` 是由 AI 工具启动的 MCP 服务（stdio），工具与上面的命令一一对应，见 `mcp`。
 
 mod app;
-mod caller;
 mod debug;
 mod i18n;
 mod mcp;
@@ -239,7 +238,7 @@ fn cmd_exec(out: &mut Output<'_>, host: String, command: String, terminal: bool)
         host,
         command,
         terminal,
-        caller: caller::chain(),
+        caller: termlet_proto::caller::chain(),
     });
     let response = match call(out, request) {
         Ok(Response::Exec(response)) => response,
@@ -278,7 +277,7 @@ fn print_exec(out: &mut Output<'_>, response: &ExecResponse) {
 }
 
 fn cmd_transfer(out: &mut Output<'_>, mut request: TransferRequest, upload: bool) -> i32 {
-    request.caller = caller::chain();
+    request.caller = termlet_proto::caller::chain();
     let request = if upload {
         Request::Upload(request)
     } else {

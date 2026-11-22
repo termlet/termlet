@@ -1,14 +1,14 @@
 //! 服务的生命周期与连接：监听、握手、逐个处理请求；客户端断开或服务停止时取消进行中的请求。
 
 use std::io;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use termlet_proto::endpoint::{Endpoint, unavailable_marker_text};
 use termlet_proto::frame::{self, HEADER_LEN};
 use termlet_proto::{
-    ClientHello, ErrorBody, ErrorCode, MAX_REQUEST, Request, Response, Welcome, negotiate,
+    ClientHello, ErrorBody, ErrorCode, Lang, MAX_REQUEST, Request, Response, Welcome, negotiate,
 };
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::{mpsc, watch};
@@ -17,9 +17,11 @@ use tokio::task::JoinHandle;
 use super::error::tr;
 use super::events::CliEvent;
 use super::handler;
+use super::http::{self, Http, HttpOptions, HttpStatus, TokenView};
 use super::listen::{Conn, Listener};
 use crate::audit::AuditLog;
 use crate::paths::DataDir;
+use crate::secret::SecretString;
 use crate::store::Store;
 
 /// 等待用户批准的最长时间。
@@ -45,6 +47,8 @@ pub struct CliConfig {
     /// 开始时是否已锁定（应用锁的状态，之后用 [`CliService::set_app_locked`] 同步）：
     /// 开始监听的那一刻起就按它处理，启动时锁定的应用不会有放行的空档
     pub locked: bool,
+    /// MCP 的 HTTP 接入的参数（测试中调短保活）
+    pub(crate) http: HttpOptions,
 }
 
 impl CliConfig {
@@ -55,6 +59,7 @@ impl CliConfig {
             audit,
             approval_timeout: APPROVAL_TIMEOUT,
             locked: false,
+            http: HttpOptions::default(),
         }
     }
 }
@@ -71,6 +76,25 @@ pub(super) struct Shared {
     pub approval_timeout: Duration,
     /// 正在处理的请求数
     in_flight: AtomicUsize,
+    /// HTTP 上的 MCP 请求按哪种语言写说明（界面语言映射来的；命名管道上的请求用命令行工具握手时给的语言）
+    english: AtomicBool,
+    /// 最近一次请求的时间（命名管道上的请求、通过鉴权的 HTTP 请求）
+    last_request: Mutex<Instant>,
+}
+
+impl Shared {
+    pub(super) fn lang(&self) -> Lang {
+        if self.english.load(Ordering::Relaxed) {
+            Lang::En
+        } else {
+            Lang::Zh
+        }
+    }
+
+    /// 记下收到了一个请求（无窗口模式据此计算空闲）。
+    pub(super) fn touch(&self) {
+        *self.last_request.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+    }
 }
 
 /// 运行中的命令行服务。丢弃时停止。
@@ -78,6 +102,8 @@ pub struct CliService {
     shared: Arc<Shared>,
     endpoint: Endpoint,
     accept: Option<JoinHandle<()>>,
+    /// MCP 的 HTTP 接入（按设置启停）
+    http: Http,
 }
 
 impl CliService {
@@ -113,14 +139,18 @@ impl CliService {
             shutdown: watch::channel(false).0,
             approval_timeout: config.approval_timeout,
             in_flight: AtomicUsize::new(0),
+            english: AtomicBool::new(false),
+            last_request: Mutex::new(Instant::now()),
         });
         let accept = crate::runtime::spawn(accept_loop(shared.clone(), listener));
         tracing::info!(endpoint = %endpoint.display(), "命令行服务已启动");
+        let http = Http::start(shared.clone(), config.http);
         Ok((
             Self {
                 shared,
                 endpoint,
                 accept: Some(accept),
+                http,
             },
             receiver,
         ))
@@ -134,6 +164,50 @@ impl CliService {
     /// 正在处理的请求数（无窗口模式据此判断是否空闲：长时间的执行、传输进行中不退出）。
     pub fn in_flight(&self) -> usize {
         self.shared.in_flight.load(Ordering::SeqCst)
+    }
+
+    /// 最近一次请求的时间：命名管道上的请求与通过鉴权的 HTTP 请求（无窗口模式据此空闲退出）。
+    pub fn last_request(&self) -> Instant {
+        *self
+            .shared
+            .last_request
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// 界面语言变了时调用：HTTP 上的 MCP 请求的说明按它写（简体、繁体中文用中文，其余用英文；默认中文）。
+    /// 命名管道上的请求仍按命令行工具自己的语言。
+    pub fn set_language(&self, lang: Lang) {
+        self.shared
+            .english
+            .store(lang == Lang::En, Ordering::Relaxed);
+    }
+
+    /// MCP 的 HTTP 接入实际的状态（正在监听的端口、没有监听、失败的原因）。
+    pub fn http_status(&self) -> HttpStatus {
+        self.http.status()
+    }
+
+    /// 订阅 [`Self::http_status`] 的变化（本机设置保存后自动启停、换端口，结果经这里送达）。
+    pub fn subscribe_http(&self) -> watch::Receiver<HttpStatus> {
+        self.http.subscribe()
+    }
+
+    /// 现在对照一次设置（例如端口被占用、对方让出后重试）；返回的任务完成时给出状态，在任何执行器上都能等。
+    /// 保存本机设置后不用调用：服务自己会对照。
+    pub fn refresh_http(&self) -> JoinHandle<HttpStatus> {
+        self.http.refresh()
+    }
+
+    /// 界面显示、复制用的 HTTP 令牌（读数据库与保险库，在后台执行器上调用）。
+    pub fn http_token(&self) -> crate::Result<TokenView> {
+        http::token::view(&self.shared.store)
+    }
+
+    /// 重新生成 HTTP 令牌，立即生效（用旧令牌的 AI 工具随即被拒绝），返回新令牌。保险库锁定时返回
+    /// [`crate::CoreError::VaultLocked`]。在后台执行器上调用。
+    pub fn regenerate_http_token(&self) -> crate::Result<SecretString> {
+        http::token::regenerate(&self.shared.store)
     }
 
     /// 监听的通道。
@@ -150,6 +224,7 @@ impl CliService {
         self.shared.shutdown.send_replace(true);
         if let Some(accept) = self.accept.take() {
             accept.abort();
+            self.http.stop();
         }
     }
 }
@@ -188,10 +263,10 @@ async fn accept_loop(shared: Arc<Shared>, mut listener: Listener) {
 }
 
 /// 一个正在处理的请求：丢弃时（处理完，或连接任务被取消）计数减一。
-struct InFlight<'a>(&'a Shared);
+pub(super) struct InFlight<'a>(&'a Shared);
 
 impl<'a> InFlight<'a> {
-    fn enter(shared: &'a Shared) -> Self {
+    pub(super) fn enter(shared: &'a Shared) -> Self {
         shared.in_flight.fetch_add(1, Ordering::SeqCst);
         Self(shared)
     }
@@ -211,6 +286,11 @@ pub(super) struct Cancel {
 }
 
 impl Cancel {
+    /// `gone`：请求的发起方已离开（连接断开、客户端取消）；`shutdown`：服务正在停止。
+    pub(super) fn new(gone: watch::Receiver<bool>, shutdown: watch::Receiver<bool>) -> Self {
+        Self { gone, shutdown }
+    }
+
     /// 等到需要取消（发送端没有了也算）。
     pub async fn wait(&mut self) {
         tokio::select! {
@@ -341,6 +421,7 @@ async fn serve(shared: Arc<Shared>, conn: Box<dyn Conn>) {
         let response = match frame {
             Ok(payload) => match serde_json::from_slice::<Request>(&payload) {
                 Ok(request) => {
+                    shared.touch();
                     let _busy = InFlight::enter(&shared);
                     // 处理命令行工具的请求算作今天用过 Termlet（使用统计；命令行工具本身不发）
                     crate::usage::mark_active();

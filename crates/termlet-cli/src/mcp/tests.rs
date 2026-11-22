@@ -5,6 +5,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
+use termlet_mcp::{
+    INVALID_PARAMS, METHOD_NOT_FOUND, PARSE_ERROR, UNSUPPORTED_PROTOCOL_VERSION, client_name,
+};
 use termlet_proto::{
     ErrorBody, ErrorCode, ExecResponse, ExitCode, HostSummary, MAX_STDIN_COMMAND, Request, Response,
 };

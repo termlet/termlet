@@ -8,3 +8,11 @@ useDefault = true
 [[allowlists]]
 description = "文案中私钥格式的占位文字"
 paths = ['''termlet-desktop[/\\]locales[/\\]keys\.yml$''']
+
+# MCP 的 HTTP 令牌（设置的「AI 与自动化」中生成，见 termlet-core 的 cli::http::token）：前缀加 52 个小写 base32 字符。
+# 用户误把写着令牌的 AI 工具配置提交进仓库时认出来
+[[rules]]
+id = "termlet-mcp-token"
+description = "Termlet MCP HTTP token"
+regex = '''\btermlet_mcp_[a-z2-7]{52}\b'''
+keywords = ["termlet_mcp_"]
