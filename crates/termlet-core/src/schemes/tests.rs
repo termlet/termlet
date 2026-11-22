@@ -78,6 +78,7 @@ fn builtin_ids_are_the_released_ones() {
             "ayu-dark",
             "vscode-light-2026",
             "vscode-dark-2026",
+            "monokai-vscode",
             "dayfox",
             "nightfox",
             "kanagawa-lotus",
@@ -373,7 +374,10 @@ fn pick_scheme_follows_the_levels() {
 #[test]
 fn highlight_palette_prefers_bright_on_dark_and_normal_on_light() {
     let p = highlight_palette(&custom());
-    let got: Vec<&str> = HighlightColor::ALL.iter().map(|&c| p.get(c)).collect();
+    let got: Vec<String> = HighlightColor::NAMED[..6]
+        .iter()
+        .map(|&c| p.get(c))
+        .collect();
     assert_eq!(
         got,
         [
@@ -391,6 +395,18 @@ fn highlight_palette_prefers_bright_on_dark_and_normal_on_light() {
     };
     assert_eq!(
         highlight_palette(&light).get(HighlightColor::Cyan),
+        "#007070"
+    );
+    // 亮色固定取 bright 的一组：这里是灰色，对白底不够 3:1，向前景色混合，不换成普通的一组
+    let bright_cyan = highlight_palette(&light).get(HighlightColor::BrightCyan);
+    assert_ne!(bright_cyan, "#007070");
+    assert_ne!(bright_cyan, "#bbbbbb");
+    assert!(contrast_ratio(&bright_cyan, "#ffffff") >= MIN_HIGHLIGHT_CONTRAST);
+    // 深色配色：两组都清楚时自动的六种本来就取 bright 的一组，与亮色相同；深色固定取普通的一组
+    assert_eq!(p.get(HighlightColor::BrightRed), p.get(HighlightColor::Red));
+    assert_eq!(p.get(HighlightColor::DarkRed), "#cc0000");
+    assert_eq!(
+        highlight_palette(&light).get(HighlightColor::DarkCyan),
         "#007070"
     );
     // Solarized Dark 的 bright 一组多是灰色：绿、黄、蓝、青用普通的一组
@@ -411,11 +427,11 @@ fn highlight_palette_is_readable_on_every_builtin() {
     for b in builtin_schemes() {
         let s = b.scheme();
         let p = highlight_palette(s);
-        for color in HighlightColor::ALL {
+        for color in HighlightColor::NAMED {
             let c = p.get(color);
-            assert!(is_lower_hex(c), "{} {color:?}", b.id());
+            assert!(is_lower_hex(&c), "{} {color:?}", b.id());
             assert!(
-                contrast_ratio(c, &s.background) >= MIN_HIGHLIGHT_CONTRAST,
+                contrast_ratio(&c, &s.background) >= MIN_HIGHLIGHT_CONTRAST,
                 "{} {color:?}",
                 b.id()
             );
@@ -428,9 +444,7 @@ fn highlight_palette_is_readable_on_every_builtin() {
         ansi: ansi("#e0c040"),
         ..custom()
     };
-    let yellow = highlight_palette(&pale)
-        .get(HighlightColor::Yellow)
-        .to_string();
+    let yellow = highlight_palette(&pale).get(HighlightColor::Yellow);
     assert!(contrast_ratio("#e0c040", &pale.background) < 2.0);
     assert!(contrast_ratio(&yellow, &pale.background) >= MIN_HIGHLIGHT_CONTRAST);
     assert_ne!(yellow, pale.foreground);
@@ -443,8 +457,104 @@ fn highlight_color_names() {
         HighlightColor::from_name("cyan"),
         Some(HighlightColor::Cyan)
     );
-    assert_eq!(HighlightColor::from_name("black"), None);
-    assert_eq!(HighlightColor::from_name("Red"), None);
+    assert_eq!(
+        HighlightColor::from_name("brightMagenta"),
+        Some(HighlightColor::BrightMagenta)
+    );
+    assert_eq!(
+        HighlightColor::from_name("darkYellow"),
+        Some(HighlightColor::DarkYellow)
+    );
+    for name in [
+        "black",
+        "Red",
+        "bright-red",
+        "brightred",
+        "brightWhite",
+        "darkWhite",
+        "dark-red",
+        "",
+    ] {
+        assert_eq!(HighlightColor::from_name(name), None, "{name}");
+    }
+    // 每种写法都能读回自己
+    for color in HighlightColor::NAMED {
+        assert_eq!(HighlightColor::from_name(&color.name()), Some(color));
+    }
+    // 三组：自动、深色（普通的一组）、亮色，每组颜色的顺序相同
+    let hues = [
+        AnsiColor::Red,
+        AnsiColor::Green,
+        AnsiColor::Yellow,
+        AnsiColor::Blue,
+        AnsiColor::Magenta,
+        AnsiColor::Cyan,
+    ];
+    let tones = [
+        HighlightTone::Auto,
+        HighlightTone::Dark,
+        HighlightTone::Bright,
+    ];
+    for (i, color) in HighlightColor::NAMED.into_iter().enumerate() {
+        assert_eq!(color.ansi(), Some((hues[i % 6], tones[i / 6])), "{color:?}");
+    }
+}
+
+// 自定义的颜色：#rrggbb（大小写均可，存成小写）；格式不对的不认
+#[test]
+fn custom_highlight_colors_parse() {
+    let orange = HighlightColor::Custom(Rgb::new(0xff, 0x88, 0x00));
+    assert_eq!(HighlightColor::from_name("#ff8800"), Some(orange));
+    assert_eq!(HighlightColor::from_name("#FF8800"), Some(orange));
+    assert_eq!(orange.name(), "#ff8800");
+    assert_eq!(orange.ansi(), None);
+    for bad in [
+        "#ff880", "#ff88001", "ff8800", "#gg8800", "#", "# ff8800", "#ff8800 ",
+    ] {
+        assert_eq!(HighlightColor::from_name(bad), None, "{bad}");
+    }
+}
+
+// 自定义的颜色：对背景够 3:1 的原样；不够的向前景色混合，浅色、深色配色上都看得清
+#[test]
+fn custom_highlight_colors_stay_readable() {
+    let dark = custom();
+    let light = ColorScheme {
+        background: "#ffffff".into(),
+        foreground: "#222222".into(),
+        ..custom()
+    };
+    let gold = HighlightColor::Custom(Rgb::new(0xff, 0xd7, 0x00));
+    let navy = HighlightColor::Custom(Rgb::new(0x00, 0x00, 0x80));
+    let (on_dark, on_light) = (highlight_palette(&dark), highlight_palette(&light));
+    // 金色在深色背景上清楚、原样；在白底上只有约 1.4:1，变深
+    assert_eq!(on_dark.get(gold), "#ffd700");
+    let adjusted = on_light.get(gold);
+    assert_ne!(adjusted, "#ffd700");
+    assert!(contrast_ratio(&adjusted, &light.background) >= MIN_HIGHLIGHT_CONTRAST);
+    assert_ne!(adjusted, light.foreground, "仍带着原来的色调");
+    // 深蓝反过来：白底上原样，深色背景上变浅
+    assert_eq!(on_light.get(navy), "#000080");
+    assert!(contrast_ratio(&on_dark.get(navy), &dark.background) >= MIN_HIGHLIGHT_CONTRAST);
+    // 每套内置配色上任何颜色都够 3:1
+    for b in builtin_schemes() {
+        let s = b.scheme();
+        let p = highlight_palette(s);
+        for rgb in [
+            Rgb::BLACK,
+            Rgb::WHITE,
+            Rgb::new(0x80, 0x80, 0x80),
+            Rgb::new(0xff, 0xff, 0x00),
+        ] {
+            let c = p.get(HighlightColor::Custom(rgb));
+            assert!(is_lower_hex(&c));
+            assert!(
+                contrast_ratio(&c, &s.background) >= MIN_HIGHLIGHT_CONTRAST || c == s.foreground,
+                "{} {rgb:?} {c}",
+                b.id()
+            );
+        }
+    }
 }
 
 #[test]
@@ -567,11 +677,14 @@ fn sample_follows_the_scheme_and_highlight_rules() {
     assert_eq!(selected.fg, None);
     let all: Vec<&SampleSpan> = lines.iter().flatten().collect();
     let error = all.iter().find(|s| s.text == "ERROR").unwrap();
-    assert_eq!(error.fg.as_deref(), Some(palette.get(HighlightColor::Red)));
+    assert_eq!(
+        error.fg.as_deref(),
+        Some(palette.get(HighlightColor::Red).as_str())
+    );
     let warn = all.iter().find(|s| s.text == "WARN").unwrap();
     assert_eq!(
         warn.fg.as_deref(),
-        Some(palette.get(HighlightColor::Yellow))
+        Some(palette.get(HighlightColor::Yellow).as_str())
     );
     // 没有规则（关闭了高亮）时日志不着色
     let plain = scheme_sample(&c, |_| Vec::new());

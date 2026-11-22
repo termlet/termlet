@@ -381,9 +381,15 @@ pub struct HighlightRule {
     pub pattern: String,
     pub regex: bool,
     pub case_sensitive: bool,
-    /// 终端配色中的颜色名（red、yellow……），深浅配色下各自取对应的颜色
+    /// 颜色：终端配色中的颜色名（red、yellow……，深浅配色下各自取对应的颜色）、深色（darkRed……）、亮色
+    /// （brightRed……）或自定义的 `#rrggbb`，写法见 [`crate::schemes::HighlightColor`]。0.3.3 起的这几种也写在这个
+    /// 字段中、不另加字段：0.3.2 及之前的版本读到不认识的值按红色显示，原样保留、同步；另加的字段会被它们在同步时
+    /// 丢掉（规则没有 `extra`），再传回来
     pub color: String,
     pub enabled: bool,
+    /// 以后的版本新加的字段（0.3.3 起保留）
+    #[serde(flatten)]
+    pub extra: Extra,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -874,6 +880,79 @@ mod tests {
         let off: HighlightSettings = serde_json::from_str(r#"{"enabled": false}"#).unwrap();
         assert!(!off.enabled);
         assert_eq!(off.rules, HighlightSettings::default().rules);
+    }
+
+    // 亮色、自定义颜色都写在 color 中，读写不变；规则中不认识的字段（以后的版本加的）原样保留
+    #[test]
+    fn highlight_colors_and_unknown_rule_fields_round_trip() {
+        let doc = serde_json::json!({
+            "enabled": true,
+            "rules": [
+                {"pattern": "ERROR", "regex": false, "caseSensitive": true, "color": "brightRed", "enabled": true},
+                {"pattern": "slow", "regex": false, "caseSensitive": false, "color": "#ff8800", "enabled": true},
+                {"pattern": "x", "regex": true, "caseSensitive": false, "color": "dim", "enabled": false,
+                 "background": "#202020", "style": {"bold": true}},
+            ],
+            "rulesVersion": 2,
+        });
+        let read: HighlightSettings = serde_json::from_value(doc.clone()).unwrap();
+        assert_eq!(read.rules[0].color, "brightRed");
+        assert_eq!(read.rules[1].color, "#ff8800");
+        assert_eq!(read.rules[2].color, "dim", "不认识的颜色原样保留");
+        assert_eq!(read.rules[2].extra["background"], "#202020");
+        assert_eq!(serde_json::to_value(&read).unwrap(), doc);
+    }
+
+    // 0.3.0–0.3.2 的规则结构（没有 extra）读到亮色、自定义颜色时不出错、不丢规则；写回的内容与读到的相同，
+    // 同步时不会被它们当成本机的修改推回云端（规则中另加的字段就会被丢掉再推回去，所以颜色不另加字段）
+    #[test]
+    fn new_highlight_colors_survive_older_versions() {
+        #[derive(Debug, Default, Serialize, Deserialize)]
+        #[serde(default, rename_all = "camelCase")]
+        struct OldRule {
+            pattern: String,
+            regex: bool,
+            case_sensitive: bool,
+            color: String,
+            enabled: bool,
+        }
+        #[derive(Debug, Default, Serialize, Deserialize)]
+        #[serde(default)]
+        struct OldSettings {
+            enabled: bool,
+            rules: Vec<OldRule>,
+            #[serde(flatten)]
+            extra: Extra,
+        }
+        let rule = |pattern: &str, color: &str| HighlightRule {
+            pattern: pattern.into(),
+            color: color.into(),
+            enabled: true,
+            ..Default::default()
+        };
+        let settings = HighlightSettings {
+            rules: vec![
+                rule("ERROR", "brightRed"),
+                rule("slow", "#ff8800"),
+                rule("ok", "green"),
+            ],
+            ..Default::default()
+        };
+        let written = serde_json::to_value(&settings).unwrap();
+        let old: OldSettings = serde_json::from_value(written.clone()).unwrap();
+        assert_eq!(
+            old.rules
+                .iter()
+                .map(|r| r.color.as_str())
+                .collect::<Vec<_>>(),
+            ["brightRed", "#ff8800", "green"]
+        );
+        assert_eq!(serde_json::to_value(&old).unwrap(), written);
+        // 换成另加一个字段的存法：旧版本写回时丢了它
+        let mut with_field = written.clone();
+        with_field["rules"][1]["customColor"] = "#ff8800".into();
+        let old: OldSettings = serde_json::from_value(with_field.clone()).unwrap();
+        assert_ne!(serde_json::to_value(&old).unwrap(), with_field);
     }
 
     #[test]

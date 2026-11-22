@@ -2497,6 +2497,149 @@ fn old_default_highlight_rules_are_upgraded_and_stay_edited(cx: &mut TestAppCont
     );
 }
 
+// 规则的颜色选深色、亮色：保存后存成 darkGreen、brightYellow 这样的名字
+#[gpui_kit::test]
+fn highlight_rule_takes_a_bright_color(cx: &mut TestAppContext) {
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    open_highlight_settings(cx, handle);
+    // 第二条是警告关键词（黄），改成亮黄；第三条是成功关键词（绿），改成深绿
+    choose_highlight_color(cx, handle, 1, 19);
+    choose_highlight_color(cx, handle, 2, 10);
+    save_settings(cx, handle);
+    let rules = cx.update(|cx| AppState::store(cx).settings().highlight.rules);
+    assert_eq!(rules[1].color, "brightYellow");
+    assert_eq!(rules[2].color, "darkGreen");
+    assert_eq!(rules[0].color, "red", "别的规则不变");
+}
+
+/// 在关键词高亮设置中点第 `row` 行的颜色，从下拉菜单中选第 `item` 项：三组各是组名一行加六种颜色（红、绿、黄、
+/// 蓝、紫、青），组之间与“自定义颜色…”前有分隔线——0 组名、1–6 自动，8 组名、9–14 深色，16 组名、17–22 亮色，
+/// 24 “自定义颜色…”。
+fn choose_highlight_color(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    row: usize,
+    item: usize,
+) {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click(("highlight-color", row), cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        // 菜单比测试窗口高时可以滚动：靠后的项先滚到底
+        if item > 12 {
+            window.within("popup-menu").scroll(
+                0usize,
+                ScrollDelta::Pixels(point(px(0.), px(-5000.))),
+                cx,
+            );
+            window.render_frame(cx);
+        }
+        window.within("popup-menu").click(item, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+}
+
+fn save_settings(cx: &mut TestAppContext, handle: AnyWindowHandle) {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("settings-save", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+}
+
+// 规则的颜色选“自定义颜色…”：从现在显示的颜色开始（存成 #rrggbb），打开取色器、焦点在色值框中；
+// 输入色值回车只确认颜色、不保存设置
+#[gpui_kit::test]
+fn highlight_rule_takes_a_custom_color(cx: &mut TestAppContext) {
+    use termlet_core::schemes::{self, HighlightColor, SchemeChoice};
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    // 设置页预览用的配色（默认设置、当前深浅）上的红色
+    let red = cx.update(|cx| {
+        let settings = AppState::store(cx).settings();
+        let dark = gpui_kit::component::ActiveTheme::theme(cx).is_dark();
+        let (scheme, _) =
+            schemes::pick_scheme(&SchemeChoice::default(), &settings.terminal, dark, |_| None);
+        schemes::highlight_palette(scheme).get(HighlightColor::Red)
+    });
+    open_highlight_settings(cx, handle);
+    choose_highlight_color(cx, handle, 0, 24);
+    // 点别处关上取色器（点击先被取色器的弹出层收走），再保存
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click(("highlight-pattern", 1usize), cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    save_settings(cx, handle);
+    let rules = cx.update(|cx| AppState::store(cx).settings().highlight.rules);
+    assert_eq!(rules[0].color, red, "从现在显示的颜色开始");
+    assert_eq!(rules[1].color, "yellow", "别的规则不变");
+
+    // 再打开：这一行是自定义的颜色，再选“自定义颜色…”，在色值框中改成 #ff8800 回车
+    open_highlight_settings(cx, handle);
+    choose_highlight_color(cx, handle, 0, 24);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.press("ctrl-a", cx);
+        window.input("#ff8800", cx);
+        window.press("enter", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("settings-save").is_some(), "设置还开着");
+    })
+    .unwrap();
+    save_settings(cx, handle);
+    let rules = cx.update(|cx| AppState::store(cx).settings().highlight.rules);
+    assert_eq!(rules[0].color, "#ff8800");
+}
+
+// 规则中不认识的颜色与字段（以后的版本写的）：设置页按红色显示，改了别的规则保存时这一条原样保留
+#[gpui_kit::test]
+fn highlight_rules_keep_unknown_colors_and_fields(cx: &mut TestAppContext) {
+    use termlet_core::model::HighlightRule;
+    let handle = open_workspace(cx);
+    i18n::set_language(Language::ZhCn);
+    let mut future = HighlightRule {
+        pattern: "slow".into(),
+        color: "dim".into(),
+        enabled: true,
+        ..Default::default()
+    };
+    future
+        .extra
+        .insert("background".into(), serde_json::json!("#202020"));
+    let plain = HighlightRule {
+        pattern: "ok".into(),
+        color: "green".into(),
+        enabled: true,
+        ..Default::default()
+    };
+    cx.update(|cx| {
+        AppState::store(cx)
+            .update_settings(|s| s.highlight.rules = vec![future.clone(), plain])
+            .unwrap();
+    });
+    open_highlight_settings(cx, handle);
+    choose_highlight_color(cx, handle, 1, 3);
+    save_settings(cx, handle);
+    let rules = cx.update(|cx| AppState::store(cx).settings().highlight.rules);
+    assert_eq!(rules[0], future);
+    assert_eq!(rules[1].color, "yellow");
+}
+
 // 配色库搜索不到时给出导入的两条路；“读取本机的配色”打开导入对话框并停在“本机已装的客户端”页签
 #[gpui_kit::test]
 fn scheme_library_offers_import_when_nothing_matches(cx: &mut TestAppContext) {

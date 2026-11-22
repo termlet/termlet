@@ -1,5 +1,6 @@
 //! 终端视图的 UI 集成测试：无头窗口中渲染真实的视图，经真实的事件路径输入，检查发给传输的字节与网格内容。
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -11,8 +12,9 @@ use gpui_kit::{
 use termlet_terminal::view::CURSOR_BLINK_INTERVAL;
 use termlet_terminal::{
     CloseReason, CommandSuggestions, CursorShape, EngineOptions, GridSize, HighlightColor,
-    HighlightRuleSpec, Highlighter, IoEvent, MouseTracking, RightClick, SearchQuery, ShellEvent,
-    TerminalEngine, TerminalInput, TerminalIo, TerminalStyle, TerminalView, TerminalViewEvent,
+    HighlightRuleSpec, Highlighter, IoEvent, MouseTracking, Rgb, RightClick, SearchQuery,
+    ShellEvent, TerminalEngine, TerminalInput, TerminalIo, TerminalStyle, TerminalView,
+    TerminalViewEvent,
 };
 
 /// 记下终端写给传输的全部字节。
@@ -624,6 +626,12 @@ fn log_screen(rows: usize) -> String {
         .collect()
 }
 
+const ORANGE: Rgb = Rgb {
+    r: 0xff,
+    g: 0x88,
+    b: 0,
+};
+
 fn builtin_highlighter() -> Arc<Highlighter> {
     let rule = |pattern: &str, color| HighlightRuleSpec {
         pattern: pattern.into(),
@@ -637,6 +645,8 @@ fn builtin_highlighter() -> Arc<Highlighter> {
         rule(r"\b(warn|deprecated)\b", HighlightColor::Yellow),
         rule(r"\b(ok|success)\b", HighlightColor::Green),
         rule(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", HighlightColor::Cyan),
+        rule(r"\bINFO\b", HighlightColor::BrightBlue),
+        rule(r"path=\S+", HighlightColor::Custom(ORANGE)),
     ]);
     assert!(errors.is_empty());
     Arc::new(highlighter)
@@ -644,8 +654,27 @@ fn builtin_highlighter() -> Arc<Highlighter> {
 
 #[gpui_kit::test]
 fn keyword_highlights_render(cx: &mut TestAppContext) {
+    // 颜色表中只有两种（界面算好的）：其余的用配色中的颜色、自定义的颜色本身
     let style = TerminalStyle {
         highlighter: Some(builtin_highlighter()),
+        highlight_colors: Some(Arc::new(HashMap::from([
+            (
+                HighlightColor::Red,
+                Rgb {
+                    r: 0xee,
+                    g: 0,
+                    b: 0,
+                },
+            ),
+            (
+                HighlightColor::Custom(ORANGE),
+                Rgb {
+                    r: 0xcc,
+                    g: 0x66,
+                    b: 0,
+                },
+            ),
+        ]))),
         ..TerminalStyle::default()
     };
     let fixture = open_with(cx, style);

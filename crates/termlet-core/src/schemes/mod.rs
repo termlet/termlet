@@ -24,8 +24,9 @@ pub use color::{
     MIN_CONTRAST_ON, Rgb, contrast_ratio, ensure_contrast, is_dark, mix, normalize_hex,
 };
 pub use derived::{
-    AnsiColor, ColorKey, HighlightColor, HighlightPalette, MIN_HIGHLIGHT_CONTRAST, MIN_READABLE,
-    SampleSpan, SearchColors, highlight_palette, scheme_sample, search_colors, unreadable_colors,
+    AnsiColor, ColorKey, HighlightColor, HighlightPalette, HighlightTone, MIN_HIGHLIGHT_CONTRAST,
+    MIN_READABLE, SampleSpan, SearchColors, highlight_palette, scheme_sample, search_colors,
+    unreadable_colors,
 };
 pub use export::{to_iterm_colors, to_windows_terminal_json};
 pub use import::{

@@ -137,6 +137,8 @@ Copyright (c) 2015 - present Microsoft Corporation
     https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/2026-light.json
   - VS Code Dark 2026 (vscode-dark-2026)
     https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/2026-dark.json
+  - Monokai (VS Code) (monokai-vscode)
+    https://github.com/microsoft/vscode/blob/main/extensions/theme-monokai/themes/monokai-color-theme.json
 
 ==============================================================================
 Nightfox (EdenEast/nightfox.nvim)

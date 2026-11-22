@@ -2,7 +2,8 @@
 //! 见 `licenses.rs`）。
 //!
 //! 只收宽松许可（MIT、Apache-2.0、X11 等）的配色；不从 iTerm2-Color-Schemes 合集、Tabby 社区包、
-//! GPL 项目整理的数据中取色，许可不明的（Monokai 等）不收。ID 发布后不能改（设置、主机中按 ID 引用）。
+//! GPL 项目整理的数据中取色，许可不明的（原版 Monokai、Monokai Pro 等；VS Code 自带的 Monokai 主题是 MIT，收了）
+//! 不收。ID 发布后不能改（设置、主机中按 ID 引用）。
 //! 颜色在编译时检查：写错（不是小写的 `#rrggbb`、16 色不全）时编译失败。
 
 use super::{License, SchemeSource};
@@ -664,6 +665,30 @@ pub(super) const SCHEMES: &[RawScheme] = &[
             url: gh!(
                 "microsoft/vscode",
                 "extensions/theme-defaults/themes/2026-dark.json"
+            ),
+            ..VSCODE
+        }),
+        ..BLANK
+    },
+    RawScheme {
+        // VS Code 自带的 Monokai 主题（theme-monokai，不是 Monokai Pro）：16 色取主题 JSON 中的 terminal.*；
+        // 主题没写终端的背景、前景、光标与选区，按 VS Code 终端的回退：背景是 panel.background（主题也没写，
+        // 回退到 editor.background），前景是终端默认的 #cccccc，光标用前景色，选区是 editor.selectionBackground
+        // （#878b9180，叠在背景上）
+        id: "monokai-vscode",
+        name: "Monokai (VS Code)",
+        foreground: "#cccccc",
+        background: "#272822",
+        cursor: "#cccccc",
+        selection_background: "#575a5a",
+        ansi: ansi(
+            "#333333 #c4265e #86b42b #b3b42b #6a7ec8 #8c6bc8 #56adbc #e3e3dd",
+            "#666666 #f92672 #a6e22e #e2e22e #819aff #ae81ff #66d9ef #f8f8f2",
+        ),
+        source: Some(SchemeSource {
+            url: gh!(
+                "microsoft/vscode",
+                "extensions/theme-monokai/themes/monokai-color-theme.json"
             ),
             ..VSCODE
         }),

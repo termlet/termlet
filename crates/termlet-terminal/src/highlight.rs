@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use regex::{Regex, RegexBuilder, RegexSet, RegexSetBuilder};
 
-use crate::colors::Color;
+use crate::colors::{Color, Rgb};
 use crate::grid::{CellFlags, GridPoint, GridSnapshot};
 use crate::text::logical_lines_within;
 
@@ -30,7 +30,9 @@ pub const MAX_MATCHES_PER_LINE: usize = 64;
 /// 编译后的正则最大的大小（与查找相同），防止用户写出巨大的正则。
 const REGEX_SIZE_LIMIT: usize = 1 << 20;
 
-/// 高亮可选的颜色：终端配色中的颜色，具体取值按当前的配色（深浅配色各自的）。
+/// 高亮可选的颜色：终端配色中的六种颜色（自动取普通色或亮色）、六种深色（普通色）、六种亮色，或自定义的颜色。实际显示的颜色由界面按当前的配色算出
+/// （[`crate::TerminalStyle::highlight_colors`]，深浅配色各自的）；没有给出时直接用配色中对应的一色或自定义的颜色本身
+/// （[`HighlightColor::fallback`]）。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum HighlightColor {
     #[default]
@@ -40,44 +42,40 @@ pub enum HighlightColor {
     Blue,
     Magenta,
     Cyan,
+    DarkRed,
+    DarkGreen,
+    DarkYellow,
+    DarkBlue,
+    DarkMagenta,
+    DarkCyan,
+    BrightRed,
+    BrightGreen,
+    BrightYellow,
+    BrightBlue,
+    BrightMagenta,
+    BrightCyan,
+    Custom(Rgb),
 }
 
 impl HighlightColor {
-    pub const ALL: [HighlightColor; 6] = [
-        HighlightColor::Red,
-        HighlightColor::Green,
-        HighlightColor::Yellow,
-        HighlightColor::Blue,
-        HighlightColor::Magenta,
-        HighlightColor::Cyan,
-    ];
-
-    /// 设置中保存的颜色名（red、green、yellow、blue、magenta、cyan，不区分大小写）；不认识时为 `None`。
-    pub fn from_name(name: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
-            .find(|c| c.name().eq_ignore_ascii_case(name.trim()))
-    }
-
-    pub fn name(self) -> &'static str {
-        match self {
-            HighlightColor::Red => "red",
-            HighlightColor::Green => "green",
-            HighlightColor::Yellow => "yellow",
-            HighlightColor::Blue => "blue",
-            HighlightColor::Magenta => "magenta",
-            HighlightColor::Cyan => "cyan",
-        }
-    }
-
-    /// 对应的 ANSI 普通色下标（1–6）。
-    pub fn ansi_index(self) -> u8 {
-        self.slot() as u8 + 1
-    }
-
-    /// 在 [`Self::ALL`] 中的位置（颜色表的下标）。
-    pub fn slot(self) -> usize {
-        self as usize
+    /// 没有算好的颜色时用的：配色中对应的 ANSI 色（1–6、9–14 号），自定义的颜色用它本身。
+    pub fn fallback(self, ansi: &[Rgb; 16]) -> Rgb {
+        let index = match self {
+            HighlightColor::Red | HighlightColor::DarkRed => 1,
+            HighlightColor::Green | HighlightColor::DarkGreen => 2,
+            HighlightColor::Yellow | HighlightColor::DarkYellow => 3,
+            HighlightColor::Blue | HighlightColor::DarkBlue => 4,
+            HighlightColor::Magenta | HighlightColor::DarkMagenta => 5,
+            HighlightColor::Cyan | HighlightColor::DarkCyan => 6,
+            HighlightColor::BrightRed => 9,
+            HighlightColor::BrightGreen => 10,
+            HighlightColor::BrightYellow => 11,
+            HighlightColor::BrightBlue => 12,
+            HighlightColor::BrightMagenta => 13,
+            HighlightColor::BrightCyan => 14,
+            HighlightColor::Custom(rgb) => return rgb,
+        };
+        ansi[index]
     }
 }
 
@@ -177,6 +175,8 @@ struct CompiledRule {
 /// 编译好的高亮规则。规则不变时界面共用同一个（放在 `Arc` 中经 [`crate::TerminalStyle`] 传给各个终端）。
 pub struct Highlighter {
     rules: Vec<CompiledRule>,
+    /// 规则用到的颜色（不重复，按第一次出现的先后），渲染时按它的下标记下每个格子的颜色
+    colors: Vec<HighlightColor>,
     /// 合并的规则：先判断一行命中了哪些（只有一条规则时不需要）
     set: Option<RegexSet>,
 }
@@ -216,6 +216,12 @@ impl Highlighter {
                 }),
             }
         }
+        let mut colors: Vec<HighlightColor> = Vec::new();
+        for rule in &compiled {
+            if !colors.contains(&rule.color) {
+                colors.push(rule.color);
+            }
+        }
         // 合并失败（例如太大）时逐条匹配
         let set = (compiled.len() > 1)
             .then(|| {
@@ -228,6 +234,7 @@ impl Highlighter {
         (
             Self {
                 rules: compiled,
+                colors,
                 set,
             },
             errors,
@@ -242,6 +249,11 @@ impl Highlighter {
     /// 可用的规则数。
     pub fn len(&self) -> usize {
         self.rules.len()
+    }
+
+    /// 规则用到的颜色：不重复，按规则的先后（最多 [`MAX_RULES`] 种）。
+    pub fn colors(&self) -> &[HighlightColor] {
+        &self.colors
     }
 
     /// 规则是否合并成了一个 `RegexSet`（只有一条时不需要合并，也算）；合并失败（太大）时退回逐条匹配，慢得多。
@@ -316,7 +328,7 @@ impl HighlightCache {
     }
 }
 
-/// 可见区中每个格子的高亮颜色（`rows × columns`，存 [`HighlightColor::slot`] + 1，0 表示不高亮）；
+/// 可见区中每个格子的高亮颜色（`rows × columns`，存颜色在 [`Highlighter::colors`] 中的下标 + 1，0 表示不高亮）；
 /// 没有要高亮的时为 `None`。快照要带上跨出可见区的逻辑行（最多上下各 `rows` 行，见 `TerminalEngine::snapshot`）。
 pub(crate) fn visible_highlights(
     snapshot: &GridSnapshot,
@@ -345,7 +357,10 @@ pub(crate) fn visible_highlights(
             if !cells_in(snapshot, start, end).all(|p| is_plain(snapshot, p)) {
                 continue;
             }
-            let value = m.color.slot() as u8 + 1;
+            let Some(slot) = highlighter.colors.iter().position(|c| *c == m.color) else {
+                continue;
+            };
+            let value = slot as u8 + 1;
             for point in cells_in(snapshot, start, end) {
                 let row = point.line + offset;
                 if (0..rows as i32).contains(&row) && point.column < columns {
@@ -557,20 +572,62 @@ mod tests {
         assert!(highlighter.find_matches("a::1").is_empty());
     }
 
+    // 没有算好的颜色时：配色中的 1–6（自动与深色）、9–14 号色，自定义的用它本身
     #[test]
-    fn color_names() {
+    fn fallback_colors() {
+        let ansi: [Rgb; 16] = std::array::from_fn(|i| Rgb {
+            r: i as u8,
+            g: 0,
+            b: 0,
+        });
+        let index = |c: HighlightColor| c.fallback(&ansi).r;
         assert_eq!(
-            HighlightColor::from_name("Cyan"),
-            Some(HighlightColor::Cyan)
+            [
+                HighlightColor::Red,
+                HighlightColor::Cyan,
+                HighlightColor::DarkRed,
+                HighlightColor::DarkCyan,
+                HighlightColor::BrightRed,
+                HighlightColor::BrightCyan,
+            ]
+            .map(index),
+            [1, 6, 1, 6, 9, 14]
         );
-        assert_eq!(HighlightColor::from_name("purple"), None);
+        let orange = Rgb {
+            r: 0xff,
+            g: 0x88,
+            b: 0,
+        };
+        assert_eq!(HighlightColor::Custom(orange).fallback(&ansi), orange);
+    }
+
+    // 颜色表：不重复，按规则的先后；停用的、无效的规则的颜色不算
+    #[test]
+    fn colors_are_listed_once_in_rule_order() {
+        let orange = HighlightColor::Custom(Rgb {
+            r: 0xff,
+            g: 0x88,
+            b: 0,
+        });
+        let mut disabled = rule("x", false, HighlightColor::Blue);
+        disabled.enabled = false;
+        let (highlighter, _) = Highlighter::new(&[
+            rule("a", false, orange),
+            rule("b", false, HighlightColor::BrightRed),
+            rule("c", false, orange),
+            disabled,
+            rule("(", true, HighlightColor::Green),
+            rule("d", false, HighlightColor::Red),
+        ]);
         assert_eq!(
-            HighlightColor::ALL.map(HighlightColor::ansi_index),
-            [1, 2, 3, 4, 5, 6]
+            highlighter.colors(),
+            [orange, HighlightColor::BrightRed, HighlightColor::Red]
         );
-        for color in HighlightColor::ALL {
-            assert_eq!(HighlightColor::from_name(color.name()), Some(color));
-        }
+        assert_eq!(
+            highlighter.find_matches("d c")[1].color,
+            orange,
+            "匹配带着规则的颜色"
+        );
     }
 
     #[test]
@@ -585,7 +642,9 @@ mod tests {
         snapshot.cell_mut(GridPoint::new(2, 0)).unwrap().fg = Color::Indexed(1);
         let cells = visible_highlights(&snapshot, &highlighter, &mut cache, 3, columns).unwrap();
         let at = |line: usize, column: usize| cells[line * columns + column];
-        let red = HighlightColor::Red.slot() as u8 + 1;
+        // 内置规则的第一条是红色：颜色表的第一种
+        assert_eq!(highlighter.colors()[0], HighlightColor::Red);
+        let red = 1;
         // 折行的 "error" 跨两行
         assert_eq!(
             (at(0, 6), at(0, 8), at(1, 0), at(1, 1)),

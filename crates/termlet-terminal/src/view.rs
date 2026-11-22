@@ -4,6 +4,7 @@
 //! 鼠标不上报给程序（照常选择文字）；网格是录制时的大小（引擎决定），不随布局变化，放不下时缩小字号。
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -188,9 +189,9 @@ pub struct TerminalStyle {
     pub contrast: Option<ContrastAdjust>,
     /// 关键词高亮（没有时不高亮）。规则不变时共用同一个，渲染的缓存按它区分
     pub highlighter: Option<Arc<Highlighter>>,
-    /// 高亮的六种颜色在当前配色中的取值（按 [`crate::HighlightColor::ALL`] 的顺序）；
-    /// 没有时用配色中的普通 ANSI 色（1–6 号）
-    pub highlight_colors: Option<[Rgb; 6]>,
+    /// 高亮的颜色在当前配色中实际显示的样子（对背景对比度不够时界面调整过的）；没有的颜色（或没有这张表时）用
+    /// [`crate::HighlightColor::fallback`]
+    pub highlight_colors: Option<Arc<HashMap<crate::HighlightColor, Rgb>>>,
 }
 
 impl Default for TerminalStyle {

@@ -125,7 +125,17 @@ pub fn search_colors(scheme: &ColorScheme) -> SearchColors {
     }
 }
 
-/// 关键词高亮可选的颜色。
+/// 关键词高亮的颜色。设置中（`HighlightRule::color`）的写法：
+///
+/// - `red`、`green`、`yellow`、`blue`、`magenta`、`cyan`：配色中的颜色，在普通色与亮色中自动取对背景更清楚的一种
+///   （见 [`highlight_palette`]；深色配色上多是亮色）；
+/// - `darkRed`、`darkGreen`……：固定取配色的普通色（1–6 号），0.3.3 起；
+/// - `brightRed`、`brightGreen`……：固定取配色的亮色（9–14 号），0.3.3 起；
+/// - `#rrggbb`：自定义的颜色，0.3.3 起。
+///
+/// 实际显示时都保证对背景的对比度（见 [`HighlightPalette::get`]），同一个值在浅色、深色配色上都看得清。
+/// 0.3.2 及之前的版本不认识后三种写法：终端中按红色显示，规则照常保留、同步；在它们的设置中保存时这几条的颜色改成
+/// 红色。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum HighlightColor {
     Red,
@@ -134,45 +144,130 @@ pub enum HighlightColor {
     Blue,
     Magenta,
     Cyan,
+    DarkRed,
+    DarkGreen,
+    DarkYellow,
+    DarkBlue,
+    DarkMagenta,
+    DarkCyan,
+    BrightRed,
+    BrightGreen,
+    BrightYellow,
+    BrightBlue,
+    BrightMagenta,
+    BrightCyan,
+    /// 自定义的颜色
+    Custom(Rgb),
+}
+
+/// 配色中的颜色取哪一组。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum HighlightTone {
+    /// 普通色与亮色中对背景更清楚的一种
+    Auto,
+    /// 普通色（1–6 号）
+    Dark,
+    /// 亮色（9–14 号）
+    Bright,
 }
 
 impl HighlightColor {
-    pub const ALL: [HighlightColor; 6] = [
+    /// 配色中的十八种颜色：自动、深色、亮色三组，每组按红、绿、黄、蓝、紫、青，也是设置中列出的顺序。
+    pub const NAMED: [HighlightColor; 18] = [
         HighlightColor::Red,
         HighlightColor::Green,
         HighlightColor::Yellow,
         HighlightColor::Blue,
         HighlightColor::Magenta,
         HighlightColor::Cyan,
+        HighlightColor::DarkRed,
+        HighlightColor::DarkGreen,
+        HighlightColor::DarkYellow,
+        HighlightColor::DarkBlue,
+        HighlightColor::DarkMagenta,
+        HighlightColor::DarkCyan,
+        HighlightColor::BrightRed,
+        HighlightColor::BrightGreen,
+        HighlightColor::BrightYellow,
+        HighlightColor::BrightBlue,
+        HighlightColor::BrightMagenta,
+        HighlightColor::BrightCyan,
     ];
 
-    /// 设置中保存的颜色名（red、green……，见 `HighlightRule::color`）；不认识时返回 `None`。
+    /// 设置中保存的写法（见类型的说明）→ 颜色；不认识时返回 `None`。
     pub fn from_name(name: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|c| c.ansi().name() == name)
+        if name.starts_with('#') {
+            return Rgb::parse(name).map(HighlightColor::Custom);
+        }
+        Self::NAMED.into_iter().find(|c| c.name() == name)
     }
 
-    /// 对应的 ANSI 色。
-    pub fn ansi(self) -> AnsiColor {
-        match self {
-            HighlightColor::Red => AnsiColor::Red,
-            HighlightColor::Green => AnsiColor::Green,
-            HighlightColor::Yellow => AnsiColor::Yellow,
-            HighlightColor::Blue => AnsiColor::Blue,
-            HighlightColor::Magenta => AnsiColor::Magenta,
-            HighlightColor::Cyan => AnsiColor::Cyan,
-        }
+    /// 设置中保存的写法：颜色名，自定义的颜色为小写的 `#rrggbb`。
+    pub fn name(self) -> std::borrow::Cow<'static, str> {
+        let name = match self {
+            HighlightColor::Red => "red",
+            HighlightColor::Green => "green",
+            HighlightColor::Yellow => "yellow",
+            HighlightColor::Blue => "blue",
+            HighlightColor::Magenta => "magenta",
+            HighlightColor::Cyan => "cyan",
+            HighlightColor::DarkRed => "darkRed",
+            HighlightColor::DarkGreen => "darkGreen",
+            HighlightColor::DarkYellow => "darkYellow",
+            HighlightColor::DarkBlue => "darkBlue",
+            HighlightColor::DarkMagenta => "darkMagenta",
+            HighlightColor::DarkCyan => "darkCyan",
+            HighlightColor::BrightRed => "brightRed",
+            HighlightColor::BrightGreen => "brightGreen",
+            HighlightColor::BrightYellow => "brightYellow",
+            HighlightColor::BrightBlue => "brightBlue",
+            HighlightColor::BrightMagenta => "brightMagenta",
+            HighlightColor::BrightCyan => "brightCyan",
+            HighlightColor::Custom(rgb) => return rgb.to_hex().into(),
+        };
+        name.into()
+    }
+
+    /// 配色中的颜色对应的 ANSI 色与取哪一组；自定义的颜色为 `None`。
+    pub fn ansi(self) -> Option<(AnsiColor, HighlightTone)> {
+        let slot = Self::NAMED.iter().position(|c| *c == self)?;
+        let tone = [
+            HighlightTone::Auto,
+            HighlightTone::Dark,
+            HighlightTone::Bright,
+        ][slot / 6];
+        Some((AnsiColor::ALL[slot % 6 + 1], tone))
     }
 }
 
 /// 关键词高亮在一套配色下的实际颜色（小写的 `#rrggbb`）。
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HighlightPalette {
-    colors: [String; 6],
+    /// 按 [`HighlightColor::NAMED`] 的顺序
+    named: [String; 18],
+    background: String,
+    foreground: String,
 }
 
 impl HighlightPalette {
-    pub fn get(&self, color: HighlightColor) -> &str {
-        &self.colors[color as usize]
+    /// 颜色在这套配色上实际显示的样子：配色中的颜色取算好的；自定义的颜色对背景不到 3:1 时与配色中的颜色一样向前景色
+    /// 混合（浅色背景上的浅黄变深、深色背景上的深蓝变浅），够了就原样。
+    pub fn get(&self, color: HighlightColor) -> String {
+        match color {
+            HighlightColor::Custom(rgb) => ensure_highlight_contrast(
+                &rgb.to_hex(),
+                &self.background,
+                &self.foreground,
+                MIN_HIGHLIGHT_CONTRAST,
+            ),
+            named => {
+                let slot = HighlightColor::NAMED
+                    .iter()
+                    .position(|c| *c == named)
+                    .unwrap_or(0);
+                self.named[slot].clone()
+            }
+        }
     }
 }
 
@@ -203,29 +298,43 @@ fn ensure_highlight_contrast(color: &str, bg: &str, toward: &str, min: f64) -> S
     toward.to_string()
 }
 
-/// 关键词高亮的颜色：每种颜色在普通的与 bright 的一组之间选对背景更清楚、更鲜艳的（深色配色先看 bright 一组，
-/// 浅色先看普通的一组，另一组明显更好时才换：Solarized Dark 等的 bright 一组多是灰色）；
-/// 对背景仍不到 3:1 时向前景色混合（浅色配色的黄色常常只有 2:1 左右）。
+/// 关键词高亮的颜色：自动的六种各在普通的与 bright 的一组之间选对背景更清楚、更鲜艳的（深色配色先看 bright 一组，
+/// 浅色先看普通的一组，另一组明显更好时才换：Solarized Dark 等的 bright 一组多是灰色）；深色、亮色两组固定取普通的、
+/// bright 的一组。对背景仍不到 3:1 时向前景色混合（浅色配色的黄色常常只有 2:1 左右）。
 pub fn highlight_palette(scheme: &ColorScheme) -> HighlightPalette {
     let dark = is_dark_scheme(scheme);
     let bg = scheme.background.as_str();
-    let colors = HighlightColor::ALL.map(|color| {
-        let i = color.ansi().index();
+    let fg = scheme.foreground.as_str();
+    let named = HighlightColor::NAMED.map(|color| {
+        let Some((ansi, tone)) = color.ansi() else {
+            return fg.to_string();
+        };
+        let i = ansi.index();
         let normal = ansi_color(scheme, i);
         let bright = ansi_color(scheme, i + 8);
-        let (first, second) = if dark {
-            (bright, normal)
-        } else {
-            (normal, bright)
+        let pick = match tone {
+            HighlightTone::Dark => normal,
+            HighlightTone::Bright => bright,
+            HighlightTone::Auto => {
+                let (first, second) = if dark {
+                    (bright, normal)
+                } else {
+                    (normal, bright)
+                };
+                if highlight_score(second, bg) > highlight_score(first, bg) + 0.05 {
+                    second
+                } else {
+                    first
+                }
+            }
         };
-        let pick = if highlight_score(second, bg) > highlight_score(first, bg) + 0.05 {
-            second
-        } else {
-            first
-        };
-        ensure_highlight_contrast(pick, bg, &scheme.foreground, MIN_HIGHLIGHT_CONTRAST)
+        ensure_highlight_contrast(pick, bg, fg, MIN_HIGHLIGHT_CONTRAST)
     });
-    HighlightPalette { colors }
+    HighlightPalette {
+        named,
+        background: bg.to_string(),
+        foreground: fg.to_string(),
+    }
 }
 
 /// 预览中的一段文字：前景、背景（`None` 时用配色的前景、背景）与粗体。
@@ -287,7 +396,7 @@ pub fn scheme_sample(
             if !before.is_empty() {
                 out.push(SampleSpan::plain(before));
             }
-            out.push(SampleSpan::fg(hit, palette.get(color)));
+            out.push(SampleSpan::fg(hit, &palette.get(color)));
             at = range.end;
         }
         if let Some(rest) = text.get(at..).filter(|r| !r.is_empty()) {

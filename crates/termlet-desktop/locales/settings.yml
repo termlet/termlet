@@ -995,6 +995,108 @@ settings.color.cyan:
   zh-TW: 青
   ja: シアン
   ko: 청록
+settings.color.dark_red:
+  zh-CN: 深红
+  en: Dark Red
+  zh-TW: 深紅
+  ja: 暗い赤
+  ko: 어두운 빨강
+settings.color.dark_green:
+  zh-CN: 深绿
+  en: Dark Green
+  zh-TW: 深綠
+  ja: 暗い緑
+  ko: 어두운 초록
+settings.color.dark_yellow:
+  zh-CN: 深黄
+  en: Dark Yellow
+  zh-TW: 深黃
+  ja: 暗い黄
+  ko: 어두운 노랑
+settings.color.dark_blue:
+  zh-CN: 深蓝
+  en: Dark Blue
+  zh-TW: 深藍
+  ja: 暗い青
+  ko: 어두운 파랑
+settings.color.dark_magenta:
+  zh-CN: 深紫
+  en: Dark Magenta
+  zh-TW: 深紫
+  ja: 暗いマゼンタ
+  ko: 어두운 자홍
+settings.color.dark_cyan:
+  zh-CN: 深青
+  en: Dark Cyan
+  zh-TW: 深青
+  ja: 暗いシアン
+  ko: 어두운 청록
+settings.color.bright_red:
+  zh-CN: 亮红
+  en: Bright Red
+  zh-TW: 亮紅
+  ja: 明るい赤
+  ko: 밝은 빨강
+settings.color.bright_green:
+  zh-CN: 亮绿
+  en: Bright Green
+  zh-TW: 亮綠
+  ja: 明るい緑
+  ko: 밝은 초록
+settings.color.bright_yellow:
+  zh-CN: 亮黄
+  en: Bright Yellow
+  zh-TW: 亮黃
+  ja: 明るい黄
+  ko: 밝은 노랑
+settings.color.bright_blue:
+  zh-CN: 亮蓝
+  en: Bright Blue
+  zh-TW: 亮藍
+  ja: 明るい青
+  ko: 밝은 파랑
+settings.color.bright_magenta:
+  zh-CN: 亮紫
+  en: Bright Magenta
+  zh-TW: 亮紫
+  ja: 明るいマゼンタ
+  ko: 밝은 자홍
+settings.color.bright_cyan:
+  zh-CN: 亮青
+  en: Bright Cyan
+  zh-TW: 亮青
+  ja: 明るいシアン
+  ko: 밝은 청록
+settings.highlight.group_auto:
+  zh-CN: 自动：按配色取清楚的一种
+  en: "Auto: the clearer one in the scheme"
+  zh-TW: 自動：依配色取清楚的一種
+  ja: 自動：配色の中で見やすい方
+  ko: "자동: 색 구성표에서 잘 보이는 쪽"
+settings.highlight.group_dark:
+  zh-CN: 深色：配色的 1–6 号色
+  en: "Dark: scheme colors 1–6"
+  zh-TW: 深色：配色的 1–6 號色
+  ja: 暗い色：配色の 1–6 番の色
+  ko: "어두운 색: 색 구성표의 1–6번 색"
+settings.highlight.group_bright:
+  zh-CN: 亮色：配色的 9–14 号色
+  en: "Bright: scheme colors 9–14"
+  zh-TW: 亮色：配色的 9–14 號色
+  ja: 明るい色：配色の 9–14 番の色
+  ko: "밝은 색: 색 구성표의 9–14번 색"
+settings.highlight.custom:
+  zh-CN: 自定义
+  en: Custom
+  zh-TW: 自訂
+  ja: カスタム
+  ko: 사용자 지정
+settings.highlight.custom_color:
+  zh-CN: 自定义颜色…
+  en: Custom Color…
+  zh-TW: 自訂顏色…
+  ja: カスタムの色…
+  ko: 사용자 지정 색…
 settings.nav.shortcuts:
   zh-CN: 快捷键
   en: Shortcuts

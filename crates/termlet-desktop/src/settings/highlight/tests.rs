@@ -4,7 +4,7 @@
 use termlet_core::model::{HIGHLIGHT_PRESETS, HighlightPreset, HighlightSettings};
 use termlet_terminal::Highlighter;
 
-use crate::terminal_colors::rule_spec;
+use crate::terminal_colors::{core_color, rule_spec};
 
 fn highlighter(rules: &[termlet_core::model::HighlightRule]) -> Highlighter {
     let specs: Vec<_> = rules.iter().map(rule_spec).collect();
@@ -590,12 +590,13 @@ const ALL_LINES: &[Line] = &[
 fn check_lines(highlighter: &Highlighter, lines: &[Line]) -> Vec<String> {
     let mut wrong = Vec::new();
     for (text, want) in lines {
-        let got: Vec<(&str, &str)> = highlighter
+        let got: Vec<(&str, String)> = highlighter
             .find_matches(text)
             .into_iter()
-            .map(|m| (&text[m.range], m.color.name()))
+            .map(|m| (&text[m.range], core_color(m.color).name().into_owned()))
             .collect();
-        if got != *want {
+        let want: Vec<(&str, String)> = want.iter().map(|(t, c)| (*t, c.to_string())).collect();
+        if got != want {
             wrong.push(format!("{text:?}：标出 {got:?}，应为 {want:?}"));
         }
     }

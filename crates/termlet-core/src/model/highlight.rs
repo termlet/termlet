@@ -30,6 +30,7 @@ impl HighlightPreset {
             case_sensitive: false,
             color: self.color.into(),
             enabled: true,
+            ..Default::default()
         }
     }
 

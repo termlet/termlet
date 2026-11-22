@@ -3,13 +3,17 @@
 //! 规则没有 ID，界面上每一行用一个递增的编号区分。关键词为空的规则保存时去掉；有无效的正则时不能保存。
 //! “添加预设规则”列出核心的 [`HIGHLIGHT_PRESETS`]：按预设的先后插入（不是加在最后），已在列表中的打勾、不能再加；
 //! 是预设的行在关键词前标出预设的名称。
+//!
+//! 颜色（[`HighlightColor`]）在下拉菜单中选：配色中自动、深色、亮色三组各六种，或“自定义颜色…”（gpui-kit 的取色器，
+//! 存成 `#rrggbb`，之后点色块调整）。色块、菜单中的颜色与预览都是当前配色上实际显示的样子（自定义的颜色对背景
+//! 不够清楚时调整过）。不认识的写法（以后的版本写的）按红色显示，没改这一行的颜色时原样保存。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::color_picker::{ColorPicker, ColorPickerEvent, ColorPickerState};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, Entity, HighlightStyle, Hsla,
@@ -18,32 +22,44 @@ use gpui_kit::{
     Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::model::{
-    ColorScheme, HIGHLIGHT_PRESETS, HighlightPreset, HighlightRule, HighlightSettings,
+    ColorScheme, Extra, HIGHLIGHT_PRESETS, HighlightPreset, HighlightRule, HighlightSettings,
     highlight_preset_of, preset_insert_position,
 };
-use termlet_core::schemes::{self, HighlightPalette};
+use termlet_core::schemes::{self, HighlightColor, HighlightPalette};
 use termlet_terminal::colors::to_hsla;
 
 use crate::app_state::AppState;
-use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::prose::prose;
+use crate::schemes::{hex_of, hsla};
 use crate::{t, terminal_colors};
 
 /// 规则最多这么多条。
 const MAX_RULES: usize = 50;
 /// 预览的默认文字：覆盖默认规则（时间、数字也能演示对应的预设）。
 const SAMPLE: &str = "12:00:01 ERROR connect 10.0.0.12:5432 refused · 12:00:02 WARN retry 1/3 via [2001:db8::1]:22 · 12:00:03 OK connected";
-/// 可选的颜色（终端配色中的颜色名）。
-const COLORS: [&str; 6] = ["red", "green", "yellow", "blue", "magenta", "cyan"];
+/// 颜色一列的宽度（rem）：色块与下拉按钮。
+const COLOR_WIDTH: f32 = 8.5;
 
 struct RuleRow {
     key: u64,
     pattern: Entity<InputState>,
     regex: bool,
     case_sensitive: bool,
-    color: Entity<ChoiceState<String>>,
+    /// 设置中的写法（见 [`HighlightColor`]）；不认识的原样留着，改了颜色才换
+    color: String,
+    /// 自定义颜色的取色器（颜色是自定义的时候显示在色块的位置）
+    picker: Entity<ColorPickerState>,
     enabled: bool,
+    /// 规则中以后的版本加的字段，原样保存
+    extra: Extra,
     _subscriptions: [Subscription; 2],
+}
+
+impl RuleRow {
+    /// 显示的颜色：不认识的写法按红色（与终端相同）。
+    fn shown_color(&self) -> HighlightColor {
+        HighlightColor::from_name(&self.color).unwrap_or(HighlightColor::Red)
+    }
 }
 
 pub(super) struct HighlightPage {
@@ -65,8 +81,8 @@ struct Memo {
     sample: String,
     /// 与 `rules` 一一对应：无效的规则的错误信息
     errors: Vec<Option<String>>,
-    /// 示例文字中的匹配（字节区间与颜色名）
-    matches: Vec<(std::ops::Range<usize>, &'static str)>,
+    /// 示例文字中的匹配（字节区间与颜色）
+    matches: Vec<(std::ops::Range<usize>, HighlightColor)>,
 }
 
 impl HighlightPage {
@@ -100,33 +116,46 @@ impl HighlightPage {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let key = self.next_key;
         let pattern = cx.new(|cx| {
             InputState::new(window, cx)
                 .placeholder(t!("settings.highlight.pattern_placeholder"))
                 .default_value(rule.pattern.clone())
         });
-        let colors = COLORS
-            .iter()
-            .map(|name| Choice::new(color_title(name), name.to_string()))
-            .collect();
-        let color = choice_state(colors, &rule.color, false, window, cx);
+        let picker = cx.new(|cx| {
+            let state = ColorPickerState::new(window, cx);
+            match HighlightColor::from_name(&rule.color) {
+                Some(HighlightColor::Custom(rgb)) => state.default_value(hsla(&rgb.to_hex())),
+                _ => state,
+            }
+        });
         let subscriptions = [
             cx.subscribe(&pattern, |_, _, event: &InputEvent, cx| {
                 if matches!(event, InputEvent::Change) {
                     cx.notify();
                 }
             }),
-            cx.observe(&color, |_, _, cx| cx.notify()),
+            // 取色器中选了颜色（拖动滑块时连续地来）：这一行用这个自定义的颜色
+            cx.subscribe(&picker, move |this, _, event: &ColorPickerEvent, cx| {
+                if let ColorPickerEvent::Change(Some(color)) = event
+                    && let Some(row) = this.row_mut(key)
+                {
+                    row.color = hex_of(*color);
+                    cx.notify();
+                }
+            }),
         ];
         self.rules.insert(
             index.min(self.rules.len()),
             RuleRow {
-                key: self.next_key,
+                key,
                 pattern,
                 regex: rule.regex,
                 case_sensitive: rule.case_sensitive,
-                color,
+                color: rule.color.clone(),
+                picker,
                 enabled: rule.enabled,
+                extra: rule.extra.clone(),
                 _subscriptions: subscriptions,
             },
         );
@@ -157,9 +186,45 @@ impl HighlightPage {
             pattern: row.pattern.read(cx).value().to_string(),
             regex: row.regex,
             case_sensitive: row.case_sensitive,
-            color: chosen(&row.color, cx).unwrap_or_else(|| "red".into()),
+            color: row.color.clone(),
             enabled: row.enabled,
+            extra: row.extra.clone(),
         }
+    }
+
+    /// 第 `key` 行改用配色中的一种颜色。
+    fn choose_color(&mut self, key: u64, color: HighlightColor, cx: &mut Context<Self>) {
+        if let Some(row) = self.row_mut(key) {
+            row.color = color.name().into_owned();
+        }
+        cx.notify();
+    }
+
+    /// 第 `key` 行选了“自定义颜色…”：还不是自定义的颜色时从现在显示的颜色（`start`，`#rrggbb`）开始，打开取色器，
+    /// 焦点放在色值框中（可以直接输入色值、回车）。
+    fn choose_custom(
+        &mut self,
+        key: u64,
+        start: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(row) = self.row_mut(key) else {
+            return;
+        };
+        if !matches!(row.shown_color(), HighlightColor::Custom(_)) {
+            row.color = start.to_string();
+            row.picker
+                .update(cx, |picker, cx| picker.set_value(hsla(start), window, cx));
+        }
+        row.picker
+            .update(cx, |picker, cx| picker.set_open(true, cx));
+        // 菜单关上时把焦点还给下拉按钮：等它还完再把焦点放进色值框
+        let hex = row.picker.read(cx).hex_input().clone();
+        window.defer(cx, move |window, cx| {
+            hex.update(cx, |input, cx| input.focus(window, cx));
+        });
+        cx.notify();
     }
 
     /// 预览改用这套配色（设置中尚未保存的当前配色）。
@@ -238,9 +303,7 @@ impl HighlightPage {
         cx: &Context<Self>,
     ) -> impl IntoElement {
         let key = row.key;
-        let color = chosen(&row.color, cx).unwrap_or_else(|| "red".into());
         let muted = cx.theme().muted_foreground;
-        let swatch = highlight_color(colors, &color).unwrap_or(muted);
         let id = |name: &'static str| ElementId::from((name, key as usize));
         let pattern = Input::new(&row.pattern)
             .small()
@@ -257,6 +320,7 @@ impl HighlightPage {
                         .child(name),
                 )
             });
+        let color = self.render_color(row, colors, cx);
         v_flex()
             .gap_0p5()
             .child(
@@ -298,17 +362,7 @@ impl HighlightPage {
                                 })),
                         ),
                     )
-                    .child(
-                        h_flex()
-                            .w(rems(7.))
-                            .gap_1p5()
-                            .child(div().size_3().flex_none().rounded_full().bg(swatch))
-                            .child(
-                                div().flex_1().child(
-                                    Select::new(&row.color).small().id(id("highlight-color")),
-                                ),
-                            ),
-                    )
+                    .child(color)
                     .child(
                         Button::new(id("highlight-delete"))
                             .ghost()
@@ -332,6 +386,98 @@ impl HighlightPage {
             })
     }
 
+    /// 颜色一列：色块（自定义的颜色是取色器，点它调整）与下拉菜单（配色中自动、深色、亮色三组各六种，分隔线隔开、
+    /// 每组标出组名，最后是“自定义颜色…”；色块都是当前配色上实际显示的样子）。
+    fn render_color(
+        &self,
+        row: &RuleRow,
+        colors: &HighlightPalette,
+        cx: &Context<Self>,
+    ) -> impl IntoElement {
+        let key = row.key;
+        let shown = row.shown_color();
+        let custom = matches!(shown, HighlightColor::Custom(_));
+        let current = colors.get(shown);
+        let swatches: Vec<(HighlightColor, Hsla)> = HighlightColor::NAMED
+            .into_iter()
+            .map(|color| (color, hsla(&colors.get(color))))
+            .collect();
+        let swatch = if custom {
+            // 取色器顶上一排（放得下 12 个）：深色、亮色两组
+            ColorPicker::new(&row.picker)
+                .xsmall()
+                .featured_colors(swatches[6..].iter().map(|(_, c)| *c).collect())
+                .accessibility_label(t!("settings.highlight.custom"))
+                .into_any_element()
+        } else {
+            div()
+                .size_3()
+                .rounded_full()
+                .bg(hsla(&current))
+                .into_any_element()
+        };
+        let page = cx.entity().downgrade();
+        let menu = Button::new(("highlight-color", key as usize))
+            .outline()
+            .small()
+            .w_full()
+            .label(color_title(shown))
+            .dropdown_caret(true)
+            .dropdown_menu(move |menu, window, _| {
+                // 一共 25 行：窗口矮时可以滚动
+                let max = window.bounds().size.height - window.rem_size() * 6.;
+                let menu = menu
+                    .scrollable(true)
+                    .max_h(max.max(window.rem_size() * 16.));
+                let groups = [
+                    t!("settings.highlight.group_auto"),
+                    t!("settings.highlight.group_dark"),
+                    t!("settings.highlight.group_bright"),
+                ];
+                let named = swatches.chunks(6).zip(groups).enumerate().fold(
+                    menu,
+                    |menu, (i, (group, title))| {
+                        let menu = if i == 0 { menu } else { menu.separator() };
+                        group
+                            .iter()
+                            .fold(menu.label(title), |menu, &(color, swatch)| {
+                                let page = page.clone();
+                                menu.item(
+                                    color_item(color, swatch).checked(color == shown).on_click(
+                                        move |_, _, cx| {
+                                            let _ = page.update(cx, |page, cx| {
+                                                page.choose_color(key, color, cx)
+                                            });
+                                        },
+                                    ),
+                                )
+                            })
+                    },
+                );
+                let (page, start) = (page.clone(), current.clone());
+                named.separator().item(
+                    PopupMenuItem::new(t!("settings.highlight.custom_color"))
+                        .checked(custom)
+                        .on_click(move |_, window, cx| {
+                            let _ = page
+                                .update(cx, |page, cx| page.choose_custom(key, &start, window, cx));
+                        }),
+                )
+            });
+        h_flex()
+            .w(rems(COLOR_WIDTH))
+            .gap_1p5()
+            .child(
+                div()
+                    .w_4()
+                    .flex_none()
+                    .flex()
+                    .justify_center()
+                    .child(swatch),
+            )
+            .child(div().flex_1().min_w_0().child(menu))
+    }
+
     /// 预览：按当前（未保存）的规则给示例文字着色，背景与颜色取设置中当前深浅的终端配色，
     /// 高亮色与终端中相同（对背景对比度不够时调整过的）。
     fn render_preview(
@@ -347,14 +493,14 @@ impl HighlightPage {
         };
         let highlights = matches
             .iter()
-            .filter_map(|(range, color)| {
-                Some((
+            .map(|(range, color)| {
+                (
                     range.clone(),
                     HighlightStyle {
-                        color: Some(highlight_color(colors, color)?),
+                        color: Some(hsla(&colors.get(*color))),
                         ..Default::default()
                     },
-                ))
+                )
             })
             .collect::<Vec<_>>();
         v_flex()
@@ -411,7 +557,11 @@ impl Render for HighlightPage {
                     .text_center()
                     .child(t!("settings.highlight.case")),
             )
-            .child(div().w(rems(7.)).child(t!("settings.highlight.color")))
+            .child(
+                div()
+                    .w(rems(COLOR_WIDTH))
+                    .child(t!("settings.highlight.color")),
+            )
             .child(div().w(rems(1.5)));
         let (errors, presets): (Vec<Option<String>>, Vec<Option<&'static HighlightPreset>>) = self
             .memo
@@ -498,7 +648,7 @@ impl Render for HighlightPage {
                                     .disabled(full)
                                     .on_click(cx.listener(|this, _, window, cx| {
                                         let rule = HighlightRule {
-                                            color: "red".into(),
+                                            color: HighlightColor::Red.name().into(),
                                             enabled: true,
                                             ..Default::default()
                                         };
@@ -532,14 +682,38 @@ fn preset_title(preset: &HighlightPreset) -> SharedString {
     }
 }
 
-fn color_title(name: &str) -> SharedString {
-    match name {
-        "red" => t!("settings.color.red"),
-        "green" => t!("settings.color.green"),
-        "yellow" => t!("settings.color.yellow"),
-        "blue" => t!("settings.color.blue"),
-        "magenta" => t!("settings.color.magenta"),
-        _ => t!("settings.color.cyan"),
+/// 颜色菜单中的一项：色块与名称。
+fn color_item(color: HighlightColor, swatch: Hsla) -> PopupMenuItem {
+    PopupMenuItem::element(move |_, _| {
+        h_flex()
+            .gap_2()
+            .child(div().size_3().flex_none().rounded_full().bg(swatch))
+            .child(color_title(color))
+    })
+}
+
+/// 颜色的名称（下拉按钮与菜单）；自定义的颜色写“自定义”（色块的提示中有色值）。
+fn color_title(color: HighlightColor) -> SharedString {
+    match color {
+        HighlightColor::Red => t!("settings.color.red"),
+        HighlightColor::Green => t!("settings.color.green"),
+        HighlightColor::Yellow => t!("settings.color.yellow"),
+        HighlightColor::Blue => t!("settings.color.blue"),
+        HighlightColor::Magenta => t!("settings.color.magenta"),
+        HighlightColor::Cyan => t!("settings.color.cyan"),
+        HighlightColor::DarkRed => t!("settings.color.dark_red"),
+        HighlightColor::DarkGreen => t!("settings.color.dark_green"),
+        HighlightColor::DarkYellow => t!("settings.color.dark_yellow"),
+        HighlightColor::DarkBlue => t!("settings.color.dark_blue"),
+        HighlightColor::DarkMagenta => t!("settings.color.dark_magenta"),
+        HighlightColor::DarkCyan => t!("settings.color.dark_cyan"),
+        HighlightColor::BrightRed => t!("settings.color.bright_red"),
+        HighlightColor::BrightGreen => t!("settings.color.bright_green"),
+        HighlightColor::BrightYellow => t!("settings.color.bright_yellow"),
+        HighlightColor::BrightBlue => t!("settings.color.bright_blue"),
+        HighlightColor::BrightMagenta => t!("settings.color.bright_magenta"),
+        HighlightColor::BrightCyan => t!("settings.color.bright_cyan"),
+        HighlightColor::Custom(_) => t!("settings.highlight.custom"),
     }
 }
 
@@ -548,29 +722,18 @@ fn rule_error(rule: &HighlightRule) -> Option<String> {
     termlet_terminal::rule_error(&terminal_colors::rule_spec(rule))
 }
 
-/// 示例文字中的匹配（字节区间与颜色名），与终端中的匹配相同。
+/// 示例文字中的匹配（字节区间与颜色），与终端中的匹配相同。
 fn preview_matches(
     text: &str,
     rules: &[HighlightRule],
-) -> Vec<(std::ops::Range<usize>, &'static str)> {
+) -> Vec<(std::ops::Range<usize>, HighlightColor)> {
     let specs: Vec<_> = rules.iter().map(terminal_colors::rule_spec).collect();
     let (highlighter, _) = termlet_terminal::Highlighter::new(&specs);
     highlighter
         .find_matches(text)
         .into_iter()
-        .map(|m| (m.range, m.color.name()))
+        .map(|m| (m.range, terminal_colors::core_color(m.color)))
         .collect()
-}
-
-/// 高亮色（颜色名不认识时为 `None`）。
-fn highlight_color(colors: &HighlightPalette, name: &str) -> Option<Hsla> {
-    let color = schemes::HighlightColor::from_name(name)?;
-    let rgb = schemes::Rgb::parse(colors.get(color))?;
-    Some(to_hsla(termlet_terminal::Rgb {
-        r: rgb.r,
-        g: rgb.g,
-        b: rgb.b,
-    }))
 }
 
 #[cfg(test)]

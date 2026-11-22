@@ -1,6 +1,7 @@
 //! 终端的样式：字体、字号、选中即复制、右键的行为、光标的默认样式、关键词高亮，以及按"预览 > 当前 Tab > 主机 >
 //! 分组 > 全局"选出的配色。
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use termlet_core::id::{GroupId, HostId};
@@ -113,23 +114,33 @@ pub fn terminal_style(
         )));
     }
     if let Some(highlighter) = highlighter(&settings.highlight) {
+        style.highlight_colors = Some(Arc::new(highlight_colors(&highlighter, scheme)));
         style.highlighter = Some(highlighter);
-        // 高亮色取这套配色的（对背景对比度不够时核心会调亮或调暗）
-        let palette = schemes::highlight_palette(scheme);
-        let colors = HighlightColor::ALL.map(|color| {
-            let core = schemes::HighlightColor::from_name(color.name())
-                .unwrap_or(schemes::HighlightColor::Red);
-            schemes::Rgb::parse(palette.get(core))
-                .map(|c| Rgb {
+    }
+    style
+}
+
+/// 高亮器用到的颜色在这套配色上实际显示的样子（对背景对比度不够时核心会调亮或调暗，自定义的颜色也是）。
+pub fn highlight_colors(
+    highlighter: &Highlighter,
+    scheme: &ColorScheme,
+) -> HashMap<HighlightColor, Rgb> {
+    let palette = schemes::highlight_palette(scheme);
+    highlighter
+        .colors()
+        .iter()
+        .filter_map(|&color| {
+            let c = schemes::Rgb::parse(&palette.get(core_color(color)))?;
+            Some((
+                color,
+                Rgb {
                     r: c.r,
                     g: c.g,
                     b: c.b,
-                })
-                .unwrap_or(style.palette.ansi[color.ansi_index() as usize])
-        });
-        style.highlight_colors = Some(colors);
-    }
-    style
+                },
+            ))
+        })
+        .collect()
 }
 
 /// 编译好的关键词高亮：所有终端共用同一个（终端按它的指针缓存匹配结果），设置变了才重新编译。
@@ -159,14 +170,72 @@ pub fn highlighter(settings: &HighlightSettings) -> Option<Arc<Highlighter>> {
     highlighter
 }
 
-/// 设置中的一条规则转成终端的规则（颜色名不认识时用红色）。
+/// 设置中的一条规则转成终端的规则（颜色不认识时用红色，与之前的版本相同）。
 pub fn rule_spec(rule: &termlet_core::model::HighlightRule) -> HighlightRuleSpec {
     HighlightRuleSpec {
         pattern: rule.pattern.clone(),
         regex: rule.regex,
         case_sensitive: rule.case_sensitive,
-        color: HighlightColor::from_name(&rule.color).unwrap_or_default(),
+        color: terminal_color(
+            schemes::HighlightColor::from_name(&rule.color).unwrap_or(schemes::HighlightColor::Red),
+        ),
         enabled: rule.enabled,
+    }
+}
+
+/// 核心的高亮颜色（设置中的写法）转成终端的。
+pub fn terminal_color(color: schemes::HighlightColor) -> HighlightColor {
+    use schemes::HighlightColor as C;
+    match color {
+        C::Red => HighlightColor::Red,
+        C::Green => HighlightColor::Green,
+        C::Yellow => HighlightColor::Yellow,
+        C::Blue => HighlightColor::Blue,
+        C::Magenta => HighlightColor::Magenta,
+        C::Cyan => HighlightColor::Cyan,
+        C::DarkRed => HighlightColor::DarkRed,
+        C::DarkGreen => HighlightColor::DarkGreen,
+        C::DarkYellow => HighlightColor::DarkYellow,
+        C::DarkBlue => HighlightColor::DarkBlue,
+        C::DarkMagenta => HighlightColor::DarkMagenta,
+        C::DarkCyan => HighlightColor::DarkCyan,
+        C::BrightRed => HighlightColor::BrightRed,
+        C::BrightGreen => HighlightColor::BrightGreen,
+        C::BrightYellow => HighlightColor::BrightYellow,
+        C::BrightBlue => HighlightColor::BrightBlue,
+        C::BrightMagenta => HighlightColor::BrightMagenta,
+        C::BrightCyan => HighlightColor::BrightCyan,
+        C::Custom(c) => HighlightColor::Custom(Rgb {
+            r: c.r,
+            g: c.g,
+            b: c.b,
+        }),
+    }
+}
+
+/// 终端的高亮颜色转回核心的（按配色算实际的颜色用）。
+pub fn core_color(color: HighlightColor) -> schemes::HighlightColor {
+    use schemes::HighlightColor as C;
+    match color {
+        HighlightColor::Red => C::Red,
+        HighlightColor::Green => C::Green,
+        HighlightColor::Yellow => C::Yellow,
+        HighlightColor::Blue => C::Blue,
+        HighlightColor::Magenta => C::Magenta,
+        HighlightColor::Cyan => C::Cyan,
+        HighlightColor::DarkRed => C::DarkRed,
+        HighlightColor::DarkGreen => C::DarkGreen,
+        HighlightColor::DarkYellow => C::DarkYellow,
+        HighlightColor::DarkBlue => C::DarkBlue,
+        HighlightColor::DarkMagenta => C::DarkMagenta,
+        HighlightColor::DarkCyan => C::DarkCyan,
+        HighlightColor::BrightRed => C::BrightRed,
+        HighlightColor::BrightGreen => C::BrightGreen,
+        HighlightColor::BrightYellow => C::BrightYellow,
+        HighlightColor::BrightBlue => C::BrightBlue,
+        HighlightColor::BrightMagenta => C::BrightMagenta,
+        HighlightColor::BrightCyan => C::BrightCyan,
+        HighlightColor::Custom(c) => C::Custom(schemes::Rgb::new(c.r, c.g, c.b)),
     }
 }
 
@@ -239,6 +308,64 @@ mod tests {
         assert_eq!(
             palette.cursor_text.is_some(),
             !scheme.cursor_accent.is_empty()
+        );
+    }
+
+    // 设置中的颜色转成终端的：深色、亮色、自定义颜色照原样，不认识的按红色（与之前的版本相同）；颜色表是高亮器用到的
+    // 颜色在这套配色上实际显示的样子（白色在浅色配色上调深了）
+    #[test]
+    fn highlight_rules_use_bright_and_custom_colors() {
+        use termlet_core::model::HighlightRule;
+        let rule = |pattern: &str, color: &str| HighlightRule {
+            pattern: pattern.into(),
+            color: color.into(),
+            enabled: true,
+            ..Default::default()
+        };
+        let white = Rgb {
+            r: 0xff,
+            g: 0xff,
+            b: 0xff,
+        };
+        assert_eq!(
+            rule_spec(&rule("a", "brightCyan")).color,
+            HighlightColor::BrightCyan
+        );
+        assert_eq!(
+            rule_spec(&rule("a", "darkBlue")).color,
+            HighlightColor::DarkBlue
+        );
+        assert_eq!(
+            rule_spec(&rule("a", "#FFFFFF")).color,
+            HighlightColor::Custom(white)
+        );
+        assert_eq!(rule_spec(&rule("a", "dim")).color, HighlightColor::Red);
+        for color in schemes::HighlightColor::NAMED {
+            assert_eq!(core_color(terminal_color(color)), color);
+        }
+        let specs: Vec<_> = [
+            rule("a", "#ffffff"),
+            rule("b", "brightRed"),
+            rule("c", "#ffffff"),
+        ]
+        .iter()
+        .map(rule_spec)
+        .collect();
+        let (highlighter, _) = Highlighter::new(&specs);
+        let light = schemes::default_scheme(false).scheme();
+        let table = highlight_colors(&highlighter, light);
+        assert_eq!(table.len(), 2);
+        let shown = table[&HighlightColor::Custom(white)];
+        assert_ne!(shown, white, "白底上的白色调深");
+        let hex = format!("#{:02x}{:02x}{:02x}", shown.r, shown.g, shown.b);
+        assert!(
+            schemes::contrast_ratio(&hex, &light.background) >= schemes::MIN_HIGHLIGHT_CONTRAST
+        );
+        // 深色配色上白色原样
+        let dark = schemes::default_scheme(true).scheme();
+        assert_eq!(
+            highlight_colors(&highlighter, dark)[&HighlightColor::Custom(white)],
+            white
         );
     }
 

@@ -611,9 +611,25 @@ fn frame_from(
             ),
         }
     });
-    let keyword_colors: [Rgb; 6] = style
-        .highlight_colors
-        .unwrap_or_else(|| std::array::from_fn(|i| palette.ansi[i + 1]));
+    // 高亮器颜色表中每种颜色实际显示的颜色（与格子中记的下标对应）
+    let keyword_colors: Vec<Rgb> = style
+        .highlighter
+        .as_ref()
+        .filter(|_| keywords.is_some())
+        .map(|highlighter| {
+            highlighter
+                .colors()
+                .iter()
+                .map(|color| {
+                    style
+                        .highlight_colors
+                        .as_ref()
+                        .and_then(|table| table.get(color).copied())
+                        .unwrap_or_else(|| color.fallback(&palette.ansi))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
 
     // 可见区的格子：（可见区的行、列，网格中的位置，格子）
     let visible = (0..rows).flat_map(|row| {
@@ -638,11 +654,12 @@ fn frame_from(
         }
         let mut fg: Rgb = palette.resolve(fg_color, colors);
         // 关键词高亮只换程序没有着色的文字的颜色，之后照常暗淡、调整对比度，选中时用选区的文字色
-        if let Some(slot) = keywords
+        if let Some(&color) = keywords
             .as_ref()
             .and_then(|k| k[row * columns + column].checked_sub(1))
+            .and_then(|slot| keyword_colors.get(slot as usize))
         {
-            fg = keyword_colors[slot as usize];
+            fg = color;
         }
         let mut bg: Rgb = palette.resolve(cell.bg, colors);
         if flags.contains(CellFlags::DIM) {
