@@ -1,5 +1,6 @@
 //! 「AI 与自动化」页的“termlet 命令”：命令行工具的位置、是否已在当前用户的 PATH 中，以及加入、移出 PATH
-//! （立即执行，只在 Windows 上由 Termlet 修改；其他平台给出手动链接的命令）。开发构建中没有命令行工具时只作说明；
+//! （立即执行，只在 Windows 上由 Termlet 修改；其他平台给出手动链接的命令）。开发构建中命令行工具在程序旁边时
+//! 给出它的路径、不改 PATH，没有时只作说明；
 //! 便携版不修改 PATH，只说明用完整路径运行。Linux 上按安装方式说明（[`linux_install`]）：deb、rpm 已装好
 //! `/usr/bin/termlet`；AppImage 显示 AppImage 文件本身（链接为 termlet 即为命令行工具），不显示每次都变的挂载点；
 //! tar.gz 等给出手动链接的命令。
@@ -35,6 +36,8 @@ termlet download web /var/log/nginx/error.log .";
 pub(super) enum PathState {
     /// 开发构建：应用程序旁边没有命令行工具
     Missing,
+    /// 开发构建：命令行工具在应用程序旁边（不改 PATH）
+    DevBuild,
     /// 这个平台不能由 Termlet 修改 PATH
     Unsupported,
     /// 便携版：不修改 PATH
@@ -73,7 +76,16 @@ impl ToolSection {
             busy: false,
             _task: None,
         };
-        if exists && env.portable {
+        let dev = if exists {
+            None
+        } else {
+            env.exe.as_deref().and_then(super::dev_cli)
+        };
+        if let Some(dev) = dev {
+            let dir = dev.parent().map(Path::to_path_buf).unwrap_or_default();
+            this.paths = Some((dev, dir));
+            this.state = PathState::DevBuild;
+        } else if exists && env.portable {
             this.state = PathState::Portable;
         } else if let Some(linux) = linux {
             // 显示的是用户要用的那个文件：系统命令，或 AppImage 文件本身
@@ -223,6 +235,13 @@ impl ToolSection {
                 .text_xs()
                 .text_color(danger)
                 .child(prose(t!("cli_ui.tool.check_failed", error = error.clone())))
+                .into_any_element(),
+            PathState::DevBuild => div()
+                .id("cli-tool-dev-found")
+                .test_support()
+                .text_xs()
+                .text_color(muted)
+                .child(prose(t!("cli_ui.tool.dev_build_found")))
                 .into_any_element(),
             PathState::Portable => div()
                 .id("cli-tool-portable")

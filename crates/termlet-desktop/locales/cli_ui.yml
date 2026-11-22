@@ -173,6 +173,12 @@ cli_ui.tool.dev_build:
   zh-TW: 開發版建置中沒有命令列工具。安裝版的命令列工具在安裝目錄的 bin 資料夾中。
   ja: 開発ビルドにはコマンドラインツールが含まれていません。インストール版では、インストール先の bin フォルダーにあります。
   ko: 개발 빌드에는 명령줄 도구가 없습니다. 설치 버전에서는 설치 위치의 bin 폴더에 있습니다.
+cli_ui.tool.dev_build_found:
+  zh-CN: 开发构建：命令行工具在程序旁边，不加入 PATH，在命令行中用上面的完整路径运行。
+  en: "Development build: the command-line tool sits next to the program and isn't added to PATH. Run it by its full path above."
+  zh-TW: 開發版建置：命令列工具在程式旁邊，不加入 PATH，在命令列中用上面的完整路徑執行。
+  ja: 開発ビルドです。コマンドラインツールはプログラムと同じ場所にあり、PATH には追加しません。コマンドラインでは上のフルパスで実行してください。
+  ko: 개발 빌드입니다. 명령줄 도구는 프로그램 옆에 있으며 PATH에 추가하지 않습니다. 명령줄에서 위의 전체 경로로 실행하세요.
 cli_ui.tool.examples:
   zh-CN: 示例
   en: Examples
@@ -414,17 +420,29 @@ cli_ui.mcp.where_cursor:
   ja: ~/.cursor/mcp.json（すべてのプロジェクト）またはプロジェクト内の .cursor/mcp.json に追加します（mcpServers がすでにあれば termlet の項目だけを追加します）：
   ko: "~/.cursor/mcp.json(모든 프로젝트) 또는 프로젝트의 .cursor/mcp.json에 추가하세요(mcpServers가 이미 있으면 termlet 항목만 추가):"
 cli_ui.mcp.where_codex:
-  zh-CN: 加到 ~/.codex/config.toml（设置了 CODEX_HOME 时是其中的 config.toml）。工具调用的超时放宽到 %{seconds} 秒，以免等你批准危险命令时超时：
-  en: "Add this to ~/.codex/config.toml (or config.toml in CODEX_HOME if it's set). The tool timeout is raised to %{seconds} seconds so calls don't time out while you approve a dangerous command:"
-  zh-TW: 加到 ~/.codex/config.toml（設定了 CODEX_HOME 時是其中的 config.toml）。工具呼叫的逾時放寬到 %{seconds} 秒，以免等你核准危險指令時逾時：
-  ja: ~/.codex/config.toml（CODEX_HOME を設定している場合はその中の config.toml）に追加します。危険なコマンドの承認を待つ間にタイムアウトしないよう、ツール呼び出しのタイムアウトを %{seconds} 秒に延ばしています：
-  ko: "~/.codex/config.toml(CODEX_HOME을 설정한 경우 그 안의 config.toml)에 추가하세요. 위험한 명령의 승인을 기다리는 동안 시간 초과가 나지 않도록 도구 호출 제한 시간을 %{seconds}초로 늘렸습니다:"
+  zh-CN: 加到 ~/.codex/config.toml（设置了 CODEX_HOME 时是其中的 config.toml）。tool_timeout_sec 是一条命令最长能运行多久（含等你批准危险命令的时间），这里放宽到 %{seconds} 秒（Codex 默认 60 秒）：
+  en: "Add this to ~/.codex/config.toml (or config.toml in CODEX_HOME if it's set). tool_timeout_sec is the longest a single command may run, including the time you take to approve a dangerous command; it's raised to %{seconds} seconds here (Codex defaults to 60):"
+  zh-TW: 加到 ~/.codex/config.toml（設定了 CODEX_HOME 時是其中的 config.toml）。tool_timeout_sec 是一條指令最長能執行多久（含等你核准危險指令的時間），這裡放寬到 %{seconds} 秒（Codex 預設 60 秒）：
+  ja: ~/.codex/config.toml（CODEX_HOME を設定している場合はその中の config.toml）に追加します。tool_timeout_sec は 1 つのコマンドを実行できる最長時間で、危険なコマンドの承認を待つ時間も含みます。ここでは %{seconds} 秒に延ばしています（Codex の既定は 60 秒）：
+  ko: "~/.codex/config.toml(CODEX_HOME을 설정한 경우 그 안의 config.toml)에 추가하세요. tool_timeout_sec는 명령 하나를 실행할 수 있는 최대 시간이며 위험한 명령의 승인을 기다리는 시간도 포함합니다. 여기서는 %{seconds}초로 늘렸습니다(Codex 기본값은 60초):"
 cli_ui.mcp.where_codex_command:
-  zh-CN: 或者在终端中运行。这样添加的没有放宽超时，还要在 config.toml 的 [mcp_servers.termlet] 中加上 tool_timeout_sec = %{seconds}：
-  en: "Or run this in a terminal. It doesn't raise the timeout, so also add tool_timeout_sec = %{seconds} under [mcp_servers.termlet] in config.toml:"
-  zh-TW: 或者在終端機中執行。這樣新增的沒有放寬逾時，還要在 config.toml 的 [mcp_servers.termlet] 中加上 tool_timeout_sec = %{seconds}：
-  ja: または、ターミナルで次のコマンドを実行します。この方法ではタイムアウトが延びないため、config.toml の [mcp_servers.termlet] に tool_timeout_sec = %{seconds} も追加してください：
-  ko: "또는 터미널에서 다음 명령을 실행하세요. 이 방법으로는 제한 시간이 늘어나지 않으므로 config.toml의 [mcp_servers.termlet]에 tool_timeout_sec = %{seconds}도 추가하세요:"
+  zh-CN: 或者在终端中运行。这样添加的没有放宽超时（Codex 默认一条命令最长 60 秒），还要在 config.toml 的 [mcp_servers.termlet] 中加上 tool_timeout_sec = %{seconds}：
+  en: "Or run this in a terminal. It doesn't raise the timeout (by default Codex lets a command run for at most 60 seconds), so also add tool_timeout_sec = %{seconds} under [mcp_servers.termlet] in config.toml:"
+  zh-TW: 或者在終端機中執行。這樣新增的沒有放寬逾時（Codex 預設一條指令最長 60 秒），還要在 config.toml 的 [mcp_servers.termlet] 中加上 tool_timeout_sec = %{seconds}：
+  ja: または、ターミナルで次のコマンドを実行します。この方法ではタイムアウトが延びない（Codex の既定では 1 つのコマンドは最長 60 秒）ため、config.toml の [mcp_servers.termlet] に tool_timeout_sec = %{seconds} も追加してください：
+  ko: "또는 터미널에서 다음 명령을 실행하세요. 이 방법으로는 제한 시간이 늘어나지 않으므로(Codex 기본값은 명령 하나에 최대 60초) config.toml의 [mcp_servers.termlet]에 tool_timeout_sec = %{seconds}도 추가하세요:"
+cli_ui.mcp.codex_approval:
+  zh-CN: Codex 默认在每次执行命令、上传、下载前先问你一次（列出主机不问）。想省掉这一问，在 [mcp_servers.termlet] 中加一行 default_tools_approval_mode = "approve"：Termlet 照样只让 AI 使用你允许的主机，危险命令照样弹出批准框，只是 Codex 不再逐次确认。codex exec 这类没人回答的场合要加，否则这些工具会直接失败。
+  en: 'By default, Codex asks you before every command, upload and download (listing hosts isn''t asked). To skip that, add default_tools_approval_mode = "approve" under [mcp_servers.termlet]. Termlet still only lets AI use the hosts you allow and still asks you to approve dangerous commands; Codex just stops asking each time. You need it where nobody can answer, such as codex exec, or those tools fail.'
+  zh-TW: Codex 預設在每次執行指令、上傳、下載前先問你一次（列出主機不問）。想省掉這一問，在 [mcp_servers.termlet] 中加一行 default_tools_approval_mode = "approve"：Termlet 照樣只讓 AI 使用你允許的主機，危險指令照樣跳出核准框，只是 Codex 不再逐次確認。codex exec 這類沒人回答的場合要加，否則這些工具會直接失敗。
+  ja: Codex は既定で、コマンドの実行、アップロード、ダウンロードのたびに確認します（ホストの一覧表示は確認しません）。確認を省くには、[mcp_servers.termlet] に default_tools_approval_mode = "approve" を 1 行追加します。Termlet は引き続き許可したホストだけを AI に使わせ、危険なコマンドでは承認ダイアログを表示します。Codex が毎回確認しなくなるだけです。codex exec のように誰も応答できない場面では追加が必要で、追加しないとこれらのツールは失敗します。
+  ko: Codex는 기본적으로 명령 실행, 업로드, 다운로드 때마다 확인합니다(호스트 목록은 확인하지 않음). 확인을 생략하려면 [mcp_servers.termlet]에 default_tools_approval_mode = "approve" 한 줄을 추가하세요. Termlet은 계속 허용한 호스트만 AI가 사용하게 하고 위험한 명령에는 승인 창을 띄우며, Codex만 매번 확인하지 않게 됩니다. codex exec처럼 응답할 사람이 없는 경우에는 추가해야 하며, 그렇지 않으면 이 도구들은 실패합니다.
+cli_ui.mcp.http_codex_proxy:
+  zh-CN: 开着系统代理（如 Clash）时，Codex 访问 127.0.0.1 也会经过代理（它不认系统代理的例外列表）：先设环境变量 NO_PROXY=127.0.0.1,localhost，再启动 Codex。
+  en: "With a system proxy on (such as Clash), Codex also sends requests for 127.0.0.1 through it, ignoring the proxy's bypass list. Set the environment variable NO_PROXY=127.0.0.1,localhost before starting Codex."
+  zh-TW: 開著系統代理伺服器（如 Clash）時，Codex 存取 127.0.0.1 也會經過代理伺服器（它不認系統代理伺服器的例外清單）：先設定環境變數 NO_PROXY=127.0.0.1,localhost，再啟動 Codex。
+  ja: システムのプロキシ（Clash など）が有効なときは、Codex は 127.0.0.1 へのアクセスもプロキシ経由で送ります（システムのプロキシの例外リストを無視します）。環境変数 NO_PROXY=127.0.0.1,localhost を設定してから Codex を起動してください。
+  ko: 시스템 프록시(Clash 등)가 켜져 있으면 Codex는 127.0.0.1에 대한 요청도 프록시를 거칩니다(시스템 프록시의 예외 목록을 무시함). 환경 변수 NO_PROXY=127.0.0.1,localhost를 설정한 뒤 Codex를 시작하세요.
 cli_ui.mcp.where_vscode:
   zh-CN: 加到 ~/.copilot/mcp-config.json（设置了 COPILOT_HOME 时是其中的 mcp-config.json；已有 mcpServers 时只加其中的 termlet 一项）。还在用旧的 .vscode/mcp.json 时，把最外层的 mcpServers 改为 servers：
   en: "Add this to ~/.copilot/mcp-config.json (or mcp-config.json in COPILOT_HOME if it's set; if it already has mcpServers, add just the termlet entry). If you still use the old .vscode/mcp.json, rename the top-level mcpServers to servers:"
@@ -954,17 +972,17 @@ cli_ui.audit.source_mcp_client:
   ja: MCP（%{client}）
   ko: MCP(%{client})
 cli_ui.audit.source_mcp_client_http:
-  zh-CN: MCP（%{client}，HTTP）
-  en: MCP (%{client}, HTTP)
-  zh-TW: MCP（%{client}，HTTP）
-  ja: MCP（%{client}、HTTP）
-  ko: MCP(%{client}, HTTP)
+  zh-CN: MCP·HTTP（%{client}）
+  en: MCP·HTTP (%{client})
+  zh-TW: MCP·HTTP（%{client}）
+  ja: MCP·HTTP（%{client}）
+  ko: MCP·HTTP(%{client})
 cli_ui.audit.source_mcp_http:
-  zh-CN: MCP（HTTP）
-  en: MCP (HTTP)
-  zh-TW: MCP（HTTP）
-  ja: MCP（HTTP）
-  ko: MCP(HTTP)
+  zh-CN: MCP·HTTP
+  en: MCP·HTTP
+  zh-TW: MCP·HTTP
+  ja: MCP·HTTP
+  ko: MCP·HTTP
 cli_ui.audit.source_panel:
   zh-CN: 主机工具
   en: Host tools
@@ -983,6 +1001,12 @@ cli_ui.audit.status_failed:
   zh-TW: 失敗
   ja: 失敗
   ko: 실패
+cli_ui.audit.status_canceled:
+  zh-CN: 已取消
+  en: Canceled
+  zh-TW: 已取消
+  ja: キャンセル済み
+  ko: 취소됨
 cli_ui.audit.status_blocked:
   zh-CN: 已拦截
   en: Blocked

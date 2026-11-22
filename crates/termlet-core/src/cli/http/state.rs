@@ -1,35 +1,52 @@
-//! HTTP 服务在内存中的状态：旧协议的会话、进行中的工具调用（取消用）、被拒绝的请求的日志（限频）。
+//! HTTP 服务的状态：旧协议的会话（ID 中自带版本与客户端名，不存在内存中）、进行中的工具调用（取消用）、被拒绝的
+//! 请求的日志（限频）。
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+use data_encoding::BASE32_NOPAD;
 use termlet_mcp::Session;
+use termlet_mcp::protocol::legacy_version;
 use tokio::sync::watch;
-
-use super::MAX_SESSIONS;
 
 /// 同一原因的拒绝隔多久才再记一条日志。
 const REJECT_LOG_EVERY: Duration = Duration::from_secs(60);
 
+/// 一次握手的会话 ID：128 位随机数（`random_token(16)`，区分各次握手，按会话取消时用），后面是 base32 写的
+/// 版本与客户端名（`<随机>.<base32(版本 + "\n" + 客户端名)>`，都是可见的 ASCII）。会话只用来记这两样、不用于鉴权，
+/// 写进 ID 中就不用在内存中保存：Termlet 重启后客户端拿旧 ID 来，照样认得出版本与客户端名，不用回 404。
+pub(super) fn session_id(session: &Session) -> String {
+    let info = format!("{}\n{}", session.version, session.client);
+    format!(
+        "{}.{}",
+        crate::id::random_token(16),
+        BASE32_NOPAD.encode(info.as_bytes()).to_ascii_lowercase()
+    )
+}
+
+/// 会话 ID 中的版本与客户端名；不是 [`session_id`] 写的（版本不认识、解不开）时为 `None`。客户端名是客户端自报的，
+/// ID 也可以由客户端随意写：照样清洗，只用于显示与审计。
+pub(super) fn session(id: &str) -> Option<Session> {
+    let (_, info) = id.rsplit_once('.')?;
+    let bytes = BASE32_NOPAD
+        .decode(info.to_ascii_uppercase().as_bytes())
+        .ok()?;
+    let text = String::from_utf8(bytes).ok()?;
+    let (version, client) = text.split_once('\n')?;
+    Some(Session {
+        version: legacy_version(version)?,
+        client: termlet_mcp::client_name(Some(&serde_json::json!({ "name": client }))),
+    })
+}
+
 #[derive(Default)]
 pub(super) struct State {
-    sessions: Mutex<Sessions>,
     calls: Mutex<Calls>,
     rejections: Mutex<HashMap<Rejected, Throttle>>,
 }
 
 impl State {
-    /// 记住一次握手，返回新的会话 ID（128 位随机数）。
-    pub fn create_session(&self, session: Session) -> String {
-        lock(&self.sessions).create(session)
-    }
-
-    /// 会话 ID 对应的会话（不认识的为 `None`）。
-    pub fn session(&self, id: &str) -> Option<Session> {
-        lock(&self.sessions).get(id)
-    }
-
     /// 记下一个进行中的工具调用；返回的登记丢弃时去掉。
     pub fn track(
         self: &Arc<Self>,
@@ -131,39 +148,6 @@ struct Throttle {
     suppressed: u64,
 }
 
-/// 旧协议的会话：最多 [`MAX_SESSIONS`] 个，超出时去掉最久没用的。
-#[derive(Default)]
-struct Sessions {
-    map: HashMap<String, (Session, u64)>,
-    tick: u64,
-}
-
-impl Sessions {
-    fn create(&mut self, session: Session) -> String {
-        if self.map.len() >= MAX_SESSIONS
-            && let Some(oldest) = self
-                .map
-                .iter()
-                .min_by_key(|(_, (_, used))| *used)
-                .map(|(id, _)| id.clone())
-        {
-            self.map.remove(&oldest);
-        }
-        let id = crate::id::random_token(16);
-        self.tick += 1;
-        self.map.insert(id.clone(), (session, self.tick));
-        id
-    }
-
-    fn get(&mut self, id: &str) -> Option<Session> {
-        self.tick += 1;
-        let tick = self.tick;
-        let (session, used) = self.map.get_mut(id)?;
-        *used = tick;
-        Some(session.clone())
-    }
-}
-
 #[derive(Default)]
 struct Calls {
     next: u64,
@@ -208,24 +192,36 @@ mod tests {
         }
     }
 
-    // 会话最多 MAX_SESSIONS 个：超出时去掉最久没用的，用过的留下
+    // 会话 ID：每次握手不同，自带版本与客户端名（Termlet 重启后照样解得出）；不是这样写的、版本不认识的不认
     #[test]
-    fn sessions_are_bounded_lru() {
-        let mut sessions = Sessions::default();
-        let first = sessions.create(session("first"));
-        let second = sessions.create(session("second"));
-        assert_eq!(first.len(), 26, "128 位的 base32");
-        assert_ne!(first, second);
-        for i in 2..MAX_SESSIONS {
-            sessions.create(session(&format!("s{i}")));
+    fn session_ids_carry_version_and_client() {
+        let first = session_id(&session("Visual Studio Code"));
+        let second = session_id(&session("Visual Studio Code"));
+        assert_ne!(first, second, "每次握手不同");
+        assert!(
+            first.bytes().all(|b| (0x21..=0x7e).contains(&b)),
+            "可见 ASCII：{first}"
+        );
+        assert_eq!(super::session(&first), Some(session("Visual Studio Code")));
+        let unnamed = session_id(&session(""));
+        assert_eq!(super::session(&unnamed).unwrap().client, "");
+        let chinese = session_id(&session("客户端"));
+        assert_eq!(super::session(&chinese).unwrap().client, "客户端");
+        for bad in ["", "unknown-session", "abc.!!!", "abc.mzxw6"] {
+            assert_eq!(super::session(bad), None, "{bad}");
         }
-        // 用一下第一个，再建一个：被去掉的是第二个
-        assert_eq!(sessions.get(&first).unwrap().client, "first");
-        sessions.create(session("new"));
-        assert_eq!(sessions.map.len(), MAX_SESSIONS);
-        assert!(sessions.get(&first).is_some());
-        assert!(sessions.get(&second).is_none());
-        assert!(sessions.get("unknown").is_none());
+        // 客户端自己写的 ID：版本不认识的不认，客户端名照样清洗
+        let forged = |info: &str| {
+            format!(
+                "x.{}",
+                BASE32_NOPAD.encode(info.as_bytes()).to_ascii_lowercase()
+            )
+        };
+        assert_eq!(super::session(&forged("2099-01-01\nx")), None);
+        assert_eq!(
+            super::session(&forged("2025-06-18\na < b")).unwrap().client,
+            "a  b"
+        );
     }
 
     // 取消：有会话时按（会话，ID）；没有会话时只在 ID 唯一时

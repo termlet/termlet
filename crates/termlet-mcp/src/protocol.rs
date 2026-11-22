@@ -2,11 +2,16 @@
 //! 握手的 2025-11-25、2025-06-18、2025-03-26、2024-11-05（规范所说的 dual-era）。
 //!
 //! 这里只管一条消息：拆开（[`classify`]）、处理一个请求（[`request`]：立即回答、握手、或交给调用方执行的工具调用）、
-//! 通知中的取消（[`cancelled_request`]）。读写消息、并发、取消、会话的保存由传输层（stdio、HTTP）负责。
+//! 通知中的取消（[`cancelled_request`]）、长调用的进度（[`Progress`]）。读写消息、并发、取消、会话的保存由传输层
+//! （stdio、HTTP）负责。
+
+use std::time::Duration;
 
 use serde_json::{Map, Value, json};
+use termlet_proto::Lang;
 use termlet_proto::mcp::CALLER_MARKER;
 
+use crate::text;
 use crate::tools::{self, Outcome, Tool};
 
 /// 按每个请求的 `_meta` 协商的版本。
@@ -204,6 +209,8 @@ pub struct ToolCall {
     pub arguments: Map<String, Value>,
     /// 客户端自报的名字（清洗过，可能为空）
     pub client: String,
+    /// 请求的 `_meta.progressToken`：客户端要进度通知时才有（字符串或整数）
+    pub progress_token: Option<Value>,
 }
 
 impl ToolCall {
@@ -220,6 +227,36 @@ impl ToolCall {
         std::iter::once(caller_marker(&self.client))
             .chain(rest)
             .collect()
+    }
+
+    /// 这个调用的进度通知；客户端没有在请求中要（没有 `progressToken`）时为 `None`，不发。
+    pub fn progress(&self) -> Option<Progress> {
+        self.progress_token.clone().map(|token| Progress {
+            token,
+            era: self.era,
+        })
+    }
+}
+
+/// 长时间的工具调用的进度通知（`notifications/progress`）：传输层在调用进行中定时发出，最终的回答之前。
+///
+/// 有的客户端按“一段时间没有回答也没有进度”中止调用（Claude Code 经 HTTP 时是 300 秒，SSE 的注释保活不算），
+/// 定时发进度可以让长命令照常跑完。进度只用于保活：值是已经过的秒数（规范要求递增），不知道总量，不发 `total`。
+#[derive(Clone, Debug)]
+pub struct Progress {
+    token: Value,
+    era: Era,
+}
+
+impl Progress {
+    /// 已经过 `elapsed` 时的进度通知。`message` 从 2025-03-26 起才有，更早的版本不带。
+    pub fn notification(&self, elapsed: Duration, lang: Lang) -> Value {
+        let seconds = elapsed.as_secs();
+        let mut params = json!({ "progressToken": self.token, "progress": seconds });
+        if self.era.annotations() {
+            params["message"] = json!(text::MCP_PROGRESS.fill(lang, &[&seconds]));
+        }
+        json!({ "jsonrpc": "2.0", "method": "notifications/progress", "params": params })
     }
 }
 
@@ -328,12 +365,19 @@ fn call_tool(id: &Value, era: Era, client: String, params: &Map<String, Value>) 
         Some(Value::Object(arguments)) => arguments.clone(),
         Some(_) => return invalid("params.arguments must be an object"),
     };
+    // 规范中进度令牌是字符串或整数，别的写法当作没有要
+    let progress_token = params
+        .get("_meta")
+        .and_then(|meta| meta.get("progressToken"))
+        .filter(|token| token.is_string() || token.is_i64() || token.is_u64())
+        .cloned();
     Step::Call(ToolCall {
         id: id.clone(),
         era,
         tool,
         arguments,
         client,
+        progress_token,
     })
 }
 

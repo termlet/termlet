@@ -11,12 +11,17 @@
 //! - 旧协议的会话（`initialize` 协商的版本与客户端名）一个进程一个。
 //! - 每个 `tools/call` 在单独的线程中执行（可以并发），各用一条到 Termlet 的连接；`notifications/cancelled` 关闭这条连接，
 //!   Termlet 中止这次请求（远程命令收到 SIGTERM、批准框关闭，审计记为已取消），被取消的请求不再回答。
+//! - 请求的 `_meta` 中带 `progressToken` 时，执行期间每 15 秒发一条 `notifications/progress`（只用于保活：有的客户端
+//!   按一段时间没有进度中止调用），回答之后不再发。
 //! - 标准输入关闭时立即退出：进行中的请求随连接关闭被 Termlet 中止。
 
 use std::collections::HashMap;
 use std::io::{self, BufRead, IsTerminal as _, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use serde_json::Value;
 use termlet_mcp::protocol::{self, Message, Session, Step, ToolCall};
@@ -28,6 +33,9 @@ use crate::app;
 use crate::debug::debug;
 use crate::i18n::Lang;
 use crate::messages;
+
+/// 长时间的工具调用多久发一次进度。
+const PROGRESS_EVERY: Duration = Duration::from_secs(15);
 
 /// 连到正在运行（或按设置拉起）的 Termlet，与命令行工具相同。
 struct AppBackend {
@@ -84,6 +92,8 @@ pub(crate) struct Server {
     /// 进行中的工具调用：请求 ID（JSON 的写法）→ 取消
     inflight: Mutex<HashMap<String, Arc<AbortSlot>>>,
     workers: Mutex<Vec<JoinHandle<()>>>,
+    /// 进度通知的间隔（测试中调短）
+    progress_every: Duration,
 }
 
 impl Server {
@@ -101,7 +111,15 @@ impl Server {
             session: Mutex::new(None),
             inflight: Mutex::default(),
             workers: Mutex::default(),
+            progress_every: PROGRESS_EVERY,
         }
+    }
+
+    /// 进度通知的间隔（测试用）。
+    #[cfg(test)]
+    pub(crate) fn with_progress_every(mut self, every: Duration) -> Self {
+        self.progress_every = every;
+        self
     }
 
     /// 逐行读取消息并处理，直到输入结束。工具调用在后台线程中执行，返回时可能还没有完成。
@@ -181,6 +199,21 @@ impl Server {
         debug!("MCP：调用工具 {}", call.tool.name());
         let server = self.clone();
         let callers = call.callers(self.callers.iter().cloned());
+        // 做完（回答或被取消）之后不再发进度：发进度时在写出的锁内检查它
+        let finished = Arc::new(AtomicBool::new(false));
+        let (stop_ticker, stopped) = mpsc::channel::<()>();
+        if let Some(progress) = call.progress() {
+            let (server, finished) = (self.clone(), finished.clone());
+            let started = Instant::now();
+            std::thread::spawn(move || {
+                while let Err(RecvTimeoutError::Timeout) =
+                    stopped.recv_timeout(server.progress_every)
+                {
+                    let note = progress.notification(started.elapsed(), server.lang);
+                    server.send_unless(&finished, &note);
+                }
+            });
+        }
         let worker = std::thread::spawn(move || {
             let context = tools::Context {
                 backend: &*server.backend,
@@ -189,6 +222,8 @@ impl Server {
                 slot: &slot,
             };
             let outcome = tools::call(call.tool, &call.arguments, &context);
+            finished.store(true, Ordering::SeqCst);
+            drop(stop_ticker);
             lock(&server.inflight).remove(&key);
             if slot.is_aborted() {
                 debug!("MCP：工具 {} 已取消，不再回答", call.tool.name());
@@ -215,7 +250,19 @@ impl Server {
 
     /// 写一条消息（一行）。
     fn send(&self, message: &Value) {
-        let mut out = lock(&self.out);
+        let out = lock(&self.out);
+        Self::write_line(out, message);
+    }
+
+    /// `finished` 还没有置位时写一条消息（进度通知：回答之后不再发）。
+    fn send_unless(&self, finished: &AtomicBool, message: &Value) {
+        let out = lock(&self.out);
+        if !finished.load(Ordering::SeqCst) {
+            Self::write_line(out, message);
+        }
+    }
+
+    fn write_line(mut out: MutexGuard<'_, Box<dyn Write + Send>>, message: &Value) {
         // serde_json 把字符串中的换行写成 \n，一条消息正好一行
         let written = serde_json::to_writer(&mut *out, message)
             .map_err(io::Error::from)

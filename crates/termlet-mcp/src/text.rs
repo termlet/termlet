@@ -135,6 +135,7 @@ msg!(
     "exit code {}, took {} (plus {} waiting for the user's approval)"
 );
 msg!(MCP_NO_OUTPUT, "（没有输出）", "(no output)");
+msg!(MCP_PROGRESS, "已运行 {} 秒", "running for {}s");
 msg!(
     MCP_CLIPPED,
     "[termlet] 输出较长，只返回了开头与结尾（合计约 {} KB）。需要完整的输出时，把它重定向到服务器上的文件再分段读取（head、tail、grep 等），或用 download_file 下载。",

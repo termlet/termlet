@@ -15,9 +15,10 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use gpui_kit::assets::IconName;
 use gpui_kit::component::button::ButtonVariant;
 use gpui_kit::component::dialog::AlertDialog;
-use gpui_kit::component::{ActiveTheme as _, v_flex};
+use gpui_kit::component::{ActiveTheme as _, Icon, v_flex};
 use gpui_kit::{
     AnyWindowHandle, App, AppContext as _, AsyncApp, Entity, Global, InteractiveElement as _,
     OperatingSystem, ParentElement as _, QuitMode, StatefulInteractiveElement as _, Styled as _,
@@ -651,8 +652,10 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
         },
         rule = rule
     );
-    // 发起请求的是认识的 AI 编程工具（Claude Code、Gemini CLI）时，标题前配上它的标志
+    // 发起请求的是认识的 AI 编程工具（Claude Code、Gemini CLI）时，标题前配上它的标志；别的 MCP 调用（如 Codex：
+    // OpenAI 的标志没有收录）配上通用的 AI 图标
     let caller_brand = crate::brand_icons::for_caller(&request.caller);
+    let from_mcp = termlet_core::audit::mcp_client(&request.caller).is_some();
     let done = request.done();
     let request = Rc::new(RefCell::new(Some(request)));
     let expired = Rc::new(std::cell::Cell::new(false));
@@ -680,6 +683,11 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
                     );
                     alert.icon(crate::brand_icons::icon(brand, color).size_5())
                 }
+                None if from_mcp => alert.icon(
+                    Icon::new(IconName::Bot)
+                        .size_5()
+                        .text_color(cx.theme().muted_foreground),
+                ),
                 None => alert,
             };
             // 倒计时每次绘制时按截止时间重新算（下面的任务每秒刷新窗口）
@@ -762,13 +770,35 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
     });
 }
 
-/// 批准框的标题，按来源写：MCP 的写客户端自报的名字（没有报名字时写“AI 工具”），其余是命令行工具。
+/// 批准框的标题，按来源写：MCP 的写客户端的名字（常见的 AI 工具写产品名，见 [`client_display_name`]；没有报名字时
+/// 写“AI 工具”），其余是命令行工具。
 fn approval_title(host: &str, caller: &str) -> gpui_kit::SharedString {
     match termlet_core::audit::mcp_client(caller) {
         None => t!("cli.approval.title", host = host),
         Some("") => t!("cli.approval.title_mcp_unnamed", host = host),
-        Some(client) => t!("cli.approval.title_mcp", client = client, host = host),
+        Some(client) => t!(
+            "cli.approval.title_mcp",
+            client = client_display_name(client),
+            host = host
+        ),
     }
+}
+
+/// 常见的 AI 工具在 MCP 握手时自报的名字 → 产品名（批准框的标题用；审计中仍记原名）。认不出的原样。
+/// claude-code、codex-mcp-client 实测过；其余按各家的源码与文档，待实测核对。
+fn client_display_name(client: &str) -> &str {
+    const NAMES: &[(&str, &str)] = &[
+        ("claude-code", "Claude Code"),
+        ("claude-ai", "Claude Desktop"),
+        ("codex-mcp-client", "Codex"),
+        ("cursor-vscode", "Cursor"),
+        ("Visual Studio Code", "VS Code"),
+        ("gemini-cli-mcp-client", "Gemini CLI"),
+    ];
+    NAMES
+        .iter()
+        .find(|(raw, _)| raw.eq_ignore_ascii_case(client))
+        .map_or(client, |(_, name)| *name)
 }
 
 /// 批准框中距离超时拦截还剩几秒：向上取整（刚打开时是完整的秒数，最后不到一秒时是 1）。
@@ -1079,9 +1109,18 @@ mod tests {
             "命令行工具要在“web”上执行危险命令"
         );
         assert_eq!(title(""), "命令行工具要在“web”上执行危险命令");
+        // 常见的 AI 工具写产品名，认不出的照原样
         assert_eq!(
             title("mcp:claude-code < claude.exe"),
-            "claude-code（MCP）要在“web”上执行危险命令"
+            "Claude Code（MCP）要在“web”上执行危险命令"
+        );
+        assert_eq!(
+            title("mcp:codex-mcp-client < http < codex.exe"),
+            "Codex（MCP）要在“web”上执行危险命令"
+        );
+        assert_eq!(
+            title("mcp:my-agent < node.exe"),
+            "my-agent（MCP）要在“web”上执行危险命令"
         );
         assert_eq!(
             title("mcp < Cursor.exe"),
@@ -1091,6 +1130,10 @@ mod tests {
         assert_eq!(
             title("mcp:cursor"),
             "cursor (MCP) wants to run a dangerous command on “web”"
+        );
+        assert_eq!(
+            title("mcp:Visual Studio Code < http"),
+            "VS Code (MCP) wants to run a dangerous command on “web”"
         );
         crate::i18n::set_language(crate::i18n::Language::ZhCn);
     }

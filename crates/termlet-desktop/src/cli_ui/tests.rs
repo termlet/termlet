@@ -192,6 +192,34 @@ fn appimage_shows_the_image_itself(cx: &mut TestAppContext) {
     });
 }
 
+// 开发构建：命令行工具编译在 termlet-desktop 旁边，显示它的路径、说明用完整路径运行，不修改 PATH
+#[gpui_kit::test]
+fn dev_build_shows_the_tool_next_to_the_program(cx: &mut TestAppContext) {
+    let tmp = TempDir::new("dev-build");
+    let suffix = std::env::consts::EXE_SUFFIX;
+    let exe = tmp.0.join(format!("termlet-desktop{suffix}"));
+    let cli = tmp.0.join(format!("termlet{suffix}"));
+    std::fs::write(&cli, b"").unwrap();
+    let env = CliEnv::at(Some(exe), Some(tmp.0.join("home")));
+    let (handle, page) = open(
+        cx,
+        Some((Settings::default(), LocalSettings::default(), env)),
+    );
+    let page = page.unwrap();
+    frame(cx, handle);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-tool-dev-found").is_some());
+        assert!(window.try_find("cli-tool-dev-build").is_none());
+        assert!(window.try_find("cli-tool-path-toggle").is_none());
+    })
+    .unwrap();
+    cx.read(|cx| {
+        let tool = page.read(cx).tool.read(cx);
+        assert_eq!(tool.state, PathState::DevBuild);
+        assert_eq!(tool.shown_path(), Some(cli.as_path()));
+    });
+}
+
 // 便携版：命令行工具在程序旁边的 bin 中，但不修改 PATH——只说明用完整路径运行，没有加入 PATH 的按钮
 #[gpui_kit::test]
 fn portable_does_not_offer_to_change_path(cx: &mut TestAppContext) {
@@ -281,11 +309,18 @@ fn mcp_snippets_use_the_installed_tool(cx: &mut TestAppContext) {
         copy(cx, handle, "cli-mcp-copy-command").starts_with("codex mcp add termlet -- "),
         "Codex 的命令"
     );
+    // Codex 另有说明：怎样省掉它自己的逐次确认；标准输入输出不用绕开代理
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-codex-approval").is_some());
+        assert!(window.try_find("cli-mcp-codex-proxy").is_none());
+    })
+    .unwrap();
 
     // VS Code 只有配置文件；“其他”是通用的 JSON
     select_tool(cx, handle, &mcp, AiTool::VsCode);
     cx.update_window(handle, |_, window, _| {
         assert!(window.try_find("cli-mcp-snippet-command").is_none());
+        assert!(window.try_find("cli-mcp-codex-approval").is_none());
     })
     .unwrap();
     assert_eq!(
@@ -606,6 +641,14 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
         copy(cx, handle, "cli-mcp-copy-file").contains(&second),
         "片段跟着换成新的令牌"
     );
+
+    // Codex 的 HTTP：另外提醒开着系统代理时设 NO_PROXY
+    select_tool(cx, handle, &mcp, AiTool::Codex);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-codex-approval").is_some());
+        assert!(window.try_find("cli-mcp-codex-proxy").is_some());
+    })
+    .unwrap();
 
     // Claude Desktop 选 HTTP：不给片段，说明它连不了本机的 HTTP
     select_tool(cx, handle, &mcp, AiTool::ClaudeDesktop);

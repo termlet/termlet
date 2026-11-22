@@ -16,8 +16,9 @@ pub const CALLER_MARKER: &str = "mcp";
 /// 审计据此写明传输方式；stdio 的调用没有这一项。
 pub const CALLER_HTTP: &str = "http";
 
-/// Codex 中工具调用的超时（秒）：默认 60 秒，等用户批准危险命令（最多 60 秒）再执行时会超时。
-pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 300;
+/// Codex 中工具调用的超时（秒）：一条命令（含等用户批准危险命令的最多 60 秒）最长能运行多久。Codex 默认 60 秒，
+/// 等批准再执行时就会超时；这是总时长，进度通知不能延长它，所以放宽到 15 分钟。
+pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 900;
 
 /// HTTP 接入的路径（只有这一个端点）。
 pub const HTTP_PATH: &str = "/mcp";
@@ -452,7 +453,7 @@ mod tests {
         assert_eq!(
             snippet(AiTool::Codex, SnippetForm::File, http(TOKEN), true),
             format!(
-                "[mcp_servers.termlet]\nurl = '{URL}'\nhttp_headers = {{ Authorization = 'Bearer {TOKEN}' }}\ntool_timeout_sec = 300"
+                "[mcp_servers.termlet]\nurl = '{URL}'\nhttp_headers = {{ Authorization = 'Bearer {TOKEN}' }}\ntool_timeout_sec = 900"
             )
         );
         for token in [TOKEN, MASKED, ODD_TOKEN] {
@@ -464,7 +465,7 @@ mod tests {
                 entry["http_headers"]["Authorization"].as_str(),
                 Some(format!("Bearer {token}").as_str())
             );
-            assert_eq!(entry["tool_timeout_sec"].as_integer(), Some(300));
+            assert_eq!(entry["tool_timeout_sec"].as_integer(), Some(900));
             assert_eq!(entry.len(), 3, "{text}");
         }
     }
@@ -532,7 +533,7 @@ mod tests {
         assert_eq!(
             text(AiTool::Codex, SnippetForm::File, WIN, true),
             format!(
-                "[mcp_servers.termlet]\ncommand = '{WIN}'\nargs = [\"mcp\"]\ntool_timeout_sec = 300"
+                "[mcp_servers.termlet]\ncommand = '{WIN}'\nargs = [\"mcp\"]\ntool_timeout_sec = 900"
             )
         );
         for path in [WIN, SPACED, MAC, ODD] {
@@ -545,7 +546,7 @@ mod tests {
                 entry["args"].as_array().unwrap(),
                 &vec![toml::Value::from("mcp")]
             );
-            assert_eq!(entry["tool_timeout_sec"].as_integer(), Some(300));
+            assert_eq!(entry["tool_timeout_sec"].as_integer(), Some(900));
             assert_eq!(entry.len(), 3, "{text}");
         }
         assert_eq!(toml_string("/opt/it's/termlet"), r#""/opt/it's/termlet""#);

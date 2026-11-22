@@ -245,3 +245,60 @@ fn era_features_follow_the_version() {
     assert!(!Era::Legacy("2024-11-05").annotations());
     assert!(Era::Modern("2026-07-28").structured());
 }
+
+// 进度：请求的 _meta 中有 progressToken（字符串或整数）才发；值是已经过的秒数，2025-03-26 起带说明
+#[test]
+fn progress_follows_the_token() {
+    let mut params = meta(json!({ "name": "run_command", "arguments": {} }));
+    params["_meta"]["progressToken"] = json!("tok-1");
+    let Step::Call(call) = request(&json!(1), "tools/call", Some(params), None) else {
+        panic!("应交给传输层执行");
+    };
+    let note = call
+        .progress()
+        .unwrap()
+        .notification(std::time::Duration::from_millis(30_900), Lang::Zh);
+    assert_eq!(
+        note,
+        json!({
+            "jsonrpc": "2.0",
+            "method": "notifications/progress",
+            "params": { "progressToken": "tok-1", "progress": 30, "message": "已运行 30 秒" },
+        })
+    );
+    assert!(note.get("id").is_none(), "通知没有 ID");
+
+    // 旧协议：整数令牌；2024-11-05 没有 message
+    let legacy_call = |version: &'static str, token: Value| {
+        let params = json!({ "name": "list_hosts", "_meta": { "progressToken": token } });
+        match request(
+            &json!(2),
+            "tools/call",
+            Some(params),
+            Some(&legacy(version)),
+        ) {
+            Step::Call(call) => call,
+            other => panic!("应交给传输层执行：{other:?}"),
+        }
+    };
+    let note = legacy_call("2025-06-18", json!(7))
+        .progress()
+        .unwrap()
+        .notification(std::time::Duration::from_secs(15), Lang::En);
+    assert_eq!(note["params"]["progressToken"], 7);
+    assert_eq!(note["params"]["message"], "running for 15s");
+    let old = legacy_call("2024-11-05", json!(7))
+        .progress()
+        .unwrap()
+        .notification(std::time::Duration::from_secs(15), Lang::En);
+    assert!(old["params"].get("message").is_none());
+
+    // 没有令牌、令牌不是字符串或整数：不发
+    assert!(legacy_call("2025-11-25", json!(null)).progress().is_none());
+    assert!(
+        legacy_call("2025-11-25", json!({ "x": 1 }))
+            .progress()
+            .is_none()
+    );
+    assert!(legacy_call("2025-11-25", json!(1.5)).progress().is_none());
+}

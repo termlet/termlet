@@ -23,7 +23,7 @@ use termlet_proto::mcp::{CALLER_HTTP, HTTP_PATH};
 use tokio::net::TcpStream;
 use tokio::sync::{OnceCell, mpsc, watch};
 
-use super::state::Rejected;
+use super::state::{self, Rejected};
 use super::{Inner, peer, token};
 use crate::cli::handler;
 use crate::cli::service::{Cancel, InFlight, Shared};
@@ -197,7 +197,7 @@ async fn handle(
         Ok(Message::Notification { method, params }) => {
             if let Some(id) = protocol::cancelled_request(&method, params.as_ref()) {
                 let session = header_str(&parts.headers, SESSION_HEADER)
-                    .filter(|s| inner.state.session(s).is_some());
+                    .filter(|s| state::session(s).is_some());
                 let canceled = inner.state.cancel(session, &id);
                 tracing::debug!(canceled, "MCP：取消进行中的工具调用");
             }
@@ -222,7 +222,7 @@ async fn dispatch(
         return match protocol::request(&id, &method, params, None) {
             Step::Initialized { reply, session } => {
                 tracing::debug!(client = %session.client, version = session.version, "MCP 的 HTTP 握手");
-                let session_id = inner.state.create_session(session);
+                let session_id = state::session_id(&session);
                 let mut response = json(StatusCode::OK, &reply);
                 if let Ok(value) = HeaderValue::from_str(&session_id) {
                     response.headers_mut().insert(SESSION_HEADER, value);
@@ -242,7 +242,7 @@ async fn dispatch(
             }
             (None, None)
         }
-        None => match legacy_session(inner, headers) {
+        None => match legacy_session(headers) {
             Ok(found) => found,
             Err((code, message, data)) => {
                 let reply = protocol::error_message(&id, code, &message, data);
@@ -306,10 +306,10 @@ fn decode_sentinel(value: &str) -> Option<String> {
     String::from_utf8(bytes).ok()
 }
 
-/// 旧协议的请求的会话：认识的会话 ID 用它记住的；否则（没有、Termlet 重启过、被挤掉了）不回 404，按没有会话处理：
-/// 版本取 `MCP-Protocol-Version` 头，没有时按 2025-03-26，客户端名为空。请求头中的版本不支持时为 400 的错误。
+/// 旧协议的请求的会话：会话 ID 中自带握手时的版本与客户端名（Termlet 重启过也认得出）；没有会话 ID、或解不开时
+/// 不回 404，按没有会话处理：版本取 `MCP-Protocol-Version` 头，没有时按 2025-03-26，客户端名为空。请求头中的版本
+/// 不支持时为 400 的错误。
 fn legacy_session(
-    inner: &Inner,
     headers: &HeaderMap,
 ) -> Result<(Option<String>, Option<Session>), (i64, String, Option<Value>)> {
     let version = match header_str(headers, VERSION_HEADER) {
@@ -338,7 +338,7 @@ fn legacy_session(
         },
     };
     if let Some(id) = header_str(headers, SESSION_HEADER)
-        && let Some(session) = inner.state.session(id)
+        && let Some(session) = state::session(id)
     {
         return Ok((Some(id.to_string()), Some(session)));
     }
@@ -352,7 +352,8 @@ fn legacy_session(
 }
 
 /// `tools/call`：在后台执行，用 SSE 回答（回答头马上发出，定时保活，最后一条事件是结果）；客户端关闭这个流即取消。
-/// 客户端的 `Accept` 不收 SSE 时做完再回答 JSON。
+/// 保活：请求带 `progressToken` 时发进度通知（Claude Code 按 300 秒没有回答也没有进度中止调用，注释不算），否则发
+/// SSE 注释。客户端的 `Accept` 不收 SSE 时做完再回答 JSON。
 async fn tool_call(
     inner: &Arc<Inner>,
     conn: &Arc<Conn>,
@@ -372,6 +373,7 @@ async fn tool_call(
         .track(session, call.id.to_string(), gone_tx.clone());
     let cancel = Cancel::new(gone.clone(), shared.shutdown.subscribe());
     tracing::debug!(tool = call.tool.name(), "MCP 的 HTTP：调用工具");
+    let progress = call.progress();
     let work = run(shared, call, callers, lang, cancel, gone);
     if !accepts_event_stream(headers) {
         let reply = work.await;
@@ -386,17 +388,22 @@ async fn tool_call(
     crate::runtime::spawn(async move {
         let _tracked = tracked;
         tokio::pin!(work);
-        let mut ticker =
-            tokio::time::interval_at(tokio::time::Instant::now() + keepalive, keepalive);
+        let started = tokio::time::Instant::now();
+        let mut ticker = tokio::time::interval_at(started + keepalive, keepalive);
         let mut closed = false;
         let reply = loop {
             tokio::select! {
                 reply = &mut work => break reply,
                 _ = ticker.tick(), if !closed => {
+                    let beat = match &progress {
+                        Some(progress) => {
+                            let note = progress.notification(started.elapsed(), lang);
+                            Bytes::from(format!("event: message\ndata: {note}\n\n"))
+                        }
+                        None => Bytes::from_static(b": keepalive\n\n"),
+                    };
                     // 发不出去（客户端没在读）时跳过这一次；连接已关闭时取消
-                    if let Err(mpsc::error::TrySendError::Closed(_)) =
-                        tx.try_send(Bytes::from_static(b": keepalive\n\n"))
-                    {
+                    if let Err(mpsc::error::TrySendError::Closed(_)) = tx.try_send(beat) {
                         closed = true;
                         gone_tx.send_replace(true);
                     }

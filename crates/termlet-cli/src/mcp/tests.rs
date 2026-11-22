@@ -602,3 +602,62 @@ fn client_names_are_sanitized() {
     assert_eq!(client_name(None), "");
     assert_eq!(client_name(Some(&json!({ "name": 5 }))), "");
 }
+
+// 进度：请求带 progressToken 时，执行期间定时发 notifications/progress，最后是回答，之后不再发；不带时不发
+#[test]
+fn long_calls_send_progress_until_the_reply() {
+    let fake = Fake::new(|_, _| {
+        std::thread::sleep(Duration::from_millis(300));
+        Ok(Response::Hosts(Vec::new()))
+    });
+    let buffer = Buffer::default();
+    let server = Arc::new(
+        Server::new(
+            fake,
+            Box::new(buffer.clone()),
+            Lang::En,
+            vec!["claude.exe".into()],
+        )
+        .with_progress_every(Duration::from_millis(40)),
+    );
+    let with_token = request(
+        2,
+        "tools/call",
+        json!({ "name": "list_hosts", "arguments": {}, "_meta": { "progressToken": "p-2" } }),
+    );
+    let without_token = call(3, "list_hosts", json!({}));
+    let input: String = [initialize(1, "2025-11-25"), with_token, without_token]
+        .iter()
+        .map(|m| format!("{m}\n"))
+        .collect();
+    server.serve(input.as_bytes());
+    server.join();
+    // 回答之后计时线程即使醒来也不再写：多等几个间隔再看
+    std::thread::sleep(Duration::from_millis(150));
+    let text = String::from_utf8(buffer.0.lock().unwrap().clone()).unwrap();
+    let out: Vec<Value> = text
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    let progress: Vec<usize> = out
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| m["method"] == "notifications/progress")
+        .map(|(i, _)| i)
+        .collect();
+    assert!(progress.len() >= 2, "{out:?}");
+    for i in &progress {
+        assert_eq!(
+            out[*i]["params"]["progressToken"], "p-2",
+            "只给要了进度的请求发"
+        );
+        assert!(out[*i]["params"]["message"].is_string());
+    }
+    let answer = out.iter().position(|m| m["id"] == 2).unwrap();
+    assert!(
+        progress.iter().all(|i| *i < answer),
+        "回答之后不再发：{out:?}"
+    );
+    assert_eq!(out[answer]["result"]["isError"], false);
+    assert_eq!(reply(&out, 3)["result"]["isError"], false);
+}

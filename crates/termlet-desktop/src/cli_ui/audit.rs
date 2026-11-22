@@ -31,6 +31,7 @@ use gpui_kit::{
 use termlet_core::audit::{
     AuditAction, AuditEntry, AuditLog, AuditQuery, AuditSource, AuditStatus, ExportFormat,
 };
+use termlet_core::proto::ErrorCode;
 
 use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::notify::{self, Notice, NoticeLine};
@@ -187,6 +188,19 @@ pub(super) fn status_label(status: AuditStatus) -> SharedString {
     }
 }
 
+/// 一条记录的结果：被取消的（AI 工具中途停止、命令行工具或客户端退出）写“已取消”，不写“失败”。
+pub(super) fn entry_status(entry: &AuditEntry) -> SharedString {
+    if canceled(entry) {
+        t!("cli_ui.audit.status_canceled")
+    } else {
+        status_label(entry.status)
+    }
+}
+
+fn canceled(entry: &AuditEntry) -> bool {
+    entry.status == AuditStatus::Failed && entry.error_code == ErrorCode::Canceled.as_str()
+}
+
 pub(super) fn source_label(source: AuditSource) -> SharedString {
     match source {
         AuditSource::Cli => t!("cli_ui.audit.source_cli"),
@@ -195,7 +209,8 @@ pub(super) fn source_label(source: AuditSource) -> SharedString {
     }
 }
 
-/// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`），经 HTTP 的另写明（`MCP（Cursor，HTTP）`）。
+/// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`），经 HTTP 的写在前面（`MCP·HTTP（Cursor）`：
+/// 列表中的这一列放不下全文时，截掉的是客户端名而不是 HTTP）。
 pub(super) fn entry_source(entry: &AuditEntry) -> SharedString {
     let http = termlet_core::audit::mcp_over_http(&entry.caller);
     match termlet_core::audit::mcp_client(&entry.caller) {
@@ -701,6 +716,9 @@ impl AuditView {
 
     fn status_color(entry: &AuditEntry, cx: &App) -> Hsla {
         let theme = cx.theme();
+        if canceled(entry) {
+            return theme.muted_foreground;
+        }
         match entry.status {
             AuditStatus::Blocked | AuditStatus::Denied => theme.danger,
             AuditStatus::Failed => theme.warning,
@@ -869,7 +887,7 @@ impl AuditView {
             .child(
                 cell(RESULT_WIDTH)
                     .text_color(status_color)
-                    .child(status_label(entry.status)),
+                    .child(entry_status(entry)),
             )
             .child(
                 div()
@@ -996,7 +1014,7 @@ impl AuditView {
             div().child(entry.host_name.clone()).into_any_element(),
             div()
                 .text_color(status_color)
-                .child(status_label(entry.status))
+                .child(entry_status(entry))
                 .into_any_element(),
         ];
         if let Some(code) = entry.exit_code {
@@ -1262,11 +1280,17 @@ mod tests {
         assert_eq!(entry_source(&mcp), "MCP（claude-code）");
         mcp.caller = "mcp < node.exe".into();
         assert_eq!(entry_source(&mcp), "MCP");
-        // 经 HTTP 的写明传输方式
+        // 经 HTTP 的写明传输方式（写在前面，列表中截断时也看得到）
         mcp.caller = "mcp:Cursor < http < Cursor.exe".into();
-        assert_eq!(entry_source(&mcp), "MCP（Cursor，HTTP）");
+        assert_eq!(entry_source(&mcp), "MCP·HTTP（Cursor）");
         mcp.caller = "mcp < http".into();
-        assert_eq!(entry_source(&mcp), "MCP（HTTP）");
+        assert_eq!(entry_source(&mcp), "MCP·HTTP");
+        // 被取消的写“已取消”；别的失败照旧
+        mcp.status = AuditStatus::Failed;
+        mcp.error_code = "canceled".into();
+        assert_eq!(entry_status(&mcp), "已取消");
+        mcp.error_code = "connect_failed".into();
+        assert_eq!(entry_status(&mcp), "失败");
         let cli = AuditEntry {
             caller: "bash".into(),
             ..Default::default()
@@ -1274,7 +1298,9 @@ mod tests {
         assert_eq!(entry_source(&cli), "命令行");
         i18n::set_language(Language::En);
         mcp.caller = "mcp:Cursor < http".into();
-        assert_eq!(entry_source(&mcp), "MCP (Cursor, HTTP)");
+        assert_eq!(entry_source(&mcp), "MCP·HTTP (Cursor)");
+        mcp.error_code = "canceled".into();
+        assert_eq!(entry_status(&mcp), "Canceled");
         assert_eq!(status_label(AuditStatus::Denied), "Denied");
         assert_eq!(action_label(AuditAction::Terminal), "Run in terminal");
         i18n::set_language(original);

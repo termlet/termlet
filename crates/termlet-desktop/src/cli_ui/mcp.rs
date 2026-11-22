@@ -55,16 +55,10 @@ impl McpCommand {
         if cli.is_file() {
             return Self::Path(cli);
         }
-        // 开发构建：cargo 把 termlet 编译在 termlet-desktop 的旁边（安装版中同一目录的 termlet.exe 就是 Termlet.exe 本身）
-        let dev = exe.with_file_name(format!("termlet{}", std::env::consts::EXE_SUFFIX));
-        if exe
-            .file_stem()
-            .is_some_and(|stem| stem == "termlet-desktop")
-            && dev.is_file()
-        {
-            return Self::Path(dev);
+        match super::dev_cli(exe) {
+            Some(dev) => Self::Path(dev),
+            None => Self::InPath,
         }
-        Self::InPath
     }
 
     fn text(&self) -> String {
@@ -369,6 +363,21 @@ impl Render for McpSection {
             )
             .when_some(copy_blocked, |this, text| {
                 this.child(Self::note("cli-mcp-copy-later", text, cx))
+            })
+            // Codex：它自己还会逐次确认（怎样省掉、意味着什么）；HTTP 还要绕开系统代理
+            .when(tool == AiTool::Codex, |this| {
+                this.child(Self::note(
+                    "cli-mcp-codex-approval",
+                    t!("cli_ui.mcp.codex_approval"),
+                    cx,
+                ))
+            })
+            .when(tool == AiTool::Codex && access == Access::Http, |this| {
+                this.child(Self::note(
+                    "cli-mcp-codex-proxy",
+                    t!("cli_ui.mcp.http_codex_proxy"),
+                    cx,
+                ))
             })
             .when(
                 access == Access::Stdio && self.command == McpCommand::InPath,

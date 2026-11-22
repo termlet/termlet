@@ -124,12 +124,19 @@ impl Env {
     }
 
     /// 新协议的请求：`_meta` 与对应的请求头都带上（不发出）。
+    /// 新协议的请求：`_meta` 与对应的请求头都带上（不发出）。`params` 中已有的 `_meta`（如 `progressToken`）保留。
     fn modern_request(&self, id: i64, method: &str, mut params: Value) -> reqwest::RequestBuilder {
+        let given = params.get("_meta").cloned();
         params["_meta"] = json!({
             "io.modelcontextprotocol/protocolVersion": MODERN,
             "io.modelcontextprotocol/clientCapabilities": {},
             "io.modelcontextprotocol/clientInfo": { "name": "modern-http", "version": "1" },
         });
+        if let Some(Value::Object(given)) = given {
+            for (key, value) in given {
+                params["_meta"][key] = value;
+            }
+        }
         let name = params["name"].as_str().unwrap_or_default().to_string();
         let body = request(id, method, params);
         let mut extra = vec![("mcp-protocol-version", MODERN), ("mcp-method", method)];
@@ -385,7 +392,7 @@ fn legacy_protocol_with_sessions() {
     assert_eq!(status, 200);
     assert_eq!(headers["content-type"], "application/json");
     let session = headers["mcp-session-id"].to_str().unwrap().to_string();
-    assert_eq!(session.len(), 26);
+    assert_eq!(session.split_once('.').unwrap().0.len(), 26, "{session}");
     let init: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(init["result"]["protocolVersion"], "2025-03-26");
 
@@ -621,6 +628,82 @@ fn tool_calls_fall_back_to_json() {
     assert_eq!(headers["content-type"], "application/json");
     let body: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(body["result"]["isError"], false);
+}
+
+// 请求带 progressToken 时，保活改为进度通知（SSE 中的一条事件），否则是注释（见下一个测试）
+#[test]
+fn progress_replaces_the_keepalive() {
+    let env = Env::new();
+    env.f.add_dead_host("web", true);
+    env.f.desktop.set_approve(Approve::Ignore);
+    let request = env.modern_request(
+        1,
+        "tools/call",
+        json!({
+            "name": "run_command",
+            "arguments": { "host": "web", "command": "reboot" },
+            "_meta": { "progressToken": "p-1" },
+        }),
+    );
+    let first = block_on(async {
+        let mut response = request.send().await.unwrap();
+        let mut text = String::new();
+        // 两次保活：进度递增
+        while text.matches("notifications/progress").count() < 2 {
+            let chunk = tokio::time::timeout(Duration::from_secs(5), response.chunk())
+                .await
+                .expect("应有进度")
+                .unwrap()
+                .unwrap();
+            text.push_str(&String::from_utf8_lossy(&chunk));
+        }
+        text
+    });
+    assert!(!first.contains(": keepalive"), "{first}");
+    let notes = events(&first);
+    assert_eq!(notes.len(), 2, "{first}");
+    for note in &notes {
+        assert_eq!(note["method"], "notifications/progress");
+        assert_eq!(note["params"]["progressToken"], "p-1");
+        assert!(note.get("id").is_none());
+    }
+    assert!(
+        notes[0]["params"]["message"]
+            .as_str()
+            .unwrap()
+            .starts_with("已运行")
+    );
+    wait_until("审计记下取消", || {
+        env.f
+            .entries()
+            .first()
+            .is_some_and(|e| e.error_code == "canceled")
+    });
+}
+
+// 会话 ID 自带版本与客户端名：换一个服务（相当于 Termlet 重启后）照样认得出，审计中有客户端名
+#[test]
+fn session_ids_survive_a_restart() {
+    let before = Env::new();
+    let (_, headers, _) = before.send(before.post(&initialize(1, "2025-06-18"), &[]));
+    let session = headers["mcp-session-id"].to_str().unwrap().to_string();
+    drop(before);
+
+    let after = Env::new();
+    after.f.add_dead_host("web", true);
+    let call = request(
+        2,
+        "tools/call",
+        json!({ "name": "run_command", "arguments": { "host": "web", "command": "uptime" } }),
+    );
+    let (status, _, text) = after.send(after.post(&call, &[("mcp-session-id", &session)]));
+    assert_eq!(status, 200);
+    // 2025-06-18 起有 structuredContent：版本也取自会话 ID
+    let result = &events(&text)[0]["result"];
+    assert_eq!(result["isError"], true);
+    assert!(result["structuredContent"].is_object(), "{result}");
+    let caller = after.f.entries()[0].caller.clone();
+    assert!(caller.starts_with("mcp:legacy-http < http"), "{caller}");
 }
 
 // SSE：回答头马上发出，等批准期间定时保活；客户端关闭流即取消（批准框关闭，审计记为已取消）

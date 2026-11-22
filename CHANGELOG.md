@@ -18,8 +18,10 @@
 - 主机的域名同时解析出 IPv6 与 IPv4 地址时，两种并发尝试（Happy Eyeballs）：先连系统排在前面的地址，250 毫秒内没连上就同时连另一种的，先连上的为准。之前逐个地址连接、每个最多等 15 秒，本机的 IPv6 不通时要先等它超时才改用 IPv4；现在连接超时是总共 15 秒。SSH、Telnet、连代理、端口转发与“通过本机代理”连本机的目标、X11 转发连本机的 X 服务器都是如此，写成 `localhost` 而对方只监听 IPv4 时，在 Windows 上也不用先等约 2 秒。
 - 本地转发、动态转发的本地地址可以选 `::`（所有 IPv6 地址），与 0.0.0.0 一样提示局域网内的其他设备也能访问；0.0.0.0 只监听 IPv4、`::` 只监听 IPv6，同一端口可以各建一条规则。之前只接受回环地址与 0.0.0.0。
 - 设置中的“命令行工具”页改名为“AI 与自动化”：这一页管的不只是 termlet 命令，还有 Agent Skill、MCP 服务、审计日志与危险命令规则。最上面的开关改为“允许 AI 工具与脚本访问”；主机对话框中的这一页同样改名，其中两项改为“允许 AI 工具与脚本使用这台主机”“AI 工具与脚本使用单独的凭据”。termlet 命令的错误说明与 Agent Skill 中提到这一页的地方随之更新（已安装的 Agent Skill 会显示有更新）。
-- MCP 服务的配置片段：AI 工具改为在下拉框中选，新增 VS Code（GitHub Copilot，写到 `~/.copilot/mcp-config.json`）、Gemini CLI 与其他 AI 工具通用的 JSON；Claude Code、Codex、Gemini CLI 既给 `mcp add` 命令，也给配置文件的写法，各有“复制”按钮。Claude Desktop 的配置文件改为从它的 Settings → Developer → Edit Config 找到（Windows 上的位置随安装方式不同，之前写的路径不一定对）。
-- 危险命令的批准框中，来自 MCP 的请求在标题中写明是哪个 AI 工具（如“claude-code（MCP）要在…上执行危险命令”），之前一律写“命令行工具”。
+- MCP 服务的配置片段：AI 工具改为在下拉框中选，新增 VS Code（GitHub Copilot，写到 `~/.copilot/mcp-config.json`）、Gemini CLI 与其他 AI 工具通用的 JSON；Claude Code、Codex、Gemini CLI 既给 `mcp add` 命令，也给配置文件的写法，各有“复制”按钮。Claude Desktop 的配置文件改为从它的 Settings → Developer → Edit Config 找到（Windows 上的位置随安装方式不同，之前写的路径不一定对）。Codex 的片段把 `tool_timeout_sec` 从 300 放宽到 900：它是一条命令最长能运行多久（含等你批准的时间），超过就被 Codex 中止；另外说明 Codex 自己还会在每次执行、上传、下载前确认，以及怎样省掉这一问。
+- 危险命令的批准框中，来自 MCP 的请求在标题中写明是哪个 AI 工具（如“Claude Code（MCP）要在…上执行危险命令”，常见的 AI 工具写产品名，别的写它自报的名字），没有品牌标志的 AI 工具配上通用的 AI 图标；之前一律写“命令行工具”。
+- MCP 服务在 AI 工具要求时（请求带 `progressToken`，Claude Code、Codex 都会带），执行期间每 15 秒报告一次进度：有的 AI 工具在一段时间没有进度时就中止调用，较长的命令不会因此被中途断开。
+- 审计日志中被取消的调用（AI 工具中途停止、命令行工具或 AI 工具退出）显示为“已取消”，之前显示为“失败”。
 - 终端配色的配色库搜索不到时，提示可以导入其他终端的配色文件，或读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色，并给出这两个按钮；导入对话框切到“本机已装的客户端”时直接开始读取，不用再点一次。
 - 关键词高亮的正则中，`\B` 与 `\b` 一样按 ASCII 判断单词边界（紧挨着中文也算边界），含中文的行上匹配更快。
 

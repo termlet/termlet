@@ -28,12 +28,14 @@
 //!
 //! - 新协议（请求的 `_meta` 中带 2026-07-28）：无会话。`MCP-Protocol-Version` 头与 `_meta` 中的版本、`Mcp-Method`
 //!   与正文的方法、`tools/call` 的 `Mcp-Name` 与工具名必须一致（缺少或不一致时 400，`-32020`）；不认识的方法 404。
-//! - 旧协议（`initialize` 握手）：`initialize` 的回答头中下发 `MCP-Session-Id`（128 位随机），会话只记协议版本与客户端名，
-//!   放在内存中，最多 [`MAX_SESSIONS`] 个（超出时去掉最久没用的）。不认识的会话 ID 不回 404，按没有会话处理：版本取
-//!   `MCP-Protocol-Version` 头，没有时按 2025-03-26，客户端名为空（宽松处理，只丢一个客户端名；客户端收到 404 后
-//!   不一定能恢复）。通知回 202。
-//! - `tools/call` 回 `text/event-stream`：回答头马上发出，每 [`KEEPALIVE`] 发一行 SSE 注释保活，最后一条事件是结果。
-//!   客户端关闭这个流（保活写失败）即取消：远程命令收到 SIGTERM，审计记为已取消，不再回答。旧协议的
+//! - 旧协议（`initialize` 握手）：`initialize` 的回答头中下发 `MCP-Session-Id`。会话只记协议版本与客户端名，都写在
+//!   ID 中（128 位随机数加上它们的 base32），不存在内存中：Termlet 重启后客户端拿旧 ID 来照样认得出。解不开的会话 ID
+//!   不回 404，按没有会话处理：版本取 `MCP-Protocol-Version` 头，没有时按 2025-03-26，客户端名为空（客户端收到 404
+//!   后不一定能恢复）。通知回 202。
+//! - `tools/call` 回 `text/event-stream`：回答头马上发出，每 [`KEEPALIVE`] 保活一次，最后一条事件是结果。请求带
+//!   `progressToken` 时保活发 `notifications/progress`（Claude Code 按 300 秒没有回答也没有进度中止调用，SSE 的注释
+//!   不算），否则发一行 SSE 注释。客户端关闭这个流（保活写失败）即取消：远程命令收到 SIGTERM，审计记为已取消，
+//!   不再回答。旧协议的
 //!   `notifications/cancelled` 按（会话，请求 ID）取消；没有会话时只在请求 ID 唯一时取消。
 //! - 其余请求回 `application/json`。不支持批量（JSON 数组）、HTTP/2 与 TLS（只在回环上）。
 //!
@@ -65,8 +67,6 @@ pub use token::TokenView;
 
 /// 同时最多的连接数：超出的连接回答 503 后关闭。
 pub const MAX_CONNECTIONS: usize = 64;
-/// 内存中最多记住的旧协议会话。
-pub const MAX_SESSIONS: usize = 256;
 /// `tools/call` 的 SSE 回答多久发一次保活。
 pub const KEEPALIVE: Duration = Duration::from_secs(15);
 
