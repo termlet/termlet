@@ -943,9 +943,13 @@
 
 ### 在线编辑
 
-- 双击文件或右键"编辑"，在编辑器 Tab 中打开（5MB 以内的文本，默认 UTF-8，可换 GBK / Big5 重新打开）。
+- 双击文件或右键"编辑"，在编辑器 Tab 中打开（5MB 以内的文本）。
+- 编码：
+  - 自动识别 UTF-8 与 UTF-16（LE、BE）：带 BOM 的直接打开（如 Windows PowerShell 5.1 用 `>` 生成的文本、.reg 文件），没有 BOM 但能明确判断的也认得出；
+  - 识别不了时可以下载，或选 GBK / GB18030、Big5、UTF-16LE、UTF-16BE 打开；
+  - 状态栏写明当前的编码（带 BOM 的写作“UTF-16LE BOM”等），点它可以换一种编码重新打开。
 - Ctrl+S 保存，Ctrl+F 查找替换（macOS 上 ⌘S、⌘F，⌘W 关闭）。
-- 保存时原子替换，保留权限、属主与原有的换行符。
+- 保存时原子替换，保留权限、属主，以及原来的编码、BOM 与换行符。
 - 文件在打开后被别人改过时提示，可覆盖或重新加载。
 - JSON、YAML、Markdown、JS / TS（含 JSX / TSX）、Python、Shell、TOML、HTML、CSS 有语法高亮（Nginx、INI、XML、Dockerfile 认得出，但按纯文本显示）。
 - 同一主机的同一文件只开一个编辑器。

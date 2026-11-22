@@ -234,11 +234,11 @@ sftp.error.too_large:
   ja: ファイルが 5 MB を超えているため、オンラインで編集できません
   ko: 파일이 5 MB를 넘어 온라인으로 편집할 수 없습니다
 sftp.error.not_text:
-  zh-CN: 不是 UTF-8 文本文件，不能在线编辑
-  en: This isn't a UTF-8 text file and can't be edited online
-  zh-TW: 不是 UTF-8 文字檔，無法線上編輯
-  ja: UTF-8 のテキストファイルではないため、オンラインで編集できません
-  ko: UTF-8 텍스트 파일이 아니어서 온라인으로 편집할 수 없습니다
+  zh-CN: 不是能识别的文本文件，或与所选的编码不符
+  en: This isn't a text file Termlet can recognize, or it isn't in the chosen encoding
+  zh-TW: 不是能辨識的文字檔，或與所選的編碼不符
+  ja: 認識できるテキストファイルではないか、選んだエンコードと一致しません
+  ko: 인식할 수 있는 텍스트 파일이 아니거나 선택한 인코딩과 맞지 않습니다
 sftp.error.changed:
   zh-CN: 远程文件在打开后已被修改
   en: The remote file was changed after it was opened
@@ -900,11 +900,23 @@ editor.too_large:
   ja: 「%{name}」は 5 MB を超えているため、オンラインで編集できません。ローカルにダウンロードしますか？
   ko: "'%{name}'은(는) 5 MB를 넘어 온라인으로 편집할 수 없습니다. 로컬로 다운로드하시겠습니까?"
 editor.binary:
-  zh-CN: “%{name}”不是 UTF-8 文本文件，不能在线编辑。要下载到本地吗？
-  en: “%{name}” isn't a UTF-8 text file and can't be edited online. Download it instead?
-  zh-TW: 「%{name}」不是 UTF-8 文字檔，無法線上編輯。要下載到本機嗎？
-  ja: 「%{name}」は UTF-8 のテキストファイルではないため、オンラインで編集できません。ローカルにダウンロードしますか？
-  ko: "'%{name}'은(는) UTF-8 텍스트 파일이 아니어서 온라인으로 편집할 수 없습니다. 로컬로 다운로드하시겠습니까?"
+  zh-CN: “%{name}”不是能自动识别的文本文件
+  en: “%{name}” isn't a recognizable text file
+  zh-TW: 「%{name}」不是能自動辨識的文字檔
+  ja: 「%{name}」は自動的に認識できるテキストファイルではありません
+  ko: "'%{name}'은(는) 자동으로 인식할 수 있는 텍스트 파일이 아닙니다"
+editor.binary_hint:
+  zh-CN: 只自动识别 UTF-8 与 UTF-16 的文本，这个文件不能直接在线编辑。可以下载到本地，或选一种编码打开。
+  en: Only UTF-8 and UTF-16 text is recognized automatically, so this file can't be edited online directly. Download it, or open it with an encoding you choose.
+  zh-TW: 只會自動辨識 UTF-8 與 UTF-16 的文字，這個檔案無法直接線上編輯。可以下載到本機，或選擇一種編碼開啟。
+  ja: 自動的に認識できるのは UTF-8 と UTF-16 のテキストだけのため、このファイルはそのままではオンラインで編集できません。ローカルにダウンロードするか、エンコードを選んで開いてください。
+  ko: 자동으로 인식할 수 있는 것은 UTF-8과 UTF-16 텍스트뿐이어서 이 파일은 바로 온라인으로 편집할 수 없습니다. 로컬로 다운로드하거나 인코딩을 선택해 여세요.
+editor.open_with_encoding:
+  zh-CN: 按其他编码打开
+  en: Open with Encoding
+  zh-TW: 以其他編碼開啟
+  ja: 別のエンコードで開く
+  ko: 다른 인코딩으로 열기
 sftp.open:
   zh-CN: 打开 SFTP
   en: Open SFTP

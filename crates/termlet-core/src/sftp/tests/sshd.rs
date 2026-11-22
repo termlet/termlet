@@ -890,14 +890,14 @@ fn read_write_text_file() {
             Err(SftpError::NotText { .. })
         ));
         let f = s
-            .read_text(&gbk, Some(crate::model::Encoding::Gb18030))
+            .read_text(&gbk, Some(crate::sftp::TextEncoding::Gb18030))
             .await
             .unwrap();
         assert_eq!(f.content, "中文");
         s.write_text(&WriteTextRequest {
             path: gbk.clone(),
             content: "中文！".into(),
-            encoding: Some(crate::model::Encoding::Gb18030),
+            encoding: Some(crate::sftp::TextEncoding::Gb18030),
             ..Default::default()
         })
         .await
@@ -906,6 +906,79 @@ fn read_write_text_file() {
             get_remote(&s, &gbk).await,
             [0xd6, 0xd0, 0xce, 0xc4, 0xa3, 0xa1]
         );
+        cleanup(&m, &dir).await;
+    });
+}
+
+/// UTF-16 的字节（`bom` 为带 BOM）。
+fn utf16le(text: &str, bom: bool) -> Vec<u8> {
+    let mut out = if bom { vec![0xff, 0xfe] } else { Vec::new() };
+    out.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+    out
+}
+
+// UTF-16LE 带 BOM 的文件（Windows PowerShell 5.1 重定向生成的那种）：自动识别，改一行保存后逐字节与预期相同
+// （BOM、CRLF、emoji 的代理对都在）；没有 BOM 的保存后仍没有；指定 UTF-16BE 打不开
+#[test]
+fn utf16_text_round_trips() {
+    let Some(server) = setup() else {
+        return;
+    };
+    block_on(async {
+        let m = manager();
+        let (s, dir) = server.scratch(&m).await;
+        let p = format!("{dir}/ps-out.txt");
+        put_remote(
+            &s,
+            &p,
+            &utf16le("Name  Id\r\n----  --\r\npwsh 1234\r\n", true),
+        )
+        .await;
+        let f = s.read_text(&p, None).await.unwrap();
+        assert_eq!(f.encoding, crate::sftp::TextEncoding::Utf16Le);
+        assert_eq!(f.content, "\u{feff}Name  Id\r\n----  --\r\npwsh 1234\r\n");
+        let edited = f.content.replace("pwsh 1234", "终端 😀 42");
+        s.write_text(&WriteTextRequest {
+            path: p.clone(),
+            content: edited,
+            encoding: Some(f.encoding),
+            expected_modified: Some(f.modified),
+            expected_size: Some(f.size),
+            force: false,
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            get_remote(&s, &p).await,
+            utf16le("Name  Id\r\n----  --\r\n终端 😀 42\r\n", true)
+        );
+        assert_eq!(
+            s.read_text(&p, None).await.unwrap().content,
+            "\u{feff}Name  Id\r\n----  --\r\n终端 😀 42\r\n"
+        );
+        assert!(matches!(
+            s.read_text(&p, Some(crate::sftp::TextEncoding::Utf16Be))
+                .await,
+            Err(SftpError::NotText { .. })
+        ));
+
+        let plain = format!("{dir}/no-bom.txt");
+        put_remote(&s, &plain, &utf16le("key=value\n", false)).await;
+        let f = s.read_text(&plain, None).await.unwrap();
+        assert_eq!(
+            (f.encoding, f.content.as_str()),
+            (crate::sftp::TextEncoding::Utf16Le, "key=value\n")
+        );
+        s.write_text(&WriteTextRequest {
+            path: plain.clone(),
+            content: "key=新值\n".into(),
+            encoding: Some(f.encoding),
+            force: true,
+            ..Default::default()
+        })
+        .await
+        .unwrap();
+        assert_eq!(get_remote(&s, &plain).await, utf16le("key=新值\n", false));
         cleanup(&m, &dir).await;
     });
 }

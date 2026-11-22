@@ -49,7 +49,7 @@ mod walk;
 pub use backend::Protocol;
 pub use codec::raw_byte;
 pub use cwd::{TerminalCwd, cwd_command, parse_cwd};
-pub use edit::{MAX_EDIT_SIZE, TextFile, WriteResult, WriteTextRequest, is_text};
+pub use edit::{MAX_EDIT_SIZE, TextEncoding, TextFile, WriteResult, WriteTextRequest, is_text};
 pub use entry::{Entry, EntryKind, Listing, mode_string};
 pub use error::{NoSftp, Rejection, SftpError, Side};
 pub use local::{

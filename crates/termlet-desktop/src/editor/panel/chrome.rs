@@ -10,10 +10,9 @@ use gpui_kit::{
     SharedString, StatefulInteractiveElement as _, Styled as _, div, prelude::FluentBuilder as _,
     rems,
 };
+use termlet_core::sftp::TextEncoding;
 
-use super::{
-    Banner, CloseTab, ENCODINGS, EditorPanel, Find, KEY_CONTEXT, Link, Save, encoding_label,
-};
+use super::{Banner, CloseTab, EditorPanel, Find, KEY_CONTEXT, Link, Save};
 use crate::editor::text::Eol;
 use crate::prose::prose;
 use crate::sftp::list_model::{format_size, visible_name};
@@ -356,14 +355,18 @@ impl EditorPanel {
         let encoding = Button::new("editor-encoding")
             .ghost()
             .xsmall()
-            .label(encoding_label(current))
+            .label(if self.bom {
+                SharedString::from(format!("{} BOM", current.label()))
+            } else {
+                current.label().into()
+            })
             .tooltip(t!("editor.encoding"))
             .disabled(!self.is_ready() || self.saving)
             .dropdown_menu(move |menu, _, _| {
-                ENCODINGS.iter().fold(menu, |menu, (value, label)| {
-                    let (this, value) = (this.clone(), *value);
+                TextEncoding::ALL.into_iter().fold(menu, |menu, value| {
+                    let this = this.clone();
                     menu.item(
-                        PopupMenuItem::new(*label)
+                        PopupMenuItem::new(value.label())
                             .checked(value == current)
                             .on_click(move |_, window, cx| {
                                 let _ =

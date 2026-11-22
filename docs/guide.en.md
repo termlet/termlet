@@ -943,9 +943,13 @@ Default shortcuts:
 
 ### Editing remote files
 
-- Double-click a file or choose "Edit" to open it in an editor tab (text up to 5MB, UTF-8 by default; it can be reopened as GBK / Big5).
+- Double-click a file or choose "Edit" to open it in an editor tab (text up to 5MB).
+- Encodings:
+  - UTF-8 and UTF-16 (LE, BE) are detected automatically: files with a BOM open directly (such as text redirected with `>` in Windows PowerShell 5.1, or .reg files), and files without one are recognized when it's clear;
+  - a file that can't be detected can be downloaded, or opened as GBK / GB18030, Big5, UTF-16LE or UTF-16BE;
+  - the status bar shows the current encoding ("UTF-16LE BOM" and so on when the file has a BOM); click it to reopen in another encoding.
 - Ctrl+S saves and Ctrl+F finds and replaces (⌘S and ⌘F on macOS, where ⌘W closes the tab).
-- Saving replaces the file atomically and keeps its permissions, owner and line endings.
+- Saving replaces the file atomically and keeps its permissions, owner, encoding, BOM and line endings.
 - If the file changed on the server after you opened it, you can overwrite or reload.
 - Syntax highlighting for JSON, YAML, Markdown, JS / TS (including JSX / TSX), Python, Shell, TOML, HTML and CSS (Nginx, INI, XML and Dockerfile are recognized but shown as plain text).
 - The same file on the same host opens in only one editor.

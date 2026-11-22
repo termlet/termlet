@@ -5,9 +5,9 @@ use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
-use gpui_kit::component::dialog::AlertDialog;
+use gpui_kit::component::dialog::{AlertDialog, DialogAction, DialogClose, DialogFooter};
 use gpui_kit::component::input::Input;
-use gpui_kit::component::menu::{PopupMenu, PopupMenuItem};
+use gpui_kit::component::menu::{DropdownMenu as _, PopupMenu, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _, WindowExt as _, h_flex,
@@ -18,7 +18,8 @@ use gpui_kit::{
     Styled as _, TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::sftp::{
-    ChmodRequest, ChmodScope, DownloadRequest, Entry, MAX_EDIT_SIZE, SftpError, UploadRequest, path,
+    ChmodRequest, ChmodScope, DownloadRequest, Entry, MAX_EDIT_SIZE, SftpError, TextEncoding,
+    UploadRequest, path,
 };
 
 use super::{COMPACT_TOOLBAR, SftpPanel, SftpPanelEvent, Status};
@@ -100,8 +101,20 @@ impl SftpPanel {
 
     // ------------------------------------------------------------ 在线编辑
 
-    /// 读取文件，交给工作区打开编辑器。超过 5 MB、不是 UTF-8 文本的问要不要下载。
+    /// 读取文件，交给工作区打开编辑器。超过 5 MB 的问要不要下载；自动识别不了编码的（不是 UTF-8、UTF-16 文本）
+    /// 问要下载还是选一种编码打开。
     fn edit(&mut self, row: FileRow, window: &mut Window, cx: &mut Context<Self>) {
+        self.edit_with(row, None, window, cx);
+    }
+
+    /// 按 `encoding` 读取并打开（为空时自动识别）。
+    fn edit_with(
+        &mut self,
+        row: FileRow,
+        encoding: Option<TextEncoding>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let (Some(session), Some(lease)) = (self.session(), self.lease.clone()) else {
             return;
         };
@@ -116,10 +129,10 @@ impl SftpPanel {
             return;
         }
         let target = path::join(&self.dir, &row.name);
-        tracing::debug!(sftp = %self.name, path = %target, "读取远程文件以便编辑");
+        tracing::debug!(sftp = %self.name, path = %target, ?encoding, "读取远程文件以便编辑");
         self.reading = true;
         let job =
-            termlet_core::runtime::spawn(async move { session.read_text(&target, None).await });
+            termlet_core::runtime::spawn(async move { session.read_text(&target, encoding).await });
         self._read = Some(cx.spawn_in(window, async move |this, cx| {
             let result = match job.await {
                 Ok(result) => result,
@@ -135,18 +148,72 @@ impl SftpPanel {
                         window,
                         cx,
                     ),
-                    Err(SftpError::NotText { .. }) => this.offer_download(
-                        t!("editor.binary", name = row.name.clone()),
-                        &row,
-                        window,
-                        cx,
-                    ),
+                    Err(SftpError::NotText { .. }) if encoding.is_none() => {
+                        this.offer_other_encoding(&row, window, cx)
+                    }
                     Err(error) => this.show_error(&error, cx),
                 }
                 cx.notify();
             });
         }));
         cx.notify();
+    }
+
+    /// 自动识别不了编码：可以下载，或选一种编码打开（GBK、Big5，没有 BOM、以汉字为主的 UTF-16 等）。
+    fn offer_other_encoding(&mut self, row: &FileRow, window: &mut Window, cx: &mut Context<Self>) {
+        let this = cx.entity().downgrade();
+        let row = row.clone();
+        let paths = vec![path::join(&self.dir, &row.name)];
+        crate::ui_scale::open_alert(window, cx, move |alert: AlertDialog, _, _| {
+            let (download, paths) = (this.clone(), paths.clone());
+            let title = t!("editor.binary", name = row.name.clone());
+            let (open, row) = (this.clone(), row.clone());
+            let encodings = Button::new("sftp-open-encoding")
+                .outline()
+                .label(t!("editor.open_with_encoding"))
+                .dropdown_caret(true)
+                .dropdown_menu(move |menu, _, _| {
+                    // UTF-8 刚试过
+                    TextEncoding::ALL
+                        .into_iter()
+                        .filter(|e| *e != TextEncoding::Utf8)
+                        .fold(menu, |menu, encoding| {
+                            let (open, row) = (open.clone(), row.clone());
+                            menu.item(PopupMenuItem::new(encoding.label()).on_click(
+                                move |_, window, cx| {
+                                    window.close_dialog(cx);
+                                    let _ = open.update(cx, |this, cx| {
+                                        this.edit_with(row.clone(), Some(encoding), window, cx)
+                                    });
+                                },
+                            ))
+                        })
+                });
+            alert
+                .confirm()
+                .title(title)
+                .description(prose(t!("editor.binary_hint")))
+                .on_ok(move |_, window, cx| {
+                    let _ =
+                        download.update(cx, |this, cx| this.download(paths.clone(), window, cx));
+                    true
+                })
+                .footer(
+                    DialogFooter::new()
+                        .child(
+                            DialogClose::new()
+                                .child(Button::new("sftp-open-cancel").label(t!("common.cancel"))),
+                        )
+                        .child(encodings)
+                        .child(
+                            DialogAction::new().child(
+                                Button::new("sftp-open-download")
+                                    .primary()
+                                    .label(t!("sftp.download")),
+                            ),
+                        ),
+                )
+        });
     }
 
     /// 不能在线编辑：问要不要下载。

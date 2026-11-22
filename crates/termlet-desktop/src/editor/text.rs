@@ -3,8 +3,19 @@
 //! - LF 与 CRLF 文件在编辑器中统一按 LF 编辑（粘贴进来的 `\r\n`、单独的 `\r` 也换成 `\n`），保存时还原为原文件的换行符；
 //! - 混用的文件只把 `\n` 当换行，单独的 `\r` 作为普通字符保留，保存时原样写回；
 //! - 不做修改就保存时，写回的内容与原文件逐字节一致。
+//!
+//! 文件开头的 BOM（核心读出的内容以 U+FEFF 开头，UTF-8、UTF-16 都是）不放进编辑器，保存时加回（[`split_bom`]）：
+//! 它看不见，留在编辑器里时 Ctrl+Home 后输入的文字会跑到它前面，保存后文件就不再以 BOM 开头了。
 
 use std::borrow::Cow;
+
+/// 去掉开头的 BOM：返回有没有 BOM 与其余的内容。
+pub fn split_bom(text: &str) -> (bool, &str) {
+    match text.strip_prefix('\u{feff}') {
+        Some(rest) => (true, rest),
+        None => (false, text),
+    }
+}
 
 /// 文件的换行符。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -133,6 +144,26 @@ mod tests {
             normalize_paste("x\r\ny", eol),
             Cow::Borrowed("x\r\ny")
         ));
+    }
+
+    // BOM 不进编辑器，加回后与原文逐字节一致；只去掉开头的一个
+    #[test]
+    fn bom_is_kept_out_of_the_editor() {
+        assert_eq!(split_bom("\u{feff}a\r\n"), (true, "a\r\n"));
+        assert_eq!(split_bom("a\u{feff}"), (false, "a\u{feff}"));
+        assert_eq!(split_bom("\u{feff}\u{feff}x"), (true, "\u{feff}x"));
+        assert_eq!(split_bom(""), (false, ""));
+        let file = "\u{feff}Windows Registry Editor Version 5.00\r\n\r\n";
+        let (bom, body) = split_bom(file);
+        let eol = detect_eol(body);
+        let editor = to_editor(body, eol);
+        assert!(!editor.starts_with('\u{feff}'));
+        let saved = format!(
+            "{}{}",
+            if bom { "\u{feff}" } else { "" },
+            to_disk(&editor, eol)
+        );
+        assert_eq!(saved, file);
     }
 
     #[test]

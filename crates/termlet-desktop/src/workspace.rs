@@ -117,6 +117,8 @@ actions!(
 );
 
 mod close_tabs;
+#[cfg(test)]
+mod editor_encoding_tests;
 mod move_tab;
 #[cfg(test)]
 mod move_tab_tests;

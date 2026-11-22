@@ -4,7 +4,8 @@
 //!   先关掉时会话仍为编辑器保留。
 //! - 保存时提交打开（或上次保存）时的修改时间与大小；远程文件在此期间被别人改过（或删除）时提示冲突，可以仍然覆盖、
 //!   放弃修改重新加载或暂不保存。保存成功后把**保存时刻**的内容记为已保存，保存期间继续输入的仍算未保存。
-//! - 换行符见 [`super::text`]：CRLF 文件按 LF 编辑、保存时还原；混用的只把 `\n` 当换行。
+//! - 换行符见 [`super::text`]：CRLF 文件按 LF 编辑、保存时还原；混用的只把 `\n` 当换行。文件开头的 BOM 不放进编辑区，
+//!   保存时加回；状态栏的编码后面写明 BOM。
 //! - 会话断开时修改保留：核心自动重连期间不能保存；重连放弃后经 SFTP 面板重新连接，换上它的新会话继续编辑、保存。
 //!   SFTP 面板也关了时提示重新打开它（工作区经 [`EditorPanel::set_sftp_panel`] 交给编辑器后自动连上）。
 //! - 不暂存未保存修改的草稿：界面不会像网页那样重新载入，编辑中的内容不会因此丢失。
@@ -24,8 +25,9 @@ use gpui_kit::{
     InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Pixels, Render,
     SharedString, Styled as _, Subscription, Task, WeakEntity, Window, actions, div, px,
 };
-use termlet_core::model::Encoding;
-use termlet_core::sftp::{SessionState, SftpError, TextFile, WriteResult, WriteTextRequest};
+use termlet_core::sftp::{
+    SessionState, SftpError, TextEncoding, TextFile, WriteResult, WriteTextRequest,
+};
 use termlet_core::store::StoreEvent;
 
 use super::language::{self, Language};
@@ -40,13 +42,6 @@ use crate::t;
 /// 面板在持久化布局中的名称，发布后不能改。
 const PANEL_NAME: &str = "EditorPanel";
 const KEY_CONTEXT: &str = "EditorPanel";
-
-/// 可以切换的编码（与终端、主机设置中的相同）；名称是专有名词，不翻译。
-const ENCODINGS: [(Encoding, &str); 3] = [
-    (Encoding::Utf8, "UTF-8"),
-    (Encoding::Gb18030, "GBK / GB18030"),
-    (Encoding::Big5, "Big5"),
-];
 
 actions!(
     editor_panel,
@@ -137,7 +132,7 @@ enum Banner {
     /// 重新读取（重新加载、换编码重新打开）失败，可以重试
     LoadFailed {
         message: SharedString,
-        encoding: Encoding,
+        encoding: TextEncoding,
     },
     /// 其他错误
     Error(SharedString),
@@ -178,7 +173,9 @@ pub struct EditorPanel {
     editor: Entity<EditorState>,
     language: Option<Language>,
     eol: Eol,
-    encoding: Encoding,
+    encoding: TextEncoding,
+    /// 文件以 BOM 开头：编辑区中不显示，保存时加回
+    bom: bool,
     meta: Meta,
     /// 上次保存（或打开、重新加载）时编辑器中的内容；与当前内容不同即为有未保存的修改
     saved: Rope,
@@ -214,13 +211,6 @@ fn grammar_of(language: Option<Language>) -> &'static str {
     language.and_then(Language::grammar).unwrap_or("text")
 }
 
-fn encoding_label(encoding: Encoding) -> &'static str {
-    ENCODINGS
-        .iter()
-        .find(|(e, _)| *e == encoding)
-        .map_or("UTF-8", |(_, label)| label)
-}
-
 /// 会话不能用了（断开或已关闭）。
 fn is_lost(error: &SftpError) -> bool {
     matches!(error, SftpError::Disconnected | SftpError::SessionClosed)
@@ -241,10 +231,10 @@ impl EditorPanel {
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx: &mut Context<Self>| {
-            let eol = text::detect_eol(&file.content);
-            let language =
-                language::language_for(&file.path, language::first_line_of(&file.content));
-            let content = text::to_editor(&file.content, eol).into_owned();
+            let (bom, body) = text::split_bom(&file.content);
+            let eol = text::detect_eol(body);
+            let language = language::language_for(&file.path, language::first_line_of(body));
+            let content = text::to_editor(body, eol).into_owned();
             let editor = cx.new(|cx| {
                 EditorState::new(window, cx)
                     .language(grammar_of(language))
@@ -280,6 +270,7 @@ impl EditorPanel {
                 language,
                 eol,
                 encoding: file.encoding,
+                bom,
                 meta: Meta::of_file(&file),
                 saved,
                 dirty: false,
@@ -525,9 +516,13 @@ impl EditorPanel {
             return;
         }
         let snapshot = self.editor.read(cx).text().clone();
+        let mut content = text::to_disk(&snapshot.to_string(), self.eol).into_owned();
+        if self.bom {
+            content.insert(0, '\u{feff}');
+        }
         let request = WriteTextRequest {
             path: self.path.clone(),
-            content: text::to_disk(&snapshot.to_string(), self.eol).into_owned(),
+            content,
             encoding: Some(self.encoding),
             expected_modified: Some(self.meta.modified),
             expected_size: Some(self.meta.size),
@@ -588,7 +583,7 @@ impl EditorPanel {
     }
 
     /// 换一种编码重新打开（有未保存的修改时先确认）。
-    fn reopen_with(&mut self, encoding: Encoding, window: &mut Window, cx: &mut Context<Self>) {
+    fn reopen_with(&mut self, encoding: TextEncoding, window: &mut Window, cx: &mut Context<Self>) {
         if encoding == self.encoding || !self.is_ready() || self.saving {
             return;
         }
@@ -597,7 +592,7 @@ impl EditorPanel {
             return;
         }
         self.confirm_discard(
-            t!("editor.confirm_reopen", name = encoding_label(encoding)),
+            t!("editor.confirm_reopen", name = encoding.label()),
             t!("editor.discard_and_reopen"),
             encoding,
             window,
@@ -610,7 +605,7 @@ impl EditorPanel {
         &mut self,
         title: SharedString,
         ok: SharedString,
-        encoding: Encoding,
+        encoding: TextEncoding,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -631,7 +626,7 @@ impl EditorPanel {
     }
 
     /// 重新读取远程文件，替换编辑器中的内容（放弃未保存的修改、清空撤销历史）。读取期间编辑区只读。
-    fn reload(&mut self, encoding: Encoding, window: &mut Window, cx: &mut Context<Self>) {
+    fn reload(&mut self, encoding: TextEncoding, window: &mut Window, cx: &mut Context<Self>) {
         let session = self.lease.session().clone();
         let path = self.path.clone();
         self.loading = true;
@@ -663,9 +658,10 @@ impl EditorPanel {
     }
 
     fn apply_file(&mut self, file: TextFile, window: &mut Window, cx: &mut Context<Self>) {
-        let eol = text::detect_eol(&file.content);
-        let language = language::language_for(&self.path, language::first_line_of(&file.content));
-        let content = text::to_editor(&file.content, eol).into_owned();
+        let (bom, body) = text::split_bom(&file.content);
+        let eol = text::detect_eol(body);
+        let language = language::language_for(&self.path, language::first_line_of(body));
+        let content = text::to_editor(body, eol).into_owned();
         let relanguage = language != self.language;
         self.editor.update(cx, |editor, cx| {
             if relanguage {
@@ -677,6 +673,7 @@ impl EditorPanel {
         self.language = language;
         self.eol = eol;
         self.encoding = file.encoding;
+        self.bom = bom;
         self.meta = Meta::of_file(&file);
         self.dirty = false;
         self.saved_once = false;
@@ -927,6 +924,7 @@ mod tests {
             "a\r\nb\nc\rd\r\n",
             "\r",
             "中文\r\n",
+            "😀 emoji 一行\r\n",
         ] {
             let (_, state, eol) = open_text(cx, file);
             let back =
