@@ -8,8 +8,9 @@
 //! 一般只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），**不导入密码**：其他工具的密码
 //! 以各自私有的方式加密。例外是 Termora 2.x 与 WindTerm：Termora 的数据只用保存在同一个文件中的密钥加密，
 //! WindTerm 用主密码（没设时为空）派生的密钥加密，密码、私钥一并导入。Electerm 的书签导出、Netcatty 的 CSV 导出中
-//! 密码是明文（Electerm 本机的旧数据是可逆的移位），只有用户明确同意后才导入（[`Source::secrets_need_consent`]，
-//! 不同意时界面用 [`ImportPlan::without_secrets`]）；这两个来源重复导入时只给已有主机补上还没保存的密码，不覆盖。
+//! 密码是明文（Electerm 本机的旧数据是可逆的移位，FinalShell 保存的密码是不需要用户输入就能还原的 DES 加密），
+//! 只有用户明确同意后才导入（[`Source::secrets_need_consent`]，
+//! 不同意时界面用 [`ImportPlan::without_secrets`]）；这几个来源重复导入时只给已有主机补上还没保存的密码，不覆盖。
 //! 计划中的凭据只有核心能取出（`pub(crate)`），界面只看得到"带密码 / 带私钥"的标记。
 //!
 //! 读取文件、目录、注册表的部分与解析分开：各来源的解析函数接受文本（Termora 是解密后的记录），
@@ -73,7 +74,7 @@ pub enum Source {
     SshConfig,
     /// Xshell 的会话目录（Sessions）
     Xshell,
-    /// FinalShell 的连接配置目录（conn）
+    /// FinalShell 的数据目录或其中的连接目录（conn），或在 FinalShell 中右键导出的目录
     FinalShell,
     /// MobaXterm.ini、导出的 `.mxtsessions`，或安装版保存在注册表中的书签
     MobaXterm,
@@ -129,7 +130,10 @@ impl Source {
     /// 来源中的密码是明文（或可逆）保存的，导入前要用户明确同意（界面上的“导入保存的密码”，默认不勾选）；
     /// 重复导入时只给已有主机补上还没保存的密码，不覆盖（见 [`fn@apply`]）。
     pub fn secrets_need_consent(self) -> bool {
-        matches!(self, Source::Electerm | Source::Netcatty)
+        matches!(
+            self,
+            Source::FinalShell | Source::Electerm | Source::Netcatty
+        )
     }
 
     pub fn from_name(name: &str) -> Option<Self> {
@@ -146,7 +150,10 @@ impl Source {
                 &env,
                 sys::xshell_registry_data_path,
             )),
-            Source::FinalShell => first_existing(finalshell::default_candidates(&env)),
+            Source::FinalShell => first_existing(finalshell::default_candidates(
+                &env,
+                sys::finalshell_registry_dir,
+            )),
             Source::MobaXterm => {
                 mobaxterm::default_path(&env, sys::mobaxterm_registry_has_bookmarks)
             }

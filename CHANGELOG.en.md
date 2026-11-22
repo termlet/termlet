@@ -31,6 +31,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 - In highlighting regexes, `\B` now uses ASCII word boundaries like `\b` (text right next to Chinese counts as a boundary), which makes matching faster on lines with Chinese text.
 - When you double-click a file whose encoding can't be detected (not UTF-8 or UTF-16 text), the prompt now lets you open it in an encoding you choose (GBK / GB18030, Big5, UTF-16LE, UTF-16BE) as well as download it. Before, it could only be downloaded, so GBK and Big5 files couldn't be opened to switch the encoding.
 - In online editing, a BOM at the start of a file no longer stays in the editor as an invisible character; it is still written back when you save (UTF-8 files with a BOM too). Before, text typed after Ctrl+Home went in front of the BOM, so the saved file no longer started with it.
+- Importing from FinalShell now also brings in descriptions, terminal encodings and saved login passwords. FinalShell’s saved passwords can be recovered without any password, so, as with Electerm and Netcatty, they’re imported only when you tick “Import saved passwords” below the preview (off by default); they go into the vault, and importing again only fills in the ones not saved yet. You can choose FinalShell’s data folder (its install folder), the `conn` folder in it, or a folder exported with right-click in FinalShell. Connections with the port written as a string, or without a username, are imported too (the latter with a reminder to fill it in). Private keys, proxies and port forwards that FinalShell keeps itself aren’t imported; the preview notes them for each host. The default locations now include the install folder recorded in the registry, `%APPDATA%\finalshell`, and the locations on macOS and Linux.
 
 ### Fixed
 
@@ -38,6 +39,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 - The "recording" and "root" badges on tabs: if the pointer rested on a badge while its tab's context menu was open, the tooltip didn't show after the menu closed until you moved the pointer off the badge and back.
 - With "Right-click in the terminal" set to show a menu, right-clicking the terminal area or a replay showed no menu (right-clicking the tab worked). When a program has turned on mouse reporting, right-clicks still go to the program.
 - When you first connected to a host at an IPv6 address on a port other than 22, the title of the fingerprint dialog read "::1:2222", so you couldn't tell which part was the port; it now reads "[::1]:2222".
+- Importing from FinalShell named groups after the folders’ IDs (the folder names under `conn`); they now use the folders’ names (from `folder.json`), nested as in FinalShell. Connections in FinalShell’s recycle bin and RDP and other non-SSH connections were imported as SSH hosts; they’re now left out (non-SSH ones count as skipped in the preview).
 
 ## 0.3.2 (2026-11-19)
 

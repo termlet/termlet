@@ -233,11 +233,14 @@ pub(super) fn describe_hint(hint: &Hint, source: &str) -> SharedString {
         Hint::UnsupportedEncoding { name } => {
             t!("backup_ui.hint.unsupported_encoding", name = name)
         }
-        Hint::ProxyNotImported { name } => t!(
-            "backup_ui.hint.proxy_not_imported",
+        Hint::ProxyNotImported { name: Some(name) } => t!(
+            "backup_ui.hint.proxy_not_imported_named",
             source = source,
             name = name
         ),
+        Hint::ProxyNotImported { name: None } => {
+            t!("backup_ui.hint.proxy_not_imported", source = source)
+        }
         Hint::JumpNotImported => t!("backup_ui.hint.jump_not_imported", source = source),
         Hint::LoginScriptNotImported => {
             t!("backup_ui.hint.login_script_not_imported", source = source)
@@ -250,6 +253,9 @@ pub(super) fn describe_hint(hint: &Hint, source: &str) -> SharedString {
         }
         Hint::SavedPasswordEncrypted => {
             t!("backup_ui.hint.saved_password_encrypted", source = source)
+        }
+        Hint::SavedPasswordInvalid => {
+            t!("backup_ui.hint.saved_password_invalid", source = source)
         }
         Hint::CredentialProfileMissing => {
             t!("backup_ui.hint.credential_profile_missing", source = source)
@@ -375,14 +381,16 @@ mod tests {
             Hint::UnsupportedEncoding {
                 name: "ISO-8859-1".into(),
             },
+            Hint::ProxyNotImported { name: None },
             Hint::ProxyNotImported {
-                name: "office".into(),
+                name: Some("office".into()),
             },
             Hint::JumpNotImported,
             Hint::LoginScriptNotImported,
             Hint::SerialSettingsUnverified,
             Hint::SavedPasswordUnreadable,
             Hint::SavedPasswordEncrypted,
+            Hint::SavedPasswordInvalid,
             Hint::CredentialProfileMissing,
             Hint::JumpHostFor {
                 session: "app".into(),

@@ -238,6 +238,9 @@ impl ImportFrom {
     fn hint(self) -> Option<SharedString> {
         match self {
             ImportFrom::Client(Source::Xshell) => Some(t!("backup_ui.import.source_hint.xshell")),
+            ImportFrom::Client(Source::FinalShell) => {
+                Some(t!("backup_ui.import.source_hint.finalshell"))
+            }
             ImportFrom::Client(Source::MobaXterm) => {
                 Some(t!("backup_ui.import.source_hint.mobaxterm"))
             }
@@ -1442,6 +1445,9 @@ impl ImportDialog {
         }
         let hint = match preview.from {
             ImportFrom::Client(Source::Netcatty) => t!("backup_ui.import.secrets_hint.netcatty"),
+            ImportFrom::Client(Source::FinalShell) => {
+                t!("backup_ui.import.secrets_hint.finalshell")
+            }
             _ => t!("backup_ui.import.secrets_hint.electerm"),
         };
         Some(

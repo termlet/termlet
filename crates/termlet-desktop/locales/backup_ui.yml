@@ -508,6 +508,12 @@ backup_ui.hint.unsupported_encoding:
   ja: インポート元のエンコード %{name} には対応していないため、UTF-8 としてインポートしました。ホストの設定でエンコードを確認してください。
   ko: 원본의 인코딩 %{name}은(는) 지원하지 않아 UTF-8로 가져왔습니다. 호스트 설정에서 인코딩을 확인하세요.
 backup_ui.hint.proxy_not_imported:
+  zh-CN: 这台主机在“%{source}”中使用代理，代理的设置保存在它自己的代理列表中，没有导入，导入后直连。
+  en: This host uses a proxy in “%{source}”. The proxy’s settings are kept in that program’s own proxy list and weren’t imported, so the host connects directly.
+  zh-TW: 這台主機在「%{source}」中使用代理，代理的設定儲存在它自己的代理清單中，沒有匯入，匯入後直接連線。
+  ja: このホストは「%{source}」でプロキシを使っています。プロキシの設定は独自のプロキシ一覧に保存されているためインポートされず、インポート後は直接接続します。
+  ko: "이 호스트는 '%{source}'에서 프록시를 사용합니다. 프록시 설정은 자체 프록시 목록에 저장되어 있어 가져오지 않았으며, 가져온 후 직접 연결합니다."
+backup_ui.hint.proxy_not_imported_named:
   zh-CN: “%{source}”中的代理“%{name}”保存在它自己的代理列表中，没有导入，导入后直连。
   en: The proxy “%{name}” is kept in “%{source}”’s own proxy list and wasn’t imported, so the host connects directly.
   zh-TW: 「%{source}」中的代理「%{name}」儲存在它自己的代理清單中，沒有匯入，匯入後直接連線。
@@ -543,6 +549,12 @@ backup_ui.hint.saved_password_encrypted:
   zh-TW: 「%{source}」匯出時未能解開這台主機的密碼（檔案中是密文），沒有匯入，連線時再輸入。
   ja: 「%{source}」がエクスポート時にこのホストのパスワードを復号できなかったため（ファイルには暗号化されたまま入っています）、インポートしていません。接続時に入力してください。
   ko: "'%{source}'에서 내보낼 때 이 호스트의 비밀번호를 열지 못해(파일에는 암호화된 채로 들어 있음) 가져오지 않았습니다. 연결할 때 입력하세요."
+backup_ui.hint.saved_password_invalid:
+  zh-CN: “%{source}”中保存的密码格式不对，没能解开，没有导入，连接时再输入。
+  en: The password saved in “%{source}” isn’t in the expected format and couldn’t be decrypted, so it wasn’t imported. Enter it when connecting.
+  zh-TW: 「%{source}」中儲存的密碼格式不對，未能解開，沒有匯入，連線時再輸入。
+  ja: 「%{source}」に保存されたパスワードは形式が正しくないため復号できず、インポートしていません。接続時に入力してください。
+  ko: "'%{source}'에 저장된 비밀번호는 형식이 맞지 않아 열지 못했으며, 가져오지 않았습니다. 연결할 때 입력하세요."
 backup_ui.hint.credential_profile_missing:
   zh-CN: “%{source}”中这台主机用凭据档案登录，文件中没有这个档案（“导出全部数据”的文件中才有），导入后请设置登录方式。
   en: This host signs in with a credential profile in “%{source}”, but the file doesn’t include it (only an “export all data” file does). Set how it signs in after importing.
@@ -569,11 +581,11 @@ backup_ui.import.title_snippets:
   ja: スニペットをインポート
   ko: 스니펫 가져오기
 backup_ui.import.hint:
-  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm 除外；Electerm、Netcatty 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
-  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora and WindTerm; for Electerm and Netcatty, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
-  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm 除外；Electerm、Netcatty 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
-  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
-  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
+  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm 除外；Electerm、Netcatty、FinalShell 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
+  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora and WindTerm; for Electerm, Netcatty and FinalShell, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
+  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm 除外；Electerm、Netcatty、FinalShell 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
+  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
+  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
 backup_ui.import.hint_snippets:
   zh-CN: 导入其他程序导出的快捷命令：分组、名称与内容按 Termlet 的写法转换，转换时丢掉或改动的内容在预览中列出。与已有快捷命令的名称、内容都相同的不重复导入。
   en: Imports snippets exported from another program. Groups, names and contents are converted to Termlet’s format, and anything dropped or changed is listed in the preview. Snippets with the same name and content as existing ones aren’t imported again.
@@ -605,11 +617,11 @@ backup_ui.import.source.xshell:
   ja: Xshell のセッションフォルダー（Sessions）
   ko: Xshell 세션 폴더(Sessions)
 backup_ui.import.source.finalshell:
-  zh-CN: FinalShell 连接目录（conn）
-  en: FinalShell connections folder (conn)
-  zh-TW: FinalShell 連線目錄（conn）
-  ja: FinalShell の接続フォルダー（conn）
-  ko: FinalShell 연결 폴더(conn)
+  zh-CN: FinalShell（数据目录或导出的目录）
+  en: FinalShell (data folder or exported folder)
+  zh-TW: FinalShell（資料目錄或匯出的目錄）
+  ja: FinalShell（データフォルダーまたはエクスポートしたフォルダー）
+  ko: FinalShell(데이터 폴더 또는 내보낸 폴더)
 backup_ui.import.source.mobaxterm:
   zh-CN: MobaXterm 书签（MobaXterm.ini 或 .mxtsessions）
   en: MobaXterm bookmarks (MobaXterm.ini or .mxtsessions)
@@ -658,6 +670,12 @@ backup_ui.import.source_hint.xshell:
   zh-TW: 選擇 Xshell 的工作階段目錄 Sessions（在 Xshell 的「工具 → 選項 → 一般」中可以看到工作階段的儲存位置）。匯入 SSH、Telnet 與序列埠工作階段，工作階段所在的子目錄成為群組，編碼、備註與連接埠轉送一併匯入（轉送不會自動啟動）；Xshell 自己加密的密碼、使用者金鑰庫中的私密金鑰與代理不匯入。
   ja: Xshell のセッションフォルダー Sessions を選択してください（セッションの保存場所は Xshell の「ツール → オプション → 全般」で確認できます）。SSH、Telnet、シリアルポートのセッションをインポートし、セッションがあるサブフォルダーはグループになります。エンコード、説明、ポート転送も一緒にインポートします（ポート転送は自動では開始されません）。Xshell が独自に暗号化したパスワード、ユーザーキーストアの秘密鍵、プロキシはインポートしません。
   ko: Xshell의 세션 폴더 Sessions를 선택하세요(세션 저장 위치는 Xshell의 '도구 → 옵션 → 일반'에서 확인할 수 있습니다). SSH, Telnet, 직렬 포트 세션을 가져오며, 세션이 있는 하위 폴더는 그룹이 되고 인코딩, 설명, 포트 포워딩도 함께 가져옵니다(포트 포워딩은 자동으로 시작되지 않음). Xshell이 자체적으로 암호화한 비밀번호, 사용자 키 저장소의 개인 키, 프록시는 가져오지 않습니다.
+backup_ui.import.source_hint.finalshell:
+  zh-CN: 选择 FinalShell 的数据目录（安装目录，其中有 conn 文件夹）或其中的 conn，也可以选在 FinalShell 中右键“导出”得到的目录。导入 SSH 连接，文件夹成为分组，备注与编码一并导入；FinalShell 回收站中的连接不导入，RDP 等其他连接跳过。FinalShell 自己保存的私钥、代理与端口转发不导入，在预览中逐台说明。
+  en: Choose FinalShell’s data folder (its install folder, which has a conn folder) or the conn folder itself; a folder exported with right-click → Export in FinalShell works too. SSH connections are imported; folders become groups, and descriptions and encodings are kept. Connections in FinalShell’s recycle bin aren’t imported, and RDP and other connections are skipped. Private keys, proxies and port forwards that FinalShell keeps itself aren’t imported; the preview notes them for each host.
+  zh-TW: 選擇 FinalShell 的資料目錄（安裝目錄，其中有 conn 資料夾）或其中的 conn，也可以選擇在 FinalShell 中按右鍵「匯出」得到的目錄。匯入 SSH 連線，資料夾成為群組，備註與編碼一併匯入；FinalShell 資源回收筒中的連線不匯入，RDP 等其他連線略過。FinalShell 自己儲存的私密金鑰、代理與連接埠轉送不匯入，在預覽中逐台說明。
+  ja: FinalShell のデータフォルダー（conn フォルダーがあるインストールフォルダー）またはその中の conn を選択してください。FinalShell で右クリック →「エクスポート」したフォルダーも選択できます。SSH 接続をインポートし、フォルダーはグループになります。説明とエンコードも一緒にインポートします。FinalShell のごみ箱にある接続はインポートせず、RDP などほかの接続はスキップします。FinalShell が独自に保存した秘密鍵、プロキシ、ポート転送はインポートせず、プレビューでホストごとに説明します。
+  ko: FinalShell의 데이터 폴더(conn 폴더가 있는 설치 폴더)나 그 안의 conn을 선택하세요. FinalShell에서 마우스 오른쪽 버튼 → '내보내기'로 만든 폴더도 선택할 수 있습니다. SSH 연결을 가져오며, 폴더는 그룹이 되고 설명과 인코딩도 함께 가져옵니다. FinalShell 휴지통에 있는 연결은 가져오지 않으며 RDP 등 다른 연결은 건너뜁니다. FinalShell이 자체적으로 저장한 개인 키, 프록시, 포트 포워딩은 가져오지 않으며 미리 보기에서 호스트마다 설명합니다.
 backup_ui.import.source_hint.mobaxterm:
   zh-CN: '便携版请选择程序目录下的 MobaXterm.ini；安装版的书签可能保存在注册表中，路径为 HKEY_CURRENT_USER\Software\Mobatek\MobaXterm。导入 SSH、Telnet 与串口会话，SSH 网关作为跳板机导入，编码与登录后执行的命令一并导入。'
   en: 'For the portable edition, choose MobaXterm.ini in its program folder. The installer edition may keep bookmarks in the registry at HKEY_CURRENT_USER\Software\Mobatek\MobaXterm. SSH, Telnet and serial sessions are imported; SSH gateways become jump hosts, and encodings and commands run after login are kept.'
@@ -1036,6 +1054,12 @@ backup_ui.import.secrets_hint.netcatty:
   zh-TW: Netcatty 匯出的 CSV 中密碼是明文。勾選後，登入密碼、私密金鑰密碼與代理密碼存進 Termlet 的保險庫，現有的主機只補上還沒儲存的密碼、不覆寫；不勾選時只匯入主機，連線時再輸入。匯入後請刪除這份 CSV 檔案。
   ja: Netcatty からエクスポートした CSV では、パスワードが平文で入っています。オンにすると、ログインパスワード、秘密鍵のパスワード、プロキシのパスワードを Termlet の保管庫に保存します。既存のホストにはまだ保存されていないパスワードだけを補い、上書きはしません。オフの場合はホストだけをインポートし、パスワードは接続時に入力します。インポート後はこの CSV ファイルを削除してください。
   ko: Netcatty에서 내보낸 CSV에는 비밀번호가 평문으로 들어 있습니다. 켜면 로그인 비밀번호, 개인 키 비밀번호, 프록시 비밀번호를 Termlet 보관함에 저장하며, 기존 호스트에는 아직 저장되지 않은 비밀번호만 채우고 덮어쓰지 않습니다. 끄면 호스트만 가져오고 비밀번호는 연결할 때 입력합니다. 가져온 후에는 이 CSV 파일을 삭제하세요.
+backup_ui.import.secrets_hint.finalshell:
+  zh-CN: FinalShell 保存的密码只是简单加密，不需要任何口令就能还原，任何拿到这些文件的人都能读出。勾选后，登录密码存进 Termlet 的保险库，已有的主机只补上还没保存的密码、不覆盖；不勾选时只导入主机，连接时再输入。
+  en: FinalShell only lightly encrypts the passwords it saves; they can be recovered without any password, so anyone with these files can read them. When ticked, login passwords go into Termlet’s vault; existing hosts only get passwords they don’t have yet, nothing is overwritten. When not ticked, only the hosts are imported and you enter passwords when connecting.
+  zh-TW: FinalShell 儲存的密碼只是簡單加密，不需要任何密碼就能還原，任何拿到這些檔案的人都能讀出。勾選後，登入密碼存進 Termlet 的保險庫，現有的主機只補上還沒儲存的密碼、不覆寫；不勾選時只匯入主機，連線時再輸入。
+  ja: FinalShell が保存したパスワードは簡単に暗号化されているだけで、パスワードなしで元に戻せるため、これらのファイルを入手した人は誰でも読み出せます。オンにすると、ログインパスワードを Termlet の保管庫に保存します。既存のホストにはまだ保存されていないパスワードだけを補い、上書きはしません。オフの場合はホストだけをインポートし、パスワードは接続時に入力します。
+  ko: FinalShell이 저장한 비밀번호는 간단히 암호화되어 있을 뿐이라 별도의 비밀번호 없이 되돌릴 수 있으며, 이 파일을 가진 사람은 누구나 읽을 수 있습니다. 켜면 로그인 비밀번호를 Termlet 보관함에 저장하며, 기존 호스트에는 아직 저장되지 않은 비밀번호만 채우고 덮어쓰지 않습니다. 끄면 호스트만 가져오고 비밀번호는 연결할 때 입력합니다.
 backup_ui.import.on_duplicate:
   zh-CN: 已存在的主机
   en: Existing hosts

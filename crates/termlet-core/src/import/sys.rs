@@ -1,5 +1,5 @@
 //! 与操作系统有关的部分：系统 ANSI 代码页，以及只有 Windows 才有的注册表
-//! （Xshell 自定义的用户数据目录、安装版 MobaXterm 的书签）。
+//! （Xshell 自定义的用户数据目录、FinalShell 的安装目录、安装版 MobaXterm 的书签）。
 
 #[cfg(windows)]
 mod imp {
@@ -28,6 +28,13 @@ mod imp {
             .open(format!(r"Software\NetSarang\Common\{version}\UserData"))
             .ok()?;
         let path = expand_env(key.get_string("UserDataPath").ok()?.trim());
+        (!path.is_empty()).then(|| PathBuf::from(path))
+    }
+
+    /// FinalShell 的安装目录（`HKCU\Software\finalshell` 的默认值）：FinalShell 把连接等数据保存在安装目录中。
+    pub fn finalshell_registry_dir() -> Option<PathBuf> {
+        let key = CURRENT_USER.open(r"Software\finalshell").ok()?;
+        let path = expand_env(key.get_string("").ok()?.trim());
         (!path.is_empty()).then(|| PathBuf::from(path))
     }
 
@@ -124,6 +131,10 @@ mod imp {
     }
 
     pub fn xshell_registry_data_path(_version: &str) -> Option<PathBuf> {
+        None
+    }
+
+    pub fn finalshell_registry_dir() -> Option<PathBuf> {
         None
     }
 

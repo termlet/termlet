@@ -262,7 +262,7 @@ Notes:
 - Open it with More → Import Hosts… in the host list toolbar. Sources:
   - `~/.ssh/config`
   - an Xshell sessions folder
-  - a FinalShell connections folder
+  - FinalShell (its data folder, the `conn` folder in it, or a folder exported with right-click)
   - MobaXterm (MobaXterm.ini, an exported `.mxtsessions` file, or bookmarks the installed version keeps in the registry)
   - Tabby (`config.yaml`)
   - Termora 2.x (data folder `~/.termora`)
@@ -275,7 +275,7 @@ Notes:
   - Hosts with the same address, port and user can be merged or skipped.
   - The preview can be searched and filtered by new / existing hosts, with Select all, Select none, Only new and Invert.
   - Click a row to select it and Shift+click to select a range.
-- Only host information is imported, not passwords (except Termora and WindTerm, and Electerm and Netcatty when you tick the option, see below). What is not imported is noted host by host in the preview.
+- Only host information is imported, not passwords (except Termora and WindTerm, and Electerm, Netcatty and FinalShell when you tick the option, see below). What is not imported is noted host by host in the preview.
 - **ssh_config and Tabby**:
   - `ProxyJump` in ssh_config becomes a jump host, and `ProxyCommand` and Tabby's proxy commands become proxy commands (confirmed on first connection).
   - `ForwardX11` and `ForwardX11Trusted` in ssh_config become the X11 forwarding settings, and `CertificateFile` becomes the key file's certificate file.
@@ -285,6 +285,11 @@ Notes:
   - SSH, Telnet and serial sessions, with notes, encoding and port forwards (not started automatically).
   - Proxies (names in Xshell's global proxy list), keys in its user key store, passwords and login scripts are not imported and are noted in the preview.
   - Check the settings of imported serial sessions.
+- **FinalShell**:
+  - Choose FinalShell's data folder (its install folder, `%LOCALAPPDATA%\finalshell` by default), the `conn` folder in it, or a folder exported with right-click → Export in FinalShell.
+  - SSH connections are imported: folders become groups (with FinalShell's names and nesting), and notes and terminal encodings are kept. Connections in FinalShell's recycle bin aren't imported, and RDP and other connections are skipped.
+  - Private keys, proxies and port forwards that FinalShell keeps itself aren't imported and are noted in the preview; choose the key file again for hosts that log in with a key.
+  - Saved passwords are imported only when you tick the option, see below.
 - **MobaXterm**:
   - SSH, Telnet and serial sessions; bookmark folders become groups and SSH gateways become jump hosts.
   - The encoding (UTF-8, GBK, Big5) and the command run after login are imported too.
@@ -315,8 +320,8 @@ Notes:
   - Categories become groups; nested categories are written as "Parent / Child". Pinned commands come first in their group.
   - Commands are converted following NyaTerm's rules: `\r` and `\n` become line breaks, `\t` a tab and `\\` a single backslash, other backslashes stay; a variable `{{name=default}}` becomes `{{name:default}}`; "execute" and line-by-line commands get a trailing line break (they run after sending), while "append to input" and character-by-character ones don't; commands NyaTerm sends as written are kept as they are.
   - Anything dropped or changed is listed in the preview: pauses `\p` (Termlet has no pauses, so the text is sent without waiting), option lists `{{name|a,b}}` (only the first option is kept, as the default), line-by-line or character-by-character intervals, variables Termlet doesn't recognize (sent as written), `{{…}}` in commands sent as written (Termlet treats them as parameters), descriptions, colors, icons, pinning and risk levels.
-- **Saved passwords from Electerm and Netcatty**:
-  - Electerm exports and Netcatty CSVs hold passwords and keys in plain text.
+- **Saved passwords from Electerm, Netcatty and FinalShell**:
+  - Electerm exports and Netcatty CSVs hold passwords and keys in plain text; FinalShell only lightly encrypts the passwords it saves, and they can be recovered without any password.
   - Below the preview there is "Import saved passwords", off by default (only the hosts are imported and you enter passwords when connecting).
   - When ticked, login, key and proxy passwords go into the vault and private keys into the key library.
   - On a repeated import, existing hosts only get passwords they don't have yet; saved ones are never overwritten (this also happens with "Skip").

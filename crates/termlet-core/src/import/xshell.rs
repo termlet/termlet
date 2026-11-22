@@ -139,7 +139,8 @@ pub(super) fn add_session(plan: &mut PlanBuilder, rel: &[String], text: &str) {
     }
     let proxy = field(section("CONNECTION:PROXY"), "Proxy");
     if !proxy.is_empty() && protocol != Protocol::Serial {
-        item.hints.push(Hint::ProxyNotImported { name: proxy });
+        item.hints
+            .push(Hint::ProxyNotImported { name: Some(proxy) });
     }
     plan.push(item);
 }
@@ -430,7 +431,7 @@ mod tests {
                 Hint::AgentForwardDisabled,
                 Hint::LoginScriptNotImported,
                 Hint::ProxyNotImported {
-                    name: "公司代理".into()
+                    name: Some("公司代理".into())
                 },
             ]
         );

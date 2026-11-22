@@ -506,6 +506,107 @@ fn netcatty_passwords_need_consent(cx: &mut TestAppContext) {
     assert_eq!(saved_password(cx, "应用").as_deref(), Some("kept"));
 }
 
+// FinalShell 的数据目录：文件夹按 folder.json 的名称成为分组，回收站中的、RDP 连接不导入；保存的密码可以还原，
+// 同 Netcatty 要勾选“导入保存的密码”才导入。样例按 termlet-core 中 FinalShell 导入说明的格式手写
+#[gpui_kit::test]
+fn finalshell_folders_and_password_consent(cx: &mut TestAppContext) {
+    // FinalShell 保存的 “DengShell-QA-123!”（取自 DengShell（MIT）的测试）
+    const SAVED: &str = "AQIDBAUGBwhSo9sQPy5eFkuGZiawt4poDYA6D2O3v3Y=";
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("finalshell");
+    let conn = dir.path("conn");
+    let put = |rel: &str, text: &str| {
+        let file = conn.join(rel);
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(file, text).unwrap();
+    };
+    put(
+        "f1/folder.json",
+        r#"{"id":"f1","name":"生产","parent_id":"root","delete_time":0}"#,
+    );
+    put(
+        "f1/1001_connect_config.json",
+        &format!(
+            r#"{{"id":"1001","name":"web","host":"10.0.0.1","port":22,"user_name":"root","conection_type":100,
+                "authentication_type":1,"password":"{SAVED}","parent_id":"f1","delete_time":0}}"#
+        ),
+    );
+    put(
+        "1002_connect_config.json",
+        r#"{"id":"1002","name":"db","host":"10.0.0.2","port":22,"user_name":"dba","conection_type":100,
+            "authentication_type":2,"secret_key_id":"k1","proxy_id":"p1","parent_id":"root"}"#,
+    );
+    put(
+        "1003_connect_config.json",
+        r#"{"id":"1003","name":"desktop","host":"10.0.0.3","port":3389,"conection_type":101}"#,
+    );
+    put(
+        "1004_connect_config.json",
+        r#"{"id":"1004","name":"old","host":"10.0.0.4","user_name":"u","conection_type":100,"delete_time":1}"#,
+    );
+
+    // 第一次：不勾选，只导入主机（选数据目录，conn 的上一级）
+    let dialog = preview_client(cx, handle, Source::FinalShell, &dir.0, 2);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(exists(window, "import-secrets"), "带密码时给出选项");
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_counts()),
+        Some((2, 0, 0, 0))
+    );
+    assert_eq!(saved_password(cx, "web"), None, "没有同意时不保存密码");
+    cx.update(|cx| {
+        let store = AppState::store(cx);
+        let group = store
+            .list::<termlet_core::model::Group>()
+            .into_iter()
+            .find(|g| g.doc.name == "生产")
+            .expect("文件夹成为分组");
+        let parent = |name: &str| {
+            store
+                .list::<Host>()
+                .into_iter()
+                .find(|h| h.doc.name == name)
+                .unwrap()
+                .parent
+        };
+        assert_eq!(parent("web"), Some(group.id.as_str().to_string()));
+        assert_eq!(parent("db"), None);
+    });
+    cx.update_window(handle, |_, window, cx| window.click("import-close", cx))
+        .unwrap();
+    cx.run_until_parked();
+
+    // 第二次：全选、勾选后导入，两台都已存在而跳过，补上保存的密码
+    let dialog = preview_client(cx, handle, Source::FinalShell, &dir.0, 2);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("import-select-all", cx);
+        window.click("import-secrets", cx);
+        window.render_frame(cx);
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done") && exists(window, "import-passwords-filled")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_counts()),
+        Some((0, 0, 2, 0))
+    );
+    assert_eq!(
+        saved_password(cx, "web").as_deref(),
+        Some("DengShell-QA-123!")
+    );
+    assert_eq!(saved_password(cx, "db"), None, "公钥认证的主机没有密码");
+}
+
 #[gpui_kit::test]
 fn full_backup_is_created_and_restored(cx: &mut TestAppContext) {
     let (handle, harness) = open(cx, true);

@@ -368,8 +368,9 @@ pub enum Hint {
     AgentForwardDisabled,
     /// 来源中的终端编码 `name` 不支持，导入后按 UTF-8
     UnsupportedEncoding { name: String },
-    /// 来源中使用代理 `name`，代理的设置保存在来源自己的代理列表中，没有导入，导入后直连（Xshell）
-    ProxyNotImported { name: String },
+    /// 来源中使用代理，代理的设置保存在来源自己的代理列表中，没有导入，导入后直连；`name` 是它在来源中的名称
+    /// （Xshell；FinalShell 的连接中只有代理的 ID，为 `None`）
+    ProxyNotImported { name: Option<String> },
     /// 来源中设置了跳板机，格式无法确定，没有导入，导入后直连（WindTerm）
     JumpNotImported,
     /// 来源中的登录脚本（等待提示、自动发送）没有导入（Xshell）
@@ -380,6 +381,8 @@ pub enum Hint {
     SavedPasswordUnreadable,
     /// 来源导出的文件中这台主机的密码是密文（导出时没能解开），没有导入，连接时输入（Netcatty）
     SavedPasswordEncrypted,
+    /// 来源中保存的密码格式不对，没能解开，没有导入，连接时输入（FinalShell）
+    SavedPasswordInvalid,
     /// 来源中用凭据档案登录，文件中没有这个档案，导入后需要设置登录方式（Electerm 的书签导出不含档案）
     CredentialProfileMissing,
     /// 这台主机是为来源中的主机 `session` 的跳板机新建的（Electerm 的跳板机写在书签里，不是另一个书签）
