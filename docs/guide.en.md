@@ -269,6 +269,7 @@ Notes:
   - WindTerm (its program folder, the `.wind` data folder or the `user.sessions` file in it; you enter the master password if one is set)
   - Electerm (exported bookmarks `.json`; for versions before 3.0 also its data folder)
   - Netcatty (the `.csv` exported from its hosts page)
+  - NyaTerm (the `.json` exported from its Quick Commands panel; snippets only, see below)
 - Preview:
   - The preview appears once you pick the source.
   - Hosts with the same address, port and user can be merged or skipped.
@@ -308,6 +309,12 @@ Notes:
   - The CSV from Export on Netcatty's hosts page (`hosts_export_….csv`); the newest one in Downloads, Desktop or Documents is filled in. Netcatty keeps its data on the computer with the system's encryption, so only the export can be read.
   - SSH and Telnet hosts are imported with groups, tags, notes, key file paths, proxies (HTTP, SOCKS5, proxy commands) and jump hosts (only the last hop of a chain).
   - Keys in Netcatty's key library, identities and port forwards are not in the export.
+- **NyaTerm quick commands**:
+  - The JSON from "Export Commands" at the top right of NyaTerm's Quick Commands panel (`nyaterm-quick-commands.json`); the one in NyaTerm's config folder (`~/.nyaterm`) is filled in, or else the newest one in Downloads, Desktop or Documents. "Import Snippets…" on the Snippets page (or in the command palette) opens the dialog with this source already chosen and the title "Import Snippets".
+  - NyaTerm doesn't export hosts (they are only in its encrypted full backup), so only the quick commands are imported. The preview lists all of them, with nothing to select; ones with the same name and content as an existing snippet aren't imported again, and ones with the same name but different content are added as new snippets (existing ones aren't replaced).
+  - Categories become groups; nested categories are written as "Parent / Child". Pinned commands come first in their group.
+  - Commands are converted following NyaTerm's rules: `\r` and `\n` become line breaks, `\t` a tab and `\\` a single backslash, other backslashes stay; a variable `{{name=default}}` becomes `{{name:default}}`; "execute" and line-by-line commands get a trailing line break (they run after sending), while "append to input" and character-by-character ones don't; commands NyaTerm sends as written are kept as they are.
+  - Anything dropped or changed is listed in the preview: pauses `\p` (Termlet has no pauses, so the text is sent without waiting), option lists `{{name|a,b}}` (only the first option is kept, as the default), line-by-line or character-by-character intervals, variables Termlet doesn't recognize (sent as written), `{{…}}` in commands sent as written (Termlet treats them as parameters), descriptions, colors, icons, pinning and risk levels.
 - **Saved passwords from Electerm and Netcatty**:
   - Electerm exports and Netcatty CSVs hold passwords and keys in plain text.
   - Below the preview there is "Import saved passwords", off by default (only the hosts are imported and you enter passwords when connecting).
@@ -607,6 +614,7 @@ Default shortcuts:
   - Names use letters, digits and underscores, optionally separated by spaces, dots or hyphens.
   - Go templates for docker and kubectl such as `{{.Names}}` are sent as is.
 - Manage snippets under "Snippets" in the sidebar (ticking "run after sending" adds a trailing Enter), optionally in groups.
+- Snippets exported from NyaTerm can be imported ("Import Snippets…" on the Snippets page; see NyaTerm under [Importing hosts](#importing-hosts)).
 - **Snippet bar**: you can also show a snippet bar below the terminal (the button on the Snippets page or "Show Snippet Bar" in the command palette; off by default).
   - Click a button to send it to the current terminal.
   - Pick a group to show only its snippets.
@@ -740,7 +748,7 @@ Default shortcuts:
 - Programs that turn on theme change notifications (DEC 2031), such as Claude Code and Neovim, are told when the terminal background switches between light and dark and change their own colors.
 - 39 schemes are built in (Solarized, Catppuccin, Tokyo Night, Gruvbox, Dracula, Nord, One Dark Pro, Ayu, VS Code, Monokai (VS Code) and more, each with its source and license).
 - Cards preview them in your font and mark colors that are hard to read on that background, and "Keep text readable" can be turned on.
-- Import schemes from Windows Terminal, iTerm2 (`.itermcolors`), Xshell (`.xcs`), MobaXterm, base16, Alacritty, Kitty, Ghostty, Xresources, Tabby and Gogh (drop, choose files or paste; the format is detected), or read them directly from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer. When a search in the library finds nothing, both options are offered right there.
+- Import schemes from Windows Terminal, iTerm2 (`.itermcolors`), Xshell (`.xcs`), MobaXterm, base16, Alacritty, Kitty, Ghostty, Xresources, Tabby, Gogh and NyaTerm (the `nyaterm-theme.json` exported from its theme designer) (drop, choose files or paste; the format is detected), or read them directly from Windows Terminal, Xshell, MobaXterm and Tabby installed on this computer. When a search in the library finds nothing, both options are offered right there.
 - Export as Windows Terminal JSON or `.itermcolors`.
 - Copy a scheme as a custom one to edit its colors.
 - A host's Terminal page and a group can use a fixed scheme (for example to make production stand out).

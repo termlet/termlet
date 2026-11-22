@@ -855,6 +855,76 @@ fn gogh_json_array() {
     assert_eq!(names(&r), ["One", "Two"]);
 }
 
+// ---- NyaTerm ----
+
+/// NyaTerm 主题设计器导出的 `nyaterm-theme.json`：按 NyaTerm 提交 daedb58 的 `ThemeConfig`
+/// （`crates/nyaterm-core/src/themes/mod.rs`，`serde_json::to_writer_pretty` 写出）手写，界面颜色照它自带的 GitHub Dark。
+fn nyaterm_theme(name: &str, label: &str) -> Value {
+    let mut terminal = Map::new();
+    for (key, value) in [
+        ("background", "#202020"),
+        ("foreground", "#dddddd"),
+        ("foregroundIntense", "#ffffff"),
+        ("cursor", "#ffcc00"),
+        ("selectionBackground", "#264f78"),
+        ("lineHighlight", "#161b22"),
+        ("findMatchBackground", "rgba(210, 153, 34, 0.35)"),
+        ("findMatchBorder", "#d29922"),
+    ] {
+        terminal.insert(key.into(), json!(value));
+    }
+    for (i, n) in ANSI.iter().enumerate() {
+        terminal.insert((*n).into(), json!(P[i]));
+        terminal.insert(bright(n), json!(P[i + 8]));
+    }
+    let mut theme = json!({
+        "id": "custom-1",
+        "label": label,
+        "swatch": "#0d1117",
+        "colors": {
+            "bg": "#0d1117", "bgPanel": "#161b22", "bgTerminal": "#0d1117", "bgHover": "#1c2128",
+            "bgInput": "#0d1117", "bgSectionHeader": "#12171f", "border": "#30363d", "text": "#c9d1d9",
+            "textMuted": "#8b949e", "textDimmed": "#6e7681", "primary": "#3b82f6",
+            "primaryHover": "#2563eb", "onPrimary": "#0d1117", "focusRing": "#58a6ff",
+            "danger": "#ff7b72", "dangerHover": "#f85149", "success": "#3fb950", "warning": "#d29922",
+            "link": "#58a6ff", "shadow": "rgb(1 4 9 / 0.45)", "scrollThumb": "#30363d",
+            "accent": "#58a6ff", "terminal": terminal
+        }
+    });
+    if !name.is_empty() {
+        theme["name"] = json!(name);
+    }
+    theme
+}
+
+#[test]
+fn nyaterm_theme_file() {
+    let text = serde_json::to_string_pretty(&nyaterm_theme("Night Owl", "Owl")).unwrap() + "\n";
+    let r = parse(&text, "nyaterm-theme.json");
+    assert_eq!(r.format, Some(SchemeFormat::NyaTerm));
+    let s = &r.schemes[0];
+    assert_eq!(s.name, "Night Owl");
+    assert_eq!(
+        (
+            s.background.as_str(),
+            s.foreground.as_str(),
+            s.cursor.as_str(),
+            s.selection_background.as_str()
+        ),
+        ("#202020", "#dddddd", "#ffcc00", "#264f78")
+    );
+    assert_eq!(s.ansi, P);
+}
+
+// 多个主题的数组（NyaTerm 自带主题的写法）；没有 name 时用简称 label
+#[test]
+fn nyaterm_theme_list() {
+    let list = json!([nyaterm_theme("One", "1"), nyaterm_theme("", "Two")]);
+    let r = parse_text(&list.to_string());
+    assert_eq!(r.format, Some(SchemeFormat::NyaTerm));
+    assert_eq!(names(&r), ["One", "Two"]);
+}
+
 // ---- 识别与容错 ----
 
 #[test]

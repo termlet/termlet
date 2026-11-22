@@ -295,6 +295,12 @@ backup_ui.import_error.not_netcatty:
   zh-TW: 不是 Netcatty 匯出的主機 CSV（缺少 Hostname/IP 欄）。請在 Netcatty 的主機頁點「匯出」取得 CSV 檔案。
   ja: Netcatty からエクスポートしたホストの CSV ではありません（Hostname/IP 列がありません）。Netcatty のホストページで「エクスポート」をクリックして CSV ファイルを作成してください。
   ko: Netcatty에서 내보낸 호스트 CSV가 아닙니다(Hostname/IP 열이 없음). Netcatty의 호스트 페이지에서 '내보내기'를 클릭해 CSV 파일을 만드세요.
+backup_ui.import_error.not_nyaterm:
+  zh-CN: 不是 NyaTerm 导出的快捷命令（%{error}）。请在 NyaTerm 的快捷命令面板点“导出快捷命令”得到 JSON 文件。
+  en: This isn’t a quick command file exported from NyaTerm (%{error}). Click “Export Commands” in NyaTerm’s Quick Commands panel to get the JSON file.
+  zh-TW: 不是 NyaTerm 匯出的快捷命令（%{error}）。請在 NyaTerm 的快捷命令面板按一下「匯出快捷命令」取得 JSON 檔案。
+  ja: NyaTerm からエクスポートしたクイックコマンドではありません（%{error}）。NyaTerm のクイックコマンドパネルで「コマンドをエクスポート」をクリックして JSON ファイルを作成してください。
+  ko: NyaTerm에서 내보낸 빠른 명령 파일이 아닙니다(%{error}). NyaTerm의 빠른 명령 패널에서 '명령 내보내기'를 클릭해 JSON 파일을 만드세요.
 
 backup_ui.failure.host:
   zh-CN: 主机“%{name}”没能导入：%{reason}
@@ -556,12 +562,24 @@ backup_ui.import.title:
   zh-TW: 匯入主機
   ja: ホストをインポート
   ko: 호스트 가져오기
+backup_ui.import.title_snippets:
+  zh-CN: 导入快捷命令
+  en: Import Snippets
+  zh-TW: 匯入快速指令
+  ja: スニペットをインポート
+  ko: 스니펫 가져오기
 backup_ui.import.hint:
   zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm 除外；Electerm、Netcatty 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
   en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora and WindTerm; for Electerm and Netcatty, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
   zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm 除外；Electerm、Netcatty 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
   ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm を除く。Electerm、Netcatty のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
   ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm 제외. Electerm, Netcatty의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
+backup_ui.import.hint_snippets:
+  zh-CN: 导入其他程序导出的快捷命令：分组、名称与内容按 Termlet 的写法转换，转换时丢掉或改动的内容在预览中列出。与已有快捷命令的名称、内容都相同的不重复导入。
+  en: Imports snippets exported from another program. Groups, names and contents are converted to Termlet’s format, and anything dropped or changed is listed in the preview. Snippets with the same name and content as existing ones aren’t imported again.
+  zh-TW: 匯入其他程式匯出的快速指令：群組、名稱與內容依 Termlet 的寫法轉換，轉換時捨棄或改動的內容會在預覽中列出。與現有快速指令名稱、內容都相同的不會重複匯入。
+  ja: ほかのプログラムからエクスポートしたスニペットをインポートします。グループ、名前、内容は Termlet の形式に変換され、変換で失われる内容や変更される内容はプレビューに表示されます。既存のスニペットと名前、内容が同じものは重複してインポートしません。
+  ko: 다른 프로그램에서 내보낸 스니펫을 가져옵니다. 그룹, 이름, 내용은 Termlet 형식으로 변환되며, 변환 중에 빠지거나 바뀌는 내용은 미리 보기에 표시됩니다. 기존 스니펫과 이름, 내용이 모두 같은 것은 다시 가져오지 않습니다.
 backup_ui.import.hint_hostfile:
   zh-CN: 导入另一台电脑或其他人的 Termlet 导出的主机。导入的主机不允许 AI 工具与脚本使用，需要时在主机设置中勾选；预览中标出了连接时在本机执行的代理命令、登录后在服务器上执行的命令与随主机导入的端口转发（导入的转发不会自动启动），导入前请确认来源可信。
   en: Import hosts exported from Termlet on another computer or by someone else. Imported hosts can’t be used by AI tools and scripts; enable it in the host settings if needed. The preview marks proxy commands (run on this computer when connecting), startup commands (run on the server after login) and port forwards imported with the hosts (they aren’t started automatically). Make sure the file comes from a trusted source.
@@ -628,6 +646,12 @@ backup_ui.import.source.netcatty:
   zh-TW: Netcatty 主機（匯出的 .csv）
   ja: Netcatty のホスト（エクスポートした .csv）
   ko: Netcatty 호스트(내보낸 .csv)
+backup_ui.import.source.nyaterm:
+  zh-CN: NyaTerm 快捷命令（导出的 .json）
+  en: NyaTerm quick commands (exported .json)
+  zh-TW: NyaTerm 快捷命令（匯出的 .json）
+  ja: NyaTerm のクイックコマンド（エクスポートした .json）
+  ko: NyaTerm 빠른 명령(내보낸 .json)
 backup_ui.import.source_hint.xshell:
   zh-CN: 选择 Xshell 的会话目录 Sessions（在 Xshell 的“工具 → 选项 → 常规”中可以看到会话的保存位置）。导入 SSH、Telnet 与串口会话，会话所在的子目录成为分组，编码、备注与端口转发一并导入（转发不会自动启动）；Xshell 自己加密的密码、用户密钥库中的私钥与代理不导入。
   en: Choose Xshell’s Sessions folder (Xshell shows where sessions are stored in Tools → Options → General). SSH, Telnet and serial sessions are imported; subfolders become groups, and encodings, descriptions and port forwards are kept (forwards aren’t started automatically). Passwords encrypted by Xshell, keys in its user key store and proxies aren’t imported.
@@ -670,6 +694,12 @@ backup_ui.import.source_hint.netcatty:
   zh-TW: 在 Netcatty 的主機頁點「匯出」，再選擇匯出的 CSV 檔案（hosts_export_….csv）。Netcatty 本機的資料用系統加密儲存，只能讀匯出的檔案。匯入 SSH 與 Telnet 主機，群組、標籤、備註、私密金鑰檔案路徑、代理與跳板機一併匯入；Netcatty 金鑰庫中的私密金鑰、身分與連接埠轉送不在匯出的檔案中。
   ja: Netcatty のホストページで「エクスポート」をクリックし、エクスポートした CSV ファイル（hosts_export_….csv）を選択してください。Netcatty はこのコンピューター上のデータをシステムの暗号化で保存しているため、読み取れるのはエクスポートしたファイルだけです。SSH と Telnet のホストをインポートし、グループ、タグ、メモ、秘密鍵ファイルのパス、プロキシ、踏み台ホストも一緒にインポートします。Netcatty の鍵ライブラリにある秘密鍵、ID、ポート転送はエクスポートしたファイルに含まれません。
   ko: Netcatty의 호스트 페이지에서 '내보내기'를 클릭한 다음 내보낸 CSV 파일(hosts_export_….csv)을 선택하세요. Netcatty는 이 컴퓨터의 데이터를 시스템 암호화로 저장하므로 내보낸 파일만 읽을 수 있습니다. SSH와 Telnet 호스트를 가져오며 그룹, 태그, 메모, 개인 키 파일 경로, 프록시, 점프 호스트도 함께 가져옵니다. Netcatty 키 라이브러리의 개인 키, ID, 포트 포워딩은 내보낸 파일에 들어 있지 않습니다.
+backup_ui.import.source_hint.nyaterm:
+  zh-CN: 在 NyaTerm 的快捷命令面板右上角点“导出快捷命令”，再选择导出的 JSON 文件（nyaterm-quick-commands.json，默认保存在 NyaTerm 的配置目录 ~/.nyaterm 中）。NyaTerm 不导出主机，这里只导入快捷命令与它们的分类。
+  en: In NyaTerm, click “Export Commands” at the top right of the Quick Commands panel, then choose the exported JSON file (nyaterm-quick-commands.json, saved in NyaTerm’s config folder ~/.nyaterm by default). NyaTerm doesn’t export hosts, so only the quick commands and their categories are imported.
+  zh-TW: 在 NyaTerm 的快捷命令面板右上角按一下「匯出快捷命令」，再選擇匯出的 JSON 檔案（nyaterm-quick-commands.json，預設儲存在 NyaTerm 的設定目錄 ~/.nyaterm 中）。NyaTerm 不匯出主機，這裡只匯入快捷命令與它們的分類。
+  ja: NyaTerm のクイックコマンドパネル右上の「コマンドをエクスポート」をクリックし、エクスポートした JSON ファイル（nyaterm-quick-commands.json。既定では NyaTerm の設定フォルダー ~/.nyaterm に保存されます）を選択してください。NyaTerm はホストをエクスポートしないため、クイックコマンドとそのカテゴリだけをインポートします。
+  ko: NyaTerm의 빠른 명령 패널 오른쪽 위에서 '명령 내보내기'를 클릭한 후 내보낸 JSON 파일(nyaterm-quick-commands.json, 기본적으로 NyaTerm 설정 폴더 ~/.nyaterm에 저장됨)을 선택하세요. NyaTerm은 호스트를 내보내지 않으므로 빠른 명령과 그 범주만 가져옵니다.
 backup_ui.import.path_placeholder:
   zh-CN: 文件或文件夹的路径
   en: File or folder path
@@ -784,6 +814,12 @@ backup_ui.import.column.group:
   zh-TW: 群組
   ja: グループ
   ko: 그룹
+backup_ui.import.column.content:
+  zh-CN: 内容
+  en: Content
+  zh-TW: 內容
+  ja: 内容
+  ko: 내용
 backup_ui.import.column.status:
   zh-CN: 状态
   en: Status
@@ -904,6 +940,84 @@ backup_ui.import.snippets:
   zh-TW: 還會匯入 %{count} 條快速指令（與現有的名稱、內容都相同的不重複匯入）。
   ja: スニペット %{count} 件もインポートします（名前と内容が既存のものと同じスニペットは重複してインポートしません）。
   ko: 스니펫 %{count}개도 가져옵니다(이름과 내용이 모두 기존 스니펫과 같은 것은 중복으로 가져오지 않음).
+backup_ui.import.snippet_count:
+  zh-CN: 文件中有 %{count} 条快捷命令，全部导入，不用勾选。
+  en: "Snippets in the file: %{count}. All of them are imported; there’s nothing to select."
+  zh-TW: 檔案中有 %{count} 條快速指令，全部匯入，不用勾選。
+  ja: ファイルにはスニペットが %{count} 件あります。すべてインポートするため、選択は不要です。
+  ko: 파일에 스니펫이 %{count}개 있습니다. 모두 가져오므로 선택할 필요가 없습니다.
+backup_ui.import.snippets_none:
+  zh-CN: 文件中没有可以导入的快捷命令。
+  en: The file has no snippets that can be imported.
+  zh-TW: 檔案中沒有可以匯入的快速指令。
+  ja: ファイルにはインポートできるスニペットがありません。
+  ko: 파일에 가져올 수 있는 스니펫이 없습니다.
+backup_ui.import.snippet_lines:
+  zh-CN: 共 %{count} 行
+  en: "%{count} lines"
+  zh-TW: 共 %{count} 行
+  ja: "%{count} 行"
+  ko: "%{count}줄"
+backup_ui.import.snippet_note.pauses:
+  zh-CN: "%{count} 条含暂停（\\p）：Termlet 没有暂停，已去掉，导入后连续发送。"
+  en: "With pauses (\\p): %{count}. Termlet has no pauses, so they were removed and the text is sent without waiting."
+  zh-TW: "%{count} 條含暫停（\\p）：Termlet 沒有暫停，已移除，匯入後連續傳送。"
+  ja: "%{count} 件に一時停止（\\p）があります。Termlet には一時停止がないため削除し、待たずに続けて送信します。"
+  ko: "%{count}개에 일시 정지(\\p)가 있습니다. Termlet에는 일시 정지가 없으므로 제거되며, 기다리지 않고 이어서 보냅니다."
+backup_ui.import.snippet_note.options:
+  zh-CN: "%{count} 条的变量有下拉选项：Termlet 没有下拉选项，只保留第一个作为默认值。"
+  en: "With variables that have a list of options: %{count}. Termlet has no option lists, so only the first option is kept, as the default value."
+  zh-TW: "%{count} 條的變數有下拉選項：Termlet 沒有下拉選項，只保留第一個作為預設值。"
+  ja: "%{count} 件の変数に選択肢があります。Termlet には選択肢がないため、最初の選択肢だけを既定値として残します。"
+  ko: "%{count}개의 변수에 선택 목록이 있습니다. Termlet에는 선택 목록이 없으므로 첫 번째 항목만 기본값으로 남깁니다."
+backup_ui.import.snippet_note.unknown_params:
+  zh-CN: "%{count} 条中有 Termlet 认不出的变量（如 {{.Names}}）：按原文发送，发送前不会要求填写。"
+  en: "With variables Termlet doesn’t recognize (such as {{.Names}}): %{count}. They’re sent as written, without asking for a value."
+  zh-TW: "%{count} 條中有 Termlet 無法辨識的變數（如 {{.Names}}）：依原文傳送，傳送前不會要求填寫。"
+  ja: "%{count} 件に Termlet が認識できない変数（{{.Names}} など）があります。そのまま送信し、送信前に入力は求めません。"
+  ko: "%{count}개에 Termlet이 인식할 수 없는 변수({{.Names}} 등)가 있습니다. 그대로 보내며, 보내기 전에 값을 묻지 않습니다."
+backup_ui.import.snippet_note.literal_params:
+  zh-CN: "%{count} 条在 NyaTerm 中原样发送，其中的 {{…}} 在 Termlet 中会当作参数，发送前要填写。"
+  en: "Sent as written in NyaTerm: %{count}. Termlet treats the {{…}} in them as parameters and asks for values before sending."
+  zh-TW: "%{count} 條在 NyaTerm 中依原文傳送，其中的 {{…}} 在 Termlet 中會當作參數，傳送前要填寫。"
+  ja: "%{count} 件は NyaTerm ではそのまま送信されますが、Termlet では中の {{…}} をパラメーターとして扱い、送信前に入力を求めます。"
+  ko: "%{count}개는 NyaTerm에서 그대로 보내지만, Termlet에서는 그 안의 {{…}}를 매개 변수로 보고 보내기 전에 값을 묻습니다."
+backup_ui.import.snippet_note.paced:
+  zh-CN: "%{count} 条设置了逐行或逐字发送：间隔不保留，导入后一次发送。"
+  en: "Set to be sent line by line or character by character: %{count}. The interval isn’t kept; they’re sent all at once."
+  zh-TW: "%{count} 條設定了逐行或逐字傳送：間隔不保留，匯入後一次傳送。"
+  ja: "%{count} 件は 1 行ずつまたは 1 文字ずつ送信する設定です。間隔は保持されず、まとめて送信します。"
+  ko: "%{count}개는 한 줄씩 또는 한 글자씩 보내도록 설정되어 있습니다. 간격은 유지되지 않으며 한 번에 보냅니다."
+backup_ui.import.snippet_note.nested_groups:
+  zh-CN: "%{count} 条在嵌套的分类中：Termlet 的分组只有一层，写成“上级 / 下级”。"
+  en: "In nested categories: %{count}. Termlet groups have only one level, so they’re written as “Parent / Child”."
+  zh-TW: "%{count} 條在巢狀的分類中：Termlet 的群組只有一層，寫成「上層 / 下層」。"
+  ja: "%{count} 件は入れ子のカテゴリにあります。Termlet のグループは 1 階層だけのため、「親 / 子」と書きます。"
+  ko: "%{count}개는 중첩된 범주에 있습니다. Termlet의 그룹은 한 단계뿐이므로 '상위 / 하위'로 씁니다."
+backup_ui.import.snippet_note.descriptions:
+  zh-CN: "%{count} 条的说明不导入（Termlet 的快捷命令没有说明）。"
+  en: "With descriptions: %{count}. Descriptions aren’t imported (Termlet snippets have none)."
+  zh-TW: "%{count} 條的說明不匯入（Termlet 的快速指令沒有說明）。"
+  ja: "%{count} 件の説明はインポートしません（Termlet のスニペットには説明がありません）。"
+  ko: "%{count}개의 설명은 가져오지 않습니다(Termlet 스니펫에는 설명이 없음)."
+backup_ui.import.snippet_note.decorations:
+  zh-CN: "%{count} 条的颜色、图标、置顶或风险等级不导入。"
+  en: "With colors, icons, pinning or risk levels: %{count}. These aren’t imported."
+  zh-TW: "%{count} 條的顏色、圖示、置頂或風險等級不匯入。"
+  ja: "%{count} 件の色、アイコン、ピン留め、リスクレベルはインポートしません。"
+  ko: "%{count}개의 색, 아이콘, 고정, 위험 수준은 가져오지 않습니다."
+backup_ui.import.snippet_note.skipped:
+  zh-CN: "%{count} 条为空、过长或格式不对，已跳过。"
+  en: "Skipped because they’re empty, too long or not in the expected format: %{count}."
+  zh-TW: "%{count} 條為空、過長或格式不對，已略過。"
+  ja: "%{count} 件は空、長すぎる、または形式が正しくないためスキップしました。"
+  ko: "%{count}개는 비어 있거나 너무 길거나 형식이 맞지 않아 건너뛰었습니다."
+backup_ui.import.snippet_note.duplicates:
+  zh-CN: 与已有快捷命令的名称、内容都相同的不重复导入；名称相同、内容不同的作为新的一条加入，不覆盖原来的。
+  en: Snippets with the same name and content as existing ones aren’t imported again. Ones with the same name but different content are added as new snippets; existing ones aren’t replaced.
+  zh-TW: 與現有快速指令名稱、內容都相同的不會重複匯入；名稱相同、內容不同的會作為新的一條加入，不覆寫原有的。
+  ja: 既存のスニペットと名前、内容が同じものは重複してインポートしません。名前が同じで内容が異なるものは新しいスニペットとして追加し、既存のものは上書きしません。
+  ko: 기존 스니펫과 이름, 내용이 모두 같은 것은 다시 가져오지 않습니다. 이름은 같고 내용이 다른 것은 새 스니펫으로 추가하며, 기존 스니펫을 덮어쓰지 않습니다.
 backup_ui.import.import_secrets:
   zh-CN: 导入保存的密码
   en: Import saved passwords
@@ -946,6 +1060,12 @@ backup_ui.import.apply:
   zh-TW: 匯入 %{count} 台
   ja: "%{count} 台をインポート"
   ko: "%{count}대 가져오기"
+backup_ui.import.apply_snippets:
+  zh-CN: 导入 %{count} 条
+  en: Import %{count}
+  zh-TW: 匯入 %{count} 條
+  ja: "%{count} 件をインポート"
+  ko: "%{count}개 가져오기"
 backup_ui.import.done:
   zh-CN: 导入完成：新建 %{created} 台，合并 %{merged} 台，跳过 %{skipped} 台。
   en: "Import finished: %{created} new, %{merged} merged, %{skipped} skipped."
@@ -958,6 +1078,18 @@ backup_ui.import.snippets_done:
   zh-TW: 新增 %{count} 條快速指令。
   ja: スニペットを %{count} 件追加しました。
   ko: 스니펫 %{count}개를 추가했습니다.
+backup_ui.import.snippets_only_done:
+  zh-CN: 导入完成：新增 %{count} 条快捷命令。
+  en: "Import finished. Snippets added: %{count}."
+  zh-TW: 匯入完成：新增 %{count} 條快速指令。
+  ja: インポートが完了しました：スニペットを %{count} 件追加しました。
+  ko: "가져오기 완료: 스니펫 %{count}개를 추가했습니다."
+backup_ui.import.snippets_skipped:
+  zh-CN: "%{count} 条与已有的快捷命令相同，没有重复添加。"
+  en: "Same as existing snippets, not added again: %{count}."
+  zh-TW: "%{count} 條與現有的快速指令相同，沒有重複新增。"
+  ja: "%{count} 件のスニペットは既存のものと同じため、重複して追加しませんでした。"
+  ko: 스니펫 %{count}개는 기존 스니펫과 같아 다시 추가하지 않았습니다.
 backup_ui.import.passwords_filled:
   zh-CN: 为 %{count} 台已有的主机补上了还没保存的密码。
   en: Filled in missing passwords for %{count} existing hosts.

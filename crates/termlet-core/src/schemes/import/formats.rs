@@ -245,7 +245,7 @@ fn iterm_variants(colors: &HashMap<String, ItermColor>, ctx: &Ctx) -> Vec<Raw> {
         .collect()
 }
 
-// ---- JSON：Windows Terminal、Gogh、base16、Tabby ----
+// ---- JSON：Windows Terminal、Gogh、base16、Tabby、NyaTerm ----
 
 /// 开头（跳过空白与 `#`、`//` 注释行）是 `[` 或 `{`。只看前 4096 字节。
 fn starts_like_json(text: &str) -> bool {
@@ -353,6 +353,36 @@ fn base16_scheme(o: Obj<'_>) -> Raw {
     raw
 }
 
+/// NyaTerm 主题设计器导出的 `nyaterm-theme.json`（格式按 NyaTerm 提交 daedb58 的 `crates/nyaterm-core/src/themes/mod.rs`
+/// 中的 `ThemeConfig`）：界面颜色在 `colors` 下，终端的颜色在 `colors.terminal` 下。也接受多个主题的数组
+/// （NyaTerm 自带主题的写法）。
+fn nyaterm_terminal<'t>(o: &Obj<'t>) -> Option<Obj<'t>> {
+    let terminal = o.obj("colors")?.obj("terminal")?;
+    (terminal.has("background") || terminal.has("black")).then_some(terminal)
+}
+
+/// 名称取 `name`（如 GitHub Dark），没有时取简称 `label`；终端的 `black`…`brightWhite`、`background`、`foreground`、
+/// `cursor`、`selectionBackground`（`foregroundIntense`、`lineHighlight`、`findMatch*` 没有对应项，不用）。
+fn nyaterm_scheme(o: Obj<'_>) -> Raw {
+    let Some(t) = nyaterm_terminal(&o) else {
+        return Raw::default();
+    };
+    let mut raw = Raw {
+        name: o.str("name").or_else(|| o.str("label")),
+        foreground: t.str("foreground"),
+        background: t.str("background"),
+        cursor: t.str("cursor"),
+        selection_background: t.str("selectionBackground"),
+        ..Raw::default()
+    };
+    for (i, n) in ANSI_NAMES.into_iter().enumerate() {
+        let cap = format!("{}{}", n[..1].to_uppercase(), &n[1..]);
+        raw.ansi[i] = t.str(n);
+        raw.ansi[i + 8] = t.str(&format!("bright{cap}"));
+    }
+    raw
+}
+
 /// Tabby：配色对象为 `{ name, foreground, background, cursor, colors[16], selection, ... }`。
 fn looks_tabby(o: &Obj<'_>) -> bool {
     o.seq("colors").is_some_and(|c| c.len() >= 8) && (o.has("foreground") || o.has("background"))
@@ -454,6 +484,14 @@ pub(super) fn json(text: &str, _: &mut Ctx) -> Option<Detected> {
     };
     let list: Vec<Obj<'_>> = items.into_iter().filter_map(|id| tree.obj(id)).collect();
     let head = list.first()?;
+    if nyaterm_terminal(head).is_some() {
+        let raws = list
+            .into_iter()
+            .filter(|o| nyaterm_terminal(o).is_some())
+            .map(nyaterm_scheme)
+            .collect();
+        return detected(SchemeFormat::NyaTerm, raws);
+    }
     if head.has("color_01") {
         return detected(
             SchemeFormat::Gogh,

@@ -35,6 +35,11 @@ fn param_name(raw: &str, go_template: bool) -> Option<&str> {
     Some(name)
 }
 
+/// `name` 能作为参数名（其他程序的模板转换成 Termlet 的写法时用）。
+pub fn is_param_name(name: &str) -> bool {
+    NAME.is_match(name)
+}
+
 /// 内容中的参数，按第一次出现的顺序。
 pub fn snippet_params(content: &str) -> Vec<SnippetParam> {
     let go_template = GO_BLOCK.is_match(content);

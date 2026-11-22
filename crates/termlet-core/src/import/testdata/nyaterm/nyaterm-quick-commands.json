@@ -1,0 +1,191 @@
+{
+  "categories": [
+    {
+      "id": "ops",
+      "name": "运维",
+      "sort_order": 0
+    },
+    {
+      "id": "k8s",
+      "name": "Kubernetes",
+      "parent_id": "ops",
+      "sort_order": 1
+    },
+    {
+      "id": "net",
+      "name": "网络设备",
+      "sort_order": 2
+    },
+    {
+      "id": "orphan",
+      "name": "孤儿",
+      "parent_id": "gone",
+      "sort_order": 3
+    },
+    {
+      "id": "loop-a",
+      "name": "环 A",
+      "parent_id": "loop-b",
+      "sort_order": 4
+    },
+    {
+      "id": "loop-b",
+      "name": "环 B",
+      "parent_id": "loop-a",
+      "sort_order": 5
+    }
+  ],
+  "commands": [
+    {
+      "id": "cmd-disk",
+      "label": "磁盘",
+      "command": "df -h",
+      "category_id": "ops",
+      "description": "看磁盘用量",
+      "color_tag": "blue",
+      "icon_tag": "linux",
+      "pinned": false,
+      "execution_mode": "execute",
+      "source": "manual",
+      "risk_level": "low",
+      "sort_order": 2
+    },
+    {
+      "id": "cmd-logs",
+      "label": "日志",
+      "command": "kubectl logs -f {{pod}} -c {{容器|app, sidecar}}",
+      "category_id": "k8s",
+      "pinned": false,
+      "execution_mode": "append",
+      "sort_order": 1
+    },
+    {
+      "id": "cmd-pods",
+      "label": "看 Pod",
+      "command": "kubectl get pods -n {{命名空间=default}}",
+      "category_id": "k8s",
+      "pinned": true,
+      "execution_mode": "execute",
+      "sort_order": 5
+    },
+    {
+      "id": "cmd-login",
+      "label": "登录交换机",
+      "command": "admin\\r\\p\nsecret\\r\\p\r\ndisplay version",
+      "category_id": "net",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-line",
+      "label": "逐行",
+      "command": "show run\nshow ip int brief",
+      "category_id": "net",
+      "pinned": false,
+      "execution_mode": "append",
+      "segmented_send": {
+        "interval_ms": 1000,
+        "mode": "line",
+        "version": 1
+      }
+    },
+    {
+      "id": "cmd-escape",
+      "label": "转义",
+      "command": "printf 'a\\tb\\\\n' | grep -E '\\d+' > C:\\Users\\x.txt",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-raw",
+      "label": "原样",
+      "command": "echo {{name}} \\r",
+      "pinned": false,
+      "execution_mode": "execute",
+      "raw_send": true
+    },
+    {
+      "id": "cmd-char",
+      "label": "逐字",
+      "command": "y",
+      "pinned": false,
+      "execution_mode": "append",
+      "segmented_send": {
+        "interval_ms": 20,
+        "mode": "character",
+        "version": 1
+      }
+    },
+    {
+      "id": "cmd-go",
+      "label": "Docker 名称",
+      "command": "docker ps --format '{{.Names}}'",
+      "pinned": false,
+      "execution_mode": "execute",
+      "source": "ai",
+      "risk_level": "medium"
+    },
+    {
+      "id": "cmd-orphan",
+      "label": "孤儿分类",
+      "command": "uptime",
+      "category_id": "orphan",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-loop",
+      "label": "成环的分类",
+      "command": "w",
+      "category_id": "loop-a",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-missing",
+      "label": "分类已删除",
+      "command": "id",
+      "category_id": "deleted-group",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-multi",
+      "label": "多行",
+      "command": "cd /srv/app\ngit pull\n",
+      "pinned": false,
+      "execution_mode": "append"
+    },
+    {
+      "id": "cmd-pause-only",
+      "label": "只有暂停",
+      "command": "\\p\\p",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-blank",
+      "label": "空",
+      "command": "  \n ",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-bad",
+      "label": 3,
+      "command": "echo bad",
+      "pinned": false,
+      "execution_mode": "execute"
+    },
+    {
+      "id": "cmd-future",
+      "label": "新版本的字段",
+      "command": "echo 未来",
+      "pinned": false,
+      "execution_mode": "execute",
+      "future_property": {
+        "keep": true
+      }
+    }
+  ]
+}

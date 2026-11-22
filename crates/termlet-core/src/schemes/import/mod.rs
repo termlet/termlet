@@ -1,5 +1,5 @@
 //! 导入终端配色：自动识别 Windows Terminal、iTerm2、Xshell、MobaXterm、base16 / base24、Alacritty、Kitty、
-//! Ghostty、Xresources、Tabby、Gogh 等格式并解析出配色。
+//! Ghostty、Xresources、Tabby、Gogh、NyaTerm 等格式并解析出配色。
 //!
 //! 格式以内容为准，文件扩展名只决定先试哪种格式。输入不可信：限制文本大小与配色数量；解析不递归（或限制深度），
 //! 正则都是线性时间的；坏输入只会得到空结果和提示，不会出错。YAML、TOML 用只解析配色所需部分的宽容解析器
@@ -42,6 +42,8 @@ pub enum SchemeFormat {
     Xresources,
     Tabby,
     Gogh,
+    /// NyaTerm 主题设计器导出的 `nyaterm-theme.json`
+    NyaTerm,
 }
 
 /// 配色中的一项颜色（导入提示中指出哪一项有问题）。

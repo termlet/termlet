@@ -21,10 +21,41 @@ pub struct ImportPlan {
     pub hosts: Vec<PlannedHost>,
     /// 要存进密钥库的私钥（只有 Termora 有）
     pub keys: Vec<PlannedKey>,
-    /// 快捷命令（WindTerm）：随勾选的主机一起导入，与已有的（名称、内容都相同）不重复导入
+    /// 快捷命令（WindTerm、NyaTerm）：随勾选的主机一起导入（NyaTerm 的文件中只有快捷命令），与已有的
+    /// （名称、内容都相同）不重复导入
     pub snippets: Vec<Snippet>,
-    /// 来源中跳过的会话数：RDP、VNC 等不支持的会话，缺少地址的会话，以及无法解密的记录
+    /// 快捷命令转换时丢掉或改动的内容（NyaTerm），预览中说明
+    pub snippet_notes: SnippetNotes,
+    /// 来源中跳过的会话数：RDP、VNC 等不支持的会话，缺少地址的会话，以及无法解密的记录；NyaTerm 为跳过的快捷命令数
     pub skipped: usize,
+}
+
+/// 快捷命令从其他程序的写法转换过来时丢掉或改动的内容：各项是涉及的快捷命令条数（NyaTerm）。
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SnippetNotes {
+    /// 去掉了暂停（`\p`）：Termlet 没有暂停，导入后连续发送
+    pub pauses: usize,
+    /// 变量的下拉选项只保留了第一个，作为默认值
+    pub options: usize,
+    /// 有 Termlet 认不出的变量（名称中有 `/`、`:` 等），按原文保留
+    pub unknown_params: usize,
+    /// 原样发送（不替换变量）的命令中有 `{{…}}`，在 Termlet 中会当作参数填写
+    pub literal_params: usize,
+    /// 设置了逐行、逐字发送：间隔不保留，导入后一次发送
+    pub paced: usize,
+    /// 有说明：不导入
+    pub descriptions: usize,
+    /// 有颜色、图标、置顶或风险等级：不导入
+    pub decorations: usize,
+    /// 在嵌套的分类中：分组合成一层，写成“上级 / 下级”
+    pub nested_groups: usize,
+}
+
+impl SnippetNotes {
+    /// 没有丢掉或改动任何内容。
+    pub fn is_empty(&self) -> bool {
+        *self == SnippetNotes::default()
+    }
 }
 
 impl ImportPlan {
@@ -35,6 +66,7 @@ impl ImportPlan {
             hosts: Vec::new(),
             keys: Vec::new(),
             snippets: Vec::new(),
+            snippet_notes: SnippetNotes::default(),
             skipped: 0,
         }
     }
@@ -444,6 +476,10 @@ impl PlanBuilder {
 
     pub fn add_snippet(&mut self, snippet: Snippet) {
         self.plan.snippets.push(snippet);
+    }
+
+    pub fn snippet_notes_mut(&mut self) -> &mut SnippetNotes {
+        &mut self.plan.snippet_notes
     }
 
     pub fn hosts(&self) -> &[PlannedHost] {

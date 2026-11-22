@@ -91,6 +91,7 @@ enum Op {
     HostToolsPopOut,
     SnippetBar,
     ImportHosts,
+    ImportSnippets,
     ExportHosts,
     Audit,
     LockNow,
@@ -142,6 +143,7 @@ impl Op {
             | Op::ChangeScheme
             | Op::Settings
             | Op::ImportHosts
+            | Op::ImportSnippets
             | Op::ExportHosts
             | Op::Audit
             | Op::LockNow
@@ -390,6 +392,7 @@ impl CommandPalette {
                 (Op::Forwards, t!("palette.op.forwards"), true),
                 (Op::Highlight, t!("palette.op.highlight"), true),
                 (Op::ImportHosts, t!("hosts.toolbar.import"), true),
+                (Op::ImportSnippets, t!("snippets.import"), true),
                 (Op::ExportHosts, t!("hosts.toolbar.export"), true),
                 (Op::Audit, t!("palette.op.audit"), true),
                 (
@@ -546,6 +549,7 @@ impl CommandPalette {
                 Op::ChangeScheme => schemes::picker::open(self.current.clone(), window, cx),
                 Op::Settings => settings::open(settings::Page::General, window, cx),
                 Op::ImportHosts => crate::backup_ui::open_import(window, cx),
+                Op::ImportSnippets => crate::backup_ui::open_import_snippets(window, cx),
                 Op::ExportHosts => crate::backup_ui::open_export(Vec::new(), window, cx),
                 Op::Audit => crate::cli_ui::open_audit(window, cx),
                 Op::LockNow => {

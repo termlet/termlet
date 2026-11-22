@@ -384,6 +384,16 @@ impl Render for SnippetList {
                                 editor::open_new(String::new(), String::new(), window, cx)
                             }),
                     )
+                    .child(
+                        Button::new("snippet-import")
+                            .ghost()
+                            .small()
+                            .icon(IconName::Download)
+                            .tooltip(t!("snippets.import"))
+                            .on_click(|_, window, cx| {
+                                crate::backup_ui::open_import_snippets(window, cx)
+                            }),
+                    )
                     .child({
                         let open = super::bar::is_open(cx);
                         Button::new("snippet-bar-toggle")

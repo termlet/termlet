@@ -269,6 +269,7 @@
   - WindTerm（程序目录、`.wind` 数据目录或其中的 `user.sessions`，设了主密码时要输入）
   - Electerm（导出的书签 `.json`，3.0 以前的版本也可以选数据目录）
   - Netcatty（主机页导出的 `.csv`）
+  - NyaTerm（快捷命令面板导出的 `.json`，只有快捷命令，见下）
 - 预览：
   - 选好来源后自动预览。
   - 同一地址、端口与用户名的主机可选择合并或跳过。
@@ -308,6 +309,12 @@
   - 在 Netcatty 的主机页点“导出”得到的 CSV（`hosts_export_….csv`），默认填入“下载”“桌面”“文档”中最新的一份。Netcatty 本机的数据用系统加密保存，只能读导出的文件。
   - 导入 SSH 与 Telnet 主机，分组、标签、备注、私钥文件路径、代理（HTTP、SOCKS5、代理命令）与跳板机（多级时只取最后一跳）一并导入。
   - Netcatty 密钥库中的私钥、身份与端口转发不在导出的文件中。
+- **NyaTerm 的快捷命令**：
+  - 在 NyaTerm 的快捷命令面板右上角点“导出快捷命令”得到的 JSON（`nyaterm-quick-commands.json`），默认填入 NyaTerm 配置目录（`~/.nyaterm`）中的那份，没有时填入“下载”“桌面”“文档”中最新的一份。快捷命令页的“导入快捷命令…”（或命令面板）打开时已选好这个来源，标题为“导入快捷命令”。
+  - NyaTerm 不导出主机（主机只在它加密的完整备份中），这里只导入快捷命令。预览列出全部快捷命令，不用勾选；与已有的名称、内容都相同的不重复导入，名称相同、内容不同的作为新的一条加入（不覆盖原来的）。
+  - 分类成为分组，嵌套的分类写成“上级 / 下级”；置顶的排在同一分组的前面。
+  - 命令按 NyaTerm 的规则转换：`\r`、`\n` 成为换行，`\t` 成为制表符，`\\` 成为一个反斜杠，其他反斜杠原样；变量 `{{名=默认值}}` 改为 `{{名:默认值}}`；“执行”与逐行发送的在末尾加换行（发送后立即执行），“追加到输入行”与逐字发送的不加；NyaTerm 中原样发送的命令内容不变。
+  - 丢掉或改动的内容在预览中逐项说明：暂停 `\p`（Termlet 没有暂停，去掉后连续发送）、下拉选项 `{{名|甲,乙}}`（只保留第一个作默认值）、逐行或逐字发送的间隔、Termlet 认不出的变量（按原文发送）、原样发送的命令中会被当作参数的 `{{…}}`、说明、颜色、图标、置顶与风险等级。
 - **Electerm、Netcatty 中保存的密码**：
   - Electerm 的导出文件与 Netcatty 的 CSV 中密码、私钥是明文。
   - 预览下方有“导入保存的密码”，默认不勾选（只导入主机，连接时再输入）。
@@ -607,6 +614,7 @@
   - 名称由文字、数字、下划线组成，中间可以有空格、点、连字符。
   - `{{.Names}}` 这类 docker、kubectl 的 Go 模板原样发送。
 - 快捷命令在侧边栏的"快捷命令"中管理（勾选"发送后立即执行"即在末尾加回车），可归入分组。
+- 可以导入 NyaTerm 导出的快捷命令（快捷命令页的"导入快捷命令…"，见[导入主机](#导入主机)中的 NyaTerm）。
 - **快捷命令栏**：也可以在终端下方显示一行快捷命令栏（快捷命令页的按钮或命令面板的"显示快捷命令栏"，默认不显示）。
   - 单击按钮发送到当前终端。
   - 有分组时可只显示某个分组。
@@ -740,7 +748,7 @@
 - 开启了深浅色切换通知（DEC 2031）的程序（Claude Code、Neovim 等），在终端配色的背景在深浅之间变了时收到通知，跟着切换自己的配色。
 - 内置 39 套（Solarized、Catppuccin、Tokyo Night、Gruvbox、Dracula、Nord、One Dark Pro、Ayu、VS Code、Monokai (VS Code) 等，每套注明来源与许可）。
 - 卡片上用你的字体预览，并标出在这套背景上看不清的颜色；可开启"保证文字可读"。
-- 可以导入 Windows Terminal、iTerm2（`.itermcolors`）、Xshell（`.xcs`）、MobaXterm、base16、Alacritty、Kitty、Ghostty、Xresources、Tabby、Gogh 的配色（拖入、选择文件或粘贴，自动识别格式），也能直接读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色；配色库搜索不到时，下面也有这两个入口。
+- 可以导入 Windows Terminal、iTerm2（`.itermcolors`）、Xshell（`.xcs`）、MobaXterm、base16、Alacritty、Kitty、Ghostty、Xresources、Tabby、Gogh、NyaTerm（主题设计器导出的 `nyaterm-theme.json`）的配色（拖入、选择文件或粘贴，自动识别格式），也能直接读取本机已装的 Windows Terminal、Xshell、MobaXterm、Tabby 中的配色；配色库搜索不到时，下面也有这两个入口。
 - 可导出为 Windows Terminal JSON 或 `.itermcolors`。
 - 复制为自定义配色后可以逐色编辑。
 - 主机设置的"终端"页、分组可以指定一套固定的配色（例如让生产环境一眼认出）。

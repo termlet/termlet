@@ -718,3 +718,174 @@ fn schedule_is_set_up_and_runs_now(cx: &mut TestAppContext) {
     assert!(schedule.status().config.is_none());
     assert_eq!(std::fs::read_dir(&dir.0).unwrap().count(), 3);
 }
+
+/// NyaTerm 导出的快捷命令（按 NyaTerm 提交 daedb58 的 `QuickCommandsExportConfig` 手写，只留测试要用的几条）：
+/// 一条与已有的相同，一条含暂停，一条在嵌套的分类中、变量有下拉选项，一条为空。
+const NYATERM_EXPORT: &str = r#"{
+  "categories": [
+    { "id": "ops", "name": "运维", "sort_order": 0 },
+    { "id": "k8s", "name": "Kubernetes", "parent_id": "ops", "sort_order": 1 }
+  ],
+  "commands": [
+    { "id": "a", "label": "磁盘", "command": "df -h", "category_id": "ops", "description": "看磁盘",
+      "pinned": false, "execution_mode": "execute" },
+    { "id": "b", "label": "登录", "command": "admin\\r\\psecret", "pinned": false, "execution_mode": "execute" },
+    { "id": "c", "label": "日志", "command": "kubectl logs {{pod}} -c {{容器|app,sidecar}}", "category_id": "k8s",
+      "pinned": false, "execution_mode": "append" },
+    { "id": "d", "label": "空", "command": " ", "pinned": false, "execution_mode": "execute" }
+  ]
+}"#;
+
+fn snippets_in_store(cx: &mut TestAppContext) -> Vec<(String, String, String)> {
+    cx.update(|cx| {
+        AppState::store(cx)
+            .list::<Snippet>()
+            .into_iter()
+            .map(|s| (s.doc.group, s.doc.name, s.doc.content))
+            .collect()
+    })
+}
+
+fn add_snippet(cx: &mut TestAppContext, group: &str, name: &str, content: &str) {
+    cx.update(|cx| {
+        AppState::store(cx)
+            .create(
+                Snippet {
+                    name: name.into(),
+                    content: content.into(),
+                    group: group.into(),
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+    });
+}
+
+// 快捷命令页的“导入快捷命令…”：打开导入对话框并选好 NyaTerm；预览列出快捷命令与说明，不用勾选就能导入，
+// 与已有的相同的跳过
+#[gpui_kit::test]
+fn nyaterm_snippets_from_the_snippets_page(cx: &mut TestAppContext) {
+    open(cx, false);
+    let dir = TempDir::new("nyaterm");
+    let file = dir.path("nyaterm-quick-commands.json");
+    std::fs::write(&file, NYATERM_EXPORT).unwrap();
+    add_snippet(cx, "运维", "磁盘", "df -h\n");
+    let handle = cx
+        .update(|cx| {
+            gpui_kit::open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::new(
+                        Default::default(),
+                        size(px(1024.), px(720.)),
+                    ))),
+                    ..Default::default()
+                },
+                cx,
+                |window, cx| cx.new(|cx| crate::snippets::list::SnippetList::new(window, cx)),
+            )
+        })
+        .unwrap()
+        .0;
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("snippet-import", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let path = file.display().to_string();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(exists(window, "import-dialog"));
+        type_into(window, cx, "import-path", &path);
+        window.click("import-preview", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "预览列出快捷命令", |window, _| {
+        exists(window, "import-snippets-list") && exists(window, "import-snippet-notes")
+    });
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(!exists(window, "import-search"), "没有主机的搜索与勾选");
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done") && exists(window, "import-snippets-skipped")
+    });
+    assert_eq!(
+        snippets_in_store(cx),
+        [
+            ("运维".into(), "磁盘".into(), "df -h\n".into()),
+            ("".into(), "登录".into(), "admin\nsecret\n".into()),
+            (
+                "运维 / Kubernetes".into(),
+                "日志".into(),
+                "kubectl logs {{pod}} -c {{容器:app}}".into()
+            ),
+        ]
+    );
+}
+
+// 预览中的转换说明与跳过数；标题随来源；不是 NyaTerm 的文件给出说明；结果中新增与相同的数量
+#[gpui_kit::test]
+fn nyaterm_preview_lists_what_is_dropped_or_changed(cx: &mut TestAppContext) {
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("nyaterm-notes");
+    let file = dir.path("nyaterm-quick-commands.json");
+    std::fs::write(&file, NYATERM_EXPORT).unwrap();
+    let wrong = dir.path("hosts.json");
+    std::fs::write(&wrong, r#"{"hosts": []}"#).unwrap();
+    add_snippet(cx, "", "磁盘", "df -h\n");
+    let dialog = cx
+        .update_window(handle, |_, window, cx| {
+            super::import::open_with(ImportFrom::Client(Source::NyaTerm), window, cx)
+        })
+        .unwrap();
+    cx.run_until_parked();
+    assert!(cx.read(|cx| dialog.read(cx).source().snippets_only()));
+    let preview = |cx: &mut TestAppContext, path: &Path| {
+        let path = path.display().to_string();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            type_into(window, cx, "import-path", &path);
+            window.click("import-preview", cx);
+        })
+        .unwrap();
+    };
+    preview(cx, &wrong);
+    wait_until(cx, handle, "说明不是 NyaTerm 的文件", |_, cx| {
+        dialog.read(cx).error_text().is_some()
+    });
+    preview(cx, &file);
+    wait_until(cx, handle, "预览列出快捷命令", |_, cx| {
+        dialog.read(cx).snippet_preview().is_some()
+    });
+    let (names, notes, skipped) = cx.read(|cx| dialog.read(cx).snippet_preview()).unwrap();
+    // 分组按第一次出现的顺序
+    assert_eq!(names, ["磁盘", "登录", "日志"]);
+    assert_eq!(skipped, 1);
+    assert_eq!(
+        (
+            notes.pauses,
+            notes.options,
+            notes.nested_groups,
+            notes.descriptions
+        ),
+        (1, 1, 1, 1)
+    );
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_snippets()),
+        Some((2, 1))
+    );
+}

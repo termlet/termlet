@@ -21,6 +21,7 @@ pub(super) fn source_name(source: Source) -> &'static str {
         Source::WindTerm => "WindTerm",
         Source::Electerm => "Electerm",
         Source::Netcatty => "Netcatty",
+        Source::NyaTerm => "NyaTerm",
     }
 }
 
@@ -113,6 +114,7 @@ pub(super) fn describe_import(error: &ImportError) -> SharedString {
         }
         ImportError::ElectermEncrypted => t!("backup_ui.import_error.electerm_encrypted"),
         ImportError::NotNetcatty => t!("backup_ui.import_error.not_netcatty"),
+        ImportError::NotNyaTerm(error) => t!("backup_ui.import_error.not_nyaterm", error = error),
     }
 }
 

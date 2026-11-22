@@ -814,6 +814,7 @@ fn passphrase_forwards_snippets_and_other_protocols() {
     let report = run(&m, plan, OnDuplicate::Skip);
     assert_eq!(counts(&report), (3, 0, 1, 1));
     assert_eq!(report.snippets, 1);
+    assert_eq!(report.snippets_skipped, 2, "已有的与计划中重复的各一条");
     // 第二条规则的监听地址与第一条相同：没能导入
     assert!(matches!(
         &report.failures[0].subject,
@@ -868,4 +869,53 @@ fn passphrase_forwards_snippets_and_other_protocols() {
     let report = run(&m, plan_of(vec![again]), OnDuplicate::Merge);
     assert_eq!(counts(&report), (0, 1, 0, 0));
     assert_eq!(m.store.list::<Forward>().len(), 1);
+}
+
+// 只有快捷命令的计划（NyaTerm）：不用勾选主机；再导入一次时全部相同，不重复添加；什么也没有时不能导入
+#[test]
+fn snippets_only() {
+    let m = Machine::new();
+    let mut b = PlanBuilder::new(Source::NyaTerm);
+    for (group, name) in [("运维", "磁盘"), ("", "进程")] {
+        b.add_snippet(Snippet {
+            name: name.into(),
+            content: format!("{name}\n"),
+            group: group.into(),
+            ..Default::default()
+        });
+    }
+    let plan = b.finish();
+    let report = block_on(apply(
+        m.backups.clone(),
+        plan.clone(),
+        Vec::new(),
+        OnDuplicate::Skip,
+    ))
+    .unwrap();
+    assert_eq!((report.snippets, report.snippets_skipped), (2, 0));
+    assert_eq!(counts(&report), (0, 0, 0, 0));
+    let groups: Vec<String> = m
+        .store
+        .list::<Snippet>()
+        .into_iter()
+        .map(|s| s.doc.group)
+        .collect();
+    assert_eq!(groups, ["运维", ""]);
+    let again = block_on(apply(
+        m.backups.clone(),
+        plan,
+        Vec::new(),
+        OnDuplicate::Skip,
+    ))
+    .unwrap();
+    assert_eq!((again.snippets, again.snippets_skipped), (0, 2));
+    assert!(matches!(
+        block_on(apply(
+            m.backups.clone(),
+            PlanBuilder::new(Source::NyaTerm).finish(),
+            Vec::new(),
+            OnDuplicate::Skip,
+        )),
+        Err(BackupError::NothingSelected)
+    ));
 }

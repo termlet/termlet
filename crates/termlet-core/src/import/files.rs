@@ -3,6 +3,7 @@
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use encoding_rs::Encoding;
 
@@ -84,6 +85,33 @@ impl LocalEnv {
             None => path.to_path_buf(),
         }
     }
+}
+
+/// “下载”“桌面”“文档”中修改时间最新的、名称（小写）满足 `matches` 的文件：其他程序导出的文件
+/// （Netcatty 的 CSV、NyaTerm 的快捷命令）多半在这几处。都没有时为 `None`。
+pub(super) fn newest_export(env: &LocalEnv, matches: impl Fn(&str) -> bool) -> Option<PathBuf> {
+    let mut best: Option<(SystemTime, PathBuf)> = None;
+    for dir in [&env.downloads, &env.desktop, &env.documents]
+        .into_iter()
+        .flatten()
+    {
+        let Ok(entries) = fs::read_dir(dir) else {
+            continue;
+        };
+        for entry in entries.filter_map(Result::ok) {
+            if !matches(&entry.file_name().to_string_lossy().to_lowercase()) {
+                continue;
+            }
+            let Ok(meta) = entry.metadata() else {
+                continue;
+            };
+            let modified = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
+            if meta.is_file() && best.as_ref().is_none_or(|(t, _)| modified > *t) {
+                best = Some((modified, entry.path()));
+            }
+        }
+    }
+    best.map(|(_, path)| path)
 }
 
 /// 从 "C:" 形式的卷名中取出盘符字母；不是盘符（例如 UNC 路径）时为 `None`。

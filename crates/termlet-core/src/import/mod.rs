@@ -1,8 +1,8 @@
 //! 从其他客户端导入主机：OpenSSH 的 `~/.ssh/config`、Xshell、FinalShell、MobaXterm、Tabby、Termora 2.x、WindTerm、
-//! Electerm、Netcatty。
+//! Electerm、Netcatty；以及 NyaTerm 导出的快捷命令（文件中只有快捷命令，没有主机）。
 //!
 //! 解析结果是与来源无关的导入计划（[`ImportPlan`]）：分组树、主机、主机之间的跳板引用、每台主机的提示、
-//! 随主机导入的端口转发（Xshell）、快捷命令（WindTerm），以及（Termora、WindTerm 有的）登录密码、代理密码、
+//! 随主机导入的端口转发（Xshell）、快捷命令（WindTerm、NyaTerm）与转换时丢掉或改动的内容，以及（Termora、WindTerm 有的）登录密码、代理密码、
 //! 私钥密码与要存进密钥库的私钥。计划只用自己内部的下标互相引用，写入存储时再换成真正的 ID。
 //!
 //! 一般只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），**不导入密码**：其他工具的密码
@@ -31,6 +31,7 @@ mod files;
 mod finalshell;
 mod mobaxterm;
 mod netcatty;
+mod nyaterm;
 mod plan;
 pub mod select;
 mod ssh_config;
@@ -53,6 +54,7 @@ pub use apply::{
 pub use mobaxterm::MOBAXTERM_REGISTRY_PATH;
 pub use plan::{
     Endpoint, Hint, ImportPlan, JumpRef, KeyAlgorithm, PlannedGroup, PlannedHost, PlannedKey,
+    SnippetNotes,
 };
 
 use files::LocalEnv;
@@ -85,10 +87,12 @@ pub enum Source {
     Electerm,
     /// Netcatty 在主机页导出的 CSV
     Netcatty,
+    /// NyaTerm 在快捷命令面板导出的 JSON（`nyaterm-quick-commands.json`）：只有快捷命令
+    NyaTerm,
 }
 
 impl Source {
-    pub const ALL: [Source; 9] = [
+    pub const ALL: [Source; 10] = [
         Source::SshConfig,
         Source::Xshell,
         Source::FinalShell,
@@ -98,6 +102,7 @@ impl Source {
         Source::WindTerm,
         Source::Electerm,
         Source::Netcatty,
+        Source::NyaTerm,
     ];
 
     /// 稳定的名称，日志、界面状态中使用。
@@ -112,7 +117,13 @@ impl Source {
             Source::WindTerm => "windterm",
             Source::Electerm => "electerm",
             Source::Netcatty => "netcatty",
+            Source::NyaTerm => "nyaterm",
         }
+    }
+
+    /// 来源中只有快捷命令，没有主机（NyaTerm）。
+    pub fn snippets_only(self) -> bool {
+        self == Source::NyaTerm
     }
 
     /// 来源中的密码是明文（或可逆）保存的，导入前要用户明确同意（界面上的“导入保存的密码”，默认不勾选）；
@@ -144,6 +155,7 @@ impl Source {
             Source::WindTerm => windterm::default_path(&env),
             Source::Electerm => electerm::default_path(&env),
             Source::Netcatty => netcatty::default_path(&env),
+            Source::NyaTerm => nyaterm::default_path(&env),
         }
     }
 }
@@ -170,6 +182,7 @@ pub fn parse_with_password(
         Source::WindTerm => windterm::read(path, &env, password)?,
         Source::Electerm => electerm::read(path, &env)?,
         Source::Netcatty => netcatty::read(path, &env)?,
+        Source::NyaTerm => nyaterm::read(path, &env)?,
     };
     tracing::info!(
         source = source.name(),
@@ -278,6 +291,10 @@ pub enum ImportError {
     /// 不是 Netcatty 导出的主机 CSV（没有 Hostname/IP 列）
     #[error("不是 Netcatty 导出的主机 CSV")]
     NotNetcatty,
+
+    /// 不是 NyaTerm 导出的快捷命令（不是 JSON，或没有 `commands`）
+    #[error("不是 NyaTerm 导出的快捷命令：{0}")]
+    NotNyaTerm(String),
 }
 
 #[cfg(test)]

@@ -110,8 +110,10 @@ pub struct ImportReport {
     pub merged: usize,
     /// 已存在而跳过的数量
     pub skipped: usize,
-    /// 新增的快捷命令数（WindTerm）
+    /// 新增的快捷命令数（WindTerm、NyaTerm）
     pub snippets: usize,
+    /// 与已有的名称、内容都相同而没有重复添加的快捷命令数
+    pub snippets_skipped: usize,
     /// 跳过的已有主机中补上了密码的数量（Electerm、Netcatty：已有主机还没保存密码时）
     pub passwords_filled: usize,
     /// 没能导入的项与原因：主机，以及随主机导入的私钥、凭据档案、分组默认值、端口转发、跳板机、快捷命令
@@ -193,7 +195,7 @@ pub enum FailureSubject {
     Jump { host: String },
     /// 分组的默认跳板机没能设置（主机文件）
     GroupJump { group: String },
-    /// 快捷命令没能导入（WindTerm）
+    /// 快捷命令没能导入（WindTerm、NyaTerm）
     Snippet { name: String },
 }
 
@@ -335,7 +337,8 @@ pub async fn apply(
         .iter()
         .filter(|h| selected.contains(&h.key))
         .collect();
-    if chosen.is_empty() {
+    // 只有快捷命令的来源（NyaTerm）不用勾选主机
+    if chosen.is_empty() && plan.snippets.is_empty() {
         return Err(BackupError::NothingSelected);
     }
     let store = backups.store().clone();
@@ -394,6 +397,8 @@ pub async fn apply(
                 created = report.created,
                 merged = report.merged,
                 skipped = report.skipped,
+                snippets = report.snippets,
+                snippets_skipped = report.snippets_skipped,
                 failures = report.failures.len(),
                 "导入主机"
             );
@@ -551,6 +556,7 @@ fn write_snippets(store: &Store, snippets: &[Snippet], report: &mut ImportReport
         .collect();
     for snippet in snippets {
         if !seen.insert((snippet.name.trim().to_string(), snippet.content.clone())) {
+            report.snippets_skipped += 1;
             continue;
         }
         match store.create(snippet.clone(), None, Position::Last) {

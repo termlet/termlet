@@ -802,6 +802,7 @@ fn format_name(format: SchemeFormat) -> SharedString {
         SchemeFormat::Xresources => "Xresources".into(),
         SchemeFormat::Tabby => "Tabby".into(),
         SchemeFormat::Gogh => "Gogh".into(),
+        SchemeFormat::NyaTerm => "NyaTerm".into(),
     }
 }
 

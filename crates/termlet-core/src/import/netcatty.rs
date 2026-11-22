@@ -19,12 +19,11 @@
 //! （[`super::Source::secrets_need_consent`]）；以 `enc:v1:` 开头的是 Netcatty 导出时没能解开的密文，不导入并提醒。
 
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
 use crate::model::{Auth, Host, KeySource, Protocol, Proxy, ProxyKind};
 use crate::secret::SecretString;
 
-use super::files::{LocalEnv, MAX_CONFIG_SIZE, decode_text, read_limited};
+use super::files::{LocalEnv, MAX_CONFIG_SIZE, decode_text, newest_export, read_limited};
 use super::plan::{Endpoint, Hint, JumpRef, PlanBuilder, PlannedHost, clip};
 use super::ssh_config::{parse_port, split_host_port};
 use super::{ImportError, ImportPlan, Source};
@@ -44,29 +43,9 @@ pub(super) fn read(path: &Path, env: &LocalEnv) -> Result<ImportPlan, ImportErro
 
 /// 默认位置：“下载”“桌面”“文档”中修改时间最新的 `hosts_export_*.csv`；都没有时为 `None`。
 pub(super) fn default_path(env: &LocalEnv) -> Option<PathBuf> {
-    let mut best: Option<(SystemTime, PathBuf)> = None;
-    for dir in [&env.downloads, &env.desktop, &env.documents]
-        .into_iter()
-        .flatten()
-    {
-        let Ok(entries) = std::fs::read_dir(dir) else {
-            continue;
-        };
-        for entry in entries.filter_map(Result::ok) {
-            let name = entry.file_name().to_string_lossy().to_lowercase();
-            if !name.starts_with(FILE_PREFIX) || !name.ends_with(".csv") {
-                continue;
-            }
-            let Ok(meta) = entry.metadata() else {
-                continue;
-            };
-            let modified = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-            if meta.is_file() && best.as_ref().is_none_or(|(t, _)| modified > *t) {
-                best = Some((modified, entry.path()));
-            }
-        }
-    }
-    best.map(|(_, path)| path)
+    newest_export(env, |name| {
+        name.starts_with(FILE_PREFIX) && name.ends_with(".csv")
+    })
 }
 
 /// 各列在行中的位置。
@@ -406,6 +385,8 @@ fn parse_csv(text: &str) -> Vec<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
+    use std::time::SystemTime;
+
     use super::*;
     use crate::import::files::tests::env;
 
