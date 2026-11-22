@@ -3,7 +3,9 @@
 //! - 预览列出来源中的主机，标出本机已有的相同主机（默认不勾选）、需要提醒的事项、代理命令、登录后执行的命令与
 //!   随主机导入的端口转发。勾选的逻辑在核心（`termlet_core::import::select`）：全选、全不选、只选新主机、反选与
 //!   表头的勾选框只作用于筛选出的行；单击整行切换，按住 Shift 单击把上次单击的行到这一行设为相同的状态。
-//! - Termlet 的主机文件加密时先要密码（导出时设置的）；WindTerm 设了主密码时先要它的主密码。
+//! - Termlet 的主机文件加密时先要密码（导出时设置的）；WindTerm 设了主密码时先要它的主密码；NyaTerm 的 `.nya` 备份、
+//!   ShellRS 的同步文件夹先要它们的密码（导出时设置的、同步密码），密码框的说明按来源写。
+//! - 整个计划的说明（`ImportPlan::notes`）写在预览下方；ShellRS 开启了同步时那一句旁边有“改选同步文件夹”。
 //! - 来源中有快捷命令（WindTerm）时，预览下方说明会一并导入多少条，结果中列出新增了多少条。
 //! - 只有快捷命令的来源（NyaTerm 导出的快捷命令）：预览列出快捷命令（分组、名称、内容的第一行）与转换时丢掉或
 //!   改动的内容，不用勾选，全部导入（与已有的名称、内容都相同的跳过）；对话框的标题随之写“导入快捷命令”。
@@ -42,7 +44,8 @@ use termlet_core::backup::BackupError;
 use termlet_core::hostfile::{self, HostFile};
 use termlet_core::import::select::{self, BulkAction, StatusFilter};
 use termlet_core::import::{
-    self, ImportPlan, ImportReport, OnDuplicate, PreviewForward, PreviewItem, SnippetNotes, Source,
+    self, ImportPlan, ImportReport, OnDuplicate, PlanNote, PreviewForward, PreviewItem,
+    SnippetNotes, Source,
 };
 use termlet_core::model::{ForwardKind, Protocol, Snippet, join_host_port};
 use termlet_core::runtime;
@@ -225,6 +228,7 @@ impl ImportFrom {
             ImportFrom::Client(Source::WindTerm) => t!("backup_ui.import.source.windterm"),
             ImportFrom::Client(Source::Electerm) => t!("backup_ui.import.source.electerm"),
             ImportFrom::Client(Source::Netcatty) => t!("backup_ui.import.source.netcatty"),
+            ImportFrom::Client(Source::ShellRs) => t!("backup_ui.import.source.shellrs"),
             ImportFrom::Client(Source::NyaTerm) => t!("backup_ui.import.source.nyaterm"),
             ImportFrom::Client(Source::NyaTermData) => t!("backup_ui.import.source.nyaterm_data"),
         }
@@ -257,6 +261,7 @@ impl ImportFrom {
                 Some(t!("backup_ui.import.source_hint.netcatty"))
             }
             ImportFrom::Client(Source::NyaTerm) => Some(t!("backup_ui.import.source_hint.nyaterm")),
+            ImportFrom::Client(Source::ShellRs) => Some(t!("backup_ui.import.source_hint.shellrs")),
             ImportFrom::Client(Source::NyaTermData) => {
                 Some(t!("backup_ui.import.source_hint.nyaterm_data"))
             }
@@ -269,7 +274,11 @@ impl ImportFrom {
         matches!(
             self,
             ImportFrom::Client(
-                Source::Xshell | Source::FinalShell | Source::Termora | Source::WindTerm
+                Source::Xshell
+                    | Source::FinalShell
+                    | Source::Termora
+                    | Source::WindTerm
+                    | Source::ShellRs
             )
         )
     }
@@ -281,6 +290,10 @@ impl ImportFrom {
             ImportFrom::Client(Source::WindTerm) => (
                 t!("backup_ui.import.windterm_password_placeholder"),
                 t!("backup_ui.import.windterm_password_hint"),
+            ),
+            ImportFrom::Client(Source::ShellRs) => (
+                t!("backup_ui.import.shellrs_password_placeholder"),
+                t!("backup_ui.import.shellrs_password_hint"),
             ),
             ImportFrom::Client(Source::NyaTermData) => (
                 t!("backup_ui.import.nyaterm_password_placeholder"),
@@ -625,6 +638,14 @@ impl ImportDialog {
         }));
     }
 
+    /// 改用来源的另一个位置（预览说明中的“改选同步文件夹”）：填入路径并重新预览。
+    fn use_folder(&mut self, path: String, window: &mut Window, cx: &mut Context<Self>) {
+        self.path_edited = true;
+        self.fill_path(path, window, cx);
+        self.needs_password = false;
+        self.start_preview(window, cx);
+    }
+
     /// 对话框收到 Enter；返回是否关闭对话框。
     fn on_enter(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
         if self.report.is_some() {
@@ -948,7 +969,14 @@ impl ImportDialog {
                                     .mask_toggle(),
                             ),
                         )
-                        .child(div().text_xs().text_color(muted).child(prose(hint))),
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(prose(hint)),
+                        ),
                 )
             })
     }
@@ -1402,12 +1430,15 @@ impl ImportDialog {
             Loaded::Plan(plan) => plan.snippets.len(),
             Loaded::HostFile(_) => 0,
         };
-        // 整个计划的说明（来源中的秘密都解不开等）
-        let notes: Vec<SharedString> = match &preview.loaded {
+        // 整个计划的说明（来源中的秘密都解不开、可以改选同步文件夹等）
+        let notes: Vec<(PlanNote, SharedString)> = match &preview.loaded {
             Loaded::Plan(plan) => plan
                 .notes
                 .iter()
-                .map(|note| errors::describe_note(note, preview.from.source_name()))
+                .map(|note| {
+                    let text = errors::describe_note(note, preview.from.source_name());
+                    (note.clone(), text)
+                })
                 .collect(),
             Loaded::HostFile(_) => Vec::new(),
         };
@@ -1439,12 +1470,27 @@ impl ImportDialog {
                     count = preview.skipped
                 )))
             })
-            .children(notes.into_iter().enumerate().map(|(n, note)| {
-                div()
+            .children(notes.into_iter().enumerate().map(|(n, (note, text))| {
+                let row = h_flex()
                     .id(super::element_id("import-plan-note", n.to_string()))
                     .test_support()
+                    .gap_2()
                     .text_color(cx.theme().warning)
-                    .child(prose(note))
+                    .child(div().flex_1().min_w_0().child(prose(text)));
+                match note {
+                    // ShellRS 开启了同步：一键改选同步文件夹（接着要输入同步密码）
+                    PlanNote::SyncFolderAvailable { path } => row.child(
+                        Button::new("import-use-sync-folder")
+                            .outline()
+                            .xsmall()
+                            .label(t!("backup_ui.import.use_sync_folder"))
+                            .disabled(self.busy.is_some())
+                            .on_click(cx.listener(move |this, _, window, cx| {
+                                this.use_folder(path.display().to_string(), window, cx)
+                            })),
+                    ),
+                    _ => row,
+                }
             }))
             .when(snippets > 0, |this| {
                 this.child(
@@ -2026,7 +2072,7 @@ mod tests {
     #[test]
     fn sources_pick_files_or_folders() {
         let all = ImportFrom::all();
-        assert_eq!(all.len(), 12);
+        assert_eq!(all.len(), 13);
         assert_eq!(all[0], ImportFrom::HostFile);
         let folders: Vec<_> = all.iter().filter(|f| f.picks_directory()).collect();
         assert_eq!(
@@ -2035,7 +2081,8 @@ mod tests {
                 &ImportFrom::Client(Source::Xshell),
                 &ImportFrom::Client(Source::FinalShell),
                 &ImportFrom::Client(Source::Termora),
-                &ImportFrom::Client(Source::WindTerm)
+                &ImportFrom::Client(Source::WindTerm),
+                &ImportFrom::Client(Source::ShellRs)
             ]
         );
         assert_eq!(ImportFrom::Client(Source::Tabby).source_name(), "Tabby");
@@ -2050,5 +2097,6 @@ mod tests {
             ImportFrom::Client(Source::NyaTermData).source_name(),
             "NyaTerm"
         );
+        assert_eq!(ImportFrom::Client(Source::ShellRs).source_name(), "ShellRS");
     }
 }

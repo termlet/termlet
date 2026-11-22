@@ -1115,3 +1115,213 @@ fn nyaterm_preview_lists_what_is_dropped_or_changed(cx: &mut TestAppContext) {
         Some((2, 1))
     );
 }
+
+/// ShellRS 自己写出的同步数据（termlet-core 的 `import/testdata/shellrs`，MIT），放进 `root/shellrs-sync/v1`。
+fn shellrs_sync_folder(root: &Path) {
+    let store = root.join("shellrs-sync").join("v1");
+    std::fs::create_dir_all(store.join("devices")).unwrap();
+    let testdata =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../termlet-core/src/import/testdata/shellrs");
+    std::fs::copy(testdata.join("vault.json"), store.join("vault.json")).unwrap();
+    std::fs::copy(
+        testdata.join("k3jq8x0m2pa7d4vn.srs"),
+        store.join("devices").join("k3jq8x0m2pa7d4vn.srs"),
+    )
+    .unwrap();
+}
+
+/// 那份同步数据的同步密码（见那里的 LICENSE）
+const SHELLRS_SYNC_PASSWORD: &str = "correct horse battery staple";
+
+/// ShellRS 的数据目录：按 ShellRS 0.1.19（结构版本 24）的列手写的数据库，`settings.json` 指向同步文件夹 `sync`。
+fn shellrs_data_folder(dir: &Path, sync: &Path) {
+    std::fs::create_dir_all(dir).unwrap();
+    let conn = rusqlite::Connection::open(dir.join("shellrs.db")).unwrap();
+    conn.execute_batch(
+        "PRAGMA user_version = 24;
+         CREATE TABLE groups (id INTEGER PRIMARY KEY, parent_id INTEGER, name TEXT NOT NULL,
+             sort_order INTEGER NOT NULL DEFAULT 0);
+         CREATE TABLE credentials (id INTEGER PRIMARY KEY, keychain_id TEXT NOT NULL, name TEXT NOT NULL,
+             kind TEXT NOT NULL, username TEXT NOT NULL, key_path TEXT);
+         CREATE TABLE hosts (id INTEGER PRIMARY KEY, public_id TEXT, group_id INTEGER,
+             sort_order INTEGER NOT NULL DEFAULT 0, name TEXT NOT NULL, address TEXT NOT NULL,
+             port INTEGER NOT NULL, auth TEXT NOT NULL, username TEXT, credential_id INTEGER,
+             route TEXT NOT NULL DEFAULT 'direct', proxy_kind TEXT, proxy_host TEXT, proxy_port INTEGER,
+             proxy_username TEXT, notes TEXT NOT NULL DEFAULT '', protocol TEXT NOT NULL DEFAULT 'ssh',
+             credential_username TEXT, one_time_code INTEGER NOT NULL DEFAULT 0, one_time_code_prompt TEXT);
+         INSERT INTO groups (id, name) VALUES (1, '生产');
+         INSERT INTO credentials (id, keychain_id, name, kind, username)
+             VALUES (1, 'c1', '运维', 'password', 'ops');
+         INSERT INTO hosts (id, public_id, group_id, name, address, port, auth, username, credential_id) VALUES
+             (1, 'p1', 1, 'app-1', '10.9.0.1', 22, 'credential', NULL, 1),
+             (2, 'p2', NULL, 'agent-1', '10.9.0.2', 22, 'no-password', 'me', NULL);",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("settings.json"),
+        serde_json::json!({"sync": {"location": {"kind": "folder", "path": sync}}}).to_string(),
+    )
+    .unwrap();
+}
+
+/// 打开导入对话框，选好 ShellRS，预览 `path`（同步文件夹，等到出现密码框）。
+fn preview_shellrs_sync(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    path: &Path,
+) -> Entity<super::import::ImportDialog> {
+    let dialog = cx
+        .update_window(handle, |_, window, cx| {
+            let dialog = super::import::open(window, cx);
+            dialog.update(cx, |d, cx| {
+                d.switch_source(ImportFrom::Client(Source::ShellRs), window, cx)
+            });
+            dialog
+        })
+        .unwrap();
+    cx.run_until_parked();
+    let path = path.display().to_string();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        type_into(window, cx, "import-path", &path);
+        window.click("import-preview", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "要求输入同步密码", |window, _| {
+        exists(window, "import-password")
+    });
+    dialog
+}
+
+/// 在密码框中输入 `password` 并预览。
+fn preview_with_password(cx: &mut TestAppContext, handle: AnyWindowHandle, password: &str) {
+    cx.update_window(handle, |_, window, cx| {
+        type_into(window, cx, "import-password", password);
+        window.render_frame(cx);
+        window.click("import-preview", cx);
+    })
+    .unwrap();
+}
+
+// ShellRS 的同步文件夹：先要同步密码，不对时提示；对了才列出主机，登录密码、代理密码、端口转发与命令片段一并导入
+#[gpui_kit::test]
+fn shellrs_sync_folder_asks_for_the_password(cx: &mut TestAppContext) {
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("shellrs-sync");
+    shellrs_sync_folder(&dir.0);
+
+    let dialog = preview_shellrs_sync(cx, handle, &dir.0);
+    preview_with_password(cx, handle, "不对的密码");
+    wait_until(cx, handle, "提示密码不对", |_, cx| {
+        dialog.read(cx).error_text().is_some()
+    });
+    assert_eq!(cx.read(|cx| dialog.read(cx).item_count()), None);
+    preview_with_password(cx, handle, SHELLRS_SYNC_PASSWORD);
+    wait_until(
+        cx,
+        handle,
+        "预览列出 ShellRS 的主机",
+        |window, cx| {
+            dialog.read(cx).item_count() == Some(3)
+                && exists(window, "import-snippets")
+                && exists(window, "import-plan-note-0")
+        },
+    );
+    cx.update_window(handle, |_, window, cx| window.click("import-apply", cx))
+        .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_counts()),
+        Some((3, 0, 0, 0))
+    );
+    assert_eq!(saved_password(cx, "web").as_deref(), Some("test password"));
+    cx.update(|cx| {
+        let store = AppState::store(cx);
+        let console = store
+            .list::<Host>()
+            .into_iter()
+            .find(|h| h.doc.name == "console")
+            .unwrap();
+        let proxy = store
+            .secret(
+                &termlet_core::store::Owner::host(&console.id),
+                termlet_core::model::SecretField::ProxyPassword,
+            )
+            .unwrap();
+        assert_eq!(proxy.unwrap().expose(), "test proxy password");
+        assert_eq!(store.list::<termlet_core::model::Forward>().len(), 2);
+        let mut snippets: Vec<String> = store
+            .list::<Snippet>()
+            .into_iter()
+            .map(|s| s.doc.name)
+            .collect();
+        snippets.sort();
+        assert_eq!(snippets, ["disk", "uptime"]);
+    });
+}
+
+// ShellRS 的数据目录：不含密码，预览中说明密码在钥匙串里；开启了同步时可以一键改选同步文件夹，接着要同步密码。
+// 凭据导入成凭据档案，“无密码”的主机用 ssh-agent
+#[gpui_kit::test]
+fn shellrs_data_folder_offers_the_sync_folder(cx: &mut TestAppContext) {
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("shellrs-data");
+    let sync = dir.path("sync");
+    shellrs_sync_folder(&sync);
+    let data = dir.path("data");
+    shellrs_data_folder(&data, &sync);
+
+    let dialog = preview_client(cx, handle, Source::ShellRs, &data, 2);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(exists(window, "import-plan-note-0"), "密码在钥匙串里");
+        assert!(exists(window, "import-plan-note-1"), "可以改选同步文件夹");
+        window.click("import-use-sync-folder", cx);
+    })
+    .unwrap();
+    wait_until(
+        cx,
+        handle,
+        "改选后要求输入同步密码",
+        |window, _| exists(window, "import-password"),
+    );
+    preview_with_password(cx, handle, SHELLRS_SYNC_PASSWORD);
+    wait_until(cx, handle, "预览同步文件夹中的主机", |_, cx| {
+        dialog.read(cx).item_count() == Some(3)
+    });
+    cx.update_window(handle, |_, window, cx| window.click("import-cancel", cx))
+        .unwrap();
+    cx.run_until_parked();
+
+    // 回到数据目录导入
+    let dialog = preview_client(cx, handle, Source::ShellRs, &data, 2);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done") && exists(window, "import-profiles-created")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_counts()),
+        Some((2, 0, 0, 0))
+    );
+    cx.update(|cx| {
+        let store = AppState::store(cx);
+        let hosts = store.list::<Host>();
+        let app = hosts.iter().find(|h| h.doc.name == "app-1").unwrap();
+        let termlet_core::model::Auth::Profile { profile } = &app.doc.auth else {
+            panic!("app-1 应使用凭据档案：{:?}", app.doc.auth);
+        };
+        let doc = store
+            .get::<termlet_core::model::Profile>(profile)
+            .unwrap()
+            .doc;
+        assert_eq!((doc.name.as_str(), doc.username.as_str()), ("运维", "ops"));
+        let agent = hosts.iter().find(|h| h.doc.name == "agent-1").unwrap();
+        assert_eq!(agent.doc.auth, termlet_core::model::Auth::Agent);
+    });
+}

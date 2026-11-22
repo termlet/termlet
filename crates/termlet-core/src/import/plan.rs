@@ -394,6 +394,15 @@ pub enum PlanNote {
     /// 来源中加密保存的秘密都解不开（NyaTerm 的本机数据来自另一台电脑，或用户目录改过名）：主机照常导入、
     /// 不带密码与私钥，连接时再输入；可以改用来源导出的备份
     SecretsUnreadable,
+    /// 读的是不含秘密的数据：来源把密码、私钥密码、验证码密钥保存在系统钥匙串中，没有导入，连接时再输入
+    /// （ShellRS 的数据目录）
+    SecretsInKeychain,
+    /// 来源开启了同步，同步文件夹 `path` 中有带秘密的数据：改选它并输入同步密码可以一并导入密码与私钥（ShellRS）
+    SyncFolderAvailable { path: std::path::PathBuf },
+    /// 来源经 WebDAV、S3 同步：要一并导入密码与私钥，先把同步数据下载到本机再选（ShellRS）
+    SyncFolderRemote,
+    /// 读的是同步数据：是各设备最后一次同步时的内容，不在同步中的（串口主机）要改选数据目录（ShellRS）
+    SyncSnapshot,
 }
 
 /// 判断重复用的键：地址（不区分大小写）、端口、用户名。三项都相同的主机视为同一台，导入时可以选择合并或跳过。
@@ -546,6 +555,20 @@ pub enum Hint {
     TotpNotImported,
     /// 来源中用凭据档案登录，文件中没有这个档案，导入后需要设置登录方式（Electerm 的书签导出不含档案）
     CredentialProfileMissing,
+    /// 来源中“无密码”登录（依次试 SSH Agent 与 `~/.ssh` 的默认私钥），导入为 ssh-agent：用默认私钥文件登录的
+    /// 要改为私钥认证（ShellRS）
+    NoPasswordLogin,
+    /// 凭据的私钥文件加了私钥密码，私钥密码没有导入、连接时输入；文件在来源的数据目录中，在来源中删除凭据会一并
+    /// 删除它（ShellRS）
+    EncryptedKeyFile,
+    /// 来源中开了验证码自动填写，密钥没有导入（在系统钥匙串里，或同步数据中没有），需要时在主机设置中填写（ShellRS）
+    TotpSecretMissing,
+    /// 来源中自定义的验证码识别文本没有导入，Termlet 按常见的说法识别（ShellRS）
+    TotpPromptIgnored,
+    /// 来源中 Telnet 自定义的登录、密码提示没有导入，Termlet 按常见的提示自动登录（ShellRS）
+    TelnetPromptsIgnored,
+    /// 本地、动态转发监听网卡地址 `from`：Termlet 只允许回环地址或任意地址，导入时改为 127.0.0.1（ShellRS）
+    ForwardBindLoopback { from: String },
     /// 这台主机是为来源中的主机 `session` 的跳板机新建的（Electerm 的跳板机写在书签里，不是另一个书签）
     JumpHostFor { session: String },
 }

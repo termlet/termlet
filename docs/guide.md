@@ -269,6 +269,7 @@
   - WindTerm（程序目录、`.wind` 数据目录或其中的 `user.sessions`，设了主密码时要输入）
   - Electerm（导出的书签 `.json`，3.0 以前的版本也可以选数据目录）
   - Netcatty（主机页导出的 `.csv`）
+  - ShellRS（数据目录，或开启云同步时的同步文件夹，要输入同步密码）
   - NyaTerm（本机数据库 `~/.nyaterm/nyaterm.redb`，或设置中导出的加密 `.nya` 备份，要输入导出时设置的密码）
   - NyaTerm 快捷命令（快捷命令面板导出的 `.json`，只有快捷命令，见下）
 - 预览：
@@ -276,7 +277,7 @@
   - 同一地址、端口与用户名的主机可选择合并或跳过。
   - 预览列表可搜索、按新主机 / 已存在筛选，支持全选、全不选、只选新主机、反选。
   - 单击整行勾选，按住 Shift 单击连续勾选。
-- 只导入主机信息，不导入密码（Termora、WindTerm、NyaTerm 例外，Electerm、Netcatty、FinalShell 要勾选，见下）；没有导入的内容，在预览中逐台说明。
+- 只导入主机信息，不导入密码（Termora、WindTerm、NyaTerm、ShellRS 的同步文件夹例外，Electerm、Netcatty、FinalShell 要勾选，见下）；没有导入的内容，在预览中逐台说明。
 - **ssh_config 与 Tabby**：
   - ssh_config 的 `ProxyJump` 导入为跳板机，`ProxyCommand` 与 Tabby 的代理命令导入为代理命令（第一次连接时确认）。
   - ssh_config 的 `ForwardX11`、`ForwardX11Trusted` 导入为 X11 转发的设置，`CertificateFile` 导入为私钥文件的证书文件。
@@ -315,6 +316,13 @@
   - 在 Netcatty 的主机页点“导出”得到的 CSV（`hosts_export_….csv`），默认填入“下载”“桌面”“文档”中最新的一份。Netcatty 本机的数据用系统加密保存，只能读导出的文件。
   - 导入 SSH 与 Telnet 主机，分组、标签、备注、私钥文件路径、代理（HTTP、SOCKS5、代理命令）与跳板机（多级时只取最后一跳）一并导入。
   - Netcatty 密钥库中的私钥、身份与端口转发不在导出的文件中。
+- **ShellRS**：
+  - 默认填入本机 ShellRS 的数据目录（Windows 为 `%APPDATA%\shellrs`，macOS 为 `~/Library/Application Support/shellrs`，Linux 为 `~/.local/share/shellrs`；便携版选程序旁的 `data`），读其中的 `shellrs.db`，ShellRS 开着时也能读。
+  - 导入 SSH、Telnet 与串口主机：分组（可嵌套）、备注、跳板机（多级的与 ShellRS 中最后一台跳板机自己的设置不同时，只导入最后一跳并在预览中说明）、HTTP 与 SOCKS5 代理、端口转发（导入后不自动启动；本地、动态转发监听网卡地址的改为 `127.0.0.1`）、登录后执行的命令；命令片段导入为快捷命令（嵌套的分类写成“上级 / 下级”，“点击时自动执行”的在末尾加换行）。
+  - ShellRS 的凭据导入为凭据档案（密码、私钥或 SSH Agent），多台主机共用（本机已有名称、用户名都相同的档案时直接用它）；主机自己填了用户名的仍用它。私钥存入密钥库；数据目录中设了私钥密码的私钥文件按路径引用，连接时输入私钥密码。
+  - “无密码”的主机（ShellRS 依次试 SSH Agent 与 `~/.ssh` 的默认私钥）导入为 ssh-agent 并在预览中说明；Telnet 主机的“使用凭据”写入凭据的用户名与密码，自定义的登录提示与验证码识别文本不导入。
+  - ShellRS 把密码、私钥密码与验证码密钥保存在系统钥匙串中，读数据目录时不导入（Termlet 不替它去钥匙串里取）。开启了云同步的，可以改选同步文件夹（在 ShellRS 中设的那个，里面有 `shellrs-sync`），输入同步密码后连同登录密码、代理密码、凭据的密码、私钥与验证码密钥一并导入；预览中有“改选同步文件夹”。同步数据是各台设备最后一次同步时的内容，串口主机不在其中。用 WebDAV 或 S3 同步的，先把同步位置中的 `shellrs-sync` 文件夹下载到本机再选。
+  - SFTP 书签、“项目”中的本地终端、关键字高亮与主题不导入。
 - **NyaTerm 的主机**：
   - 默认填入本机的数据库（`~/.nyaterm/nyaterm.redb`；改过数据目录的按 `location.json` 找，便携版选程序旁的 `data/config`）。NyaTerm 运行时锁住了它，读取前要先退出 NyaTerm（包括托盘中的），否则提示改用备份。
   - 也可以选在 NyaTerm 设置中导出的加密备份（`.nya`），预览前输入导出时设置的密码；换了电脑时用这种方式。

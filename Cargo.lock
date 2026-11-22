@@ -1011,6 +1011,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "chacha20poly1305"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b89e1c441e926b9c82a8d023f6e1b7ae0adcfaa7d621814e4d60789bac751cb"
+dependencies = [
+ "aead",
+ "chacha20",
+ "cipher 0.5.2",
+ "poly1305",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8151,6 +8163,7 @@ dependencies = [
  "blake2",
  "bytes",
  "cbc 0.2.1",
+ "chacha20poly1305",
  "chrono",
  "data-encoding",
  "des",
@@ -8164,6 +8177,7 @@ dependencies = [
  "http-body-util",
  "hyper",
  "hyper-util",
+ "icu_normalizer",
  "keyring",
  "libc",
  "md-5 0.11.0",
@@ -8216,6 +8230,7 @@ dependencies = [
  "objc2 0.6.5",
  "raw-window-handle",
  "regex",
+ "rusqlite",
  "rust-i18n",
  "serde_json",
  "sys-locale",

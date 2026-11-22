@@ -19,7 +19,7 @@ It comes with the `termlet` command-line tool, which lets AI tools such as Claud
 - **Files**: two-pane SFTP with drag-and-drop transfers, resuming and remote editing; SCP when the server has no SFTP.
 - **Keys and tunnels**: a key library, local / dynamic / remote port forwarding, and lending your local proxy to a server.
 - **Security**: encrypted credentials, host key verification and an app lock; AI access is allowed per host, dangerous commands need your approval, and every call is audited.
-- **Import and sync**: import from 9 sources including ssh_config, Xshell, MobaXterm and Tabby; end-to-end encrypted sync through a folder, WebDAV, S3 or a Gist.
+- **Import and sync**: import from 11 sources including ssh_config, Xshell, MobaXterm and Tabby; end-to-end encrypted sync through a folder, WebDAV, S3 or a Gist.
 - **Interface**: Simplified Chinese, Traditional Chinese, English, Japanese and Korean; light / dark; interface size 90%–150%.
 
 ## Installation

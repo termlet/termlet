@@ -64,6 +64,8 @@ workspace = true
 gpui-kit = { workspace = true, features = ["test-support"] }
 # UI 测试中按旧版本写进数据库的原样读取设置（关键词高亮的迁移）
 serde_json.workspace = true
+# UI 测试中现场生成 ShellRS 的数据库（核心已经依赖它，不引入新的包）
+rusqlite.workspace = true
 
 # 给 Windows 程序嵌入图标与版本信息（build.rs）。GPUI 嵌入清单用的同一个包（MIT），不引入新的包
 [build-dependencies]

@@ -22,6 +22,7 @@ pub(super) fn source_name(source: Source) -> &'static str {
         Source::Electerm => "Electerm",
         Source::Netcatty => "Netcatty",
         Source::NyaTerm | Source::NyaTermData => "NyaTerm",
+        Source::ShellRs => "ShellRS",
     }
 }
 
@@ -120,6 +121,8 @@ pub(super) fn describe_import(error: &ImportError) -> SharedString {
         ImportError::NotNyaTermData(error) => {
             t!("backup_ui.import_error.not_nyaterm_data", error = error)
         }
+        ImportError::NotShellRs(error) => t!("backup_ui.import_error.not_shellrs", error = error),
+        ImportError::ShellRsTooNew => t!("backup_ui.import_error.shellrs_too_new"),
         ImportError::PasswordRequired => t!("backup_ui.import_error.password_required"),
         ImportError::WrongPassword => t!("backup_ui.import_error.wrong_password"),
     }
@@ -131,6 +134,16 @@ pub(super) fn describe_note(note: &PlanNote, source: &str) -> SharedString {
         PlanNote::SecretsUnreadable => {
             t!("backup_ui.plan_note.secrets_unreadable", source = source)
         }
+        PlanNote::SecretsInKeychain => {
+            t!("backup_ui.plan_note.secrets_in_keychain", source = source)
+        }
+        PlanNote::SyncFolderAvailable { .. } => {
+            t!("backup_ui.plan_note.sync_folder_available", source = source)
+        }
+        PlanNote::SyncFolderRemote => {
+            t!("backup_ui.plan_note.sync_folder_remote", source = source)
+        }
+        PlanNote::SyncSnapshot => t!("backup_ui.plan_note.sync_snapshot", source = source),
     }
 }
 
@@ -287,6 +300,18 @@ pub(super) fn describe_hint(hint: &Hint, source: &str) -> SharedString {
             source = source,
             session = session
         ),
+        Hint::NoPasswordLogin => t!("backup_ui.hint.no_password_login", source = source),
+        Hint::EncryptedKeyFile => t!("backup_ui.hint.encrypted_key_file", source = source),
+        Hint::TotpSecretMissing => t!("backup_ui.hint.totp_secret_missing", source = source),
+        Hint::TotpPromptIgnored => t!("backup_ui.hint.totp_prompt_ignored", source = source),
+        Hint::TelnetPromptsIgnored => {
+            t!("backup_ui.hint.telnet_prompts_ignored", source = source)
+        }
+        Hint::ForwardBindLoopback { from } => t!(
+            "backup_ui.hint.forward_bind_loopback",
+            source = source,
+            from = from
+        ),
     }
 }
 
@@ -370,6 +395,8 @@ mod tests {
             ImportError::NyaTermNotFound,
             ImportError::NyaTermInUse,
             ImportError::NotNyaTermData("no table".into()),
+            ImportError::NotShellRs("no hosts".into()),
+            ImportError::ShellRsTooNew,
             ImportError::PasswordRequired,
             ImportError::WrongPassword,
         ]
@@ -425,6 +452,14 @@ mod tests {
             Hint::JumpHostFor {
                 session: "app".into(),
             },
+            Hint::NoPasswordLogin,
+            Hint::EncryptedKeyFile,
+            Hint::TotpSecretMissing,
+            Hint::TotpPromptIgnored,
+            Hint::TelnetPromptsIgnored,
+            Hint::ForwardBindLoopback {
+                from: "192.168.1.10".into(),
+            },
         ]
     }
 
@@ -464,7 +499,16 @@ mod tests {
             texts.extend(backup_errors().iter().map(describe_backup));
             texts.extend(import_errors().iter().map(describe_import));
             texts.extend(hints().iter().map(|h| describe_hint(h, "Tabby")));
-            texts.push(describe_note(&PlanNote::SecretsUnreadable, "NyaTerm"));
+            let notes = [
+                PlanNote::SecretsUnreadable,
+                PlanNote::SecretsInKeychain,
+                PlanNote::SyncFolderAvailable {
+                    path: PathBuf::from("/sync"),
+                },
+                PlanNote::SyncFolderRemote,
+                PlanNote::SyncSnapshot,
+            ];
+            texts.extend(notes.iter().map(|n| describe_note(n, "ShellRS")));
             let reasons = [
                 FailureReason::Invalid(Invalid::new("bindPort", "conflict")),
                 FailureReason::Invalid(Invalid::new("name", "too_long")),

@@ -19,7 +19,7 @@ Termlet 是 SSH 客户端，支持 Windows、macOS（Apple 芯片）与 Linux。
 - **文件**：SFTP 双栏拖动传输、断点续传、在线编辑；服务器没有 SFTP 时改用 SCP。
 - **密钥与转发**：密钥库、本地 / 动态 / 远程端口转发，把本机的代理借给服务器。
 - **安全**：凭据加密保存、主机指纹校验、应用锁；AI 访问按主机授权，危险命令要你批准，每次调用都有审计。
-- **导入与同步**：从 ssh_config、Xshell、MobaXterm、Tabby 等 9 种来源导入；经文件夹、WebDAV、S3、Gist 端到端加密同步。
+- **导入与同步**：从 ssh_config、Xshell、MobaXterm、Tabby 等 11 种来源导入；经文件夹、WebDAV、S3、Gist 端到端加密同步。
 - **界面**：简体中文、繁體中文、English、日本語、한국어；浅色 / 深色；界面大小 90%–150%。
 
 ## 安装

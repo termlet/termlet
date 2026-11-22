@@ -1,5 +1,6 @@
 //! 从其他客户端导入主机：OpenSSH 的 `~/.ssh/config`、Xshell、FinalShell、MobaXterm、Tabby、Termora 2.x、WindTerm、
-//! Electerm、Netcatty、NyaTerm（本机数据库或 `.nya` 备份）；以及 NyaTerm 导出的快捷命令（文件中只有快捷命令，没有主机）。
+//! Electerm、Netcatty、ShellRS（数据目录或同步文件夹）、NyaTerm（本机数据库或 `.nya` 备份）；以及 NyaTerm 导出的快捷命令
+//! （文件中只有快捷命令，没有主机）。
 //!
 //! 解析结果是与来源无关的导入计划（[`ImportPlan`]）：分组树、主机、主机之间的跳板引用、每台主机的提示、
 //! 随主机导入的端口转发（Xshell、NyaTerm）、快捷命令（WindTerm、NyaTerm）与转换时丢掉或改动的内容，以及（Termora、
@@ -7,9 +8,10 @@
 //! 互相引用，写入存储时再换成真正的 ID。
 //!
 //! 一般只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），**不导入密码**：其他工具的密码
-//! 以各自私有的方式加密。例外是 Termora 2.x、WindTerm 与 NyaTerm：Termora 的数据只用保存在同一个文件中的密钥加密，
-//! WindTerm 用主密码（没设时为空）派生的密钥加密，NyaTerm 的本机数据用从主目录路径派生的密钥加密、`.nya` 备份用
-//! 导出时输入的密码加密，密码、私钥一并导入。Electerm 的书签导出、Netcatty 的 CSV 导出中
+//! 以各自私有的方式加密。例外是 Termora 2.x、WindTerm、NyaTerm 与 ShellRS 的同步文件夹：Termora 的数据只用保存在
+//! 同一个文件中的密钥加密，WindTerm 用主密码（没设时为空）派生的密钥加密，NyaTerm 的本机数据用从主目录路径派生的
+//! 密钥加密、`.nya` 备份用导出时输入的密码加密，ShellRS 的同步数据用用户输入的同步密码加密，密码、私钥一并导入
+//! （ShellRS 的数据目录中没有秘密，它们在系统钥匙串里，不替它取）。Electerm 的书签导出、Netcatty 的 CSV 导出中
 //! 密码是明文（Electerm 本机的旧数据是可逆的移位，FinalShell 保存的密码是不需要用户输入就能还原的 DES 加密），
 //! 只有用户明确同意后才导入（[`Source::secrets_need_consent`]，
 //! 不同意时界面用 [`ImportPlan::without_secrets`]）；这几个来源重复导入时只给已有主机补上还没保存的密码，不覆盖。
@@ -21,7 +23,8 @@
 //! # 用法（界面）
 //!
 //! 选来源（[`Source::default_path`] 给出默认位置）→ [`read`]（在阻塞线程上解析；WindTerm 设了主密码时返回
-//! [`ImportError::WindTermPasswordRequired`]，再用 [`read_with_password`] 读）→ [`preview`] 列出主机并标出本机已有的
+//! [`ImportError::WindTermPasswordRequired`]，加密的来源返回 [`ImportError::PasswordRequired`]，再用
+//! [`read_with_password`] 读）→ [`preview`] 列出主机并标出本机已有的
 //! 相同主机 → 界面用 [`select`] 中的函数搜索、筛选、勾选（默认勾选新主机）→ [`fn@apply`] 导入勾选的主机，返回新增 / 合并 /
 //! 跳过的数量与没能导入的项。计划由界面保存到导入为止（其中的凭据界面取不出）。Termlet 自己的主机文件见
 //! [`crate::hostfile`]，预览、勾选与结果的类型相同。
@@ -37,6 +40,7 @@ mod netcatty;
 mod nyaterm;
 mod plan;
 pub mod select;
+mod shellrs;
 mod ssh_config;
 mod sys;
 mod tabby;
@@ -90,6 +94,8 @@ pub enum Source {
     Electerm,
     /// Netcatty 在主机页导出的 CSV
     Netcatty,
+    /// ShellRS 的数据目录（`shellrs.db`，不含秘密），或开启云同步时的同步文件夹（要同步密码，含秘密）
+    ShellRs,
     /// NyaTerm 在快捷命令面板导出的 JSON（`nyaterm-quick-commands.json`）：只有快捷命令
     NyaTerm,
     /// NyaTerm 的本机数据库（`~/.nyaterm/nyaterm.redb`）或设置中导出的加密完整备份（`.nya`）：主机与快捷命令
@@ -97,7 +103,7 @@ pub enum Source {
 }
 
 impl Source {
-    pub const ALL: [Source; 11] = [
+    pub const ALL: [Source; 12] = [
         Source::SshConfig,
         Source::Xshell,
         Source::FinalShell,
@@ -107,6 +113,7 @@ impl Source {
         Source::WindTerm,
         Source::Electerm,
         Source::Netcatty,
+        Source::ShellRs,
         Source::NyaTermData,
         Source::NyaTerm,
     ];
@@ -123,6 +130,7 @@ impl Source {
             Source::WindTerm => "windterm",
             Source::Electerm => "electerm",
             Source::Netcatty => "netcatty",
+            Source::ShellRs => "shellrs",
             Source::NyaTerm => "nyaterm",
             Source::NyaTermData => "nyaterm_data",
         }
@@ -168,6 +176,7 @@ impl Source {
             Source::WindTerm => windterm::default_path(&env),
             Source::Electerm => electerm::default_path(&env),
             Source::Netcatty => netcatty::default_path(&env),
+            Source::ShellRs => shellrs::default_path(&env),
             Source::NyaTerm => nyaterm::default_path(&env),
             Source::NyaTermData => nyaterm::data::default_path(&env),
         }
@@ -180,7 +189,8 @@ pub fn parse(source: Source, path: &Path) -> Result<ImportPlan, ImportError> {
 }
 
 /// 同 [`parse`]；`password` 是来源的主密码（WindTerm 设了主密码时），或加密来源的密码（NyaTerm 的 `.nya` 是导出时
-/// 设置的密码；来源要密码时返回 [`ImportError::PasswordRequired`]，界面按来源说明是什么密码），其他来源不用。
+/// 设置的密码，ShellRS 的同步文件夹是它的同步密码；来源要密码时返回 [`ImportError::PasswordRequired`]，界面按来源
+/// 说明是什么密码），其他来源不用。
 pub fn parse_with_password(
     source: Source,
     path: &Path,
@@ -197,6 +207,7 @@ pub fn parse_with_password(
         Source::WindTerm => windterm::read(path, &env, password)?,
         Source::Electerm => electerm::read(path, &env)?,
         Source::Netcatty => netcatty::read(path, &env)?,
+        Source::ShellRs => shellrs::read(path, &env, password)?,
         Source::NyaTerm => nyaterm::read(path, &env)?,
         Source::NyaTermData => nyaterm::data::read(path, &env, password)?,
     };
@@ -324,8 +335,16 @@ pub enum ImportError {
     #[error("不是 NyaTerm 的数据库或备份：{0}")]
     NotNyaTermData(String),
 
-    /// 来源是加密的，需要输入密码（NyaTerm 的 `.nya` 是导出时设置的密码）；界面按来源说明要输入什么密码，
-    /// 再用 [`read_with_password`] 读
+    /// 不是 ShellRS 的数据目录（没有 `shellrs.db`，或其中缺少主机表）或同步文件夹
+    #[error("不是 ShellRS 的数据目录或同步文件夹：{0}")]
+    NotShellRs(String),
+
+    /// ShellRS 的同步数据来自更新的版本（格式或 `min_reader` 比这里认得的新）
+    #[error("ShellRS 的同步数据来自更新的版本")]
+    ShellRsTooNew,
+
+    /// 来源是加密的，需要输入密码（NyaTerm 的 `.nya` 是导出时设置的密码，ShellRS 的同步文件夹是同步密码）；
+    /// 界面按来源说明要输入什么密码，再用 [`read_with_password`] 读
     #[error("这个来源是加密的，需要输入密码")]
     PasswordRequired,
 

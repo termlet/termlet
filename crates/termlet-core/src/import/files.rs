@@ -23,12 +23,17 @@ pub(super) struct LocalEnv {
     pub desktop: Option<PathBuf>,
     /// 系统的配置目录（Windows 为 `%APPDATA%`）
     pub config_dir: Option<PathBuf>,
+    /// 系统的数据目录（Windows 为 `%APPDATA%`，macOS 为 `~/Library/Application Support`，Linux 为
+    /// `~/.local/share`）
+    pub data_dir: Option<PathBuf>,
     /// 系统盘的盘符字母（不含冒号）
     pub system_drive: String,
     /// 系统 ANSI 代码页对应的编码：MobaXterm 等老程序按它保存配置文件（中文 Windows 上为 GBK）
     pub ansi: &'static Encoding,
     /// Termora 的数据目录（环境变量 `TERMORA_BASE_DATA_DIR`）
     pub termora_dir: Option<PathBuf>,
+    /// ShellRS 的数据目录（环境变量 `SHELLRS_DATA_DIR`）
+    pub shellrs_dir: Option<PathBuf>,
 }
 
 impl LocalEnv {
@@ -45,11 +50,15 @@ impl LocalEnv {
             home,
             documents,
             config_dir: dirs::config_dir(),
+            data_dir: dirs::data_dir(),
             system_drive,
             ansi: sys::ansi_code_page()
                 .map(encoding_for_code_page)
                 .unwrap_or(encoding_rs::GB18030),
             termora_dir: std::env::var_os("TERMORA_BASE_DATA_DIR")
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from),
+            shellrs_dir: std::env::var_os("SHELLRS_DATA_DIR")
                 .filter(|v| !v.is_empty())
                 .map(PathBuf::from),
         }
@@ -353,9 +362,11 @@ pub(super) mod tests {
             downloads: None,
             desktop: None,
             config_dir: None,
+            data_dir: None,
             system_drive: "C".into(),
             ansi: encoding_for_code_page(936),
             termora_dir: None,
+            shellrs_dir: None,
         }
     }
 

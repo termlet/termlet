@@ -295,6 +295,18 @@ backup_ui.import_error.not_nyaterm_data:
   zh-TW: 不是 NyaTerm 的資料庫或 .nya 備份，或是不支援的版本：%{error}
   ja: NyaTerm のデータベースや .nya バックアップではないか、対応していないバージョンです：%{error}
   ko: "NyaTerm 데이터베이스나 .nya 백업이 아니거나 지원하지 않는 버전입니다: %{error}"
+backup_ui.import_error.not_shellrs:
+  zh-CN: 不是 ShellRS 的数据目录或同步文件夹（%{error}）。请选 ShellRS 的数据目录（其中有 shellrs.db），或在 ShellRS 中开启云同步时选的文件夹（其中有 shellrs-sync）。
+  en: This isn’t a ShellRS data folder or sync folder (%{error}). Choose ShellRS’s data folder (with shellrs.db in it) or the folder chosen when turning on sync in ShellRS (with shellrs-sync in it).
+  zh-TW: 不是 ShellRS 的資料目錄或同步資料夾（%{error}）。請選擇 ShellRS 的資料目錄（其中有 shellrs.db），或在 ShellRS 中開啟雲端同步時選的資料夾（其中有 shellrs-sync）。
+  ja: ShellRS のデータフォルダーまたは同期フォルダーではありません（%{error}）。ShellRS のデータフォルダー（shellrs.db があるフォルダー）か、ShellRS でクラウド同期を有効にしたときに選択したフォルダー（shellrs-sync があるフォルダー）を選択してください。
+  ko: ShellRS 데이터 폴더나 동기화 폴더가 아닙니다(%{error}). ShellRS 데이터 폴더(shellrs.db가 있는 폴더)나 ShellRS에서 클라우드 동기화를 켤 때 선택한 폴더(shellrs-sync가 있는 폴더)를 선택하세요.
+backup_ui.import_error.shellrs_too_new:
+  zh-CN: 这份 ShellRS 的同步数据来自更新的版本，Termlet 还读不了。请改选 ShellRS 的数据目录，或更新 Termlet。
+  en: This ShellRS sync data comes from a newer version that Termlet can’t read yet. Choose ShellRS’s data folder instead, or update Termlet.
+  zh-TW: 這份 ShellRS 的同步資料來自較新的版本，Termlet 還讀不了。請改選 ShellRS 的資料目錄，或更新 Termlet。
+  ja: この ShellRS の同期データは新しいバージョンのもので、Termlet ではまだ読み取れません。代わりに ShellRS のデータフォルダーを選択するか、Termlet を更新してください。
+  ko: 이 ShellRS 동기화 데이터는 더 새로운 버전에서 만든 것이라 Termlet에서 아직 읽을 수 없습니다. 대신 ShellRS 데이터 폴더를 선택하거나 Termlet을 업데이트하세요.
 backup_ui.import_error.password_required:
   zh-CN: 这个来源是加密的，请输入密码后再预览。
   en: This source is encrypted. Enter the password, then preview again.
@@ -313,6 +325,30 @@ backup_ui.plan_note.secrets_unreadable:
   zh-TW: 「%{source}」中儲存的密碼與私密金鑰都無法解開（資料可能來自另一台電腦，或使用者目錄改過名）：主機照常匯入，不帶密碼與私密金鑰，連線時再輸入；也可以改用匯出的備份。
   ja: 「%{source}」に保存されたパスワードと秘密鍵はどれも復号できません（データが別のコンピューターのものか、ユーザーフォルダーの名前が変わった可能性があります）。ホストはパスワードと秘密鍵なしでインポートされるため、接続時に入力してください。エクスポートしたバックアップを代わりにインポートすることもできます。
   ko: "'%{source}'에 저장된 비밀번호와 개인 키를 모두 열 수 없습니다(다른 컴퓨터의 데이터이거나 사용자 폴더 이름이 바뀌었을 수 있음). 호스트는 비밀번호와 개인 키 없이 가져오므로 연결할 때 입력하세요. 내보낸 백업을 대신 가져올 수도 있습니다."
+backup_ui.plan_note.secrets_in_keychain:
+  zh-CN: “%{source}”把密码、私钥密码与验证码密钥保存在系统钥匙串中，这里没有导入，连接时再输入。
+  en: “%{source}” keeps passwords, private key passphrases and one-time code secrets in the system keychain, so they weren’t imported. Enter them when connecting.
+  zh-TW: 「%{source}」把密碼、私密金鑰密碼與驗證碼金鑰儲存在系統鑰匙圈中，這裡沒有匯入，連線時再輸入。
+  ja: 「%{source}」はパスワード、秘密鍵のパスフレーズ、確認コードのシークレットをシステムのキーチェーンに保存しているため、ここではインポートされていません。接続時に入力してください。
+  ko: "'%{source}'은(는) 비밀번호, 개인 키 암호 문구, 인증 코드 비밀 키를 시스템 키체인에 저장하므로 여기서는 가져오지 않았습니다. 연결할 때 입력하세요."
+backup_ui.plan_note.sync_folder_available:
+  zh-CN: “%{source}”开启了同步：改选同步文件夹并输入同步密码，可以一并导入密码与私钥。
+  en: “%{source}” syncs. Choose its sync folder and enter the sync password to import passwords and private keys too.
+  zh-TW: 「%{source}」開啟了同步：改選同步資料夾並輸入同步密碼，可以一併匯入密碼與私密金鑰。
+  ja: 「%{source}」で同期が有効になっています。同期フォルダーを選択し直して同期パスワードを入力すると、パスワードと秘密鍵も一緒にインポートできます。
+  ko: "'%{source}'에서 동기화가 켜져 있습니다. 동기화 폴더를 다시 선택하고 동기화 비밀번호를 입력하면 비밀번호와 개인 키도 함께 가져올 수 있습니다."
+backup_ui.plan_note.sync_folder_remote:
+  zh-CN: “%{source}”用 WebDAV 或 S3 同步：要一并导入密码与私钥，先把同步位置中的 shellrs-sync 文件夹下载到本机，再改选它并输入同步密码。
+  en: “%{source}” syncs through WebDAV or S3. To import passwords and private keys too, download the shellrs-sync folder from the sync location to this computer, then choose it and enter the sync password.
+  zh-TW: 「%{source}」用 WebDAV 或 S3 同步：要一併匯入密碼與私密金鑰，先把同步位置中的 shellrs-sync 資料夾下載到本機，再改選它並輸入同步密碼。
+  ja: 「%{source}」は WebDAV または S3 で同期しています。パスワードと秘密鍵も一緒にインポートするには、同期先の shellrs-sync フォルダーをこのコンピューターにダウンロードしてから、それを選択して同期パスワードを入力してください。
+  ko: "'%{source}'은(는) WebDAV나 S3로 동기화합니다. 비밀번호와 개인 키도 함께 가져오려면 동기화 위치의 shellrs-sync 폴더를 이 컴퓨터로 다운로드한 다음 그 폴더를 선택하고 동기화 비밀번호를 입력하세요."
+backup_ui.plan_note.sync_snapshot:
+  zh-CN: 同步数据是各台设备最后一次同步时的内容；串口主机不在同步中，要导入请改选“%{source}”的数据目录。
+  en: The sync data is what each device had when it last synced. Serial hosts aren’t synced; to import them, choose the “%{source}” data folder.
+  zh-TW: 同步資料是各台裝置最後一次同步時的內容；序列埠主機不在同步中，要匯入請改選「%{source}」的資料目錄。
+  ja: 同期データは各デバイスが最後に同期したときの内容です。シリアルポートのホストは同期されないため、インポートするには「%{source}」のデータフォルダーを選択してください。
+  ko: "동기화 데이터는 각 기기가 마지막으로 동기화했을 때의 내용입니다. 직렬 포트 호스트는 동기화되지 않으므로 가져오려면 '%{source}' 데이터 폴더를 선택하세요."
 backup_ui.import_error.not_electerm:
   zh-CN: 不是 Electerm 的书签导出或数据目录：%{error}
   en: "This isn’t an Electerm bookmark export or data folder: %{error}"
@@ -616,6 +652,42 @@ backup_ui.hint.jump_host_for:
   ja: 「%{source}」の「%{session}」の踏み台ホストとして新しく作成したホストです。
   ko: "'%{source}'에 있는 '%{session}'의 점프 호스트로 새로 만든 호스트입니다."
 
+backup_ui.hint.no_password_login:
+  zh-CN: “%{source}”中这台主机用“无密码”登录（依次试 SSH Agent 与 ~/.ssh 中的默认私钥），导入为 ssh-agent；用默认私钥文件登录的，请在主机设置中改为私钥认证。
+  en: This host signs in with “No password” in “%{source}” (trying the SSH agent, then the default keys in ~/.ssh). It was imported to use ssh-agent; if it signs in with a default key file, switch it to key authentication in the host settings.
+  zh-TW: 「%{source}」中這台主機用「無密碼」登入（依序嘗試 SSH Agent 與 ~/.ssh 中的預設私密金鑰），匯入為 ssh-agent；用預設私密金鑰檔案登入的，請在主機設定中改為私密金鑰驗證。
+  ja: 「%{source}」ではこのホストは「パスワードなし」でログインします（SSH Agent、~/.ssh の既定の秘密鍵の順に試します）。ssh-agent を使うようにインポートしました。既定の秘密鍵ファイルでログインしている場合は、ホスト設定で秘密鍵認証に変更してください。
+  ko: "'%{source}'에서 이 호스트는 '비밀번호 없음'으로 로그인합니다(SSH Agent, ~/.ssh의 기본 개인 키 순서로 시도). ssh-agent를 사용하도록 가져왔습니다. 기본 개인 키 파일로 로그인한다면 호스트 설정에서 개인 키 인증으로 바꾸세요."
+backup_ui.hint.encrypted_key_file:
+  zh-CN: “%{source}”中凭据的私钥文件设了私钥密码，私钥密码没有导入，连接时输入；这个文件在 %{source} 的数据目录中，在 %{source} 中删除这条凭据会一并删除它。
+  en: The private key file of this credential in “%{source}” has a passphrase, which wasn’t imported; enter it when connecting. The file is in %{source}’s data folder and is deleted along with the credential if you delete it in %{source}.
+  zh-TW: 「%{source}」中認證資訊的私密金鑰檔案設了私密金鑰密碼，私密金鑰密碼沒有匯入，連線時輸入；這個檔案在 %{source} 的資料目錄中，在 %{source} 中刪除這條認證資訊會一併刪除它。
+  ja: 「%{source}」の認証情報の秘密鍵ファイルにはパスフレーズが設定されていますが、パスフレーズはインポートされていません。接続時に入力してください。このファイルは %{source} のデータフォルダーにあり、%{source} でこの認証情報を削除すると一緒に削除されます。
+  ko: "'%{source}'의 자격 증명 개인 키 파일에 암호 문구가 설정되어 있지만 암호 문구는 가져오지 않았습니다. 연결할 때 입력하세요. 이 파일은 %{source} 데이터 폴더에 있으며 %{source}에서 이 자격 증명을 삭제하면 함께 삭제됩니다."
+backup_ui.hint.totp_secret_missing:
+  zh-CN: “%{source}”中这台主机开了验证码自动填写，密钥没有导入，需要时在主机设置的“验证码”中填写。
+  en: This host fills in one-time codes in “%{source}”, but the secret wasn’t imported. Enter it under One-time code in the host settings if you need it.
+  zh-TW: 「%{source}」中這台主機開啟了驗證碼自動填寫，金鑰沒有匯入，需要時在主機設定的「驗證碼」中填寫。
+  ja: 「%{source}」ではこのホストで確認コードの自動入力が有効になっていますが、シークレットはインポートされていません。必要な場合はホスト設定の「確認コード」に入力してください。
+  ko: "'%{source}'에서 이 호스트는 인증 코드 자동 입력이 켜져 있지만 비밀 키는 가져오지 않았습니다. 필요하면 호스트 설정의 '인증 코드'에 입력하세요."
+backup_ui.hint.totp_prompt_ignored:
+  zh-CN: “%{source}”中自定义的验证码识别文本没有导入，Termlet 按常见的说法识别验证码的问题。
+  en: The custom text used to recognize one-time code prompts in “%{source}” wasn’t imported; Termlet recognizes the usual wordings.
+  zh-TW: 「%{source}」中自訂的驗證碼識別文字沒有匯入，Termlet 按常見的說法識別驗證碼的問題。
+  ja: 「%{source}」で独自に設定した確認コードの識別テキストはインポートされていません。Termlet は一般的な言い回しで確認コードの入力要求を識別します。
+  ko: "'%{source}'에서 직접 설정한 인증 코드 인식 문구는 가져오지 않았습니다. Termlet은 일반적인 표현으로 인증 코드 요청을 인식합니다."
+backup_ui.hint.telnet_prompts_ignored:
+  zh-CN: '“%{source}”中自定义的登录、密码提示没有导入，Termlet 按常见的提示（login:、Password: 等）自动登录。'
+  en: 'The custom login and password prompts in “%{source}” weren’t imported; Termlet signs in automatically on the usual prompts (login:, Password: and so on).'
+  zh-TW: '「%{source}」中自訂的登入、密碼提示沒有匯入，Termlet 按常見的提示（login:、Password: 等）自動登入。'
+  ja: '「%{source}」で独自に設定したログインとパスワードのプロンプトはインポートされていません。Termlet は一般的なプロンプト（login:、Password: など）で自動ログインします。'
+  ko: "'%{source}'에서 직접 설정한 로그인, 비밀번호 프롬프트는 가져오지 않았습니다. Termlet은 일반적인 프롬프트(login:, Password: 등)에서 자동으로 로그인합니다."
+backup_ui.hint.forward_bind_loopback:
+  zh-CN: “%{source}”中的转发监听网卡地址 %{from}，Termlet 的本地、动态转发只能监听本机或全部地址，导入时改为 127.0.0.1。
+  en: A forward in “%{source}” listens on the network address %{from}. Local and dynamic forwards in Termlet can only listen on this computer or on all addresses, so it was changed to 127.0.0.1.
+  zh-TW: 「%{source}」中的轉送監聽網路卡位址 %{from}，Termlet 的本機、動態轉送只能監聽本機或全部位址，匯入時改為 127.0.0.1。
+  ja: 「%{source}」の転送はネットワークアドレス %{from} で待ち受けています。Termlet のローカル転送とダイナミック転送はこのコンピューターかすべてのアドレスでしか待ち受けできないため、インポート時に 127.0.0.1 に変更しました。
+  ko: "'%{source}'의 포워딩은 네트워크 주소 %{from}에서 수신 대기합니다. Termlet의 로컬, 동적 포워딩은 이 컴퓨터나 모든 주소에서만 수신 대기할 수 있으므로 가져올 때 127.0.0.1로 바꿨습니다."
 backup_ui.import.title:
   zh-CN: 导入主机
   en: Import Hosts
@@ -629,11 +701,11 @@ backup_ui.import.title_snippets:
   ja: スニペットをインポート
   ko: 스니펫 가져오기
 backup_ui.import.hint:
-  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm、NyaTerm 除外；Electerm、Netcatty、FinalShell 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
-  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora, WindTerm and NyaTerm; for Electerm, Netcatty and FinalShell, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
-  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm、NyaTerm 除外；Electerm、Netcatty、FinalShell 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
-  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm、NyaTerm を除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
-  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm, NyaTerm 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
+  zh-CN: 只导入主机信息（名称、地址、端口、用户名、分组、私钥路径、代理），不导入密码（Termora、WindTerm、NyaTerm 与 ShellRS 的同步文件夹除外；Electerm、Netcatty、FinalShell 的密码要勾选“导入保存的密码”）。导入后，用密码登录的主机需要编辑补填密码。
+  en: Only host information is imported (name, address, port, user name, group, key path, proxy), not passwords (except from Termora, WindTerm, NyaTerm and a ShellRS sync folder; for Electerm, Netcatty and FinalShell, tick “Import saved passwords”). Edit password-based hosts afterwards to fill in their passwords.
+  zh-TW: 只匯入主機資訊（名稱、位址、連接埠、使用者名稱、群組、私密金鑰路徑、代理），不匯入密碼（Termora、WindTerm、NyaTerm 與 ShellRS 的同步資料夾除外；Electerm、Netcatty、FinalShell 的密碼要勾選「匯入儲存的密碼」）。匯入後，以密碼登入的主機需要編輯補填密碼。
+  ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm、NyaTerm、ShellRS の同期フォルダーを除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
+  ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm, NyaTerm, ShellRS 동기화 폴더 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
 backup_ui.import.hint_snippets:
   zh-CN: 导入其他程序导出的快捷命令：分组、名称与内容按 Termlet 的写法转换，转换时丢掉或改动的内容在预览中列出。与已有快捷命令的名称、内容都相同的不重复导入。
   en: Imports snippets exported from another program. Groups, names and contents are converted to Termlet’s format, and anything dropped or changed is listed in the preview. Snippets with the same name and content as existing ones aren’t imported again.
@@ -706,6 +778,12 @@ backup_ui.import.source.netcatty:
   zh-TW: Netcatty 主機（匯出的 .csv）
   ja: Netcatty のホスト（エクスポートした .csv）
   ko: Netcatty 호스트(내보낸 .csv)
+backup_ui.import.source.shellrs:
+  zh-CN: ShellRS（数据目录或同步文件夹）
+  en: ShellRS (data folder or sync folder)
+  zh-TW: ShellRS（資料目錄或同步資料夾）
+  ja: ShellRS（データフォルダーまたは同期フォルダー）
+  ko: ShellRS(데이터 폴더 또는 동기화 폴더)
 backup_ui.import.source.nyaterm_data:
   zh-CN: NyaTerm（本机数据或 .nya 备份）
   en: NyaTerm (local data or .nya backup)
@@ -766,6 +844,12 @@ backup_ui.import.source_hint.netcatty:
   zh-TW: 在 Netcatty 的主機頁點「匯出」，再選擇匯出的 CSV 檔案（hosts_export_….csv）。Netcatty 本機的資料用系統加密儲存，只能讀匯出的檔案。匯入 SSH 與 Telnet 主機，群組、標籤、備註、私密金鑰檔案路徑、代理與跳板機一併匯入；Netcatty 金鑰庫中的私密金鑰、身分與連接埠轉送不在匯出的檔案中。
   ja: Netcatty のホストページで「エクスポート」をクリックし、エクスポートした CSV ファイル（hosts_export_….csv）を選択してください。Netcatty はこのコンピューター上のデータをシステムの暗号化で保存しているため、読み取れるのはエクスポートしたファイルだけです。SSH と Telnet のホストをインポートし、グループ、タグ、メモ、秘密鍵ファイルのパス、プロキシ、踏み台ホストも一緒にインポートします。Netcatty の鍵ライブラリにある秘密鍵、ID、ポート転送はエクスポートしたファイルに含まれません。
   ko: Netcatty의 호스트 페이지에서 '내보내기'를 클릭한 다음 내보낸 CSV 파일(hosts_export_….csv)을 선택하세요. Netcatty는 이 컴퓨터의 데이터를 시스템 암호화로 저장하므로 내보낸 파일만 읽을 수 있습니다. SSH와 Telnet 호스트를 가져오며 그룹, 태그, 메모, 개인 키 파일 경로, 프록시, 점프 호스트도 함께 가져옵니다. Netcatty 키 라이브러리의 개인 키, ID, 포트 포워딩은 내보낸 파일에 들어 있지 않습니다.
+backup_ui.import.source_hint.shellrs:
+  zh-CN: 默认填入本机 ShellRS 的数据目录（便携版是程序旁的 data）。导入 SSH、Telnet 与串口主机，分组、凭据（成为凭据档案）、跳板机、代理、端口转发（不会自动启动）、登录后执行的命令与命令片段（成为快捷命令）一并导入；ShellRS 的密码保存在系统钥匙串中，读数据目录时不导入。开启了云同步时，可以改选同步文件夹并输入同步密码，一并导入密码、私钥与验证码密钥（串口主机不在同步中）；用 WebDAV 或 S3 同步的，先把同步位置中的 shellrs-sync 文件夹下载到本机。
+  en: Your local ShellRS data folder is filled in (for the portable edition, the data folder next to the program). SSH, Telnet and serial hosts are imported with groups, credentials (as credential profiles), jump hosts, proxies, port forwards (not started automatically), startup commands and command snippets. ShellRS keeps passwords in the system keychain, so they aren’t imported from the data folder. If ShellRS syncs, choose its sync folder instead and enter the sync password to import passwords, private keys and one-time code secrets too (serial hosts aren’t synced). For WebDAV or S3 sync, download the shellrs-sync folder from the sync location to this computer first.
+  zh-TW: 預設填入本機 ShellRS 的資料目錄（免安裝版是程式旁的 data）。匯入 SSH、Telnet 與序列埠主機，群組、認證資訊（成為認證資訊設定檔）、跳板機、代理、連接埠轉送（不會自動啟動）、登入後執行的指令與指令片段（成為快速指令）一併匯入；ShellRS 的密碼儲存在系統鑰匙圈中，讀資料目錄時不匯入。開啟了雲端同步時，可以改選同步資料夾並輸入同步密碼，一併匯入密碼、私密金鑰與驗證碼金鑰（序列埠主機不在同步中）；用 WebDAV 或 S3 同步的，先把同步位置中的 shellrs-sync 資料夾下載到本機。
+  ja: このコンピューターの ShellRS のデータフォルダーが入力されています（ポータブル版はプログラムの隣の data）。SSH、Telnet、シリアルポートのホストをインポートし、グループ、認証情報（認証プロファイルとして）、踏み台ホスト、プロキシ、ポート転送（自動では開始されません）、ログイン後に実行するコマンド、コマンドスニペット（スニペットとして）も一緒にインポートします。ShellRS はパスワードをシステムのキーチェーンに保存しているため、データフォルダーからはインポートされません。クラウド同期を使っている場合は、代わりに同期フォルダーを選択して同期パスワードを入力すると、パスワード、秘密鍵、確認コードのシークレットも一緒にインポートできます（シリアルポートのホストは同期されません）。WebDAV または S3 で同期している場合は、先に同期先の shellrs-sync フォルダーをこのコンピューターにダウンロードしてください。
+  ko: 이 컴퓨터의 ShellRS 데이터 폴더가 입력되어 있습니다(포터블 버전은 프로그램 옆의 data). SSH, Telnet, 직렬 포트 호스트를 가져오며 그룹, 자격 증명(자격 증명 프로필로), 점프 호스트, 프록시, 포트 포워딩(자동으로 시작되지 않음), 로그인 후 실행할 명령, 명령 스니펫(스니펫으로)도 함께 가져옵니다. ShellRS는 비밀번호를 시스템 키체인에 저장하므로 데이터 폴더에서는 가져오지 않습니다. 클라우드 동기화를 사용하면 대신 동기화 폴더를 선택하고 동기화 비밀번호를 입력해 비밀번호, 개인 키, 인증 코드 비밀 키도 함께 가져올 수 있습니다(직렬 포트 호스트는 동기화되지 않음). WebDAV나 S3로 동기화하면 먼저 동기화 위치의 shellrs-sync 폴더를 이 컴퓨터로 다운로드하세요.
 backup_ui.import.source_hint.nyaterm_data:
   zh-CN: 默认填入本机 NyaTerm 的数据库（数据目录 ~/.nyaterm 中的 nyaterm.redb），读取前请先退出 NyaTerm；也可以选在 NyaTerm 设置中导出的加密 .nya 备份，并输入导出时设置的密码。导入 SSH、Telnet 与串口连接，分组、备注、标签、跳板机、代理、端口转发（不会自动启动）、验证码与快捷命令一并导入；登录密码与私钥存进保险库和密钥库，账号导入为凭据档案。本机的数据只用从用户目录派生的密钥加密，本机任何程序都能读出其中的密码；换了电脑时请用 .nya 备份。
   en: Your local NyaTerm database (nyaterm.redb in the data folder ~/.nyaterm) is filled in; quit NyaTerm before reading it. You can also choose an encrypted .nya backup exported in NyaTerm’s settings and enter the password set when exporting it. SSH, Telnet and serial connections are imported with groups, notes, tags, jump hosts, proxies, port forwards (not started automatically), one-time codes and quick commands; login passwords and private keys go into the vault and the key library, and accounts become credential profiles. NyaTerm encrypts its local data with a key derived from your home folder, so any program on this computer can read the passwords in it. On another computer, use a .nya backup.
@@ -832,12 +916,30 @@ backup_ui.import.nyaterm_password_hint:
   zh-TW: 這是加密的 NyaTerm 備份，輸入匯出時設定的密碼後才能讀取。
   ja: これは暗号化された NyaTerm のバックアップです。エクスポート時に設定したパスワードを入力すると読み取れます。
   ko: 암호화된 NyaTerm 백업입니다. 내보낼 때 설정한 비밀번호를 입력해야 읽을 수 있습니다.
+backup_ui.import.shellrs_password_placeholder:
+  zh-CN: ShellRS 的同步密码
+  en: ShellRS sync password
+  zh-TW: ShellRS 的同步密碼
+  ja: ShellRS の同期パスワード
+  ko: ShellRS 동기화 비밀번호
+backup_ui.import.shellrs_password_hint:
+  zh-CN: 这是 ShellRS 的同步文件夹，输入在 ShellRS 的“设置 › 云同步”中设的同步密码后才能读取。密码只用来解开同步数据，不会保存。
+  en: This is a ShellRS sync folder. Enter the sync password set under Settings › Sync in ShellRS to read it. The password is only used to decrypt the sync data and isn’t saved.
+  zh-TW: 這是 ShellRS 的同步資料夾，輸入在 ShellRS 的「設定 › 雲端同步」中設定的同步密碼後才能讀取。密碼只用來解開同步資料，不會儲存。
+  ja: これは ShellRS の同期フォルダーです。ShellRS の「設定 › クラウド同期」で設定した同期パスワードを入力すると読み取れます。パスワードは同期データの復号にだけ使い、保存しません。
+  ko: ShellRS 동기화 폴더입니다. ShellRS의 '설정 › 클라우드 동기화'에서 설정한 동기화 비밀번호를 입력해야 읽을 수 있습니다. 비밀번호는 동기화 데이터를 여는 데에만 사용하며 저장하지 않습니다.
 backup_ui.import.uses_profile:
   zh-CN: 使用凭据档案“%{name}”
   en: Uses credential profile “%{name}”
   zh-TW: 使用認證資訊設定檔「%{name}」
   ja: 認証プロファイル「%{name}」を使用
   ko: "자격 증명 프로필 '%{name}' 사용"
+backup_ui.import.use_sync_folder:
+  zh-CN: 改选同步文件夹
+  en: Use sync folder
+  zh-TW: 改選同步資料夾
+  ja: 同期フォルダーを使用
+  ko: 동기화 폴더 사용
 backup_ui.import.profiles_created:
   zh-CN: 新建 %{count} 个凭据档案（名称、用户名都相同的已有档案直接使用）。
   en: "Credential profiles created: %{count} (existing ones with the same name and username are used as they are)."

@@ -269,6 +269,7 @@ Notes:
   - WindTerm (its program folder, the `.wind` data folder or the `user.sessions` file in it; you enter the master password if one is set)
   - Electerm (exported bookmarks `.json`; for versions before 3.0 also its data folder)
   - Netcatty (the `.csv` exported from its hosts page)
+  - ShellRS (its data folder, or its sync folder if it syncs, which needs the sync password)
   - NyaTerm (its local database `~/.nyaterm/nyaterm.redb`, or an encrypted `.nya` backup exported in its settings, which needs the password set when exporting)
   - NyaTerm quick commands (the `.json` exported from its Quick Commands panel; snippets only, see below)
 - Preview:
@@ -276,7 +277,7 @@ Notes:
   - Hosts with the same address, port and user can be merged or skipped.
   - The preview can be searched and filtered by new / existing hosts, with Select all, Select none, Only new and Invert.
   - Click a row to select it and Shift+click to select a range.
-- Only host information is imported, not passwords (except Termora, WindTerm and NyaTerm, and Electerm, Netcatty and FinalShell when you tick the option, see below). What is not imported is noted host by host in the preview.
+- Only host information is imported, not passwords (except Termora, WindTerm, NyaTerm and ShellRS's sync folder, and Electerm, Netcatty and FinalShell when you tick the option, see below). What is not imported is noted host by host in the preview.
 - **ssh_config and Tabby**:
   - `ProxyJump` in ssh_config becomes a jump host, and `ProxyCommand` and Tabby's proxy commands become proxy commands (confirmed on first connection).
   - `ForwardX11` and `ForwardX11Trusted` in ssh_config become the X11 forwarding settings, and `CertificateFile` becomes the key file's certificate file.
@@ -315,6 +316,13 @@ Notes:
   - The CSV from Export on Netcatty's hosts page (`hosts_export_….csv`); the newest one in Downloads, Desktop or Documents is filled in. Netcatty keeps its data on the computer with the system's encryption, so only the export can be read.
   - SSH and Telnet hosts are imported with groups, tags, notes, key file paths, proxies (HTTP, SOCKS5, proxy commands) and jump hosts (only the last hop of a chain).
   - Keys in Netcatty's key library, identities and port forwards are not in the export.
+- **ShellRS**:
+  - Your local ShellRS data folder is filled in (`%APPDATA%\shellrs` on Windows, `~/Library/Application Support/shellrs` on macOS, `~/.local/share/shellrs` on Linux; for the portable edition, choose the `data` folder next to the program), and its `shellrs.db` is read, even while ShellRS is running.
+  - SSH, Telnet and serial hosts are imported with groups (nested), notes, jump hosts (when a chain of jump hosts differs from the last jump host's own setting in ShellRS, only the last hop is imported and the preview says so), HTTP and SOCKS5 proxies, port forwards (not started automatically; local and dynamic forwards listening on a network address are changed to `127.0.0.1`) and startup commands. Command snippets become snippets (nested categories are written as "Parent / Child"; those set to run on click get a trailing line break).
+  - ShellRS credentials become credential profiles (password, private key or SSH agent) shared by their hosts (an existing profile with the same name and username is used as it is); a host with its own username keeps it. Private keys go into the key library; a key file in the data folder that has a passphrase is referenced by its path, and you enter the passphrase when connecting.
+  - Hosts set to "No password" (ShellRS tries the SSH agent, then the default keys in `~/.ssh`) are imported to use ssh-agent, and the preview says so. Telnet hosts that "use a credential" get the credential's username and password; custom login prompts and one-time code prompt texts aren't imported.
+  - ShellRS keeps passwords, key passphrases and one-time code secrets in the system keychain, so they aren't imported from the data folder (Termlet doesn't take them from the keychain on its behalf). If ShellRS syncs, you can choose its sync folder instead (the one set in ShellRS, with `shellrs-sync` in it) and enter the sync password: login passwords, proxy passwords, credential passwords, private keys and one-time code secrets are then imported too. The preview offers "Use sync folder". The sync data is what each device had when it last synced, and serial hosts aren't in it. For WebDAV or S3 sync, download the `shellrs-sync` folder from the sync location to this computer first.
+  - SFTP bookmarks, local terminals under Projects, keyword highlighting and themes aren't imported.
 - **NyaTerm hosts**:
   - Your local database is filled in (`~/.nyaterm/nyaterm.redb`; a moved data folder is found through `location.json`, and for the portable edition choose `data/config` next to the program). NyaTerm locks it while running, so quit NyaTerm first (including from the system tray); otherwise you're told to use a backup instead.
   - You can also choose an encrypted backup (`.nya`) exported in NyaTerm's settings and enter the password set when exporting it before the preview. Use this on another computer.
