@@ -336,7 +336,7 @@ pub struct TerminalPanel {
     sync_member: bool,
     /// 在终端中执行命令时：会话结束时丢弃，告诉执行的一方终端已关闭
     run_closed: Option<async_channel::Sender<()>>,
-    /// 通过本机代理（把本机的 HTTP 代理借给服务器）：开启着时在这里，随会话结束而停止
+    /// 把本机代理借给服务器：开启着时在这里，随会话结束而停止
     proxy: Option<ProxyLend>,
     /// 命令补全提示：交给终端视图的命令历史（见 `terminal_panel/suggest.rs`）
     suggest: suggest::Suggest,
@@ -351,7 +351,7 @@ impl Drop for SamplingHold {
     }
 }
 
-/// 正在进行的“通过本机代理”。
+/// 正在进行的“把本机代理借给服务器”。
 pub(crate) struct ProxyLend {
     pub share: Arc<ProxyShare>,
     /// 最近的状态与统计
@@ -778,21 +778,21 @@ impl TerminalPanel {
             .flatten()
     }
 
-    // ------------------------------------------------------------ 通过本机代理
+    // ------------------------------------------------------------ 把本机代理借给服务器
 
-    /// 能不能开启“通过本机代理”：连接着的 SSH 终端，不是“只用一个通道”的主机（服务器转来的连接要另开通道）。
+    /// 能不能开启“把本机代理借给服务器”：连接着的 SSH 终端，不是“只用一个通道”的主机（服务器转来的连接要另开通道）。
     pub(crate) fn can_lend_proxy(&self) -> bool {
         self.is_ssh()
             && self.connection().is_some()
             && !self.spec.as_ref().is_some_and(|spec| spec.single_channel)
     }
 
-    /// 正在进行的“通过本机代理”。
+    /// 正在进行的“把本机代理借给服务器”。
     pub(crate) fn proxy_lend(&self) -> Option<&ProxyLend> {
         self.proxy.as_ref()
     }
 
-    /// 开启“通过本机代理”：请服务器在 `127.0.0.1:port`（0 为由服务器选）监听，转到本机代理 `local`。
+    /// 开启“把本机代理借给服务器”：请服务器在 `127.0.0.1:port`（0 为由服务器选）监听，转到本机代理 `local`。
     /// 返回的任务给出结果；成功时状态条上显示，Tab 关闭、会话结束时停止。
     pub(crate) fn start_proxy_lend(
         &mut self,
@@ -806,7 +806,7 @@ impl TerminalPanel {
         let Some(connection) = self.connection().filter(|_| self.can_lend_proxy()) else {
             return Task::ready(Err(ShareError::Disconnected));
         };
-        tracing::info!(session = %self.name, local = %local, port, "开启通过本机代理");
+        tracing::info!(session = %self.name, local = %local, port, "开始把本机代理借给服务器");
         let job = termlet_core::runtime::spawn(ProxyShare::start(connection, local, port));
         cx.spawn(async move |this, cx| {
             let share = match job.await {
@@ -846,7 +846,7 @@ impl TerminalPanel {
         };
         match status.stopped {
             Some(reason) => {
-                tracing::info!(session = %self.name, ?reason, "通过本机代理已停止");
+                tracing::info!(session = %self.name, ?reason, "本机代理已不再借给服务器");
                 if reason == StopReason::ConnectionClosed
                     && let Some(view) = &self.view
                 {
@@ -861,7 +861,7 @@ impl TerminalPanel {
         cx.notify();
     }
 
-    /// 会话结束或换了连接（强制重连）时停止“通过本机代理”，并在终端中说明。
+    /// 会话结束或换了连接（强制重连）时停止“把本机代理借给服务器”，并在终端中说明。
     fn end_proxy_lend(&mut self, cx: &mut Context<Self>) {
         if self.proxy.is_none() {
             return;
@@ -874,12 +874,12 @@ impl TerminalPanel {
         }
     }
 
-    /// 停止“通过本机代理”（取消服务器上的监听）。
+    /// 停止“把本机代理借给服务器”（取消服务器上的监听）。
     pub(crate) fn stop_proxy_lend(&mut self, cx: &mut Context<Self>) {
         let Some(lend) = self.proxy.take() else {
             return;
         };
-        tracing::info!(session = %self.name, "停止通过本机代理");
+        tracing::info!(session = %self.name, "停止把本机代理借给服务器");
         let share = lend.share;
         termlet_core::runtime::spawn(async move { share.stop().await });
         cx.notify();
@@ -1494,7 +1494,7 @@ impl TerminalPanel {
         } = opened;
         // 先经文件传输的检测包装：sudo 密码填入等直接写远端的地方也用包装后的输入（传输期间被拦下）
         let io = self.wrap_io(io, tmux == TmuxStatus::Attached, cx);
-        // 强制重连换了连接：原来连接上的通过本机代理不再属于这个会话
+        // 强制重连换了连接：原来连接上借出的本机代理不再属于这个会话
         self.end_proxy_lend(cx);
         self.transport = Some(io.input.clone());
         self.watch_password();
@@ -2671,7 +2671,7 @@ impl TerminalPanel {
         self.stalled = false;
         self._health = None;
         self._x11 = None;
-        // 通过本机代理属于这个会话：会话结束（含断线）即停止，重连后要用时重新开启
+        // 借出的本机代理属于这个会话：会话结束（含断线）即停止，重连后要用时重新开启
         self.end_proxy_lend(cx);
         self._latency = None;
         self.latency = None;
@@ -3476,7 +3476,7 @@ impl Panel for TerminalPanel {
                         }),
                 );
         }
-        // 通过本机代理：连接着的 SSH 终端（“只用一个通道”的主机不行）；开启着时打开它的命令片段与“停止”
+        // 把本机代理借给服务器：连接着的 SSH 终端（“只用一个通道”的主机不行）；开启着时打开它的命令片段与“停止”
         if self.is_ssh() {
             let running = self.proxy.is_some();
             let terminal = this.clone();
@@ -3514,22 +3514,29 @@ impl Panel for TerminalPanel {
                     }),
             );
         }
+        // 远端的编码：与终端内的右键菜单一样收在子菜单里
         if self.is_ssh() {
             let current = self.current_encoding();
-            menu = menu.separator();
-            for (value, _, label) in ENCODINGS {
-                let this = this.clone();
-                menu = menu.item(
-                    gpui_kit::component::menu::PopupMenuItem::new(t!(
-                        "panel.menu.encoding",
-                        name = label
-                    ))
-                    .checked(value == current)
-                    .on_click(move |_, _, cx| {
-                        let _ = this.update(cx, |this, cx| this.set_encoding(value, cx));
-                    }),
-                );
-            }
+            let items: Vec<gpui_kit::component::menu::PopupMenuItem> = ENCODINGS
+                .iter()
+                .map(|(value, _, label)| {
+                    let this = this.clone();
+                    let value = *value;
+                    gpui_kit::component::menu::PopupMenuItem::new(*label)
+                        .checked(value == current)
+                        .on_click(move |_, _, cx| {
+                            let _ = this.update(cx, |this, cx| this.set_encoding(value, cx));
+                        })
+                })
+                .collect();
+            let submenu =
+                gpui_kit::component::menu::PopupMenu::build(window, cx, move |menu, _, _| {
+                    items.into_iter().fold(menu, |menu, item| menu.item(item))
+                });
+            menu = menu.item(gpui_kit::component::menu::PopupMenuItem::submenu(
+                t!("terminal.encoding"),
+                submenu,
+            ));
         }
         let menu = menu.separator().menu(t!("panel.close"), Box::new(CloseTab));
         crate::workspace::close_tab_items(menu, cx.entity_id(), window, cx).separator()

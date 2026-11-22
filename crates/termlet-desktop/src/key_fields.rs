@@ -4,6 +4,7 @@
 //! 主机认证、命令行工具专用凭据、凭据档案都用它。
 
 use gpui_kit::component::button::Button;
+use gpui_kit::component::form::field;
 use gpui_kit::component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_kit::component::radio::RadioGroup;
 use gpui_kit::component::select::Select;
@@ -81,11 +82,8 @@ impl KeyFields {
         Self {
             from,
             library: choice_state(key_choices(store), &selected, true, window, cx),
-            file: cx.new(|cx| {
-                InputState::new(window, cx)
-                    .placeholder(t!("host.key.file_placeholder"))
-                    .default_value(path)
-            }),
+            // 私钥文件有标签与“浏览…”（见 render），不要占位文字
+            file: cx.new(|cx| InputState::new(window, cx).default_value(path)),
             certificate: cx.new(|cx| {
                 InputState::new(window, cx)
                     .placeholder(t!("host.key.certificate_placeholder"))
@@ -177,6 +175,35 @@ impl KeyFields {
             .map_err(|_| invalid(&CertError::Malformed))
     }
 
+    /// 选私钥文件：填进路径（不读文件，连接时再读，与手填的路径相同）。
+    fn browse_file<T: 'static>(
+        fields: fn(&mut T) -> &mut KeyFields,
+        window: &mut Window,
+        cx: &mut Context<T>,
+    ) {
+        let picked = cx.prompt_for_paths(PathPromptOptions {
+            files: true,
+            directories: false,
+            multiple: false,
+            prompt: None,
+        });
+        cx.spawn_in(window, async move |this, cx| {
+            let Ok(Ok(Some(paths))) = picked.await else {
+                return;
+            };
+            let Some(path) = paths.into_iter().next() else {
+                return;
+            };
+            let _ = this.update_in(cx, |this, window, cx| {
+                tracing::debug!("选了私钥文件");
+                fields(this).file.update(cx, |input, cx| {
+                    input.set_value(path.display().to_string(), window, cx)
+                });
+            });
+        })
+        .detach();
+    }
+
     /// 粘贴的私钥附带的证书从文件读入（`-cert.pub`）：读到的是证书时填进规范的一行，否则填进原文（保存时说明）。
     fn browse_certificate<T: 'static>(
         fields: fn(&mut T) -> &mut KeyFields,
@@ -256,51 +283,97 @@ impl KeyFields {
                 .text_color(muted)
                 .child(prose(t!("host.key.library_empty")))
                 .into_any_element(),
-            KeyFrom::Library => v_flex()
-                .gap_1()
-                .child(Select::new(&self.library))
-                .when_some(self.library_certificate_note(store, cx), |this, note| {
-                    this.child(div().text_xs().text_color(muted).child(prose(note)))
-                })
+            KeyFrom::Library => field()
+                .label(t!("host.key.library_key"))
+                .child(
+                    v_flex()
+                        .gap_1()
+                        .child(Select::new(&self.library))
+                        .when_some(self.library_certificate_note(store, cx), |this, note| {
+                            this.child(div().text_xs().text_color(muted).child(prose(note)))
+                        }),
+                )
                 .into_any_element(),
             KeyFrom::File => v_flex()
-                .gap_2()
-                .child(Input::new(&self.file))
-                .child(Input::new(&self.certificate))
+                .gap_3()
+                .child(
+                    field().label(t!("host.key.file")).child(
+                        h_flex()
+                            .gap_2()
+                            .child(div().flex_1().min_w_0().child(
+                                Input::new(&self.file).id(SharedString::from(format!("{id}-file"))),
+                            ))
+                            .child(
+                                Button::new(SharedString::from(format!("{id}-file-browse")))
+                                    .outline()
+                                    .label(t!("keys.browse"))
+                                    .on_click(cx.listener(move |_, _, window, cx| {
+                                        Self::browse_file(fields, window, cx)
+                                    })),
+                            ),
+                    ),
+                )
+                .child(
+                    field()
+                        .label(t!("host.key.certificate"))
+                        .child(Input::new(&self.certificate)),
+                )
                 .into_any_element(),
             KeyFrom::Pasted => v_flex()
-                .gap_2()
-                .child(Textarea::new(&self.pasted))
+                .gap_3()
                 .child(
-                    h_flex()
-                        .gap_2()
+                    field()
+                        .label(t!("host.key.pasted_content"))
+                        .child(Textarea::new(&self.pasted)),
+                )
+                .child(
+                    field()
+                        .label(t!("host.key.pasted_certificate_label"))
                         .child(
-                            div().flex_1().min_w_0().child(
-                                Input::new(&self.pasted_certificate)
-                                    .id(SharedString::from(format!("{id}-certificate"))),
-                            ),
-                        )
-                        .child(
-                            Button::new(SharedString::from(format!("{id}-certificate-browse")))
-                                .outline()
-                                .label(t!("keys.browse"))
-                                .on_click(cx.listener(move |_, _, window, cx| {
-                                    Self::browse_certificate(fields, window, cx)
-                                })),
+                            v_flex()
+                                .gap_1()
+                                .child(
+                                    h_flex()
+                                        .gap_2()
+                                        .child(div().flex_1().min_w_0().child(
+                                            Input::new(&self.pasted_certificate).id(
+                                                SharedString::from(format!("{id}-certificate")),
+                                            ),
+                                        ))
+                                        .child(
+                                            Button::new(SharedString::from(format!(
+                                                "{id}-certificate-browse"
+                                            )))
+                                            .outline()
+                                            .label(t!("keys.browse"))
+                                            .on_click(cx.listener(move |_, _, window, cx| {
+                                                Self::browse_certificate(fields, window, cx)
+                                            })),
+                                        ),
+                                )
+                                .when_some(
+                                    self.pasted_certificate_note(cx),
+                                    |this, (note, warn)| {
+                                        let color = if warn { danger } else { muted };
+                                        this.child(
+                                            div().text_xs().text_color(color).child(prose(note)),
+                                        )
+                                    },
+                                ),
                         ),
                 )
-                .when_some(self.pasted_certificate_note(cx), |this, (note, warn)| {
-                    let color = if warn { danger } else { muted };
-                    this.child(div().text_xs().text_color(color).child(prose(note)))
-                })
                 .into_any_element(),
         };
         v_flex()
-            .gap_2()
-            .child(radio)
+            .gap_3()
+            .child(field().label(t!("host.key.source")).child(radio))
             .child(source)
             .when(from != KeyFrom::Library, |this| {
-                this.child(Input::new(&self.passphrase).mask_toggle())
+                this.child(
+                    field()
+                        .label(t!("host.key.passphrase"))
+                        .child(Input::new(&self.passphrase).mask_toggle()),
+                )
             })
             .into_any_element()
     }

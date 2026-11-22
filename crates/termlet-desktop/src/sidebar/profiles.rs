@@ -122,13 +122,8 @@ impl Render for ProfileList {
                     .pt_2()
                     .pb_1()
                     .gap_1()
-                    .child(
-                        div()
-                            .flex_1()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child(prose(t!("profiles.hint"))),
-                    )
+                    // 页头只放按钮（说明在空状态里）
+                    .child(div().flex_1())
                     .child(
                         Button::new("new-profile")
                             .ghost()

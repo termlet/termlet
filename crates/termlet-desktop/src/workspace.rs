@@ -2489,6 +2489,12 @@ impl Workspace {
                             .on_click(cx.listener(|this, _, window, cx| {
                                 this.open_local_terminal(window, cx)
                             })),
+                    )
+                    .child(
+                        Button::new("start-import-hosts")
+                            .icon(IconName::Download)
+                            .label(t!("hosts.import_button"))
+                            .on_click(|_, window, cx| crate::backup_ui::open_import(window, cx)),
                     ),
             )
     }

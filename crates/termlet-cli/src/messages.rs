@@ -44,7 +44,7 @@ pub const USAGE: Msg = Msg {
   4  命令命中危险命令规则被拦截
   5  连接或执行失败
   6  凭据已锁定
-  7  外部 CLI 已关闭（在 Termlet 设置中的「AI 与自动化」中开启）
+  7  AI 工具与脚本的访问已关闭（在 Termlet 设置中的「AI 与自动化」中开启）
   其他  exec 连接成功后透传远程命令的退出码
 
 语言: 跟随 LC_ALL / LC_MESSAGES / LANG 或系统界面语言，可用 TERMLET_LANG=en|zh 指定。
@@ -84,7 +84,7 @@ Exit codes:
   4  command blocked by a dangerous-command rule
   5  connection or execution failed
   6  credentials are locked
-  7  external CLI is turned off (turn it on in Termlet under Settings → AI & automation)
+  7  access from AI tools and scripts is turned off (turn it on in Termlet under Settings → AI & automation)
   other  exec passes through the remote command's exit code once connected
 
 Language: follows LC_ALL / LC_MESSAGES / LANG or the system UI language; override with TERMLET_LANG=en|zh.

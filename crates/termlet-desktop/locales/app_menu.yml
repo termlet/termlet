@@ -72,11 +72,11 @@ app_menu.reconnect:
   ja: 再接続
   ko: 다시 연결
 app_menu.sftp_beside:
-  zh-CN: 在旁边打开 SFTP
-  en: Open SFTP Beside the Terminal
-  zh-TW: 在旁邊開啟 SFTP
-  ja: ターミナルの横に SFTP を開く
-  ko: 터미널 옆에 SFTP 열기
+  zh-CN: 在右侧打开 SFTP
+  en: Open SFTP on the Right
+  zh-TW: 在右側開啟 SFTP
+  ja: 右側に SFTP を開く
+  ko: 오른쪽에 SFTP 열기
 app_menu.split_right:
   zh-CN: 向右分屏
   en: Split Right

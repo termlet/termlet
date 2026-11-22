@@ -251,7 +251,7 @@ pub(crate) struct SettingsForm {
     agent_path: Entity<InputState>,
     /// 本机的 X 显示（X11 转发，本机设置）
     x11_display: Entity<InputState>,
-    /// 通过本机代理：本机的 HTTP 代理与服务器上的端口（本机设置）
+    /// 把本机代理借给服务器：本机的 HTTP 代理与服务器上的端口（本机设置）
     local_proxy: Entity<InputState>,
     local_proxy_port: Entity<InputState>,
     /// 打开设置时找到的系统代理（说明中显示）
@@ -651,7 +651,7 @@ impl SettingsForm {
                             )*};
                         }
                         changed!(cli, app_lock, backup, shells, logs, usage, window);
-                        // 本机的连接设置中只有 X 显示与通过本机代理的两项在这里改：确认过的代理命令可能在设置打开期间增加，
+                        // 本机的连接设置中只有 X 显示与借给服务器的本机代理两项在这里改：确认过的代理命令可能在设置打开期间增加，
                         // 不用旧值覆盖
                         if local.connection.x11_display != initial_local.connection.x11_display {
                             s.connection.x11_display = local.connection.x11_display.clone();
@@ -960,18 +960,13 @@ impl SettingsForm {
         } else {
             t!("settings.ui_scale_hint")
         };
+        // 只有 Linux 要说明前提（要桌面环境支持）；Windows、macOS 一看标签便知
         let taskbar_texts = match os {
-            gpui_kit::OperatingSystem::Windows => Some((
-                t!("settings.taskbar_progress"),
-                t!("settings.taskbar_progress_hint"),
-            )),
-            gpui_kit::OperatingSystem::Mac => Some((
-                t!("settings.taskbar_progress_mac"),
-                t!("settings.taskbar_progress_mac_hint"),
-            )),
+            gpui_kit::OperatingSystem::Windows => Some((t!("settings.taskbar_progress"), None)),
+            gpui_kit::OperatingSystem::Mac => Some((t!("settings.taskbar_progress_mac"), None)),
             gpui_kit::OperatingSystem::Linux => Some((
                 t!("settings.taskbar_progress_linux"),
-                t!("settings.taskbar_progress_linux_hint"),
+                Some(t!("settings.taskbar_progress_linux_hint")),
             )),
             _ => None,
         };
@@ -987,8 +982,8 @@ impl SettingsForm {
         };
         v_form()
             .child(
-                // 语言、主题与图标一行；说明写在这一行下面，讲图标管哪些地方
-                field().description(prose(t!("settings.icons_hint"))).child(
+                // 语言、主题与图标一行
+                field().child(
                     h_flex()
                         .gap_3()
                         .child(
@@ -1049,7 +1044,7 @@ impl SettingsForm {
                 el.child(self.checkbox(
                     "settings-taskbar-progress",
                     label,
-                    Some(hint),
+                    hint,
                     |this| &mut this.local.window.taskbar_progress,
                     cx,
                 ))

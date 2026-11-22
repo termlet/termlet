@@ -12,11 +12,11 @@ cli_ui.enabled:
   ja: AI ツールとスクリプトからのアクセスを許可
   ko: AI 도구와 스크립트의 액세스 허용
 cli_ui.enabled_hint:
-  zh-CN: AI 工具与脚本可以经 termlet 命令或 MCP 服务，在允许它们使用的主机上执行命令、上传下载文件。关闭时它们的全部请求都被拒绝（termlet 命令的退出码为 7）。
-  en: AI tools and scripts can run commands and transfer files on hosts that allow them, through the termlet command or the MCP server. When this is off, all of their requests are refused (the termlet command exits with code 7).
-  zh-TW: AI 工具與指令碼可以經由 termlet 指令或 MCP 服務，在允許它們使用的主機上執行指令、上傳下載檔案。關閉時它們的全部要求都會被拒絕（termlet 指令的結束代碼為 7）。
-  ja: AI ツールやスクリプトが termlet コマンドまたは MCP サーバーを通じて、使用を許可したホストでコマンドを実行したり、ファイルをアップロード・ダウンロードしたりできます。オフにすると、これらからの要求はすべて拒否されます（termlet コマンドの終了コードは 7）。
-  ko: AI 도구와 스크립트가 termlet 명령이나 MCP 서버를 통해 사용을 허용한 호스트에서 명령을 실행하고 파일을 업로드·다운로드할 수 있습니다. 끄면 이들의 모든 요청이 거부됩니다(termlet 명령의 종료 코드는 7).
+  zh-CN: 只能使用编辑时允许了的主机；关闭时拒绝所有请求。
+  en: They can use only the hosts you've allowed. When this is off, all requests are refused.
+  zh-TW: 只能使用編輯時允許了的主機；關閉時拒絕所有要求。
+  ja: 使えるのは編集時に許可したホストだけです。オフにすると、すべての要求を拒否します。
+  ko: 편집할 때 허용한 호스트만 사용할 수 있습니다. 끄면 모든 요청을 거부합니다.
 cli_ui.auto_start:
   zh-CN: Termlet 没有打开时也能使用（自动在后台启动）
   en: Also works when Termlet isn't open (start it in the background)

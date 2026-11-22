@@ -336,7 +336,11 @@ impl Render for ProfileForm {
             }));
         let store = self.store.clone();
         let auth_fields = match self.auth {
-            AuthKind::Password => Input::new(&self.password).mask_toggle().into_any_element(),
+            // 与私钥的字段一样标签在上方
+            AuthKind::Password => field()
+                .label(t!("host.field.password"))
+                .child(Input::new(&self.password).mask_toggle())
+                .into_any_element(),
             AuthKind::Key => self.key.render(
                 "profile-key-from",
                 &store,

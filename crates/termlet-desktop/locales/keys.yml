@@ -11,12 +11,6 @@ keys.tab_keys:
   zh-TW: 金鑰
   ja: 鍵
   ko: 키
-keys.hint:
-  zh-CN: 可被多台主机共用
-  en: Shared by multiple hosts
-  zh-TW: 可供多台主機共用
-  ja: 複数のホストで共有できます
-  ko: 여러 호스트에서 공유할 수 있습니다
 keys.empty:
   zh-CN: 还没有密钥。生成或导入后可在编辑主机时选择。
   en: No keys yet. Generated or imported keys can be chosen when editing a host.

@@ -539,12 +539,6 @@ panel.menu.reveal_log:
   zh-TW: 開啟工作階段記錄所在的資料夾
   ja: セッションログのフォルダーを開く
   ko: 세션 로그가 있는 폴더 열기
-panel.menu.encoding:
-  zh-CN: 编码：%{name}
-  en: "Encoding: %{name}"
-  zh-TW: 編碼：%{name}
-  ja: エンコード：%{name}
-  ko: "인코딩: %{name}"
 terminal.encoding:
   zh-CN: 远端的编码
   en: Server encoding
@@ -684,27 +678,27 @@ panel.menu.clear_scheme:
   ja: このタブの一時的な配色を解除
   ko: 이 탭의 임시 색 구성표 해제
 terminal.notice.proxy_stopped:
-  zh-CN: 通过本机代理已停止（会话已结束）。重新连接后要用时，从 Tab 菜单重新开启
+  zh-CN: 本机代理已不再借给服务器（会话已结束）。重新连接后要用时，从 Tab 菜单重新开启
   en: Lending the local proxy stopped because the session ended. After reconnecting, turn it on again from the tab menu if you need it
-  zh-TW: 透過本機代理已停止（工作階段已結束）。重新連線後若要使用，請從分頁選單重新開啟
+  zh-TW: 本機代理已不再借給伺服器（工作階段已結束）。重新連線後若要使用，請從分頁選單重新開啟
   ja: ローカルプロキシの共有を停止しました（セッションが終了しました）。再接続後に使う場合は、タブのメニューからもう一度オンにしてください
   ko: 로컬 프록시 공유가 중지되었습니다(세션 종료). 다시 연결한 후 사용하려면 탭 메뉴에서 다시 켜세요
 terminal.proxy.menu:
-  zh-CN: 通过本机代理…
-  en: Lend Local Proxy…
-  zh-TW: 透過本機代理…
-  ja: ローカルプロキシを共有…
-  ko: 로컬 프록시 공유…
+  zh-CN: 把本机代理借给服务器…
+  en: Lend Local Proxy to the Server…
+  zh-TW: 把本機代理借給伺服器…
+  ja: ローカルプロキシをサーバーと共有…
+  ko: 서버와 로컬 프록시 공유…
 terminal.proxy.menu_running:
-  zh-CN: 通过本机代理（开启中）…
-  en: Lend Local Proxy (On)…
-  zh-TW: 透過本機代理（開啟中）…
-  ja: ローカルプロキシを共有（オン）…
-  ko: 로컬 프록시 공유(켜짐)…
+  zh-CN: 把本机代理借给服务器（开启中）…
+  en: Lend Local Proxy to the Server (On)…
+  zh-TW: 把本機代理借給伺服器（開啟中）…
+  ja: ローカルプロキシをサーバーと共有（オン）…
+  ko: 서버와 로컬 프록시 공유(켜짐)…
 terminal.proxy.title:
-  zh-CN: 通过本机代理
+  zh-CN: 把本机代理借给服务器
   en: Lend Local Proxy to the Server
-  zh-TW: 透過本機代理
+  zh-TW: 把本機代理借給伺服器
   ja: ローカルプロキシをサーバーと共有
   ko: 서버와 로컬 프록시 공유
 terminal.proxy.intro:
@@ -900,9 +894,9 @@ terminal.proxy.bar:
   ja: プロキシ :%{port}
   ko: 프록시 :%{port}
 terminal.proxy.bar_tooltip:
-  zh-CN: 通过本机代理：服务器上的 127.0.0.1:%{port} → 本机的 %{local}
+  zh-CN: 本机代理借给服务器：服务器上的 127.0.0.1:%{port} → 本机的 %{local}
   en: "Lending the local proxy: 127.0.0.1:%{port} on the server → %{local} here"
-  zh-TW: 透過本機代理：伺服器上的 127.0.0.1:%{port} → 本機的 %{local}
+  zh-TW: 本機代理借給伺服器：伺服器上的 127.0.0.1:%{port} → 本機的 %{local}
   ja: ローカルプロキシを共有中：サーバーの 127.0.0.1:%{port} → このコンピューターの %{local}
   ko: "로컬 프록시 공유 중: 서버의 127.0.0.1:%{port} → 이 컴퓨터의 %{local}"
 terminal.proxy.error.address_empty:
@@ -924,9 +918,9 @@ terminal.proxy.error.port:
   ja: ポートが正しくありません：%{port}。1～65535 を入力するか、空欄のままにしてください。
   ko: "포트가 올바르지 않습니다: %{port}. 1–65535 사이 값을 입력하거나 비워 두세요."
 terminal.proxy.error.denied:
-  zh-CN: 服务器不允许远程转发（sshd 设置了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），不能通过本机代理。
+  zh-CN: 服务器不允许远程转发（sshd 设置了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），不能把本机代理借给它。
   en: The server doesn't allow remote forwarding (sshd sets AllowTcpForwarding no, DisableForwarding, PermitListen or similar), so the local proxy can't be lent.
-  zh-TW: 伺服器不允許遠端轉送（sshd 設定了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），無法透過本機代理。
+  zh-TW: 伺服器不允許遠端轉送（sshd 設定了 AllowTcpForwarding no、DisableForwarding 或 PermitListen 等），無法把本機代理借給它。
   ja: サーバーがリモート転送を許可していないため（sshd で AllowTcpForwarding no、DisableForwarding、PermitListen などが設定されています）、ローカルプロキシを共有できません。
   ko: 서버가 원격 포워딩을 허용하지 않아(sshd에 AllowTcpForwarding no, DisableForwarding, PermitListen 등이 설정됨) 로컬 프록시를 공유할 수 없습니다.
 terminal.proxy.error.disconnected:

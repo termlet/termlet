@@ -191,8 +191,8 @@ pub fn human(code: &str) -> Option<Msg> {
             "Termlet is locked; unlock it in Termlet first",
         ),
         CliDisabled => (
-            "外部 CLI 已关闭，请在 Termlet 设置中的「AI 与自动化」中开启",
-            "External CLI is turned off; turn it on in Termlet under Settings → AI & automation",
+            "AI 工具与脚本的访问已关闭，请在 Termlet 设置中的「AI 与自动化」中开启",
+            "Access from AI tools and scripts is turned off; turn it on in Termlet under Settings → AI & automation",
         ),
         AppNotRunning => ("Termlet 没有运行", "Termlet is not running"),
         ConnectFailed => ("连接或执行失败", "connection or execution failed"),

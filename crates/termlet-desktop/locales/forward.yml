@@ -5,12 +5,6 @@ sidebar.page.forwards:
   zh-TW: 轉送
   ja: ポート転送
   ko: 포트 포워딩
-forward.hint:
-  zh-CN: 本地端口经 SSH 转发到远程
-  en: Forward ports over SSH
-  zh-TW: 本機連接埠經 SSH 轉送到遠端
-  ja: ローカルポートを SSH 経由でリモートに転送
-  ko: 로컬 포트를 SSH를 통해 원격으로 포워딩
 forward.new:
   zh-CN: 新建端口转发
   en: New Port Forward

@@ -1,4 +1,4 @@
-//! “通过本机代理”的对话框（终端的 Tab 菜单、状态条）：把本机的 HTTP 代理借给服务器（SSH 远程转发，服务器上只监听
+//! “把本机代理借给服务器”的对话框（终端的 Tab 菜单、状态条）：把本机的 HTTP 代理借给服务器（SSH 远程转发，服务器上只监听
 //! `127.0.0.1`），服务器连不上外网时装包、拉镜像用。
 //!
 //! - 开启前：本机代理（设置中填了的，没填时用系统代理）与服务器上的端口（留空由服务器选），开启时记进本机设置。
@@ -31,7 +31,7 @@ use crate::snippets::CommandInput;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
 
-/// 打开“通过本机代理”：还没开启时是开启的表单，开启着时是命令片段与“停止”。
+/// 打开“把本机代理借给服务器”：还没开启时是开启的表单，开启着时是命令片段与“停止”。
 pub fn open(terminal: Entity<TerminalPanel>, window: &mut Window, cx: &mut App) {
     let view = cx.new(|cx| ProxyShareView::new(terminal.clone(), window, cx));
     let notice = view.read(cx).notice.clone();
@@ -206,7 +206,7 @@ impl ProxyShareView {
             }
             s.connection.local_proxy_port = port;
         }) {
-            tracing::warn!("保存通过本机代理的设置失败：{e}");
+            tracing::warn!("保存借给服务器的本机代理设置失败：{e}");
         }
         self.error = None;
         self.starting = true;
@@ -218,7 +218,7 @@ impl ProxyShareView {
             let _ = this.update(cx, |this, cx| {
                 this.starting = false;
                 if let Err(error) = result {
-                    tracing::info!("开启通过本机代理失败：{error}");
+                    tracing::info!("把本机代理借给服务器失败：{error}");
                     this.error = Some(describe(&error));
                 }
                 cx.notify();
@@ -529,7 +529,7 @@ mod tests {
         port
     }
 
-    // 连真实的 sshd（TERMLET_TEST_SSH）：在终端上开启通过本机代理，对话框给出命令片段、状态条上显示；
+    // 连真实的 sshd（TERMLET_TEST_SSH）：在终端上开启“把本机代理借给服务器”，对话框给出命令片段、状态条上显示；
     // 停止后对话框回到开启前的表单，状态条上没有了
     #[gpui_kit::test]
     fn lends_and_stops_from_the_dialog(cx: &mut TestAppContext) {

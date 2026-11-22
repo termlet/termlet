@@ -84,17 +84,17 @@ lock_ui.screen.quit_ok:
   ja: 終了
   ko: 종료
 lock_ui.security.description:
-  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。按 %{key} 立即锁定。"
-  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked. Press %{key} to lock now."
-  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。按 %{key} 立即鎖定。"
-  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。%{key} を押すとすぐにロックします。
-  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다. %{key}을(를) 누르면 바로 잠급니다.
+  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。锁定密码只挡住界面，保存的密码与私钥由系统钥匙串或主密码加密。按 %{key} 立即锁定。"
+  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked. The lock password only guards the window; saved passwords and private keys are encrypted by the system keychain or your master password. Press %{key} to lock now."
+  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。鎖定密碼只擋住介面，儲存的密碼與私密金鑰由系統鑰匙圈或主密碼加密。按 %{key} 立即鎖定。"
+  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。ロックパスワードは画面を隠すだけで、保存したパスワードや秘密鍵はシステムのキーチェーンまたはマスターパスワードで暗号化されます。%{key} を押すとすぐにロックします。
+  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다. 잠금 비밀번호는 화면만 가리며, 저장한 비밀번호와 개인 키는 시스템 키체인이나 마스터 비밀번호로 암호화됩니다. %{key}을(를) 누르면 바로 잠급니다.
 lock_ui.security.description_no_key:
-  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。"
-  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked."
-  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。"
-  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。
-  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다.
+  zh-CN: "锁定后要输入锁定密码（或使用 Windows Hello）才能继续使用，已打开的会话在后台继续运行；锁定期间 termlet 命令行工具返回退出码 6。锁定密码只挡住界面，保存的密码与私钥由系统钥匙串或主密码加密。"
+  en: "When locked, enter the lock password (or use Windows Hello) to continue. Open sessions keep running in the background, and the termlet CLI returns exit code 6 while locked. The lock password only guards the window; saved passwords and private keys are encrypted by the system keychain or your master password."
+  zh-TW: "鎖定後要輸入鎖定密碼（或使用 Windows Hello）才能繼續使用，已開啟的工作階段會在背景繼續執行；鎖定期間 termlet 命令列工具會傳回結束代碼 6。鎖定密碼只擋住介面，儲存的密碼與私密金鑰由系統鑰匙圈或主密碼加密。"
+  ja: ロック中は、ロックパスワードを入力する（または Windows Hello を使う）と使用を再開できます。開いているセッションはバックグラウンドで実行を続けます。ロック中、termlet コマンドラインツールは終了コード 6 を返します。ロックパスワードは画面を隠すだけで、保存したパスワードや秘密鍵はシステムのキーチェーンまたはマスターパスワードで暗号化されます。
+  ko: 잠긴 동안에는 잠금 비밀번호를 입력하거나 Windows Hello를 사용해야 계속 쓸 수 있으며, 열려 있는 세션은 백그라운드에서 계속 실행됩니다. 잠긴 동안 termlet 명령줄 도구는 종료 코드 6을 반환합니다. 잠금 비밀번호는 화면만 가리며, 저장한 비밀번호와 개인 키는 시스템 키체인이나 마스터 비밀번호로 암호화됩니다.
 lock_ui.security.lock_now:
   zh-CN: "立即锁定"
   en: "Lock now"
@@ -258,11 +258,11 @@ lock_ui.master.title:
   ja: マスターパスワード
   ko: 마스터 비밀번호
 lock_ui.master.description:
-  zh-CN: "这台电脑没有可用的系统钥匙串，保存的密码、私钥等用主密码加密，每次启动时输入。修改后用新的主密码解锁，保存的内容不用重新加密。只影响这台电脑：云同步用的是同步密码，其他电脑有各自的钥匙串或主密码，不用跟着改。"
-  en: "No system keychain is available on this computer, so saved passwords, private keys and other secrets are encrypted with your master password, which you enter at each start. After a change you unlock with the new one; saved secrets don't need to be encrypted again. This affects only this computer: sync uses your sync password, and your other computers have their own keychain or master password, so nothing needs to change there."
-  zh-TW: "這台電腦沒有可用的系統鑰匙圈，儲存的密碼、私密金鑰等用主密碼加密，每次啟動時輸入。修改後用新的主密碼解鎖，儲存的內容不用重新加密。只影響這台電腦：雲端同步用的是同步密碼，其他電腦有各自的鑰匙圈或主密碼，不用跟著改。"
-  ja: このコンピューターには使用できるシステムのキーチェーンがないため、保存したパスワードや秘密鍵などはマスターパスワードで暗号化され、起動のたびに入力します。変更後は新しいマスターパスワードでロックを解除します。保存した内容を暗号化し直す必要はありません。影響するのはこのコンピューターだけです。クラウド同期では同期パスワードを使い、ほかのコンピューターにはそれぞれのキーチェーンまたはマスターパスワードがあるため、変更は不要です。
-  ko: 이 컴퓨터에는 사용할 수 있는 시스템 키체인이 없어 저장한 비밀번호, 개인 키 등을 마스터 비밀번호로 암호화하며, 시작할 때마다 입력해야 합니다. 변경한 뒤에는 새 마스터 비밀번호로 잠금을 해제하며, 저장한 내용을 다시 암호화할 필요는 없습니다. 이 컴퓨터에만 영향을 줍니다. 클라우드 동기화는 동기화 비밀번호를 쓰고, 다른 컴퓨터에는 각자의 키체인이나 마스터 비밀번호가 있으므로 함께 바꿀 필요가 없습니다.
+  zh-CN: "这台电脑没有可用的系统钥匙串，保存的密码、私钥等用主密码加密，每次启动时输入；应用锁的锁定密码只挡住界面，与主密码无关。修改后用新的主密码解锁，保存的内容不用重新加密。只影响这台电脑：云同步用的是同步密码，其他电脑有各自的钥匙串或主密码，不用跟着改。"
+  en: "No system keychain is available on this computer, so saved passwords, private keys and other secrets are encrypted with your master password, which you enter at each start; the app lock password only guards the window and is separate from it. After a change you unlock with the new one; saved secrets don't need to be encrypted again. This affects only this computer: sync uses your sync password, and your other computers have their own keychain or master password, so nothing needs to change there."
+  zh-TW: "這台電腦沒有可用的系統鑰匙圈，儲存的密碼、私密金鑰等用主密碼加密，每次啟動時輸入；應用程式鎖定的鎖定密碼只擋住介面，與主密碼無關。修改後用新的主密碼解鎖，儲存的內容不用重新加密。只影響這台電腦：雲端同步用的是同步密碼，其他電腦有各自的鑰匙圈或主密碼，不用跟著改。"
+  ja: このコンピューターには使用できるシステムのキーチェーンがないため、保存したパスワードや秘密鍵などはマスターパスワードで暗号化され、起動のたびに入力します。アプリロックのロックパスワードは画面を隠すだけで、マスターパスワードとは別のものです。変更後は新しいマスターパスワードでロックを解除します。保存した内容を暗号化し直す必要はありません。影響するのはこのコンピューターだけです。クラウド同期では同期パスワードを使い、ほかのコンピューターにはそれぞれのキーチェーンまたはマスターパスワードがあるため、変更は不要です。
+  ko: 이 컴퓨터에는 사용할 수 있는 시스템 키체인이 없어 저장한 비밀번호, 개인 키 등을 마스터 비밀번호로 암호화하며, 시작할 때마다 입력해야 합니다. 앱 잠금의 잠금 비밀번호는 화면만 가리며 마스터 비밀번호와는 별개입니다. 변경한 뒤에는 새 마스터 비밀번호로 잠금을 해제하며, 저장한 내용을 다시 암호화할 필요는 없습니다. 이 컴퓨터에만 영향을 줍니다. 클라우드 동기화는 동기화 비밀번호를 쓰고, 다른 컴퓨터에는 각자의 키체인이나 마스터 비밀번호가 있으므로 함께 바꿀 필요가 없습니다.
 lock_ui.master.change:
   zh-CN: "修改主密码…"
   en: "Change Master Password…"

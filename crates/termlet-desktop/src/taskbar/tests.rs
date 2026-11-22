@@ -409,9 +409,9 @@ fn real_upload_shows_and_clears_progress(cx: &mut TestAppContext) {
 fn texts_exist() {
     for key in [
         "settings.taskbar_progress",
-        "settings.taskbar_progress_hint",
         "settings.taskbar_progress_mac",
-        "settings.taskbar_progress_mac_hint",
+        "settings.taskbar_progress_linux",
+        "settings.taskbar_progress_linux_hint",
     ] {
         assert_ne!(crate::t!(key).as_ref(), key, "缺少文案 {key}");
     }

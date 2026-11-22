@@ -215,36 +215,66 @@ host.key.library_empty:
   zh-TW: 金鑰庫中還沒有金鑰，請先在側邊欄「金鑰」中產生或匯入。
   ja: 鍵ライブラリに鍵がまだありません。先にサイドバーの「鍵」で生成またはインポートしてください。
   ko: 키 라이브러리에 아직 키가 없습니다. 먼저 사이드바의 '키'에서 생성하거나 가져오세요.
-host.key.file_placeholder:
-  zh-CN: 私钥文件路径
-  en: Path to the private key file
-  zh-TW: 私密金鑰檔案路徑
-  ja: 秘密鍵ファイルのパス
-  ko: 개인 키 파일 경로
+host.key.source:
+  zh-CN: 私钥来源
+  en: Key source
+  zh-TW: 私密金鑰來源
+  ja: 秘密鍵の取得元
+  ko: 개인 키 출처
+host.key.library_key:
+  zh-CN: 密钥
+  en: Key
+  zh-TW: 金鑰
+  ja: 鍵
+  ko: 키
+host.key.certificate:
+  zh-CN: 证书文件（可选）
+  en: Certificate file (optional)
+  zh-TW: 憑證檔案（選填）
+  ja: 証明書ファイル（省略可）
+  ko: 인증서 파일(선택 사항)
+host.key.pasted_content:
+  zh-CN: 私钥内容
+  en: Private key
+  zh-TW: 私密金鑰內容
+  ja: 秘密鍵の内容
+  ko: 개인 키 내용
+host.key.pasted_certificate_label:
+  zh-CN: 证书（可选）
+  en: Certificate (optional)
+  zh-TW: 憑證（選填）
+  ja: 証明書（省略可）
+  ko: 인증서(선택 사항)
+host.key.passphrase:
+  zh-CN: 私钥密码
+  en: Key passphrase
+  zh-TW: 私密金鑰密碼
+  ja: 秘密鍵のパスフレーズ
+  ko: 개인 키 암호 문구
 host.key.passphrase_placeholder:
-  zh-CN: 私钥密码（没有可留空）
-  en: Key passphrase (leave empty if none)
-  zh-TW: 私密金鑰密碼（沒有可留空）
-  ja: 秘密鍵のパスフレーズ（ない場合は空欄）
-  ko: 개인 키 암호 문구(없으면 비워 둠)
+  zh-CN: 没有可留空
+  en: Leave empty if none
+  zh-TW: 沒有可留空
+  ja: ない場合は空欄
+  ko: 없으면 비워 둠
 host.key.passphrase_keep:
-  zh-CN: 私钥密码（留空则不修改）
-  en: Key passphrase (leave empty to keep it)
-  zh-TW: 私密金鑰密碼（留空則不修改）
-  ja: 秘密鍵のパスフレーズ（空欄のままにすると変更しません）
-  ko: 개인 키 암호 문구(비워 두면 변경하지 않음)
+  zh-CN: 留空则不修改
+  en: Leave empty to keep it
+  zh-TW: 留空則不修改
+  ja: 空欄のままにすると変更しません
+  ko: 비워 두면 변경하지 않음
 host.key.certificate_placeholder:
-  zh-CN: 证书文件（可选，留空时自动使用同名的 -cert.pub）
-  en: Certificate file (optional; leave empty to use the matching -cert.pub)
-  zh-TW: 憑證檔案（選填，留空時自動使用同名的 -cert.pub）
-  ja: 証明書ファイル（省略可。空欄の場合は同名の -cert.pub を自動で使用）
-  ko: 인증서 파일(선택 사항, 비워 두면 같은 이름의 -cert.pub 파일을 자동으로 사용)
+  zh-CN: 留空时自动使用同名的 -cert.pub
+  en: Leave empty to use the matching -cert.pub
+  zh-TW: 留空時自動使用同名的 -cert.pub
+  ja: 空欄の場合は同名の -cert.pub を自動で使用
+  ko: 비워 두면 같은 이름의 -cert.pub 파일을 자동으로 사용
 host.key.pasted_certificate_placeholder:
-  zh-CN: 证书（可选）：粘贴 -cert.pub 的内容，或从文件读入
-  en: "Certificate (optional): paste the contents of the -cert.pub file, or load it from a file"
-  zh-TW: 憑證（選填）：貼上 -cert.pub 的內容，或從檔案讀入
-  ja: 証明書（省略可）：-cert.pub の内容を貼り付けるか、ファイルから読み込みます
-  ko: "인증서(선택 사항): -cert.pub 파일의 내용을 붙여 넣거나 파일에서 불러오기"
+  zh-CN: 粘贴 -cert.pub 的内容，或从文件读入
+  en: Paste the contents of the -cert.pub file, or load it from a file
+  zh-TW: 貼上 -cert.pub 的內容，或從檔案讀入
+  ja: "-cert.pub の内容を貼り付けるか、ファイルから読み込みます"
+  ko: "-cert.pub 파일의 내용을 붙여 넣거나 파일에서 불러오기"
 host.key.pasted_certificate:
   zh-CN: 附带这张证书，登录时先出示证书。
   en: This certificate is attached and presented first when logging in.
@@ -449,12 +479,18 @@ host.totp.hint:
   zh-TW: 伺服器要求輸入驗證碼時由 Termlet 計算並填寫，斷線重連、連接埠轉送也能用於這台主機。命令列工具不使用。
   ja: サーバーが確認コードを求めたときに Termlet が計算して入力します。切断後の再接続やポート転送でもこのホストに使用できます。コマンドラインツールでは使用しません。
   ko: 서버가 인증 코드를 요청하면 Termlet이 계산해서 입력합니다. 연결이 끊긴 뒤 다시 연결할 때나 포트 포워딩에서도 이 호스트에 사용할 수 있습니다. 명령줄 도구에서는 사용하지 않습니다.
+host.totp.secret:
+  zh-CN: TOTP 密钥
+  en: TOTP secret
+  zh-TW: TOTP 金鑰
+  ja: TOTP シークレット
+  ko: TOTP 비밀 키
 host.totp.placeholder:
-  zh-CN: TOTP 密钥：Base32 字符串或 otpauth:// 链接
-  en: "TOTP secret: a Base32 string or an otpauth:// link"
-  zh-TW: TOTP 金鑰：Base32 字串或 otpauth:// 連結
-  ja: TOTP シークレット：Base32 文字列または otpauth:// リンク
-  ko: "TOTP 비밀 키: Base32 문자열 또는 otpauth:// 링크"
+  zh-CN: Base32 字符串或 otpauth:// 链接
+  en: A Base32 string or an otpauth:// link
+  zh-TW: Base32 字串或 otpauth:// 連結
+  ja: Base32 文字列または otpauth:// リンク
+  ko: Base32 문자열 또는 otpauth:// 링크
 host.totp.keep:
   zh-CN: 已设置，留空保持不变
   en: Set. Leave empty to keep it

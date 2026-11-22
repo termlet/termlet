@@ -1859,8 +1859,20 @@ impl HostTree {
                 if searching {
                     this.child(prose(t!("hosts.empty.no_match")))
                 } else {
+                    // 从别的客户端搬过来的人先找导入：放在空状态里，不用先找到“…”菜单
                     this.child(prose(t!("hosts.empty.no_hosts")))
                         .child(prose(t!("hosts.empty.no_hosts_hint")))
+                        .child(
+                            h_flex().pt_2().child(
+                                Button::new("hosts-empty-import")
+                                    .outline()
+                                    .small()
+                                    .label(t!("hosts.import_button"))
+                                    .on_click(|_, window, cx| {
+                                        crate::backup_ui::open_import(window, cx)
+                                    }),
+                            ),
+                        )
                 }
             })
     }

@@ -14,7 +14,7 @@ use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, WindowExt as _, 
 use gpui_kit::{
     Action, App, AppContext as _, Context, Entity, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, Styled as _, TestSupportExt as _, WeakEntity, Window,
-    div, rems,
+    div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::{HostId, WorkspaceId};
 use termlet_core::model::{Host, Workspace as SavedWorkspace};
@@ -579,6 +579,8 @@ impl CommandPalette {
 
 impl Render for CommandPalette {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // 列出的全是操作时（如不输入、或以 > 开头）不逐行显示同一个图标与“操作”，混着主机、Tab 时才用来区分
+        let only_ops = self.shown.iter().all(|e| e.category == Category::Op);
         let items = self.shown.iter().map(|entry| {
             let entry = entry.clone();
             CommandItem::new()
@@ -615,7 +617,9 @@ impl Render for CommandPalette {
                     h_flex()
                         .w_full()
                         .gap_2()
-                        .child(Icon::new(icon).small().text_color(color))
+                        .when(!only_ops, |this| {
+                            this.child(Icon::new(icon).small().text_color(color))
+                        })
                         .child(div().flex_none().text_sm().child(entry.name.clone()))
                         .child(
                             div()
@@ -627,12 +631,14 @@ impl Render for CommandPalette {
                                 .child(entry.detail.clone()),
                         )
                         .children(shortcut)
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(theme.muted_foreground)
-                                .child(category),
-                        )
+                        .when(!only_ops, |this| {
+                            this.child(
+                                div()
+                                    .text_xs()
+                                    .text_color(theme.muted_foreground)
+                                    .child(category),
+                            )
+                        })
                 })
         });
         let this = cx.entity().downgrade();

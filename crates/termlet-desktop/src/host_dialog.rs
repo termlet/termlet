@@ -29,9 +29,9 @@ use gpui_kit::component::{
 };
 use gpui_kit::{
     AnyElement, App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Subscription, Task, TestSupportExt as _, Window, div, prelude::FluentBuilder as _,
-    rems,
+    IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
+    StatefulInteractiveElement as _, Styled as _, Subscription, Task, TestSupportExt as _, Window,
+    div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::{GroupId, HostId, ProfileId};
 use termlet_core::inherit::{self, Inherited};
@@ -257,6 +257,8 @@ struct HostForm {
     original: Host,
     store: Arc<Store>,
     page: Page,
+    /// 右侧内容的滚动位置：换页时回到顶部（各页长短不同，沿用上一页的位置会截掉新页的标题）
+    page_scroll: ScrollHandle,
     /// 左侧分页导航的焦点（见 [`crate::page_nav`]）
     nav_focus: gpui_kit::FocusHandle,
     protocol: Protocol,
@@ -488,27 +490,20 @@ impl HostForm {
             cx,
         );
         let p = proxy.clone().unwrap_or_default();
-        let proxy_address = input(p.address.clone(), t!("host.proxy.address"), window, cx);
+        // 代理的字段在上方有标签（见 render_connection），占位文字只说已保存的密码怎样保持
+        let proxy_address = input(p.address.clone(), SharedString::default(), window, cx);
         let proxy_port = input(
             if p.port == 0 {
                 String::new()
             } else {
                 p.port.to_string()
             },
-            t!("host.field.port"),
+            SharedString::default(),
             window,
             cx,
         );
-        let proxy_username = input(p.username.clone(), t!("host.proxy.username"), window, cx);
-        let proxy_password = masked(
-            if saved.proxy_password {
-                t!("host.secret.keep")
-            } else {
-                t!("host.proxy.password")
-            },
-            window,
-            cx,
-        );
+        let proxy_username = input(p.username.clone(), SharedString::default(), window, cx);
+        let proxy_password = masked(keep(saved.proxy_password), window, cx);
         let proxy_command = input(
             p.command.clone(),
             t!("host.proxy.command_placeholder"),
@@ -679,6 +674,7 @@ impl HostForm {
             id,
             store,
             page: Page::General,
+            page_scroll: ScrollHandle::new(),
             nav_focus: cx.focus_handle().tab_stop(true),
             protocol: h.protocol,
             name,
@@ -885,7 +881,7 @@ impl HostForm {
         }
         self.protocol = protocol;
         if !Page::for_protocol(protocol).contains(&self.page) {
-            self.page = Page::General;
+            self.set_page(Page::General);
         }
         let keep =
             self.saved.password && (protocol != Protocol::Ssh || self.auth == AuthKind::Password);
@@ -1338,7 +1334,7 @@ impl HostForm {
         let (host, group, secrets) = match self.collect(cx) {
             Ok(collected) => collected,
             Err((page, message)) => {
-                self.page = page;
+                self.set_page(page);
                 self.error = Some(message);
                 cx.notify();
                 return false;
@@ -1367,7 +1363,7 @@ impl HostForm {
             let _ = this.update_in(cx, |this, window, cx| {
                 this.saving = false;
                 if let Some((page, message)) = failed {
-                    this.page = page;
+                    this.set_page(page);
                     this.error = Some(message);
                     cx.notify();
                 } else if this.write(host, group, secrets, cx) {
@@ -1462,7 +1458,7 @@ impl HostForm {
         let (host, group, secrets) = match self.collect(cx) {
             Ok(collected) => collected,
             Err((page, message)) => {
-                self.page = page;
+                self.set_page(page);
                 self.error = Some(message);
                 cx.notify();
                 return;
@@ -1606,6 +1602,14 @@ impl HostForm {
         }
     }
 
+    /// 换到某一页：换了页时右侧内容回到顶部。
+    fn set_page(&mut self, page: Page) {
+        if page != self.page {
+            self.page_scroll.set_offset(Default::default());
+        }
+        self.page = page;
+    }
+
     fn render_nav(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let items = Page::for_protocol(self.protocol).iter().map(|&page| {
             let dot = self.page_has_settings(page, cx);
@@ -1620,7 +1624,7 @@ impl HostForm {
             };
             item.on_click(move |_, _, cx| {
                 let _ = this.update(cx, |this, cx| {
-                    this.page = page;
+                    this.set_page(page);
                     cx.notify();
                 });
             })
@@ -1630,7 +1634,7 @@ impl HostForm {
         let frame = crate::page_nav::frame("host-nav", &self.nav_focus, window, cx).on_key_down(
             cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
                 if let Some(ix) = crate::page_nav::step(event, current, pages.len()) {
-                    this.page = pages[ix];
+                    this.set_page(pages[ix]);
                     cx.notify();
                     cx.stop_propagation();
                 }
@@ -2007,24 +2011,47 @@ impl HostForm {
                     .child(Input::new(&self.proxy_command).id("host-proxy-command"))
                     .into_any_element(),
             ),
+            // 地址与端口、用户名与密码各一行，与常规页的地址、端口一样标签在上方
             ProxyChoice::Kind(kind) => Some(
                 v_flex()
-                    .gap_2()
+                    .gap_3()
                     .child(
                         h_flex()
                             .gap_3()
-                            .child(div().flex_1().child(Input::new(&self.proxy_address)))
-                            .child(div().w(rems(6.)).child(Input::new(&self.proxy_port))),
+                            .items_start()
+                            .child(
+                                div().flex_1().child(
+                                    field()
+                                        .label(t!("host.proxy.address"))
+                                        .child(Input::new(&self.proxy_address)),
+                                ),
+                            )
+                            .child(
+                                div().w(rems(6.)).child(
+                                    field()
+                                        .label(t!("host.field.port"))
+                                        .child(Input::new(&self.proxy_port)),
+                                ),
+                            ),
                     )
                     .child(
                         h_flex()
                             .gap_3()
-                            .child(div().flex_1().child(Input::new(&self.proxy_username)))
+                            .items_start()
                             .child(
                                 div().flex_1().child(
-                                    Input::new(&self.proxy_password)
-                                        .mask_toggle()
-                                        .disabled(kind == ProxyKind::Socks4),
+                                    field()
+                                        .label(t!("host.proxy.username"))
+                                        .child(Input::new(&self.proxy_username)),
+                                ),
+                            )
+                            .child(
+                                div().flex_1().child(
+                                    field().label(t!("host.proxy.password")).child(
+                                        Input::new(&self.proxy_password)
+                                            .mask_toggle()
+                                            .disabled(kind == ProxyKind::Socks4),
+                                    ),
                                 ),
                             ),
                     )
@@ -2180,7 +2207,7 @@ impl HostForm {
             ))
             .when(self.totp_enabled, |this| {
                 this.child(
-                    field().child(
+                    field().label(t!("host.totp.secret")).child(
                         Input::new(&self.totp_secret)
                             .id("host-totp-secret")
                             .mask_toggle(),
@@ -2347,8 +2374,9 @@ impl HostForm {
                     cx.notify();
                 }));
             let auth_fields = if self.cli_password_auth {
-                Input::new(&self.cli_password)
-                    .mask_toggle()
+                field()
+                    .label(t!("host.field.password"))
+                    .child(Input::new(&self.cli_password).mask_toggle())
                     .into_any_element()
             } else {
                 self.render_key_fields(true, cx)
@@ -2555,6 +2583,7 @@ impl Render for HostForm {
                             .flex_1()
                             .min_w_0()
                             .overflow_y_scroll()
+                            .track_scroll(&self.page_scroll)
                             .pr_1()
                             .child(
                                 v_flex()

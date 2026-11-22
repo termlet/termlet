@@ -15,7 +15,7 @@
 - [Local terminals and WSL](#local-terminals-and-wsl): [Local shells](#local-shells) · [WSL](#wsl)
 - [SFTP](#sftp): [Opening](#opening) · [Opening as root](#opening-as-root) · [Remote file name encoding](#remote-file-name-encoding) · [Two panes](#two-panes) · [Following the terminal folder](#following-the-terminal-folder) · [File operations](#file-operations) · [Keyboard](#keyboard) · [Browsing](#browsing) · [Columns](#columns) · [Changing permissions](#changing-permissions) · [Transfers](#transfers) · [Clearing and summaries](#clearing-and-summaries) · [Transfer progress on the taskbar](#transfer-progress-on-the-taskbar) · [Resuming and reconnecting](#resuming-and-reconnecting) · [Editing remote files](#editing-remote-files) · [Opening in VS Code / Zed](#opening-in-vs-code--zed) · [SCP when the server has no SFTP](#scp-when-the-server-has-no-sftp)
 - [Keys](#keys): [Importing and generating keys](#importing-and-generating-keys) · [Deploying public keys](#deploying-public-keys) · [Exporting private keys](#exporting-private-keys) · [Using keys in hosts](#using-keys-in-hosts) · [Certificates](#certificates)
-- [Port forwarding](#port-forwarding): [Forwarding rules](#forwarding-rules) · [Status and reconnection](#status-and-reconnection) · [Adding forwards while connected](#adding-forwards-while-connected) · [Stopping and starting automatically](#stopping-and-starting-automatically) · [Lending your local proxy](#lending-your-local-proxy)
+- [Port forwarding](#port-forwarding): [Forwarding rules](#forwarding-rules) · [Status and reconnection](#status-and-reconnection) · [Adding forwards while connected](#adding-forwards-while-connected) · [Stopping and starting automatically](#stopping-and-starting-automatically) · [Lending your local proxy to the server](#lending-your-local-proxy-to-the-server)
 - [Host tools](#host-tools): [Overview](#overview) · [Always-on-top overview window](#always-on-top-overview-window) · [Processes](#processes) · [Services](#services) · [Timers](#timers) · [Docker](#docker) · [Docker cleanup](#docker-cleanup) · [Log viewer](#log-viewer) · [Network](#network) · [Row actions](#row-actions) · [Details](#details) · [Jumping between pages](#jumping-between-pages) · [Keyboard](#keyboard-1) · [Confirmations](#confirmations) · [When root is needed](#when-root-is-needed) · [Audit log](#audit-log)
 - [Opened by bastion hosts](#opened-by-bastion-hosts): [Setting up the bastion host](#setting-up-the-bastion-host) · [The connections it opens](#the-connections-it-opens)
 - [App lock](#app-lock)
@@ -259,7 +259,7 @@ Notes:
 
 ### Importing hosts
 
-- Open it with More → Import Hosts… in the host list toolbar. Sources:
+- Open it with More → Import Hosts… in the host list toolbar, or with the "Import hosts…" button on the start page and in the empty host list. Sources:
   - `~/.ssh/config`
   - an Xshell sessions folder
   - FinalShell (its data folder, the `conn` folder in it, or a folder exported with right-click)
@@ -347,7 +347,7 @@ Notes:
 ### Authentication
 
 - Password.
-- Private key, with passphrase: OpenSSH, PEM and PuTTY ppk, from the key library, a key file or pasted text.
+- Private key, with passphrase: OpenSSH, PEM and PuTTY ppk, from the key library, a key file (type the path or click "Browse…") or pasted text.
 - SSH Agent / Pageant: on Windows, the OpenSSH Authentication Agent service first (the system's `\\.\pipe\openssh-ssh-agent` or the pipe given by `SSH_AUTH_SOCK`), and Pageant if that is unavailable or has no keys.
 - To use the agent of 1Password, Bitwarden and the like, enter its pipe under Settings → Connection ("ssh-agent address").
 - When the server asks for a verification code or other interactive input, a dialog asks you.
@@ -466,7 +466,7 @@ Notes:
 - Host addresses, jump hosts and proxies can be IPv6 addresses (such as `::1`).
 - When a name resolves to both IPv6 and IPv4 addresses, both are tried in parallel (Happy Eyeballs): the address your system prefers goes first, and if it hasn't connected within 250 milliseconds the other kind is tried at the same time; whichever connects first is used. If IPv6 is broken on your computer, you no longer wait for it to time out before IPv4 is tried.
 - The connection timeout of 15 seconds is for the whole attempt, not 15 seconds for each address.
-- The same goes for port forwarding connecting to a target on this computer, "Lend Local Proxy" connecting to your local proxy, and X11 forwarding connecting to your X server: when you write `localhost` and the other side listens on IPv4 only, there's no wait for IPv6 to fail first (about 2 seconds on Windows).
+- The same goes for port forwarding connecting to a target on this computer, "Lend Local Proxy to the Server" connecting to your local proxy, and X11 forwarding connecting to your X server: when you write `localhost` and the other side listens on IPv4 only, there's no wait for IPv6 to fail first (about 2 seconds on Windows).
 
 ### Connection not responding
 
@@ -491,7 +491,7 @@ Notes:
 - In Settings → Shortcuts you can add or remove keys for each action or restore the defaults. Conflicts tell you which action uses the key, and changes apply as soon as you save.
 - Windows and Linux use Ctrl:
   - Custom shortcuts need Ctrl or Alt, except F1–F24 and Shift with Insert, Delete, Home, End, Page Up or Page Down.
-  - You can switch to the keys of Xshell or MobaXterm in one click, e.g. Xshell's Alt+1–9 to switch tabs, Alt+I for the compose bar, Alt+Enter for full screen and Ctrl+Alt+F to open SFTP beside the terminal, or MobaXterm's Ctrl+Alt+←/→, Ctrl+Alt+F1–F9 and Ctrl+Alt+T.
+  - You can switch to the keys of Xshell or MobaXterm in one click, e.g. Xshell's Alt+1–9 to switch tabs, Alt+I for the compose bar, Alt+Enter for full screen and Ctrl+Alt+F to open SFTP on the right, or MobaXterm's Ctrl+Alt+←/→, Ctrl+Alt+F1–F9 and Ctrl+Alt+T.
 - macOS follows Terminal.app and iTerm2 and uses ⌘ (the menu bar lists the common commands with their shortcuts):
   - Every Control combination goes to the terminal (⌃C, ⌃R, ⌃W and so on reach the shell).
   - Option types special characters as the system does, unless "Use Option as Meta key" is turned on under Settings → Terminal (then it sends the ESC prefix; both Option keys work the same way).
@@ -516,7 +516,7 @@ Default shortcuts:
 | Reconnect | Ctrl+Shift+R | ⇧⌘R |
 | Next / previous tab (within the group, wrapping) | Ctrl+Tab / Ctrl+Shift+Tab | ⇧⌘] / ⇧⌘[ (or ⌃⇥ / ⌃⇧⇥) |
 | Go to tab 1–9 | Ctrl+Alt+1–9 | ⌘1–9 |
-| Open SFTP beside the terminal | None by default (Ctrl+Alt+F with the Xshell keys) | None by default |
+| Open SFTP on the right | None by default (Ctrl+Alt+F with the Xshell keys) | None by default |
 | Zoom the interface in / out, reset the interface size (all windows; the terminal font size is unchanged) | None by default (Ctrl+= and the like belong to the terminal font size) | None by default (all three are in the View menu) |
 | Move the current tab to a new window | None by default | None by default |
 | Split right / down | Alt+Shift+= / Alt+Shift+- | ⌘D / ⇧⌘D |
@@ -615,7 +615,7 @@ Default shortcuts:
 ### Encoding
 
 - Choose UTF-8, GBK / GB18030 or Big5 on the host's Terminal page.
-- Switch it at any time in the terminal: the encoding button in the status bar under the terminal, the tab menu, or the right-click menu.
+- Switch it at any time in the terminal: the encoding button in the status bar under the terminal, or "Server encoding ›" in the tab menu or the right-click menu.
 - A switch applies to the current session only (and is kept when it reconnects).
 
 ### Commands after login
@@ -1087,9 +1087,9 @@ Default shortcuts:
 - Forwards stop when the window that started them closes.
 - Rules marked "Start automatically when Termlet starts" start when the first window opens and the vault is unlocked.
 
-### Lending your local proxy
+### Lending your local proxy to the server
 
-- When the server can't reach the internet to install packages or pull images, choose "Lend Local Proxy…" in the terminal tab menu to lend your local HTTP proxy to the server (SSH remote forwarding; the server listens only on `127.0.0.1`).
+- When the server can't reach the internet to install packages or pull images, choose "Lend Local Proxy to the Server…" in the terminal tab menu to lend your local HTTP proxy to the server (SSH remote forwarding; the server listens only on `127.0.0.1`).
 - The local proxy defaults to the system proxy settings (Internet Options on Windows, network settings on macOS, otherwise variables such as `https_proxy`). If none is found, enter it yourself (e.g. Clash's `127.0.0.1:7890`; HTTP proxies only).
 - The port on the server is picked by the server unless you enter a fixed one (if that one is taken, the server picks another and says so).
 - Both are kept on this computer only, not synced, and can also be changed under Settings → Connection.
@@ -1362,7 +1362,7 @@ Default shortcuts:
   - the host key is confirmed as usual;
   - legacy algorithms used by old bastion hosts are accepted (secure ones still come first);
   - without a password, keys in ssh-agent are tried first.
-- It uses a single channel (many bastion hosts close the session when a second channel opens on the same connection), so there is no resource monitor, host tools, duplicate session, split pane, SFTP beside it or command history.
+- It uses a single channel (many bastion hosts close the session when a second channel opens on the same connection), so there is no resource monitor, host tools, duplicate session, split pane, SFTP on the right or command history.
 - "Save to Host List…" in the tab menu keeps it as a host (with the address, port, user and password filled in).
 - For a bastion host saved in the host list, check "Use a single channel (bastion host)" on the host's Connection page for the same protection (duplicating a session opens a new connection instead).
 - When a server refuses extra channels, Termlet also remembers it and stops trying (except when the connection merely reached the server's session limit, MaxSessions; then it retries later).
@@ -1508,7 +1508,7 @@ Default shortcuts:
 | Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, ssh-agent address, opening by bastion hosts and other programs |
 | Host Keys | — |
 | Security | app lock |
-| AI & automation | external CLI, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration and HTTP, audit log |
+| AI & automation | allowing access from AI tools and scripts, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration and HTTP, audit log |
 | Backup | full backups and restore, local snapshots |
 | Sync | — |
 | Shortcuts | — |
@@ -1651,7 +1651,7 @@ termlet version
 
 ### Turning it on
 
-- The external CLI is off by default; tick "Allow access from AI tools and scripts" under Settings → AI & automation (it covers both the termlet command and the MCP server). While it is off, every request returns `cli_disabled` (exit code 7).
+- Access from AI tools and scripts is off by default; tick "Allow access from AI tools and scripts" under Settings → AI & automation (it covers both the termlet command and the MCP server). While it is off, every request returns `cli_disabled` (exit code 7).
 - Each host also needs "Allow AI tools and scripts to use this host" when editing it (on the AI & automation page).
 - You can additionally tick "Use a separate credential for AI tools and scripts" to give the CLI its own user and password / key. A low-privilege account on the server is recommended; the real permission boundary is on the server.
 - If Termlet is not running, `termlet` starts it in the background by default (no window; it quits after 10 minutes without requests).
@@ -1689,10 +1689,10 @@ termlet version
   | `download_file` | `download` |
 
 - Local paths for `upload_file` and `download_file` must be absolute (paths on the computer running Termlet).
-- Every call goes through Termlet as usual: the external CLI switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
+- Every call goes through Termlet as usual: the "Allow access from AI tools and scripts" switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
 - The audit log's Source column shows "MCP (client name)", "MCP·HTTP (client name)" over HTTP, or "MCP·LAN <its address> (client name)" from another computer on the LAN, and you can filter for these calls. The caller starts with `mcp:<client name>`; over HTTP it's followed by `http` and the chain of processes that opened the connection (recorded on Windows and Linux), or `lan:<its address>` from the LAN.
 - The approval dialog for a dangerous command names the AI tool in its title, such as "Claude Code (MCP) wants to run a dangerous command on …": common AI tools get their product name, others the name they report; those without a brand logo get a generic AI icon.
-- When the external CLI is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
+- When access from AI tools and scripts is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
 - Commands return at most 32 KB of stdout and stderr together to the AI (the beginning and end are kept, with a note on how to get the full output).
 - While a call runs, Termlet reports progress every 15 seconds when the AI tool asks for it (Claude Code and Codex both do). Some AI tools abort a call after a while without progress, so longer commands aren't cut off for that reason.
 - When the AI tool cancels a call (or drops the HTTP connection), Termlet stops the request (the remote command gets SIGTERM), and the audit log records it as "Canceled".
@@ -1772,7 +1772,7 @@ termlet version
 | 4 | the command matched a dangerous command rule and was blocked or not approved |
 | 5 | connection or execution failed |
 | 6 | credentials or Termlet are locked |
-| 7 | the external CLI is off, or Termlet isn't running and may not be started automatically |
+| 7 | access from AI tools and scripts is off, or Termlet isn't running and may not be started automatically |
 
 - When `exec` runs, the remote command's exit code is passed through.
 

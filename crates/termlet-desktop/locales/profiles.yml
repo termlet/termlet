@@ -1,10 +1,4 @@
 _version: 2
-profiles.hint:
-  zh-CN: 多台主机共用的用户名与认证
-  en: A user name and authentication shared by several hosts
-  zh-TW: 多台主機共用的使用者名稱與驗證
-  ja: 複数のホストで共有するユーザー名と認証
-  ko: 여러 호스트가 함께 쓰는 사용자 이름과 인증
 profiles.new:
   zh-CN: 新建凭据档案…
   en: New credential profile…

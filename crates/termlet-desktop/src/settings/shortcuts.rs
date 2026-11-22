@@ -455,10 +455,10 @@ fn fixed_windows() -> (FixedKeys, FixedKeys) {
     let key = |k: &'static str| SharedString::from(k);
     let sftp = vec![
         (
-            key("↑ ↓  PageUp PageDown  Home End"),
+            key("↑ ↓  Page Up  Page Down  Home  End"),
             t!("settings.keys.sftp_move"),
         ),
-        (key("Shift + ↑ ↓ …"), t!("settings.keys.sftp_extend")),
+        (key("Shift+↑ ↓ …"), t!("settings.keys.sftp_extend")),
         (key("Ctrl+↑ ↓"), t!("settings.keys.sftp_cursor")),
         (key("Ctrl+Space"), t!("settings.keys.sftp_toggle_cursor")),
         (
@@ -500,7 +500,7 @@ fn fixed_mac() -> (FixedKeys, FixedKeys) {
     let key = |k: &'static str| SharedString::from(k);
     let sftp = vec![
         (
-            key("↑ ↓  PageUp PageDown  Home End"),
+            key("↑ ↓  Page Up  Page Down  Home  End"),
             t!("settings.keys.sftp_move"),
         ),
         (key("⇧ ↑ ↓ …"), t!("settings.keys.sftp_extend")),
@@ -567,7 +567,7 @@ fn fixed_host_tools(os: KeyOs) -> FixedKeys {
     };
     vec![
         (
-            key("↑ ↓  PageUp PageDown  Home End"),
+            key("↑ ↓  Page Up  Page Down  Home  End"),
             t!("settings.keys.tools_move"),
         ),
         (keys(&["enter"]), t!("settings.keys.tools_open")),
@@ -576,7 +576,7 @@ fn fixed_host_tools(os: KeyOs) -> FixedKeys {
         (delete, t!("settings.keys.tools_delete")),
         (keys(&["shift-f10"]), t!("settings.keys.tools_menu")),
         (search, t!("settings.keys.tools_search")),
-        (keys(&["escape"]), t!("settings.keys.tools_escape")),
+        (key("Esc"), t!("settings.keys.tools_escape")),
         (pages, t!("settings.keys.tools_pages")),
     ]
 }
@@ -599,12 +599,12 @@ fn fixed_tab_list(os: KeyOs) -> FixedKeys {
         key("Delete")
     };
     vec![
-        (key("↑ ↓  Home End"), t!("settings.keys.tab_list_move")),
+        (key("↑ ↓  Home  End"), t!("settings.keys.tab_list_move")),
         (keys(&["enter"]), t!("settings.keys.tab_list_open")),
         (close, t!("settings.keys.tab_list_close")),
         (key("← →"), t!("settings.keys.tab_list_fold")),
         (keys(&["shift-f10"]), t!("settings.keys.tab_list_menu")),
-        (keys(&["escape"]), t!("settings.keys.tab_list_escape")),
+        (key("Esc"), t!("settings.keys.tab_list_escape")),
     ]
 }
 

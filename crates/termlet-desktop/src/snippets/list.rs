@@ -257,16 +257,27 @@ impl Render for SnippetList {
         let muted = cx.theme().muted_foreground;
         let hover = cx.theme().list_hover;
         let radius = cx.theme().radius;
+        let settings = AppState::store(cx).settings();
+        let os = crate::keymap::current_os(cx);
+        let picker_key = keymap::effective(&settings.keybindings, os)
+            .combos(KeyAction::CommandPicker)
+            .first()
+            .map(|c| c.label(os));
         let mut list = v_flex().gap_0p5();
         if groups.is_empty() {
-            // 与主机、密钥、转发页的空状态相同的边距
-            list = list.child(div().p_4().text_sm().text_color(muted).child(
-                if query.trim().is_empty() {
-                    t!("snippets.empty")
-                } else {
-                    t!("snippets.no_match")
-                },
-            ));
+            // 与主机、密钥、转发页的空状态相同的边距；还没有快捷命令时顺带说怎么在终端中调出、命令历史在哪管理
+            let body = if query.trim().is_empty() {
+                v_flex()
+                    .gap_2()
+                    .child(prose(t!("snippets.empty")))
+                    .child(prose(match picker_key {
+                        Some(key) => t!("snippets.picker_hint", key = key),
+                        None => t!("snippets.picker_hint_no_key"),
+                    }))
+            } else {
+                v_flex().child(prose(t!("snippets.no_match")))
+            };
+            list = list.child(div().p_4().text_sm().text_color(muted).child(body));
         }
         for (group, snippets) in &groups {
             // 搜索时不折叠
@@ -352,12 +363,6 @@ impl Render for SnippetList {
                 );
             }
         }
-        let settings = AppState::store(cx).settings();
-        let os = crate::keymap::current_os(cx);
-        let picker_key = keymap::effective(&settings.keybindings, os)
-            .combos(KeyAction::CommandPicker)
-            .first()
-            .map(|c| c.label(os));
         v_flex()
             .size_full()
             .child(
@@ -417,17 +422,6 @@ impl Render for SnippetList {
                     .overflow_y_scroll()
                     .px_1()
                     .child(list),
-            )
-            .child(
-                div()
-                    .px_3()
-                    .py_1p5()
-                    .text_xs()
-                    .text_color(muted)
-                    .child(prose(match picker_key {
-                        Some(key) => t!("snippets.picker_hint", key = key),
-                        None => t!("snippets.picker_hint_no_key"),
-                    })),
             )
     }
 }
