@@ -19,5 +19,6 @@ pub mod tools;
 pub use backend::{AbortSlot, Backend, Failure};
 pub use protocol::{
     Era, HEADER_MISMATCH, INVALID_PARAMS, INVALID_REQUEST, MAX_MESSAGE, METHOD_NOT_FOUND, Message,
-    PARSE_ERROR, Progress, Session, Step, ToolCall, UNSUPPORTED_PROTOCOL_VERSION, client_name,
+    PARSE_ERROR, Progress, Reach, Session, Step, ToolCall, UNSUPPORTED_PROTOCOL_VERSION,
+    client_name,
 };

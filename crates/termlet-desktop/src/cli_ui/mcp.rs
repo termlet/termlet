@@ -4,7 +4,8 @@
 //!
 //! 标准输入输出的片段中，命令是这台电脑上命令行工具的完整路径（AI 工具从图形界面启动时不一定读到新的 PATH），Linux 的
 //! deb、rpm 是 `/usr/bin/termlet`；找不到命令行工具时（开发构建没有编译它、AppImage 要先链接为 termlet）写 `termlet`，
-//! 并说明它要在 PATH 中。HTTP 的片段预览中令牌打码，复制出的是含原文的片段；还不能复制时预览中写占位。
+//! 并说明它要在 PATH 中。HTTP 的片段预览中令牌打码，复制出的是含原文的片段；还不能复制时预览中写占位。监听范围为
+//! 局域网时，HTTP 的片段可以选给这台电脑还是局域网中的另一台电脑（这台电脑的局域网地址与局域网令牌）。
 
 use std::path::PathBuf;
 
@@ -19,7 +20,8 @@ use gpui_kit::{
     ParentElement as _, Render, SharedString, Styled as _, Subscription, TestSupportExt as _,
     Window, div, prelude::FluentBuilder as _, rems,
 };
-use termlet_core::model::LocalSettings;
+use termlet_core::cli::TokenKind;
+use termlet_core::model::{HttpScope, LocalSettings};
 use termlet_core::proto::mcp::{AiTool, CODEX_TOOL_TIMEOUT_SECS, Snippet, SnippetForm, Transport};
 use termlet_core::userpath;
 
@@ -82,9 +84,24 @@ impl Access {
     const ALL: [Access; 2] = [Access::Stdio, Access::Http];
 }
 
+/// HTTP 的配置给谁用（监听范围为局域网时可选）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Target {
+    /// 这台电脑上的 AI 工具
+    Local,
+    /// 局域网中的另一台电脑
+    Lan,
+}
+
+impl Target {
+    const ALL: [Target; 2] = [Target::Local, Target::Lan];
+}
+
 pub(super) struct McpSection {
     command: McpCommand,
     pub(super) access: Access,
+    /// HTTP 的配置给谁用（选的；监听范围不是局域网时按这台电脑）
+    pub(super) target: Target,
     /// 选中的 AI 工具（下拉框，两种接入类型共用）
     pub(super) tools: Entity<ChoiceState<AiTool>>,
     pub(super) http: Entity<HttpPanel>,
@@ -151,7 +168,15 @@ impl McpSection {
             window,
             cx,
         );
-        let http = cx.new(|cx| HttpPanel::new(local.cli.enabled, &local.cli.http, window, cx));
+        let http = cx.new(|cx| {
+            HttpPanel::new(
+                local.cli.enabled,
+                &local.cli.http,
+                env.lan_addresses.clone(),
+                window,
+                cx,
+            )
+        });
         let subscriptions = vec![
             cx.subscribe(&tools, |_, _, _: &ToolEvent, cx| cx.notify()),
             // 令牌、端口、状态变了：片段随之改变
@@ -165,9 +190,18 @@ impl McpSection {
             } else {
                 Access::Stdio
             },
+            target: Target::Local,
             tools,
             http,
             _subscriptions: subscriptions,
+        }
+    }
+
+    /// HTTP 的配置实际给谁用：草稿的监听范围不是局域网时只能给这台电脑。
+    pub(super) fn target(&self, cx: &App) -> Target {
+        match self.http.read(cx).scope {
+            HttpScope::Lan => self.target,
+            HttpScope::Local => Target::Local,
         }
     }
 
@@ -194,10 +228,17 @@ impl McpSection {
             }
             Access::Http => {
                 let http = self.http.read(cx);
-                let url = http.url();
-                let real = http.token_for_copy();
+                let (url, kind) = match self.target(cx) {
+                    Target::Local => (http.url(), TokenKind::Local),
+                    Target::Lan => match http.lan_url(cx) {
+                        Some(url) => (url, TokenKind::Lan),
+                        // 这台电脑没有局域网地址：没有可给的配置
+                        None => return Vec::new(),
+                    },
+                };
+                let real = http.token_for_copy(kind);
                 let shown = match real {
-                    Some(_) => masked_token(),
+                    Some(_) => masked_token(kind),
                     None => t!("cli_ui.http.token_placeholder").to_string(),
                 };
                 let preview = tool.snippets(
@@ -224,6 +265,7 @@ impl McpSection {
     fn render_snippet(
         tool: AiTool,
         access: Access,
+        target: Target,
         snippet: Snippet,
         copy: Option<String>,
         cx: &App,
@@ -233,11 +275,15 @@ impl McpSection {
         let mono = theme.mono_font_family.clone();
         let form = snippet.form.id();
         let lines: Vec<String> = snippet.text.lines().map(str::to_string).collect();
-        let notice = match (tool.name(), access) {
-            (Some(name), Access::Stdio) => t!("cli_ui.mcp.copied", tool = name),
-            (None, Access::Stdio) => t!("cli_ui.mcp.copied_generic"),
-            (Some(name), Access::Http) => t!("cli_ui.mcp.copied_with_token", tool = name),
-            (None, Access::Http) => t!("cli_ui.mcp.copied_generic_with_token"),
+        let notice = match (tool.name(), access, target) {
+            (Some(name), Access::Stdio, _) => t!("cli_ui.mcp.copied", tool = name),
+            (None, Access::Stdio, _) => t!("cli_ui.mcp.copied_generic"),
+            (Some(name), Access::Http, Target::Local) => {
+                t!("cli_ui.mcp.copied_with_token", tool = name)
+            }
+            (None, Access::Http, Target::Local) => t!("cli_ui.mcp.copied_generic_with_token"),
+            (Some(name), Access::Http, Target::Lan) => t!("cli_ui.mcp.copied_lan", tool = name),
+            (None, Access::Http, Target::Lan) => t!("cli_ui.mcp.copied_generic_lan"),
         };
         v_flex()
             .gap_1()
@@ -302,11 +348,23 @@ impl Render for McpSection {
         let muted = cx.theme().muted_foreground;
         let tool = self.selected(cx);
         let access = self.access;
+        let lan_scope = self.http.read(cx).scope == HttpScope::Lan;
+        let target = self.target(cx);
         let snippets = self.snippets(cx);
+        let kind = match target {
+            Target::Local => TokenKind::Local,
+            Target::Lan => TokenKind::Lan,
+        };
         let copy_blocked = match access {
-            Access::Http if !snippets.is_empty() => self.http.read(cx).copy_blocked(),
+            Access::Http if !snippets.is_empty() => self.http.read(cx).copy_blocked(kind),
             _ => None,
         };
+        // 给另一台电脑而这台电脑没有局域网地址（Claude Desktop 另有说明）
+        let no_lan_address = access == Access::Http
+            && target == Target::Lan
+            && tool != AiTool::ClaudeDesktop
+            && snippets.is_empty();
+        let lan_ip = self.http.read(cx).lan_ip(cx);
         v_flex()
             .gap_2()
             .child(row(
@@ -349,18 +407,58 @@ impl Render for McpSection {
                     .w(rems(16.))
                     .child(Select::new(&self.tools).small().id("cli-mcp-tool")),
             ))
-            .when(snippets.is_empty(), |this| {
+            .when(access == Access::Http && lan_scope, |this| {
+                this.child(row(
+                    t!("cli_ui.mcp.target"),
+                    muted,
+                    h_flex().id("cli-mcp-target-row").test_support().child(
+                        TabBar::new("cli-mcp-target")
+                            .segmented()
+                            .small()
+                            .selected_index(
+                                Target::ALL
+                                    .iter()
+                                    .position(|t| *t == target)
+                                    .unwrap_or_default(),
+                            )
+                            .on_click(cx.listener(|this, ix: &usize, _, cx| {
+                                if let Some(target) = Target::ALL.get(*ix) {
+                                    this.target = *target;
+                                    cx.notify();
+                                }
+                            }))
+                            .child(Tab::new().label(t!("cli_ui.mcp.target_local")))
+                            .child(Tab::new().label(t!("cli_ui.mcp.target_lan"))),
+                    ),
+                ))
+            })
+            .when(
+                access == Access::Http && target == Target::Lan && !snippets.is_empty(),
+                |this| {
+                    this.child(Self::note(
+                        "cli-mcp-lan-target",
+                        t!("cli_ui.mcp.lan_target_note"),
+                        cx,
+                    ))
+                },
+            )
+            .when(no_lan_address, |this| {
+                this.child(Self::note(
+                    "cli-mcp-no-lan-address",
+                    t!("cli_ui.http.lan_none"),
+                    cx,
+                ))
+            })
+            .when(snippets.is_empty() && !no_lan_address, |this| {
                 this.child(Self::note(
                     "cli-mcp-no-http",
                     t!("cli_ui.mcp.http_claude_desktop"),
                     cx,
                 ))
             })
-            .children(
-                snippets
-                    .into_iter()
-                    .map(|(snippet, copy)| Self::render_snippet(tool, access, snippet, copy, cx)),
-            )
+            .children(snippets.into_iter().map(|(snippet, copy)| {
+                Self::render_snippet(tool, access, target, snippet, copy, cx)
+            }))
             .when_some(copy_blocked, |this, text| {
                 this.child(Self::note("cli-mcp-copy-later", text, cx))
             })
@@ -372,13 +470,28 @@ impl Render for McpSection {
                     cx,
                 ))
             })
-            .when(tool == AiTool::Codex && access == Access::Http, |this| {
-                this.child(Self::note(
-                    "cli-mcp-codex-proxy",
-                    t!("cli_ui.mcp.http_codex_proxy"),
-                    cx,
-                ))
-            })
+            .when(
+                tool == AiTool::Codex && access == Access::Http && target == Target::Local,
+                |this| {
+                    this.child(Self::note(
+                        "cli-mcp-codex-proxy",
+                        t!("cli_ui.mcp.http_codex_proxy"),
+                        cx,
+                    ))
+                },
+            )
+            .when_some(
+                lan_ip.filter(|_| {
+                    tool == AiTool::Codex && access == Access::Http && target == Target::Lan
+                }),
+                |this, ip| {
+                    this.child(Self::note(
+                        "cli-mcp-codex-proxy",
+                        t!("cli_ui.mcp.lan_codex_proxy", address = ip.to_string()),
+                        cx,
+                    ))
+                },
+            )
             .when(
                 access == Access::Stdio && self.command == McpCommand::InPath,
                 |this| this.child(Self::note("cli-mcp-in-path", t!("cli_ui.mcp.in_path"), cx)),

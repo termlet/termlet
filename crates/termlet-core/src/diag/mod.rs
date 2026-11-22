@@ -410,10 +410,14 @@ pub fn settings_summary(settings: &Settings, local: &LocalSettings) -> Value {
         "keybindings": settings.keybindings.bindings,
         "macKeybindings": settings.keybindings.mac_bindings,
         "local": {
-            // MCP 的 HTTP 接入只记开关与端口（令牌不在设置中，也不进诊断信息）
+            // MCP 的 HTTP 接入只记开关、端口与监听范围（令牌不在设置中，也不进诊断信息）
             "cli": {
                 "enabled": local.cli.enabled,
-                "http": { "enabled": local.cli.http.enabled, "port": local.cli.http.port },
+                "http": {
+                    "enabled": local.cli.http.enabled,
+                    "port": local.cli.http.port,
+                    "scope": local.cli.http.scope,
+                },
             },
             "appLock": plain(app_lock),
             "backup": plain(backup),

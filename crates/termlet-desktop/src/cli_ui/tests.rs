@@ -10,13 +10,14 @@ use gpui_kit::{
     Render, Styled as _, TestAppContext, Window, WindowBounds, WindowOptions, div, px, size,
 };
 use termlet_core::audit::{AuditAction, AuditEntry, AuditLog, AuditStatus};
-use termlet_core::cli::{HttpError, HttpStatus, TokenView};
-use termlet_core::model::{Approval, CliHttpSettings, LocalSettings, Settings};
+use termlet_core::cli::http::lan::LanAddress;
+use termlet_core::cli::{HttpError, HttpStatus, TokenKind, TokenView};
+use termlet_core::model::{Approval, CliHttpSettings, HttpScope, LocalSettings, Settings};
 use termlet_core::proto::skill::{self, Agent, Status};
 
 use super::audit::{self, AuditView, PAGE, SEARCH_DELAY};
 use super::http::TokenState;
-use super::mcp::{Access, McpSection};
+use super::mcp::{Access, McpSection, Target};
 use super::page::CliPage;
 use super::tool::PathState;
 use super::{CliEnv, refresh_open_audit};
@@ -381,6 +382,14 @@ fn select_tool(
     assert_eq!(cx.read(|cx| mcp.read(cx).selected(cx)), tool);
 }
 
+/// 只有本机时在监听。
+fn listening(port: u16) -> HttpStatus {
+    HttpStatus::Listening {
+        port,
+        scope: HttpScope::Local,
+    }
+}
+
 /// 本机设置中外部 CLI 与 HTTP 的开关。
 fn http_local(cli: bool, http: bool) -> LocalSettings {
     let mut local = LocalSettings::default();
@@ -447,7 +456,7 @@ fn mcp_http_drafts_and_status(cx: &mut TestAppContext) {
     .unwrap();
 
     // 服务送来实际的状态：在草稿的端口上监听，与草稿一致
-    cx.update(|cx| http.update(cx, |h, cx| h.set_status(HttpStatus::Listening { port }, cx)));
+    cx.update(|cx| http.update(cx, |h, cx| h.set_status(listening(port), cx)));
     frame(cx, handle);
     assert_eq!(status(cx), format!("运行中：正在监听 127.0.0.1:{port}"));
     cx.update_window(handle, |_, window, _| {
@@ -461,6 +470,7 @@ fn mcp_http_drafts_and_status(cx: &mut TestAppContext) {
             h.set_status(
                 HttpStatus::Failed {
                     port,
+                    scope: HttpScope::Local,
                     error: HttpError::PortInUse,
                 },
                 cx,
@@ -516,6 +526,7 @@ fn mcp_http_drafts_and_status(cx: &mut TestAppContext) {
     assert!(local.cli.enabled);
     assert!(local.cli.http.enabled);
     assert_eq!(local.cli.http.port, 47900);
+    assert_eq!(local.cli.http.scope, HttpScope::Local, "默认只有本机");
 }
 
 // HTTP 的令牌与片段：令牌默认打码，“显示”后露出原文；预览的片段中令牌打码、复制的含原文；重新生成要先确认，
@@ -558,10 +569,15 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
 
     // 开始监听时（核心在这时生成令牌）重新读令牌
     let store = cx.update(|cx| AppState::store(cx));
-    let first = token::regenerate(&store).unwrap().expose().to_string();
-    cx.update(|cx| http.update(cx, |h, cx| h.set_status(HttpStatus::Listening { port }, cx)));
+    let first = token::regenerate(&store, TokenKind::Local)
+        .unwrap()
+        .expose()
+        .to_string();
+    cx.update(|cx| http.update(cx, |h, cx| h.set_status(listening(port), cx)));
     poll_until(cx, "读出令牌", |cx| {
-        cx.read(|cx| http.read(cx).token_for_copy()).as_ref() == Some(&first)
+        cx.read(|cx| http.read(cx).token_for_copy(TokenKind::Local))
+            .as_ref()
+            == Some(&first)
     });
     frame(cx, handle);
     cx.update_window(handle, |_, window, _| {
@@ -575,7 +591,11 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
     let snippets = cx.read(|cx| mcp.read(cx).snippets(cx));
     assert_eq!(snippets.len(), 1);
     let (preview, real) = &snippets[0];
-    assert!(preview.text.contains(&super::http::masked_token()));
+    assert!(
+        preview
+            .text
+            .contains(&super::http::masked_token(TokenKind::Local))
+    );
     assert!(!preview.text.contains(&first));
     let copied = copy(cx, handle, "cli-mcp-copy-command");
     assert_eq!(Some(&copied), real.as_ref());
@@ -615,7 +635,7 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
         .unwrap();
     cx.run_until_parked();
     assert_eq!(
-        cx.read(|cx| http.read(cx).token_for_copy()),
+        cx.read(|cx| http.read(cx).token_for_copy(TokenKind::Local)),
         Some(first.clone())
     );
     // 确认后换成新的（立即生效：存储中已是新的），重新打码
@@ -627,12 +647,14 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
     cx.update_window(handle, |_, window, cx| window.click("ok", cx))
         .unwrap();
     poll_until(cx, "重新生成令牌", |cx| {
-        cx.read(|cx| http.read(cx).token_for_copy())
+        cx.read(|cx| http.read(cx).token_for_copy(TokenKind::Local))
             .is_some_and(|t| t != first)
     });
-    let second = cx.read(|cx| http.read(cx).token_for_copy()).unwrap();
+    let second = cx
+        .read(|cx| http.read(cx).token_for_copy(TokenKind::Local))
+        .unwrap();
     assert!(!cx.read(|cx| http.read(cx).revealed));
-    match token::view(&store).unwrap() {
+    match token::view(&store, TokenKind::Local).unwrap() {
         TokenView::Ready(stored) => assert_eq!(stored.expose(), second),
         other => panic!("{other:?}"),
     }
@@ -672,6 +694,243 @@ fn mcp_http_token_and_snippets(cx: &mut TestAppContext) {
         assert!(window.try_find("cli-mcp-no-http").is_none());
         assert!(window.try_find("cli-mcp-snippet-file").is_some());
         assert!(window.try_find("cli-http-enabled").is_none());
+    })
+    .unwrap();
+}
+
+/// 这台电脑在局域网中的两个地址（测试中给定，不读真实的网卡）。
+fn two_lan_addresses() -> Vec<LanAddress> {
+    vec![
+        LanAddress {
+            ip: [192, 168, 1, 5].into(),
+            interface: "WLAN".into(),
+            gateway: true,
+        },
+        LanAddress {
+            ip: [10, 0, 0, 7].into(),
+            interface: "vEthernet (WSL)".into(),
+            gateway: false,
+        },
+    ]
+}
+
+// 监听范围：默认只有本机；选“本机与局域网”后另有局域网地址（多个时可选）、局域网令牌与风险的说明，片段可以给局域网
+// 中的另一台电脑（局域网地址与局域网令牌）；保存时写进本机设置
+#[gpui_kit::test]
+fn mcp_http_lan_scope(cx: &mut TestAppContext) {
+    use termlet_core::cli::http::token;
+    use termlet_core::proto::mcp::{AiTool, Transport};
+
+    let tmp = TempDir::new("mcp-lan");
+    let env = CliEnv::at(Some(tmp.0.join("Termlet.exe")), Some(tmp.0.join("home")))
+        .with_lan(two_lan_addresses());
+    let (handle, page) = open(cx, Some((Settings::default(), http_local(true, true), env)));
+    let page = page.unwrap();
+    let mcp = cx.read(|cx| page.read(cx).mcp.clone());
+    let http = cx.read(|cx| mcp.read(cx).http.clone());
+    let port = CliHttpSettings::DEFAULT_PORT;
+    let store = cx.update(|cx| AppState::store(cx));
+    let local_token = token::regenerate(&store, TokenKind::Local)
+        .unwrap()
+        .expose()
+        .to_string();
+    cx.update(|cx| http.update(cx, |h, cx| h.set_status(listening(port), cx)));
+    poll_until(cx, "读令牌", |cx| {
+        cx.read(|cx| http.read(cx).token_for_copy(TokenKind::Local))
+            .is_some()
+    });
+    frame(cx, handle);
+    let lan_ids = [
+        "cli-http-lan-ip",
+        "cli-http-lan-url",
+        "cli-http-lan-plaintext",
+        "cli-http-lan-firewall",
+        "cli-http-lan-approval",
+        "cli-http-lan-tools",
+    ];
+    let has_target = |window: &mut Window| window.try_find("cli-mcp-target-row").is_some();
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.within("cli-http-scope").try_find(1usize).is_some());
+        for id in lan_ids {
+            assert!(window.try_find(id).is_none(), "只有本机时没有 {id}");
+        }
+        assert!(!has_target(window), "只有本机时片段只给这台电脑");
+    })
+    .unwrap();
+    assert!(!cx.read(|cx| http.read(cx).pending()));
+
+    // 选“本机与局域网”：保存后才生效；局域网的部分出现，局域网令牌还没有
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-http-scope").click(1usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    cx.read(|cx| {
+        let http = http.read(cx);
+        assert_eq!(http.scope, HttpScope::Lan);
+        assert!(http.pending(), "监听范围变了：保存后生效");
+        assert_eq!(
+            http.lan_url(cx).as_deref(),
+            Some(format!("http://192.168.1.5:{port}/mcp").as_str()),
+            "默认第一个地址（有默认网关的）"
+        );
+        assert!(http.token_for_copy(TokenKind::Lan).is_none());
+    });
+    cx.update_window(handle, |_, window, _| {
+        for id in lan_ids {
+            assert!(window.try_find(id).is_some(), "局域网时有 {id}");
+        }
+        assert!(has_target(window));
+        assert!(
+            window.try_find("cli-http-lan-token-note").is_some(),
+            "还没有局域网令牌"
+        );
+    })
+    .unwrap();
+
+    // 片段给局域网中的另一台电脑：局域网地址；还没有局域网令牌时预览写占位、不能复制
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-mcp-target").click(1usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(cx.read(|cx| mcp.read(cx).target(cx)), Target::Lan);
+    let snippets = cx.read(|cx| mcp.read(cx).snippets(cx));
+    assert!(
+        snippets[0].0.text.contains("http://192.168.1.5:") && snippets[0].0.text.contains("<令牌>"),
+        "{}",
+        snippets[0].0.text
+    );
+    assert!(snippets.iter().all(|(_, copy)| copy.is_none()));
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-lan-target").is_some());
+        assert!(window.try_find("cli-mcp-copy-later").is_some());
+    })
+    .unwrap();
+
+    // 保存后核心在监听局域网时生成局域网令牌：重新读出，片段中是局域网令牌（不是本机的）
+    let lan_token = token::regenerate(&store, TokenKind::Lan)
+        .unwrap()
+        .expose()
+        .to_string();
+    cx.update(|cx| {
+        http.update(cx, |h, cx| {
+            h.set_status(
+                HttpStatus::Listening {
+                    port,
+                    scope: HttpScope::Lan,
+                },
+                cx,
+            )
+        })
+    });
+    poll_until(cx, "读出局域网令牌", |cx| {
+        cx.read(|cx| http.read(cx).token_for_copy(TokenKind::Lan))
+            .as_ref()
+            == Some(&lan_token)
+    });
+    frame(cx, handle);
+    assert!(!cx.read(|cx| http.read(cx).pending()));
+    assert_eq!(
+        cx.update(|cx| http.read(cx).status_text(cx).0.to_string()),
+        format!("运行中：正在所有 IPv4 网卡上监听端口 {port}（本机与局域网）")
+    );
+    select_tool(cx, handle, &mcp, AiTool::Cursor);
+    let lan_url = format!("http://192.168.1.5:{port}/mcp");
+    let copied = copy(cx, handle, "cli-mcp-copy-file");
+    assert_eq!(
+        copied,
+        AiTool::Cursor.snippets(
+            Transport::Http {
+                url: &lan_url,
+                token: &lan_token
+            },
+            cfg!(windows)
+        )[0]
+        .text
+    );
+    assert!(!copied.contains(&local_token));
+    let preview = cx.read(|cx| mcp.read(cx).snippets(cx))[0].0.text.clone();
+    assert!(
+        preview.contains(&super::http::masked_token(TokenKind::Lan)),
+        "{preview}"
+    );
+
+    // 局域网令牌：显示、复制
+    cx.update_window(handle, |_, window, cx| {
+        window.click("cli-http-lan-token-reveal", cx)
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert!(cx.read(|cx| http.read(cx).lan_revealed && !http.read(cx).revealed));
+    assert_eq!(copy(cx, handle, "cli-http-lan-token-copy"), lan_token);
+
+    // 换一个局域网地址：片段随之改变；Codex 另提醒 NO_PROXY 写这个地址
+    cx.update_window(handle, |_, window, cx| {
+        let select = http.read(cx).lan_select.clone().unwrap();
+        let ip: std::net::Ipv4Addr = [10, 0, 0, 7].into();
+        select.update(cx, |state, cx| state.set_selected_value(&ip, window, cx));
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(
+        cx.read(|cx| http.read(cx).lan_url(cx)),
+        Some(format!("http://10.0.0.7:{port}/mcp"))
+    );
+    select_tool(cx, handle, &mcp, AiTool::Codex);
+    assert!(copy(cx, handle, "cli-mcp-copy-file").contains("http://10.0.0.7:"));
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-codex-proxy").is_some());
+    })
+    .unwrap();
+
+    // 改回只有本机：片段回到这台电脑（选的“另一台电脑”不再起作用）
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-http-scope").click(0usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert_eq!(cx.read(|cx| mcp.read(cx).target(cx)), Target::Local);
+    cx.update_window(handle, |_, window, _| assert!(!has_target(window)))
+        .unwrap();
+    assert!(copy(cx, handle, "cli-mcp-copy-file").contains(&local_token));
+
+    // 保存：监听范围写进本机设置
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-http-scope").click(1usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    let mut saved = Settings::default();
+    let mut local = http_local(true, true);
+    cx.read(|cx| page.read(cx).apply(&mut saved, &mut local, cx));
+    assert_eq!(local.cli.http.scope, HttpScope::Lan);
+}
+
+// 这台电脑没有局域网地址：说明找不到，给另一台电脑的片段不给
+#[gpui_kit::test]
+fn mcp_http_lan_without_an_address(cx: &mut TestAppContext) {
+    let tmp = TempDir::new("mcp-lan-none");
+    let env = CliEnv::at(Some(tmp.0.join("Termlet.exe")), Some(tmp.0.join("home")));
+    let mut local = http_local(true, true);
+    local.cli.http.scope = HttpScope::Lan;
+    let (handle, page) = open(cx, Some((Settings::default(), local, env)));
+    let mcp = cx.read(|cx| page.unwrap().read(cx).mcp.clone());
+    frame(cx, handle);
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-http-lan-none").is_some());
+        assert!(window.try_find("cli-http-lan-url").is_none());
+    })
+    .unwrap();
+    cx.update_window(handle, |_, window, cx| {
+        window.within("cli-mcp-target").click(1usize, cx);
+    })
+    .unwrap();
+    frame(cx, handle);
+    assert!(cx.read(|cx| mcp.read(cx).snippets(cx)).is_empty());
+    cx.update_window(handle, |_, window, _| {
+        assert!(window.try_find("cli-mcp-no-lan-address").is_some());
+        assert!(window.try_find("cli-mcp-no-http").is_none());
     })
     .unwrap();
 }

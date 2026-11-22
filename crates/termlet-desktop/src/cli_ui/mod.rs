@@ -22,6 +22,7 @@ mod tool;
 use std::path::{Path, PathBuf};
 
 use gpui_kit::SharedString;
+use termlet_core::cli::http::lan::LanAddress;
 
 pub(crate) use audit::{open_audit, refresh_open_audit};
 pub(crate) use page::CliPage;
@@ -58,6 +59,8 @@ pub(crate) struct CliEnv {
     system_link: Option<PathBuf>,
     /// Linux：环境变量 `APPIMAGE`（从 AppImage 运行时为 AppImage 文件本身）
     appimage: Option<PathBuf>,
+    /// 这台电脑在局域网中的地址：`None` 时在后台读网卡（测试中给定）
+    lan_addresses: Option<Vec<LanAddress>>,
 }
 
 impl CliEnv {
@@ -77,6 +80,7 @@ impl CliEnv {
                 .flatten()
                 .filter(|v| !v.is_empty())
                 .map(PathBuf::from),
+            lan_addresses: None,
         }
     }
 
@@ -90,6 +94,7 @@ impl CliEnv {
             portable: false,
             system_link: None,
             appimage: None,
+            lan_addresses: Some(Vec::new()),
         }
     }
 
@@ -109,6 +114,13 @@ impl CliEnv {
     #[cfg(test)]
     pub(crate) fn into_portable(mut self) -> Self {
         self.portable = true;
+        self
+    }
+
+    /// 指定这台电脑在局域网中的地址（测试用）。
+    #[cfg(test)]
+    pub(crate) fn with_lan(mut self, addresses: Vec<LanAddress>) -> Self {
+        self.lan_addresses = Some(addresses);
         self
     }
 }

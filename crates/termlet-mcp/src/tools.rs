@@ -17,6 +17,7 @@ use termlet_proto::{
 };
 
 use crate::backend::{AbortSlot, Backend, Failure};
+use crate::protocol::Reach;
 use crate::text::{self as messages, upload_source_problem};
 
 /// 执行命令时返回给 AI 的输出上限（标准输出与标准错误合计，字节），超出时保留开头与结尾。Termlet 本身每路最多返回
@@ -54,6 +55,11 @@ impl Tool {
 
     pub fn parse(name: &str) -> Option<Tool> {
         Self::ALL.into_iter().find(|tool| tool.name() == name)
+    }
+
+    /// 读写运行 Termlet 的这台电脑上的文件（本机路径）：局域网中的客户端不能用。
+    pub fn local_files(self) -> bool {
+        matches!(self, Tool::UploadFile | Tool::DownloadFile)
     }
 
     fn title(self) -> &'static str {
@@ -193,14 +199,27 @@ impl Tool {
     }
 }
 
-/// `tools/list` 中的工具。`annotations`、`title` 按协议版本（较早的版本没有这些字段）。
-pub fn list(annotations: bool, title: bool) -> Value {
+/// `tools/list` 中的工具：局域网中的客户端没有传文件的工具。`annotations`、`title` 按协议版本（较早的版本没有
+/// 这些字段）。
+pub fn list(reach: Reach, annotations: bool, title: bool) -> Value {
     Value::Array(
         Tool::ALL
             .into_iter()
+            .filter(|tool| reach == Reach::Local || !tool.local_files())
             .map(|tool| tool.definition(annotations, title))
             .collect(),
     )
+}
+
+/// 局域网中的客户端调用了传文件的工具：工具执行错误，说明小的文本文件可以用 `run_command` 读写。
+pub fn lan_unavailable(tool: Tool, lang: Lang) -> Outcome {
+    let text = messages::MCP_LAN_UNAVAILABLE.fill(lang, &[&tool.name()]);
+    let code = messages::CODE_LAN_UNAVAILABLE;
+    Outcome {
+        text: format!("[{code}] {text}"),
+        structured: Some(json!({ "error": code, "message": text })),
+        is_error: true,
+    }
 }
 
 /// 一次工具调用用到的东西。
@@ -275,10 +294,10 @@ impl Outcome {
     }
 }
 
-/// 调用一个工具：检查参数，把请求交给 Termlet，写出结果。
+/// 调用一个工具（stdio：客户端总在这台电脑上）：检查参数，把请求交给 Termlet，写出结果。
 pub fn call(tool: Tool, arguments: &Map<String, Value>, context: &Context<'_>) -> Outcome {
     let lang = context.lang;
-    let request = match request(tool, arguments, lang, context.callers) {
+    let request = match request(tool, arguments, lang, context.callers, Reach::Local) {
         Ok(request) => request,
         Err(outcome) => return outcome,
     };
@@ -288,6 +307,7 @@ pub fn call(tool: Tool, arguments: &Map<String, Value>, context: &Context<'_>) -
         terminal,
         context.backend.call(request, context.slot),
         lang,
+        Reach::Local,
     )
 }
 
@@ -296,12 +316,14 @@ pub fn in_terminal(request: &Request) -> bool {
     matches!(request, Request::Exec(r) if r.terminal)
 }
 
-/// Termlet 的回答（或连不上的原因）写成工具的结果。`terminal` 见 [`in_terminal`]。
+/// Termlet 的回答（或连不上的原因）写成工具的结果。`terminal` 见 [`in_terminal`]；`reach` 是客户端在哪里（局域网中的
+/// 客户端没有传文件的工具，说明中不提它们）。
 pub fn outcome(
     tool: Tool,
     terminal: bool,
     response: Result<Response, Failure>,
     lang: Lang,
+    reach: Reach,
 ) -> Outcome {
     let response = match response {
         Ok(Response::Error(body)) => return Outcome::error(&body.code, &body.message, lang),
@@ -311,7 +333,7 @@ pub fn outcome(
     match (tool, response) {
         (Tool::ListHosts, Response::Hosts(hosts)) => hosts_outcome(&hosts, lang),
         (Tool::RunCommand, Response::Exec(exec)) => {
-            Outcome::ok(exec_text(&exec, terminal, lang), None)
+            Outcome::ok(exec_text(&exec, terminal, lang, reach), None)
         }
         (Tool::UploadFile, Response::Transfer(done)) => transfer_outcome(&done, true, lang),
         (Tool::DownloadFile, Response::Transfer(done)) => transfer_outcome(&done, false, lang),
@@ -324,12 +346,13 @@ pub fn outcome(
 }
 
 /// 检查参数，写成发给 Termlet 的请求（与命令行工具的请求相同，调用方换成 MCP 的：`callers`）。参数不对时为
-/// 工具执行错误（AI 可以改了重试），不发请求。
+/// 工具执行错误（AI 可以改了重试），不发请求；`reach` 见 [`outcome`]。
 pub fn request(
     tool: Tool,
     arguments: &Map<String, Value>,
     lang: Lang,
     callers: &[String],
+    reach: Reach,
 ) -> Result<Request, Outcome> {
     let args = Args {
         map: arguments,
@@ -346,10 +369,11 @@ pub fn request(
             let command = args.required("command")?;
             // 与 `exec --stdin` 相同：过长的脚本不截断执行
             if command.len() > MAX_STDIN_COMMAND {
-                return Err(Outcome::invalid(
-                    messages::MCP_COMMAND_TOO_LARGE.get(lang).into(),
-                    lang,
-                ));
+                let message = match reach {
+                    Reach::Local => messages::MCP_COMMAND_TOO_LARGE,
+                    Reach::Lan => messages::MCP_COMMAND_TOO_LARGE_LAN,
+                };
+                return Err(Outcome::invalid(message.get(lang).into(), lang));
             }
             Request::Exec(ExecRequest {
                 host,
@@ -478,8 +502,8 @@ fn transfer_outcome(done: &TransferResponse, upload: bool, lang: Lang) -> Outcom
 }
 
 /// 执行结果的文本：退出码与用时（等用户批准过的另说明等了多久），标准输出、标准错误（太长时只留开头与结尾），
-/// 截断的说明，登录用的证书快过期的提醒。
-fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
+/// 截断的说明（局域网中的客户端不提 download_file），登录用的证书快过期的提醒。
+fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang, reach: Reach) -> String {
     let (out_limit, err_limit) = budgets(exec.stdout.len(), exec.stderr.len(), OUTPUT_BUDGET);
     let (stdout, out_omitted) = clip(&exec.stdout, out_limit);
     let (stderr, err_omitted) = clip(&exec.stderr, err_limit);
@@ -514,7 +538,11 @@ fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang) -> String {
     }
     if out_omitted + err_omitted > 0 {
         text.push('\n');
-        text.push_str(&messages::MCP_CLIPPED.fill(lang, &[&(OUTPUT_BUDGET / 1024)]));
+        let clipped = match reach {
+            Reach::Local => messages::MCP_CLIPPED,
+            Reach::Lan => messages::MCP_CLIPPED_LAN,
+        };
+        text.push_str(&clipped.fill(lang, &[&(OUTPUT_BUDGET / 1024)]));
         text.push('\n');
     }
     if exec.truncated {
@@ -605,15 +633,15 @@ mod tests {
             expiring_certificates: Vec::new(),
         };
         assert_eq!(
-            exec_text(&exec, false, Lang::En),
+            exec_text(&exec, false, Lang::En, Reach::Local),
             "exit code 2, took 1.5s\n--- stdout ---\nhi\n--- stderr ---\nwarn\n"
         );
         assert_eq!(
-            exec_text(&exec, true, Lang::Zh),
+            exec_text(&exec, true, Lang::Zh, Reach::Local),
             "退出码 2，用时 1.5 秒\n--- output ---\nhi\n--- stderr ---\nwarn\n"
         );
         let empty = ExecResponse::default();
-        assert!(exec_text(&empty, false, Lang::En).contains("(no output)"));
+        assert!(exec_text(&empty, false, Lang::En, Reach::Local).contains("(no output)"));
         // 等用户批准过：用时只算执行，等待的时长另外说明
         let approved = ExecResponse {
             duration_ms: 40,
@@ -621,11 +649,11 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            exec_text(&approved, false, Lang::Zh)
+            exec_text(&approved, false, Lang::Zh, Reach::Local)
                 .starts_with("退出码 0，用时 0.0 秒（另等待用户批准 31.4 秒）\n")
         );
         assert!(
-            exec_text(&approved, false, Lang::En).starts_with(
+            exec_text(&approved, false, Lang::En, Reach::Local).starts_with(
                 "exit code 0, took 0.0s (plus 31.4s waiting for the user's approval)\n"
             )
         );
@@ -643,7 +671,7 @@ mod tests {
             approval_wait_ms: None,
             expiring_certificates: Vec::new(),
         };
-        let text = exec_text(&exec, false, Lang::En);
+        let text = exec_text(&exec, false, Lang::En, Reach::Local);
         assert!(text.len() < OUTPUT_BUDGET + 1024, "{}", text.len());
         assert!(text.contains("first line") && text.contains("last line"));
         assert!(text.contains("bytes omitted"));
@@ -652,8 +680,41 @@ mod tests {
             "{text}"
         );
         assert!(text.contains("exceeded 1048576 bytes"), "{text}");
-        let text = exec_text(&exec, false, Lang::Zh);
+        let text = exec_text(&exec, false, Lang::Zh, Reach::Local);
         assert!(text.contains("只返回了开头与结尾"), "{text}");
+        assert!(
+            text.contains("download_file"),
+            "本机的客户端可以下载：{text}"
+        );
+        // 局域网中的客户端：不提 download_file，改为在命令中取需要的部分
+        for lang in [Lang::En, Lang::Zh] {
+            let text = exec_text(&exec, false, lang, Reach::Lan);
+            assert!(!text.contains("download_file"), "{text}");
+            assert!(text.contains("head") && text.contains("grep"), "{text}");
+        }
+    }
+
+    // 命令超过 1MB：本机的客户端提示先用 upload_file 上传，局域网中的客户端提示用 heredoc 分几次写到服务器上
+    #[test]
+    fn oversized_command_hint_follows_the_reach() {
+        let mut arguments = Map::new();
+        arguments.insert("host".into(), json!("web"));
+        arguments.insert("command".into(), json!("x".repeat(MAX_STDIN_COMMAND + 1)));
+        let text = |lang, reach| {
+            let Err(outcome) = request(Tool::RunCommand, &arguments, lang, &[], reach) else {
+                panic!("过长的命令不应发出");
+            };
+            assert!(outcome.is_error());
+            outcome.text
+        };
+        assert!(text(Lang::En, Reach::Local).contains("upload_file"));
+        for lang in [Lang::En, Lang::Zh] {
+            let lan = text(lang, Reach::Lan);
+            assert!(
+                !lan.contains("upload_file") && lan.contains("heredoc"),
+                "{lan}"
+            );
+        }
     }
 
     // 服务器没有 SFTP、改用了 SCP 时在结果中说明；旧版的应用不发 protocol，按 SFTP
@@ -702,7 +763,7 @@ mod tests {
             expiring_certificates: expiring.clone(),
             ..Default::default()
         };
-        let text = exec_text(&exec, false, Lang::Zh);
+        let text = exec_text(&exec, false, Lang::Zh, Reach::Local);
         assert!(
             text.ends_with(
                 "hi\n[termlet] 跳板机 bastion 登录用的证书将于 2026-11-19 20:30 过期（还剩约 25 分钟），过期后无法再经它连接，请及时重新签发。\n[termlet] 登录用的证书将于 2026-11-19 20:40 过期（还剩约 35 分钟），过期后无法再连接这台主机，请及时重新签发。\n"
@@ -732,7 +793,7 @@ mod tests {
 
     #[test]
     fn definitions_follow_the_protocol_version() {
-        let tools = list(true, true);
+        let tools = list(Reach::Local, true, true);
         let tools = tools.as_array().unwrap();
         let names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert_eq!(
@@ -768,8 +829,42 @@ mod tests {
         assert_eq!(tools[0]["annotations"]["readOnlyHint"], true);
         assert_eq!(tools[1]["annotations"]["destructiveHint"], true);
         // 较早的版本没有 annotations、title
-        for tool in list(false, false).as_array().unwrap() {
+        for tool in list(Reach::Local, false, false).as_array().unwrap() {
             assert!(tool.get("annotations").is_none() && tool.get("title").is_none());
         }
+    }
+
+    // 局域网中的客户端：没有传文件的工具；直接调用时是工具执行错误，说明怎样用 run_command 读写小文件
+    #[test]
+    fn lan_clients_get_no_file_tools() {
+        let tools = list(Reach::Lan, true, true);
+        let names: Vec<&str> = tools
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(names, ["list_hosts", "run_command"]);
+        assert!(Tool::UploadFile.local_files() && Tool::DownloadFile.local_files());
+        assert!(!Tool::ListHosts.local_files() && !Tool::RunCommand.local_files());
+
+        let outcome = lan_unavailable(Tool::DownloadFile, Lang::En);
+        assert!(outcome.is_error());
+        assert!(
+            outcome.text.starts_with(
+                "[lan_unavailable] download_file isn't available over the local network"
+            ),
+            "{}",
+            outcome.text
+        );
+        assert!(outcome.text.contains("cat") && outcome.text.contains("heredoc"));
+        let result = outcome.into_result(true);
+        assert_eq!(result["structuredContent"]["error"], "lan_unavailable");
+        let zh = lan_unavailable(Tool::UploadFile, Lang::Zh);
+        assert!(
+            zh.text.contains("通过局域网连接时不能使用 upload_file"),
+            "{}",
+            zh.text
+        );
     }
 }

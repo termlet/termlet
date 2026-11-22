@@ -2,6 +2,7 @@
 //! 请求的日志（限频）。
 
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
@@ -87,8 +88,9 @@ impl State {
         matched.len()
     }
 
-    /// 被拒绝的请求：同一原因每分钟最多记一条日志（带上期间省略的次数），不记内容与令牌。
-    pub fn reject(&self, reason: Rejected) {
+    /// 被拒绝的请求：同一原因每分钟最多记一条日志（带上期间省略的次数），不记内容与令牌。局域网（或别处）来的连接
+    /// 记下对方的地址（`peer`），回环来的不记。
+    pub fn reject(&self, reason: Rejected, peer: Option<IpAddr>) {
         let mut rejections = lock(&self.rejections);
         let throttle = rejections.entry(reason).or_default();
         let now = Instant::now();
@@ -101,18 +103,29 @@ impl State {
         }
         let suppressed = std::mem::take(&mut throttle.suppressed);
         throttle.logged = Some(now);
-        tracing::warn!(
-            reason = reason.as_str(),
-            suppressed,
-            "拒绝了一个 MCP 的 HTTP 请求：{}",
-            reason.describe()
-        );
+        match peer {
+            Some(peer) => tracing::warn!(
+                reason = reason.as_str(),
+                suppressed,
+                %peer,
+                "拒绝了一个 MCP 的 HTTP 请求：{}",
+                reason.describe()
+            ),
+            None => tracing::warn!(
+                reason = reason.as_str(),
+                suppressed,
+                "拒绝了一个 MCP 的 HTTP 请求：{}",
+                reason.describe()
+            ),
+        }
     }
 }
 
 /// 拒绝的原因。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(super) enum Rejected {
+    /// 连接不是来自回环地址或私有网段（在读请求之前关闭）
+    Peer,
     Host,
     Origin,
     Token,
@@ -123,6 +136,7 @@ pub(super) enum Rejected {
 impl Rejected {
     fn as_str(self) -> &'static str {
         match self {
+            Rejected::Peer => "peer",
             Rejected::Host => "host",
             Rejected::Origin => "origin",
             Rejected::Token => "token",
@@ -133,6 +147,7 @@ impl Rejected {
 
     fn describe(self) -> &'static str {
         match self {
+            Rejected::Peer => "连接不是来自本机或局域网的私有网段，已关闭",
             Rejected::Host => "Host 头不是本机地址（可能是 DNS 重绑定）",
             Rejected::Origin => "带有 Origin 头（来自浏览器中的网页）",
             Rejected::Token => "没有令牌或令牌不对",

@@ -23,7 +23,7 @@
 - [Sync](#sync): [What is synced](#what-is-synced) · [Sync locations](#sync-locations) · [Encryption](#encryption) · [Merging](#merging) · [Safeguards](#safeguards) · [Automatic sync](#automatic-sync)
 - [Interface and settings](#interface-and-settings): [Settings pages](#settings-pages) · [Font and cursor](#font-and-cursor) · [Sidebar](#sidebar) · [Windows and the title bar](#windows-and-the-title-bar) · [Toolbar](#toolbar) · [Opening at startup](#opening-at-startup)
 - [Updates, diagnostics and uninstalling](#updates-diagnostics-and-uninstalling): [Updates](#updates) · [Usage statistics](#usage-statistics) · [Diagnostics](#diagnostics) · [Logs](#logs) · [Crash records](#crash-records) · [Uninstalling](#uninstalling)
-- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [MCP over HTTP](#mcp-over-http) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [Limits](#limits)
+- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [MCP over HTTP](#mcp-over-http) · [MCP over the LAN](#mcp-over-the-lan) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [Limits](#limits)
 - [Known limitations](#known-limitations)
 
 ## Installation
@@ -1640,7 +1640,7 @@ termlet version
 - AI tools such as Claude Code, Codex and Cursor can call Termlet directly as an MCP server (list hosts, run commands, upload and download files). There are two transports:
   - **Standard input and output** (recommended): the AI tool starts `termlet mcp` itself from its configuration, and no network port is opened. If Termlet isn't running, it's started in the background as set under [Turning it on](#turning-it-on).
   - **HTTP**: Termlet listens on this computer and the AI tool connects with an address and a token. It only works while Termlet is running; see [MCP over HTTP](#mcp-over-http).
-- Which to choose: standard input and output usually, with no port or token to look after. Use HTTP when the AI tool only supports HTTP MCP servers, or when it runs on a server and connects back to this computer through SSH port forwarding. Claude Desktop can only use standard input and output.
+- Which to choose: standard input and output usually, with no port or token to look after. Use HTTP when the AI tool only supports HTTP MCP servers, when it runs on a server and connects back to this computer through SSH port forwarding, or when it's on another computer on your LAN. Claude Desktop can only use standard input and output.
 - Both transports have the same tools, checks, approval and audit. You only need one of them in an AI tool (both are named `termlet`).
 - Copy every AI tool's configuration from the settings page: under Settings → AI & automation → MCP server, pick the transport and the AI tool (Claude Code, Codex, Cursor, VS Code (GitHub Copilot), Gemini CLI, Claude Desktop, or generic JSON for other tools) to get the configuration and where it goes, and copy it with one click.
   - For standard input and output, the command is the full path of termlet on this computer; for HTTP, the address and token are filled in (the preview masks the token; what you copy contains it).
@@ -1657,7 +1657,7 @@ termlet version
 
 - Local paths for `upload_file` and `download_file` must be absolute (paths on the computer running Termlet).
 - Every call goes through Termlet as usual: the external CLI switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
-- The audit log's Source column shows "MCP (client name)", or "MCP·HTTP (client name)" over HTTP, and you can filter for these calls. The caller starts with `mcp:<client name>`; over HTTP it's followed by `http` and the chain of processes that opened the connection (recorded on Windows and Linux).
+- The audit log's Source column shows "MCP (client name)", "MCP·HTTP (client name)" over HTTP, or "MCP·LAN <its address> (client name)" from another computer on the LAN, and you can filter for these calls. The caller starts with `mcp:<client name>`; over HTTP it's followed by `http` and the chain of processes that opened the connection (recorded on Windows and Linux), or `lan:<its address>` from the LAN.
 - The approval dialog for a dangerous command names the AI tool in its title, such as "Claude Code (MCP) wants to run a dangerous command on …": common AI tools get their product name, others the name they report; those without a brand logo get a generic AI icon.
 - When the external CLI is off, Termlet isn't running, or a command is blocked or denied, the tool returns an error with the same error code as the JSON output.
 - Commands return at most 32 KB of stdout and stderr together to the AI (the beginning and end are kept, with a note on how to get the full output).
@@ -1671,8 +1671,9 @@ termlet version
 
 ### MCP over HTTP
 
-- Turning it on: under Settings → AI & automation → MCP server, set the transport to "HTTP", tick "Listen for HTTP on this computer" and save.
+- Turning it on: under Settings → AI & automation → MCP server, set the transport to "HTTP", tick "Listen for HTTP" and save.
   - It's off by default. "Allow access from AI tools and scripts" at the top must be on as well; Termlet only listens when both are on, and opens no port otherwise.
+  - "Listen on" defaults to "This computer only"; for "This computer and LAN", see [MCP over the LAN](#mcp-over-the-lan).
   - "Status" shows what's actually happening: running, off, or why it couldn't listen.
 - Address: `http://127.0.0.1:<port>/mcp`. The port defaults to 47800 and can be changed (1–65535); change the address in your AI tools along with it.
   - That's the only address, and it only accepts POST. In the AI tool, choose the HTTP type (some call it Streamable HTTP or `streamableHttp`); the old SSE type isn't supported.
@@ -1687,15 +1688,35 @@ termlet version
   - On Windows, to keep it available after you close the window, turn on "Minimize to the system tray when closing the window" under General.
   - A Termlet started in the background by the termlet command (no window) listens too; it quits after 10 minutes without requests, and HTTP requests count.
   - After Termlet restarts, there's nothing to reconfigure: calls in progress fail, and it works as usual afterwards.
-- It only accepts connections from this computer: it listens on `127.0.0.1` only, so other devices on your network can't connect.
-  - The Host of a request must be `127.0.0.1`, `localhost` or `[::1]` with this port, and requests with an `Origin` header (sent by web pages in a browser) are always refused, so web pages can't call it.
+- By default it only accepts connections from this computer: with "This computer only", it listens on `127.0.0.1` only, so other devices on your network can't connect.
+  - For connections from this computer, the Host of a request must be `127.0.0.1`, `localhost` or `[::1]` with this port; requests with an `Origin` header (sent by web pages in a browser) are always refused, so web pages can't call it.
   - Refused requests are noted in the log with the reason (at most once a minute per reason), without the token or the content.
-- There's no access from your network: local paths for uploads and downloads are paths on the computer running Termlet, and approval dialogs appear on it too, so opening it to the network would let another computer read and write files on this one as you. For an AI tool on another computer, install Termlet on that computer.
 - For an AI tool on a server (for example, Claude Code running on the server in a terminal), use SSH remote forwarding to bring a port on the server back to this computer:
   - Add a remote forwarding rule under [Port forwarding](#port-forwarding): listen on `127.0.0.1:47800` on the server with target `127.0.0.1:47800`; or with OpenSSH: `ssh -R 47800:127.0.0.1:47800 <server>`.
   - The AI tool on the server uses the address `http://127.0.0.1:47800/mcp` and the token as usual. The ports on both ends must match, because Termlet checks the port in the Host.
   - Local paths for `upload_file` and `download_file` are still paths on the computer running Termlet: any program on the server that has the token can read and write files on this computer through it, and run commands on the hosts you've allowed.
   - Other users on the server can reach that port too, with only the token to stop them. Do this only on servers you trust, and close the forwarding when you're done.
+
+### MCP over the LAN
+
+- By default, only AI tools on this computer can connect. To let another computer on your LAN use it (Cursor on another computer, for example), set "Listen on" to "This computer and LAN" under HTTP in the MCP server settings and save: Termlet then listens on the same port on all IPv4 interfaces, and AI tools on this computer keep working.
+- Computers on the LAN use this computer's LAN address and a separate LAN token:
+  - "LAN address" lists this computer's IPv4 addresses in private ranges; if there are several, pick the one the other computer can reach (those with a default gateway come first; with Tailscale, pick the one starting with 100.).
+  - The "LAN token" starts with `termlet_mcp_lan_`. It's generated the first time you choose "This computer and LAN" and save, and can be regenerated on its own, so revoking computers on the LAN doesn't affect AI tools on this computer. The local token is only used on this computer and never sent over the network.
+  - The two tokens are told apart by the other side's address: connections from the LAN only accept the LAN token, and those from this computer only the local token.
+  - The configuration for that computer: set "For" to "Another computer on the LAN", pick the AI tool and copy it into the user-level configuration of the AI tool on that computer. Claude Desktop can still only use standard input and output.
+- Computers on the LAN can only list hosts and run commands: `upload_file` and `download_file` read and write files on this computer, which is no use to the AI over there, so they aren't offered, and calling them anyway returns an explanation. For small text files, use `run_command` (`cat` to read, a heredoc to write).
+- Only connections from private ranges are accepted: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16 and 100.64.0.0/10 (Tailscale and the like). Connections from other addresses are closed without reading the request, and the log notes their address.
+- For requests from the LAN, the Host must be the address of this computer they connected to, or this computer's name (such as `office-pc` or `office-pc.local`), with the port; requests with an `Origin` header are still always refused.
+- The audit log's Source shows "MCP·LAN 192.168.1.23 (client name)", and the approval dialog's title says where the request came from, such as "Cursor (MCP, from 192.168.1.23) wants to run a dangerous command on …".
+- Risks:
+  - Traffic is unencrypted, with no HTTPS: others on the same network could capture the LAN token and your commands. Use it only on trusted networks, such as at home or in the office, and don't turn it on over public Wi-Fi.
+  - Approval dialogs appear on this computer: if nobody's there, dangerous commands are denied after 60 seconds.
+  - A computer with the LAN token can run commands on the hosts you've allowed: give it only to computers you trust, and when you no longer need it, switch back to "This computer only" or regenerate the LAN token.
+- Firewall: on Windows, the first time Termlet listens on the LAN, Windows Firewall asks whether to allow it on networks; allow it on private networks. If you canceled or nothing appeared, allow Termlet under Firewall & network protection in Windows Security. On other systems with a firewall on, allow this TCP port.
+- When you need encryption, use one of these instead of LAN access:
+  - Tailscale or a similar tool: traffic goes through an encrypted tunnel, and the other computer connects to this computer's address starting with 100. (again, it can only list hosts and run commands).
+  - SSH local forwarding (if this computer runs an SSH server): on the other computer, run `ssh -L 47800:127.0.0.1:47800 <this computer>`, and the AI tool uses `http://127.0.0.1:47800/mcp` with the local token. To Termlet this is a connection from this computer, so all four tools work (file transfers read and write files on this computer); do this only between your own computers.
 
 ### Output
 

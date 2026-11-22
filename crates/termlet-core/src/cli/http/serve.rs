@@ -1,7 +1,7 @@
 //! 一条 HTTP 连接与其上的请求：检查、读正文、分发，`tools/call` 用 SSE 回答。
 
 use std::convert::Infallible;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -16,14 +16,15 @@ use hyper_util::rt::{TokioIo, TokioTimer};
 use serde_json::Value;
 use termlet_mcp::protocol::{self, Message, Session, Step, ToolCall};
 use termlet_mcp::{
-    HEADER_MISMATCH, INVALID_REQUEST, MAX_MESSAGE, UNSUPPORTED_PROTOCOL_VERSION, tools,
+    HEADER_MISMATCH, INVALID_REQUEST, MAX_MESSAGE, Reach, UNSUPPORTED_PROTOCOL_VERSION, tools,
 };
 use termlet_proto::Lang;
-use termlet_proto::mcp::{CALLER_HTTP, HTTP_PATH};
+use termlet_proto::mcp::{CALLER_HTTP, CALLER_LAN, HTTP_PATH};
 use tokio::net::TcpStream;
 use tokio::sync::{OnceCell, mpsc, watch};
 
 use super::state::{self, Rejected};
+use super::token::TokenKind;
 use super::{Inner, peer, token};
 use crate::cli::handler;
 use crate::cli::service::{Cancel, InFlight, Shared};
@@ -38,25 +39,53 @@ const VERSION_HEADER: &str = "mcp-protocol-version";
 const METHOD_HEADER: &str = "mcp-method";
 const NAME_HEADER: &str = "mcp-name";
 
-/// 一条连接：对端、本机地址、发起连接的进程链（第一次调用工具时才查）。
+/// 一条连接：对端、本机地址、本机还是局域网、发起连接的进程链（第一次调用工具时才查）。
 pub(super) struct Conn {
     peer: SocketAddr,
     local: SocketAddr,
     port: u16,
+    reach: Reach,
+    /// 局域网的连接的 `Host` 可以写的这台电脑的名字（小写）
+    names: Arc<[String]>,
     callers: OnceCell<Vec<String>>,
 }
 
 impl Conn {
-    pub fn new(peer: SocketAddr, local: SocketAddr, port: u16) -> Arc<Self> {
+    pub fn new(
+        peer: SocketAddr,
+        local: SocketAddr,
+        port: u16,
+        reach: Reach,
+        names: Arc<[String]>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             peer,
             local,
             port,
+            reach,
+            names,
             callers: OnceCell::new(),
         })
     }
 
+    /// 被拒绝时日志中记下的对方地址：局域网的连接才记。
+    fn from(&self) -> Option<IpAddr> {
+        (self.reach == Reach::Lan).then_some(self.peer.ip())
+    }
+
+    /// 这条连接的请求要带的令牌。
+    fn token_kind(&self) -> TokenKind {
+        match self.reach {
+            Reach::Local => TokenKind::Local,
+            Reach::Lan => TokenKind::Lan,
+        }
+    }
+
+    /// 调用方中 `http` 之后的部分：本机的连接是发起连接的进程链；局域网的连接是 `lan:<对方的 IP>`（那边的进程查不到）。
     async fn callers(&self) -> Vec<String> {
+        if self.reach == Reach::Lan {
+            return vec![format!("{CALLER_LAN}:{}", self.peer.ip().to_canonical())];
+        }
         self.callers
             .get_or_init(|| async {
                 let (peer, local) = (self.peer, self.local);
@@ -135,15 +164,22 @@ async fn handle(
     request: Request<Incoming>,
 ) -> Response<HttpBody> {
     let headers = request.headers();
-    if !host_allowed(headers, conn.port) {
-        inner.state.reject(Rejected::Host);
+    if !host_allowed(headers, conn) {
+        inner.state.reject(Rejected::Host, conn.from());
         return rpc_error(
             StatusCode::FORBIDDEN,
-            "Forbidden: the Host header must be 127.0.0.1, localhost or [::1] with this port",
+            match conn.reach {
+                Reach::Local => {
+                    "Forbidden: the Host header must be 127.0.0.1, localhost or [::1] with this port"
+                }
+                Reach::Lan => {
+                    "Forbidden: the Host header must be this computer's address on the network, or its name, with this port"
+                }
+            },
         );
     }
     if headers.contains_key(header::ORIGIN) {
-        inner.state.reject(Rejected::Origin);
+        inner.state.reject(Rejected::Origin, conn.from());
         return rpc_error(
             StatusCode::FORBIDDEN,
             "Forbidden: requests from web pages (with an Origin header) are not accepted",
@@ -160,11 +196,18 @@ async fn handle(
         return response;
     }
     // 先不带 WWW-Authenticate：带了的话 Devin、opencode、Zed 会转去走 OAuth（第 4 步用真实的客户端实测后再定）
-    if !authorized(inner, headers).await {
-        inner.state.reject(Rejected::Token);
+    if !authorized(inner, headers, conn.token_kind()).await {
+        inner.state.reject(Rejected::Token, conn.from());
         return rpc_error(
             StatusCode::UNAUTHORIZED,
-            "Unauthorized: send the token from Termlet (Settings → AI & automation) as Authorization: Bearer <token>",
+            match conn.reach {
+                Reach::Local => {
+                    "Unauthorized: send the token from Termlet (Settings → AI & automation) as Authorization: Bearer <token>"
+                }
+                Reach::Lan => {
+                    "Unauthorized: send the LAN token from Termlet (Settings → AI & automation) as Authorization: Bearer <token>"
+                }
+            },
         );
     }
     let too_large = headers
@@ -173,14 +216,14 @@ async fn handle(
         .and_then(|v| v.parse::<u64>().ok())
         .is_some_and(|len| len > MAX_MESSAGE as u64);
     if too_large {
-        inner.state.reject(Rejected::TooLarge);
+        inner.state.reject(Rejected::TooLarge, conn.from());
         return rpc_error(StatusCode::PAYLOAD_TOO_LARGE, "message too large");
     }
     let (parts, body) = request.into_parts();
     let bytes = match Limited::new(body, MAX_MESSAGE).collect().await {
         Ok(collected) => collected.to_bytes(),
         Err(e) if e.is::<LengthLimitError>() => {
-            inner.state.reject(Rejected::TooLarge);
+            inner.state.reject(Rejected::TooLarge, conn.from());
             return rpc_error(StatusCode::PAYLOAD_TOO_LARGE, "message too large");
         }
         Err(e) => {
@@ -219,7 +262,7 @@ async fn dispatch(
     params: Option<Value>,
 ) -> Response<HttpBody> {
     if method == "initialize" {
-        return match protocol::request(&id, &method, params, None) {
+        return match protocol::request_in(&id, &method, params, None, conn.reach) {
             Step::Initialized { reply, session } => {
                 tracing::debug!(client = %session.client, version = session.version, "MCP 的 HTTP 握手");
                 let session_id = state::session_id(&session);
@@ -250,7 +293,7 @@ async fn dispatch(
             }
         },
     };
-    match protocol::request(&id, &method, params, session.as_ref()) {
+    match protocol::request_in(&id, &method, params, session.as_ref(), conn.reach) {
         Step::Reply(reply) | Step::Initialized { reply, .. } => {
             json(status_of(&reply, modern.is_some()), &reply)
         }
@@ -441,7 +484,11 @@ async fn run(
     cancel: Cancel,
     gone: watch::Receiver<bool>,
 ) -> Option<Value> {
-    let request = match tools::request(call.tool, &call.arguments, lang, &callers) {
+    // 局域网中的客户端调用传文件的工具：不交给 Termlet
+    if let Some(refusal) = call.refusal(lang) {
+        return Some(call.reply(refusal));
+    }
+    let request = match tools::request(call.tool, &call.arguments, lang, &callers, call.reach) {
         Ok(request) => request,
         Err(outcome) => return Some(call.reply(outcome)),
     };
@@ -457,11 +504,18 @@ async fn run(
         );
         return None;
     }
-    Some(call.reply(tools::outcome(call.tool, terminal, Ok(response), lang)))
+    Some(call.reply(tools::outcome(
+        call.tool,
+        terminal,
+        Ok(response),
+        lang,
+        call.reach,
+    )))
 }
 
-/// `Host` 是本机的这个端口（只有一个 `Host` 头）。
-fn host_allowed(headers: &HeaderMap, port: u16) -> bool {
+/// `Host` 是这个端口（只有一个 `Host` 头）上的这台电脑：本机的连接写回环的名字；局域网的连接写这条连接的本机地址
+/// 或这台电脑的名字（回环的名字不认：局域网中的电脑写 localhost 指的是它自己）。
+fn host_allowed(headers: &HeaderMap, conn: &Conn) -> bool {
     let mut hosts = headers.get_all(header::HOST).iter();
     let (Some(host), None) = (hosts.next(), hosts.next()) else {
         return false;
@@ -469,12 +523,22 @@ fn host_allowed(headers: &HeaderMap, port: u16) -> bool {
     let Some((name, host_port)) = host.to_str().ok().and_then(|h| h.rsplit_once(':')) else {
         return false;
     };
-    host_port == port.to_string()
-        && (name == "127.0.0.1" || name == "[::1]" || name.eq_ignore_ascii_case("localhost"))
+    if host_port != conn.port.to_string() {
+        return false;
+    }
+    match conn.reach {
+        Reach::Local => {
+            name == "127.0.0.1" || name == "[::1]" || name.eq_ignore_ascii_case("localhost")
+        }
+        Reach::Lan => {
+            name == conn.local.ip().to_canonical().to_string()
+                || conn.names.iter().any(|n| n.eq_ignore_ascii_case(name))
+        }
+    }
 }
 
-/// `Authorization: Bearer <令牌>` 是否正确（读数据库，在后台线程上）。
-async fn authorized(inner: &Inner, headers: &HeaderMap) -> bool {
+/// `Authorization: Bearer <令牌>` 是否是这条连接要的令牌（读数据库，在后台线程上）。
+async fn authorized(inner: &Inner, headers: &HeaderMap, kind: TokenKind) -> bool {
     let Some(presented) = headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
@@ -485,7 +549,7 @@ async fn authorized(inner: &Inner, headers: &HeaderMap) -> bool {
         return false;
     };
     let store = inner.shared.store.clone();
-    tokio::task::spawn_blocking(move || token::verify(&store, &presented))
+    tokio::task::spawn_blocking(move || token::verify(&store, kind, &presented))
         .await
         .unwrap_or(false)
 }
@@ -581,15 +645,30 @@ mod tests {
         map
     }
 
+    fn conn(reach: Reach) -> Arc<Conn> {
+        let (peer, local) = match reach {
+            Reach::Local => ("127.0.0.1:50000", "127.0.0.1:47801"),
+            Reach::Lan => ("192.168.1.23:50000", "192.168.1.5:47801"),
+        };
+        Conn::new(
+            peer.parse().unwrap(),
+            local.parse().unwrap(),
+            47801,
+            reach,
+            vec!["office-pc".to_string(), "office-pc.local".to_string()].into(),
+        )
+    }
+
     #[test]
     fn host_must_be_this_machine_and_port() {
+        let local = conn(Reach::Local);
         for ok in [
             "127.0.0.1:47801",
             "localhost:47801",
             "LocalHost:47801",
             "[::1]:47801",
         ] {
-            assert!(host_allowed(&headers(&[("host", ok)]), 47801), "{ok}");
+            assert!(host_allowed(&headers(&[("host", ok)]), &local), "{ok}");
         }
         for bad in [
             "127.0.0.1:47800",
@@ -597,13 +676,40 @@ mod tests {
             "evil.example:47801",
             "127.0.0.1.evil.example:47801",
             "[::2]:47801",
+            "192.168.1.5:47801",
+            "office-pc:47801",
             "",
         ] {
-            assert!(!host_allowed(&headers(&[("host", bad)]), 47801), "{bad}");
+            assert!(!host_allowed(&headers(&[("host", bad)]), &local), "{bad}");
         }
-        assert!(!host_allowed(&HeaderMap::new(), 47801), "没有 Host");
+        assert!(!host_allowed(&HeaderMap::new(), &local), "没有 Host");
         let twice = headers(&[("host", "127.0.0.1:47801"), ("host", "127.0.0.1:47801")]);
-        assert!(!host_allowed(&twice, 47801), "两个 Host");
+        assert!(!host_allowed(&twice, &local), "两个 Host");
+    }
+
+    // 局域网的连接：Host 是这条连接的本机地址或这台电脑的名字加端口；回环的名字、别的地址不认
+    #[test]
+    fn lan_host_is_this_computer_on_the_network() {
+        let lan = conn(Reach::Lan);
+        for ok in [
+            "192.168.1.5:47801",
+            "office-pc:47801",
+            "OFFICE-PC.local:47801",
+        ] {
+            assert!(host_allowed(&headers(&[("host", ok)]), &lan), "{ok}");
+        }
+        for bad in [
+            "127.0.0.1:47801",
+            "localhost:47801",
+            "[::1]:47801",
+            "192.168.1.6:47801",
+            "192.168.1.5:47800",
+            "192.168.1.5",
+            "office-pc.evil.example:47801",
+            "evil.example:47801",
+        ] {
+            assert!(!host_allowed(&headers(&[("host", bad)]), &lan), "{bad}");
+        }
     }
 
     #[test]

@@ -539,12 +539,72 @@ cli_ui.mcp.copied_generic_with_token:
   zh-TW: 已複製通用的 JSON 設定（含權杖）
   ja: 汎用の JSON 設定をコピーしました（トークンを含む）
   ko: 범용 JSON 구성을 복사했습니다(토큰 포함)
+cli_ui.mcp.target:
+  zh-CN: 配置给
+  en: For
+  zh-TW: 設定給
+  ja: 設定先
+  ko: 구성 대상
+cli_ui.mcp.target_local:
+  zh-CN: 这台电脑
+  en: This computer
+  zh-TW: 這台電腦
+  ja: このコンピューター
+  ko: 이 컴퓨터
+cli_ui.mcp.target_lan:
+  zh-CN: 局域网中的另一台电脑
+  en: Another computer on the LAN
+  zh-TW: 區域網路中的另一台電腦
+  ja: LAN 上の別のコンピューター
+  ko: LAN의 다른 컴퓨터
+cli_ui.mcp.lan_target_note:
+  zh-CN: 下面的配置用在局域网中的另一台电脑上：地址是这台电脑的局域网地址，令牌是局域网令牌。那台电脑上的 AI 工具只能列出主机与执行命令。
+  en: "Use this configuration on another computer on your LAN: the address is this computer's LAN address and the token is the LAN token. AI tools on that computer can only list hosts and run commands."
+  zh-TW: 下面的設定用在區域網路中的另一台電腦上：位址是這台電腦的區域網路位址，權杖是區域網路權杖。那台電腦上的 AI 工具只能列出主機與執行指令。
+  ja: 以下の設定は LAN 上の別のコンピューターで使います。アドレスはこのコンピューターの LAN アドレス、トークンは LAN トークンです。そのコンピューター上の AI ツールはホストの一覧表示とコマンドの実行だけができます。
+  ko: 아래 구성은 LAN의 다른 컴퓨터에서 사용합니다. 주소는 이 컴퓨터의 LAN 주소이고 토큰은 LAN 토큰입니다. 그 컴퓨터의 AI 도구는 호스트 목록 보기와 명령 실행만 할 수 있습니다.
+cli_ui.mcp.lan_codex_proxy:
+  zh-CN: 那台电脑开着系统代理（如 Clash）时，Codex 访问 %{address} 也可能经过代理：先设环境变量 NO_PROXY=%{address}，再启动 Codex。
+  en: If that computer has a system proxy on (such as Clash), Codex may send requests for %{address} through it too. Set the environment variable NO_PROXY=%{address} before starting Codex.
+  zh-TW: 那台電腦開著系統代理伺服器（如 Clash）時，Codex 存取 %{address} 也可能經過代理伺服器：先設定環境變數 NO_PROXY=%{address}，再啟動 Codex。
+  ja: そのコンピューターでシステムのプロキシ（Clash など）が有効なときは、Codex は %{address} へのアクセスもプロキシ経由で送ることがあります。環境変数 NO_PROXY=%{address} を設定してから Codex を起動してください。
+  ko: 그 컴퓨터에 시스템 프록시(Clash 등)가 켜져 있으면 Codex는 %{address}에 대한 요청도 프록시를 거칠 수 있습니다. 환경 변수 NO_PROXY=%{address}를 설정한 뒤 Codex를 시작하세요.
+cli_ui.mcp.copied_lan:
+  zh-CN: 已复制 %{tool} 的局域网配置（含局域网令牌）
+  en: "%{tool} LAN configuration copied (includes the LAN token)"
+  zh-TW: 已複製 %{tool} 的區域網路設定（含區域網路權杖）
+  ja: "%{tool} の LAN 用の設定をコピーしました（LAN トークンを含む）"
+  ko: "%{tool} LAN 구성을 복사했습니다(LAN 토큰 포함)"
+cli_ui.mcp.copied_generic_lan:
+  zh-CN: 已复制通用的 JSON 局域网配置（含局域网令牌）
+  en: Generic JSON LAN configuration copied (includes the LAN token)
+  zh-TW: 已複製通用的 JSON 區域網路設定（含區域網路權杖）
+  ja: 汎用の JSON の LAN 用設定をコピーしました（LAN トークンを含む）
+  ko: 범용 JSON LAN 구성을 복사했습니다(LAN 토큰 포함)
 cli_ui.http.enabled:
-  zh-CN: 在本机监听 HTTP（只接受这台电脑上的连接，Termlet 运行时可用）
-  en: Listen for HTTP on this computer (only accepts connections from this computer; works while Termlet is running)
-  zh-TW: 在本機監聽 HTTP（只接受這台電腦上的連線，Termlet 執行時可用）
-  ja: このコンピューターで HTTP を待ち受ける（このコンピューターからの接続のみ受け付け、Termlet の実行中に使用可能）
-  ko: 이 컴퓨터에서 HTTP 수신 대기(이 컴퓨터의 연결만 허용, Termlet 실행 중에 사용 가능)
+  zh-CN: 监听 HTTP（Termlet 运行时可用）
+  en: Listen for HTTP (works while Termlet is running)
+  zh-TW: 監聽 HTTP（Termlet 執行時可用）
+  ja: HTTP を待ち受ける（Termlet の実行中に使用可能）
+  ko: HTTP 수신 대기(Termlet 실행 중에 사용 가능)
+cli_ui.http.scope:
+  zh-CN: 监听范围
+  en: Listen on
+  zh-TW: 監聽範圍
+  ja: 待ち受け範囲
+  ko: 수신 범위
+cli_ui.http.scope_local:
+  zh-CN: 仅本机
+  en: This computer only
+  zh-TW: 僅本機
+  ja: このコンピューターのみ
+  ko: 이 컴퓨터만
+cli_ui.http.scope_lan:
+  zh-CN: 本机与局域网
+  en: This computer and LAN
+  zh-TW: 本機與區域網路
+  ja: このコンピューターと LAN
+  ko: 이 컴퓨터와 LAN
 cli_ui.http.port:
   zh-CN: 端口
   en: Port
@@ -575,6 +635,12 @@ cli_ui.http.status_listening:
   zh-TW: 執行中：正在監聽 127.0.0.1:%{port}
   ja: 実行中：127.0.0.1:%{port} で待ち受け中
   ko: "실행 중: 127.0.0.1:%{port}에서 수신 대기 중"
+cli_ui.http.status_listening_lan:
+  zh-CN: 运行中：正在所有 IPv4 网卡上监听端口 %{port}（本机与局域网）
+  en: "Running: listening on port %{port} on all IPv4 interfaces (this computer and LAN)"
+  zh-TW: 執行中：正在所有 IPv4 網路卡上監聽連接埠 %{port}（本機與區域網路）
+  ja: 実行中：すべての IPv4 ネットワークインターフェイスのポート %{port} で待ち受け中（このコンピューターと LAN）
+  ko: "실행 중: 모든 IPv4 네트워크 인터페이스의 포트 %{port}에서 수신 대기 중(이 컴퓨터와 LAN)"
 cli_ui.http.status_off:
   zh-CN: 未启用
   en: "Off"
@@ -779,6 +845,96 @@ cli_ui.http.note_other:
   zh-TW: HTTP 由 Termlet 自己監聽，只在 Termlet 執行時可用，Termlet 結束後就連不上。要在 Termlet 沒有執行時也能使用，請改用標準輸入輸出（由 AI 工具在背景啟動 Termlet）。
   ja: HTTP は Termlet 自身が待ち受けるため、Termlet の実行中にしか使用できません。Termlet が実行されていないときも使用するには、標準入出力を使ってください（AI ツールがバックグラウンドで Termlet を起動します）。
   ko: HTTP는 Termlet이 직접 수신 대기하므로 Termlet이 실행 중일 때만 사용할 수 있습니다. Termlet이 실행 중이 아닐 때도 사용하려면 표준 입출력을 사용하세요(AI 도구가 백그라운드에서 Termlet을 시작함).
+cli_ui.http.lan_address:
+  zh-CN: 局域网地址
+  en: LAN address
+  zh-TW: 區域網路位址
+  ja: LAN アドレス
+  ko: LAN 주소
+cli_ui.http.lan_address_item:
+  zh-CN: "%{ip}（%{interface}）"
+  en: "%{ip} (%{interface})"
+  zh-TW: "%{ip}（%{interface}）"
+  ja: "%{ip}（%{interface}）"
+  ko: "%{ip}(%{interface})"
+cli_ui.http.lan_loading:
+  zh-CN: 正在读取这台电脑的网络地址…
+  en: Reading this computer's network addresses…
+  zh-TW: 正在讀取這台電腦的網路位址…
+  ja: このコンピューターのネットワークアドレスを読み取っています…
+  ko: 이 컴퓨터의 네트워크 주소를 읽는 중…
+cli_ui.http.lan_none:
+  zh-CN: 没有找到这台电脑在局域网中的 IPv4 地址（10.x、172.16–31.x、192.168.x 等私有网段）。连上网络后重新打开设置。
+  en: Couldn't find an IPv4 address of this computer on a local network (a private range such as 10.x, 172.16–31.x or 192.168.x). Connect to a network, then reopen Settings.
+  zh-TW: 找不到這台電腦在區域網路中的 IPv4 位址（10.x、172.16–31.x、192.168.x 等私有網段）。連上網路後重新開啟設定。
+  ja: このコンピューターの LAN 上の IPv4 アドレス（10.x、172.16–31.x、192.168.x などのプライベートアドレス）が見つかりません。ネットワークに接続してから、設定を開き直してください。
+  ko: LAN에서 이 컴퓨터의 IPv4 주소(10.x, 172.16–31.x, 192.168.x 등 사설 주소)를 찾을 수 없습니다. 네트워크에 연결한 뒤 설정을 다시 여세요.
+cli_ui.http.lan_token:
+  zh-CN: 局域网令牌
+  en: LAN token
+  zh-TW: 區域網路權杖
+  ja: LAN トークン
+  ko: LAN 토큰
+cli_ui.http.lan_token_missing:
+  zh-CN: 选“本机与局域网”并保存后生成
+  en: Generated once you choose “This computer and LAN” and save
+  zh-TW: 選「本機與區域網路」並儲存後產生
+  ja: 「このコンピューターと LAN」を選んで保存すると生成されます
+  ko: "'이 컴퓨터와 LAN'을 선택하고 저장하면 생성됩니다"
+cli_ui.http.lan_regenerate_title:
+  zh-CN: 重新生成局域网令牌？
+  en: Regenerate the LAN token?
+  zh-TW: 重新產生區域網路權杖？
+  ja: LAN トークンを再生成しますか？
+  ko: LAN 토큰을 다시 생성할까요?
+cli_ui.http.lan_regenerate_body:
+  zh-CN: 局域网中使用旧令牌的电脑会立即被拒绝，要把新的配置复制到它们之中；这台电脑上的 AI 工具不受影响。
+  en: Computers on the LAN using the old token are refused right away; you'll need to copy the new configuration to them. AI tools on this computer aren't affected.
+  zh-TW: 區域網路中使用舊權杖的電腦會立即被拒絕，要把新的設定複製到它們之中；這台電腦上的 AI 工具不受影響。
+  ja: 古いトークンを使っている LAN 上のコンピューターはすぐに拒否されます。新しい設定をそれぞれにコピーしてください。このコンピューター上の AI ツールには影響しません。
+  ko: 이전 토큰을 사용하는 LAN의 컴퓨터는 즉시 거부됩니다. 새 구성을 각 컴퓨터에 복사해야 합니다. 이 컴퓨터의 AI 도구에는 영향이 없습니다.
+cli_ui.http.lan_regenerated:
+  zh-CN: 已生成新的局域网令牌，请把新的配置复制到局域网中的电脑上
+  en: New LAN token generated; copy the new configuration to the computers on your LAN
+  zh-TW: 已產生新的區域網路權杖，請把新的設定複製到區域網路中的電腦上
+  ja: 新しい LAN トークンを生成しました。新しい設定を LAN 上のコンピューターにコピーしてください
+  ko: 새 LAN 토큰을 생성했습니다. 새 구성을 LAN의 컴퓨터에 복사하세요
+cli_ui.http.lan_copy_later_off:
+  zh-CN: 预览中的令牌是占位：选“本机与局域网”并保存、生成局域网令牌后才能复制配置。
+  en: "The token in the preview is a placeholder: choose “This computer and LAN” and save to generate the LAN token, then copy the configuration."
+  zh-TW: 預覽中的權杖是預留位置：選「本機與區域網路」並儲存、產生區域網路權杖後才能複製設定。
+  ja: プレビューのトークンは仮のものです。「このコンピューターと LAN」を選んで保存し、LAN トークンが生成されてから設定をコピーしてください。
+  ko: 미리 보기의 토큰은 자리 표시자입니다. '이 컴퓨터와 LAN'을 선택하고 저장해 LAN 토큰이 생성된 후에 구성을 복사하세요.
+cli_ui.http.lan_plaintext:
+  zh-CN: 局域网上是明文传输（没有 HTTPS）：同一网络中的人可能截获令牌与命令的内容。只在家里、办公室这类信任的网络中使用；要加密时改用 SSH 端口转发或 Tailscale 等。只接受私有网段（10.x、172.16–31.x、192.168.x、169.254.x、100.64–127.x）的连接。
+  en: "Traffic on the LAN is unencrypted (no HTTPS): others on the same network could capture the token and your commands. Use it only on trusted networks, such as at home or in the office; for encryption, use SSH port forwarding or Tailscale instead. Only connections from private ranges (10.x, 172.16–31.x, 192.168.x, 169.254.x, 100.64–127.x) are accepted."
+  zh-TW: 區域網路上是明文傳輸（沒有 HTTPS）：同一網路中的人可能截取權杖與指令的內容。只在家裡、辦公室這類受信任的網路中使用；要加密時改用 SSH 連接埠轉送或 Tailscale 等。只接受私有網段（10.x、172.16–31.x、192.168.x、169.254.x、100.64–127.x）的連線。
+  ja: LAN 上の通信は暗号化されません（HTTPS なし）。同じネットワーク上の人がトークンやコマンドの内容を傍受できる可能性があります。自宅やオフィスなど信頼できるネットワークでのみ使用し、暗号化が必要な場合は SSH ポート転送や Tailscale などを使ってください。プライベートアドレス（10.x、172.16–31.x、192.168.x、169.254.x、100.64–127.x）からの接続のみ受け付けます。
+  ko: LAN에서는 암호화되지 않은 상태로 전송됩니다(HTTPS 없음). 같은 네트워크의 다른 사람이 토큰과 명령 내용을 가로챌 수 있습니다. 집이나 사무실처럼 신뢰할 수 있는 네트워크에서만 사용하고, 암호화가 필요하면 SSH 포트 포워딩이나 Tailscale 등을 사용하세요. 사설 주소(10.x, 172.16–31.x, 192.168.x, 169.254.x, 100.64–127.x)의 연결만 허용합니다.
+cli_ui.http.lan_firewall_windows:
+  zh-CN: 第一次在局域网上监听时，Windows 防火墙会询问是否允许 Termlet 访问网络：允许“专用网络”。点了取消或没有弹出时，局域网中的电脑连不上，可以在 Windows 安全中心的“防火墙和网络保护”中允许 Termlet。
+  en: "The first time Termlet listens on the LAN, Windows Firewall asks whether to allow it on networks: allow it on private networks. If you canceled or nothing appeared, computers on the LAN can't connect; allow Termlet under Firewall & network protection in Windows Security."
+  zh-TW: 第一次在區域網路上監聽時，Windows 防火牆會詢問是否允許 Termlet 存取網路：允許「私人網路」。按了取消或沒有跳出時，區域網路中的電腦連不上，可以在 Windows 安全性的「防火牆與網路保護」中允許 Termlet。
+  ja: 初めて LAN で待ち受けるとき、Windows ファイアウォールが Termlet のネットワークへのアクセスを許可するか確認します。「プライベート ネットワーク」で許可してください。キャンセルした場合や表示されなかった場合は LAN 上のコンピューターから接続できないため、Windows セキュリティの「ファイアウォールとネットワーク保護」で Termlet を許可してください。
+  ko: 처음 LAN에서 수신 대기할 때 Windows 방화벽이 Termlet의 네트워크 액세스를 허용할지 묻습니다. '개인 네트워크'에서 허용하세요. 취소했거나 아무것도 표시되지 않았다면 LAN의 컴퓨터가 연결할 수 없으므로 Windows 보안의 '방화벽 및 네트워크 보호'에서 Termlet을 허용하세요.
+cli_ui.http.lan_firewall_other:
+  zh-CN: 开着防火墙时，要放行 TCP 端口 %{port}，局域网中的电脑才连得上。
+  en: If a firewall is on, allow TCP port %{port} so computers on the LAN can connect.
+  zh-TW: 開著防火牆時，要允許 TCP 連接埠 %{port}，區域網路中的電腦才連得上。
+  ja: ファイアウォールが有効な場合は、LAN 上のコンピューターから接続できるように TCP ポート %{port} を許可してください。
+  ko: 방화벽이 켜져 있으면 LAN의 컴퓨터가 연결할 수 있도록 TCP 포트 %{port}을(를) 허용하세요.
+cli_ui.http.lan_approval:
+  zh-CN: 危险命令的批准框弹在这台电脑上：没人点时 %{seconds} 秒后按拒绝处理。
+  en: Approval dialogs for dangerous commands appear on this computer; if nobody responds, the command is denied after %{seconds} seconds.
+  zh-TW: 危險指令的核准框會跳出在這台電腦上：沒人回應時 %{seconds} 秒後視為拒絕。
+  ja: 危険なコマンドの承認ダイアログはこのコンピューターに表示されます。誰も応答しないと %{seconds} 秒後に拒否されます。
+  ko: 위험한 명령의 승인 창은 이 컴퓨터에 표시됩니다. 아무도 응답하지 않으면 %{seconds}초 후 거부됩니다.
+cli_ui.http.lan_tools:
+  zh-CN: 局域网中的电脑只能列出主机、执行命令，不能上传、下载文件（这两个工具读写的是这台电脑上的文件）；小的文本文件可以让 AI 用 cat 读、用 heredoc 写。
+  en: Computers on the LAN can only list hosts and run commands, not upload or download files (those tools read and write files on this computer); for small text files, the AI can use cat to read and a heredoc to write.
+  zh-TW: 區域網路中的電腦只能列出主機、執行指令，不能上傳、下載檔案（這兩個工具讀寫的是這台電腦上的檔案）；小的文字檔可以讓 AI 用 cat 讀、用 heredoc 寫。
+  ja: LAN 上のコンピューターからはホストの一覧表示とコマンドの実行だけができ、ファイルのアップロードとダウンロードはできません（この 2 つのツールはこのコンピューター上のファイルを読み書きするため）。小さなテキストファイルは、AI に cat で読ませ、heredoc で書かせることができます。
+  ko: LAN의 컴퓨터는 호스트 목록 보기와 명령 실행만 할 수 있고 파일 업로드와 다운로드는 할 수 없습니다(이 두 도구는 이 컴퓨터의 파일을 읽고 쓰기 때문). 작은 텍스트 파일은 AI가 cat으로 읽고 heredoc으로 쓰게 할 수 있습니다.
 cli_ui.rules.hint:
   zh-CN: 通过 termlet 命令与 MCP 服务执行的命令（包括 Claude Code 等 AI 工具发出的）命中以下规则时，先请你批准或直接拦截，并记入审计日志；粘贴、同步输入与撰写栏发送前也按这些规则检查。规则用于防止误操作，命令可以通过编码、脚本等方式绕过，不是安全边界；请为 AI 工具与脚本使用服务器上的低权限账号（编辑主机 → AI 与自动化 → AI 工具与脚本使用单独的凭据）。
   en: Commands run through the termlet command or the MCP server (including those from AI tools such as Claude Code) that match these rules need your approval or are blocked, and are recorded in the audit log. Pasting, synchronized input and the compose bar check these rules too. The rules prevent mistakes but can be bypassed with encoding or scripts, so they aren't a security boundary; use a low-privilege server account for AI tools and scripts (Edit host → AI & automation → Use a separate credential for AI tools and scripts).
@@ -977,6 +1133,18 @@ cli_ui.audit.source_mcp_client_http:
   zh-TW: MCP·HTTP（%{client}）
   ja: MCP·HTTP（%{client}）
   ko: MCP·HTTP(%{client})
+cli_ui.audit.source_mcp_lan:
+  zh-CN: MCP·局域网 %{address}
+  en: MCP·LAN %{address}
+  zh-TW: MCP·區域網路 %{address}
+  ja: MCP·LAN %{address}
+  ko: MCP·LAN %{address}
+cli_ui.audit.source_mcp_client_lan:
+  zh-CN: MCP·局域网 %{address}（%{client}）
+  en: MCP·LAN %{address} (%{client})
+  zh-TW: MCP·區域網路 %{address}（%{client}）
+  ja: MCP·LAN %{address}（%{client}）
+  ko: MCP·LAN %{address}(%{client})
 cli_ui.audit.source_mcp_http:
   zh-CN: MCP·HTTP
   en: MCP·HTTP

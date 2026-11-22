@@ -1,6 +1,7 @@
 //! HTTP 接入的测试：真实的命令行服务（内存中的存储、模拟的界面，见 `cli::tests`）在随机的空闲端口上监听，
 //! 用 reqwest 当客户端。
 
+use std::net::IpAddr;
 use std::time::Duration;
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -10,6 +11,7 @@ use super::*;
 use crate::audit::{AuditSource, AuditStatus};
 use crate::cli::tests::{Approve, Fixture, store_with};
 use crate::cli::{APPROVAL_TIMEOUT, TokenView};
+use crate::model::HttpScope;
 use crate::testkit::{block_on, wait_until};
 use crate::vault::MemoryKeyStore;
 
@@ -32,6 +34,14 @@ fn options(max_connections: usize) -> HttpOptions {
     HttpOptions {
         keepalive: Duration::from_millis(100),
         max_connections,
+        fake_lan: FakeLan::default(),
+    }
+}
+
+fn listening(port: u16) -> HttpStatus {
+    HttpStatus::Listening {
+        port,
+        scope: HttpScope::Local,
     }
 }
 
@@ -50,7 +60,7 @@ fn wait_status(f: &Fixture, want: &HttpStatus) {
 }
 
 fn token_of(f: &Fixture) -> String {
-    match f.service.http_token().unwrap() {
+    match f.service.http_token(TokenKind::Local).unwrap() {
         TokenView::Ready(token) => token.expose().to_string(),
         other => panic!("应能看到令牌：{other:?}"),
     }
@@ -70,7 +80,7 @@ impl Env {
                 s.cli.http.port = port;
             })
             .unwrap();
-        wait_status(&f, &HttpStatus::Listening { port });
+        wait_status(&f, &listening(port));
         let token = token_of(&f);
         let client = reqwest::Client::builder().no_proxy().build().unwrap();
         Self {
@@ -184,7 +194,10 @@ fn port_closed(port: u16) -> bool {
 fn listens_only_when_both_switches_are_on() {
     let f = fixture(MAX_CONNECTIONS);
     assert_eq!(f.service.http_status(), HttpStatus::Off, "默认关闭");
-    assert_eq!(f.service.http_token().unwrap(), TokenView::Missing);
+    assert_eq!(
+        f.service.http_token(TokenKind::Local).unwrap(),
+        TokenView::Missing
+    );
     let port = free_port();
     f.store
         .update_local_settings(|s| {
@@ -197,12 +210,15 @@ fn listens_only_when_both_switches_are_on() {
     let status = block_on(f.service.refresh_http()).unwrap();
     assert_eq!(status, HttpStatus::Off);
     assert!(port_closed(port));
-    assert_eq!(f.service.http_token().unwrap(), TokenView::Missing);
+    assert_eq!(
+        f.service.http_token(TokenKind::Local).unwrap(),
+        TokenView::Missing
+    );
 
     f.store
         .update_local_settings(|s| s.cli.enabled = true)
         .unwrap();
-    wait_status(&f, &HttpStatus::Listening { port });
+    wait_status(&f, &listening(port));
     assert!(!port_closed(port));
     let token = token_of(&f);
     assert!(token.starts_with("termlet_mcp_"));
@@ -212,7 +228,7 @@ fn listens_only_when_both_switches_are_on() {
     f.store
         .update_local_settings(|s| s.cli.http.port = other)
         .unwrap();
-    wait_status(&f, &HttpStatus::Listening { port: other });
+    wait_status(&f, &listening(other));
     assert!(port_closed(port));
     assert_eq!(token_of(&f), token);
 
@@ -225,7 +241,7 @@ fn listens_only_when_both_switches_are_on() {
     f.store
         .update_local_settings(|s| s.cli.http.enabled = true)
         .unwrap();
-    wait_status(&f, &HttpStatus::Listening { port: other });
+    wait_status(&f, &listening(other));
 
     // 服务停止：端口关闭
     let Fixture { service, .. } = f;
@@ -249,12 +265,13 @@ fn port_in_use_is_reported() {
         &f,
         &HttpStatus::Failed {
             port,
+            scope: HttpScope::Local,
             error: HttpError::PortInUse,
         },
     );
     drop(taken);
     let status = block_on(f.service.refresh_http()).unwrap();
-    assert_eq!(status, HttpStatus::Listening { port });
+    assert_eq!(status, listening(port));
 
     f.store
         .update_local_settings(|s| s.cli.http.port = 0)
@@ -263,6 +280,7 @@ fn port_in_use_is_reported() {
         &f,
         &HttpStatus::Failed {
             port: 0,
+            scope: HttpScope::Local,
             error: HttpError::InvalidPort,
         },
     );
@@ -377,7 +395,11 @@ fn regenerated_token_takes_effect_immediately() {
     let mut env = Env::new();
     let ping = request(1, "ping", json!({}));
     assert_eq!(env.json(&ping, &[]).0, 200);
-    let new = env.f.service.regenerate_http_token().unwrap();
+    let new = env
+        .f
+        .service
+        .regenerate_http_token(TokenKind::Local)
+        .unwrap();
     assert_eq!(env.json(&ping, &[]).0, 401, "旧令牌随即失效");
     env.token = new.expose().to_string();
     assert_eq!(env.json(&ping, &[]).0, 200);
@@ -858,9 +880,12 @@ fn locked_vault_keeps_serving() {
             s.cli.http.port = port;
         })
         .unwrap();
-    wait_status(&f, &HttpStatus::Listening { port });
-    assert_eq!(f.service.http_token().unwrap(), TokenView::Missing);
-    assert!(f.service.regenerate_http_token().is_err());
+    wait_status(&f, &listening(port));
+    assert_eq!(
+        f.service.http_token(TokenKind::Local).unwrap(),
+        TokenView::Missing
+    );
+    assert!(f.service.regenerate_http_token(TokenKind::Local).is_err());
     let client = reqwest::Client::builder().no_proxy().build().unwrap();
     let status = block_on(async {
         client
@@ -874,4 +899,319 @@ fn locked_vault_keeps_serving() {
             .as_u16()
     });
     assert_eq!(status, 401);
+}
+
+// ------------------------------------------------------------ 局域网
+
+/// 测试中当作局域网中的电脑的源地址（回环地址：不监听局域网、不弹防火墙的提示）与它代表的地址。
+const LAN_SOURCE: [u8; 4] = [127, 0, 0, 2];
+const LAN_PEER: [u8; 4] = [192, 168, 1, 23];
+/// 当作公网来的连接
+const PUBLIC_SOURCE: [u8; 4] = [127, 0, 0, 3];
+/// 局域网的连接连到的本机地址
+const LAN_LOCAL: [u8; 4] = [192, 168, 1, 5];
+
+/// 监听范围为局域网（实际仍在 127.0.0.1 上），从 127.0.0.2 来的连接当作 192.168.1.23、127.0.0.3 来的当作 8.8.8.8。
+fn lan_fixture() -> Fixture {
+    let mut options = options(MAX_CONNECTIONS);
+    options.fake_lan = FakeLan {
+        bind: Some(IpAddr::from([127, 0, 0, 1])),
+        peers: vec![
+            (IpAddr::from(LAN_SOURCE), IpAddr::from(LAN_PEER)),
+            (IpAddr::from(PUBLIC_SOURCE), IpAddr::from([8, 8, 8, 8])),
+        ],
+        local: Some(IpAddr::from(LAN_LOCAL)),
+    };
+    Fixture::with_http(
+        store_with(Box::new(MemoryKeyStore::default())),
+        APPROVAL_TIMEOUT,
+        options,
+    )
+}
+
+/// 以 `source` 为源地址、不复用连接的客户端（换了监听范围后旧连接会被关闭）。
+fn client_from(source: [u8; 4]) -> reqwest::Client {
+    reqwest::Client::builder()
+        .no_proxy()
+        .local_address(IpAddr::from(source))
+        .pool_max_idle_per_host(0)
+        .build()
+        .unwrap()
+}
+
+/// 发一个请求，返回（状态，正文）；连接被关闭时为 `None`。
+fn lan_send(
+    client: &reqwest::Client,
+    port: u16,
+    host: &str,
+    token: &str,
+    body: &Value,
+    extra: &[(&str, &str)],
+) -> Option<(u16, String)> {
+    block_on(async {
+        let mut request = client
+            .post(format!("http://127.0.0.1:{port}/mcp"))
+            .header("host", host)
+            .header("accept", "application/json, text/event-stream")
+            .header("authorization", format!("Bearer {token}"))
+            .body(body.to_string());
+        for (name, value) in extra {
+            request = request.header(*name, *value);
+        }
+        let response = request.send().await.ok()?;
+        let status = response.status().as_u16();
+        Some((status, response.text().await.unwrap_or_default()))
+    })
+}
+
+fn lan_token_of(f: &Fixture) -> String {
+    match f.service.http_token(TokenKind::Lan).unwrap() {
+        TokenView::Ready(token) => token.expose().to_string(),
+        other => panic!("应能看到局域网令牌：{other:?}"),
+    }
+}
+
+// 监听范围为局域网：生成局域网令牌；按对端地址选令牌、核对 Host；局域网中的客户端只有两个工具，调用传文件的工具得到
+// 说明而不交给 Termlet；审计的调用方是 lan:<IP>；不在私有网段的连接直接关闭；改回只有本机后局域网的连接被关闭
+#[test]
+fn lan_clients_are_separated_by_peer_address() {
+    let f = lan_fixture();
+    f.add_dead_host("web", true);
+    let port = free_port();
+    f.store
+        .update_local_settings(|s| {
+            s.cli.http.enabled = true;
+            s.cli.http.port = port;
+            s.cli.http.scope = HttpScope::Lan;
+        })
+        .unwrap();
+    wait_status(
+        &f,
+        &HttpStatus::Listening {
+            port,
+            scope: HttpScope::Lan,
+        },
+    );
+    let local_token = token_of(&f);
+    let lan_token = lan_token_of(&f);
+    assert!(
+        lan_token.starts_with("termlet_mcp_lan_"),
+        "局域网令牌的前缀"
+    );
+    assert_ne!(local_token, lan_token);
+
+    let ping = request(1, "ping", json!({}));
+    let lan = client_from(LAN_SOURCE);
+    let lan_host = format!("192.168.1.5:{port}");
+    // 局域网来的：只认局域网令牌
+    let (status, body) = lan_send(&lan, port, &lan_host, &local_token, &ping, &[]).unwrap();
+    assert_eq!(status, 401, "本机的令牌不能用在局域网：{body}");
+    assert!(body.contains("LAN token"), "{body}");
+    let (status, _) = lan_send(&lan, port, &lan_host, &lan_token, &ping, &[]).unwrap();
+    assert_eq!(status, 200);
+    // Host：这条连接的本机地址或这台电脑的名字；回环的名字、别的地址不认
+    for bad in [
+        format!("127.0.0.1:{port}"),
+        format!("localhost:{port}"),
+        format!("192.168.1.6:{port}"),
+    ] {
+        let (status, _) = lan_send(&lan, port, &bad, &lan_token, &ping, &[]).unwrap();
+        assert_eq!(status, 403, "{bad}");
+    }
+    if let Some(name) = lan::host_names().first() {
+        let host = format!("{name}:{port}");
+        let (status, _) = lan_send(&lan, port, &host, &lan_token, &ping, &[]).unwrap();
+        assert_eq!(status, 200, "{host}");
+    }
+    // Origin 照旧一律拒绝
+    let origin = [("origin", "http://192.168.1.23")];
+    let (status, _) = lan_send(&lan, port, &lan_host, &lan_token, &ping, &origin).unwrap();
+    assert_eq!(status, 403);
+
+    // 本机来的：照旧只认本机的令牌与回环的名字
+    let local = client_from([127, 0, 0, 1]);
+    let local_host = format!("127.0.0.1:{port}");
+    let send_local =
+        |token: &str, body: &Value| lan_send(&local, port, &local_host, token, body, &[]).unwrap();
+    assert_eq!(send_local(&local_token, &ping).0, 200);
+    assert_eq!(
+        send_local(&lan_token, &ping).0,
+        401,
+        "局域网令牌不能用在本机"
+    );
+
+    // 局域网中的客户端：说明与工具列表
+    let send_lan = |body: &Value| lan_send(&lan, port, &lan_host, &lan_token, body, &[]).unwrap();
+    let init: Value = serde_json::from_str(&send_lan(&initialize(1, "2025-11-25")).1).unwrap();
+    let instructions = init["result"]["instructions"].as_str().unwrap();
+    assert!(instructions.contains("local network"), "{init}");
+    let list = request(2, "tools/list", json!({}));
+    let tool_names = |text: &str| -> Vec<String> {
+        let body: Value = serde_json::from_str(text).unwrap();
+        body["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_string())
+            .collect()
+    };
+    assert_eq!(
+        tool_names(&send_lan(&list).1),
+        ["list_hosts", "run_command"]
+    );
+    assert_eq!(
+        tool_names(&send_local(&local_token, &list).1).len(),
+        4,
+        "本机照旧四个"
+    );
+
+    // 直接调用传文件的工具：工具执行错误，不交给 Termlet（没有审计记录）
+    let download = request(
+        3,
+        "tools/call",
+        json!({
+            "name": "download_file",
+            "arguments": { "host": "web", "remote_path": "/etc/hostname", "local_path": "/tmp/x" },
+        }),
+    );
+    let (status, text) = send_lan(&download);
+    assert_eq!(status, 200);
+    let result = &events(&text)[0]["result"];
+    assert_eq!(result["isError"], true);
+    let message = result["content"][0]["text"].as_str().unwrap();
+    assert!(message.starts_with("[lan_unavailable]"), "{result}");
+    assert!(f.entries().is_empty(), "没有交给 Termlet");
+
+    // 执行命令：审计的调用方是 mcp < http < lan:<IP>，没有进程链
+    let run = request(
+        4,
+        "tools/call",
+        json!({ "name": "run_command", "arguments": { "host": "web", "command": "uptime" } }),
+    );
+    assert_eq!(send_lan(&run).0, 200);
+    let entry = f.entries()[0].clone();
+    assert_eq!(entry.source, AuditSource::Mcp);
+    assert_eq!(entry.caller, "mcp < http < lan:192.168.1.23");
+    assert_eq!(
+        crate::audit::mcp_lan_peer(&entry.caller),
+        Some("192.168.1.23")
+    );
+
+    // 说明中不提局域网中的客户端没有的工具：命令过长时不叫它先用 upload_file 上传
+    let huge = request(
+        5,
+        "tools/call",
+        json!({
+            "name": "run_command",
+            "arguments": { "host": "web", "command": "x".repeat(termlet_proto::MAX_STDIN_COMMAND + 1) },
+        }),
+    );
+    let (_, text) = send_lan(&huge);
+    let message = events(&text)[0]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(message.starts_with("[bad_request]"), "{message}");
+    assert!(
+        message.contains("heredoc") && !message.contains("upload_file"),
+        "{message}"
+    );
+    let (_, text) = lan_send(&local, port, &local_host, &local_token, &huge, &[]).unwrap();
+    assert!(
+        events(&text)[0]["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("upload_file"),
+        "本机的客户端照旧"
+    );
+
+    // 不在私有网段的连接：不读请求，直接关闭
+    let public = client_from(PUBLIC_SOURCE);
+    assert!(
+        lan_send(&public, port, &lan_host, &lan_token, &ping, &[]).is_none(),
+        "连接应被关闭"
+    );
+
+    // 改回只有本机：重新监听；局域网来的连接被关闭，本机照常
+    f.store
+        .update_local_settings(|s| s.cli.http.scope = HttpScope::Local)
+        .unwrap();
+    wait_status(&f, &listening(port));
+    assert!(lan_send(&lan, port, &lan_host, &lan_token, &ping, &[]).is_none());
+    assert_eq!(send_local(&local_token, &ping).0, 200);
+    assert_eq!(lan_token_of(&f), lan_token, "局域网令牌保留");
+}
+
+// 局域网令牌只在监听范围为局域网时生成，可以单独重新生成（本机的不变）
+#[test]
+fn lan_token_is_generated_and_regenerated_separately() {
+    let f = fixture(MAX_CONNECTIONS);
+    let port = free_port();
+    f.store
+        .update_local_settings(|s| {
+            s.cli.http.enabled = true;
+            s.cli.http.port = port;
+        })
+        .unwrap();
+    wait_status(&f, &listening(port));
+    assert_eq!(
+        f.service.http_token(TokenKind::Lan).unwrap(),
+        TokenView::Missing,
+        "只有本机时不生成"
+    );
+    let local = token_of(&f);
+    let new = f.service.regenerate_http_token(TokenKind::Lan).unwrap();
+    assert!(new.expose().starts_with("termlet_mcp_lan_"));
+    assert_eq!(token_of(&f), local, "本机的令牌不变");
+}
+
+// 真的在 0.0.0.0 上监听（只在 Linux 上跑：Windows 上会在桌面上弹出防火墙的提示；本机在 testing/linux 的容器中验证）。
+// 本机经回环照常；有私有网段的网卡时，经它的地址连接要局域网令牌
+#[cfg(target_os = "linux")]
+#[test]
+fn lan_scope_listens_on_all_ipv4_interfaces() {
+    let f = fixture(MAX_CONNECTIONS);
+    let port = free_port();
+    f.store
+        .update_local_settings(|s| {
+            s.cli.http.enabled = true;
+            s.cli.http.port = port;
+            s.cli.http.scope = HttpScope::Lan;
+        })
+        .unwrap();
+    wait_status(
+        &f,
+        &HttpStatus::Listening {
+            port,
+            scope: HttpScope::Lan,
+        },
+    );
+    let ping = request(1, "ping", json!({}));
+    let local_token = token_of(&f);
+    let lan_token = lan_token_of(&f);
+    let local = client_from([127, 0, 0, 1]);
+    let host = format!("127.0.0.1:{port}");
+    let (status, _) = lan_send(&local, port, &host, &local_token, &ping, &[]).unwrap();
+    assert_eq!(status, 200);
+    let Some(address) = lan::addresses().into_iter().next() else {
+        eprintln!("没有私有网段的网卡，跳过经局域网地址的连接");
+        return;
+    };
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let send = |token: &str| {
+        block_on(async {
+            client
+                .post(format!("http://{}:{port}/mcp", address.ip))
+                .header("accept", "application/json, text/event-stream")
+                .header("authorization", format!("Bearer {token}"))
+                .body(ping.to_string())
+                .send()
+                .await
+                .unwrap()
+                .status()
+                .as_u16()
+        })
+    };
+    assert_eq!(send(&lan_token), 200, "经 {} 连接", address.ip);
+    assert_eq!(send(&local_token), 401, "本机的令牌不能用在局域网");
 }

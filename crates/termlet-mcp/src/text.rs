@@ -46,6 +46,9 @@ macro_rules! msg {
 /// 命令行工具自己产生的用法错误的错误码（不经过 Termlet）。
 pub const CODE_USAGE: &str = "usage";
 
+/// 局域网中的客户端调用了传文件的工具（不交给 Termlet，只在 MCP 的结果中）。
+pub const CODE_LAN_UNAVAILABLE: &str = "lan_unavailable";
+
 msg!(
     UPLOAD_IS_DIR,
     "{} 是目录，目前只支持上传单个文件；可先打包（如 tar czf dir.tar.gz dir）再上传",
@@ -123,10 +126,21 @@ msg!(
     "命令超过 1MB，未执行；较大的脚本请先用 upload_file 上传到服务器再执行",
     "the command exceeds 1MB; nothing was run. Upload larger scripts with upload_file first, then run them"
 );
+// 局域网中的客户端没有传文件的工具：同样的说明不提 upload_file / download_file
+msg!(
+    MCP_COMMAND_TOO_LARGE_LAN,
+    "命令超过 1MB，未执行；较大的脚本请拆成几段，分几次用 heredoc 写到服务器上的文件里再执行",
+    "the command exceeds 1MB; nothing was run. Split larger scripts into parts, write them to a file on the server with a few heredocs, then run it"
+);
 msg!(
     MCP_HOST_NOT_FOUND,
     "主机不存在，请先调用 list_hosts 查看可用的主机",
     "host not found; call list_hosts to see the available hosts"
+);
+msg!(
+    MCP_LAN_UNAVAILABLE,
+    "通过局域网连接时不能使用 {}：它读写的是运行 Termlet 的那台电脑上的文件，不是你这边的。小的文本文件可以用 run_command：cat 读取，heredoc（cat > 文件 <<'EOF' … EOF）写入。",
+    "{} isn't available over the local network: it reads and writes files on the computer running Termlet, not on yours. For small text files, use run_command instead: cat to read a file, and a heredoc (cat > file <<'EOF' ... EOF) to write one."
 );
 msg!(MCP_EXIT, "退出码 {}，用时 {}", "exit code {}, took {}");
 msg!(
@@ -140,6 +154,11 @@ msg!(
     MCP_CLIPPED,
     "[termlet] 输出较长，只返回了开头与结尾（合计约 {} KB）。需要完整的输出时，把它重定向到服务器上的文件再分段读取（head、tail、grep 等），或用 download_file 下载。",
     "[termlet] The output was long, so only its beginning and end are shown (about {} KB in total). For the full output, redirect it to a file on the server and read it in parts (head, tail, grep and so on), or fetch it with download_file."
+);
+msg!(
+    MCP_CLIPPED_LAN,
+    "[termlet] 输出较长，只返回了开头与结尾（合计约 {} KB）。需要其余部分时，在命令中用 head、tail、grep 等只取需要的部分，或把输出写到服务器上的文件里再分段读取。",
+    "[termlet] The output was long, so only its beginning and end are shown (about {} KB in total). For the rest, use head, tail, grep and so on in the command to take only the part you need, or write the output to a file on the server and read it in parts."
 );
 msg!(
     MCP_APP_TRUNCATED,

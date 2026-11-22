@@ -485,8 +485,9 @@ impl Default for CliSettings {
     }
 }
 
-/// MCP 的 HTTP 接入：只在 127.0.0.1 上监听（见 `cli::http`）。令牌不在这里：它的摘要与经保险库加密的原文在本机的
-/// `meta` 表中（设置对话框保存时会整组写回本机设置，放在这里会被打开对话框时的旧值覆盖）。
+/// MCP 的 HTTP 接入（见 `cli::http`）：默认只在 127.0.0.1 上监听，可以改为同时接受局域网的连接。令牌不在这里：
+/// 它们的摘要与经保险库加密的原文在本机的 `meta` 表中（设置对话框保存时会整组写回本机设置，放在这里会被打开对话框时
+/// 的旧值覆盖）。
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct CliHttpSettings {
@@ -494,8 +495,22 @@ pub struct CliHttpSettings {
     pub enabled: bool,
     /// 监听的端口，被占用时不自动换（AI 工具的配置中写着它）
     pub port: u16,
+    /// 监听范围：只有本机（默认），或局域网
+    pub scope: HttpScope,
     #[serde(flatten)]
     pub extra: Extra,
+}
+
+/// MCP 的 HTTP 接入的监听范围。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HttpScope {
+    /// 只在 127.0.0.1 上监听
+    #[default]
+    Local,
+    /// 在所有 IPv4 网卡上（0.0.0.0）监听同一个端口：本机照旧，另接受私有网段中的其他电脑（只有列出主机与执行命令，
+    /// 用单独的局域网令牌）
+    Lan,
 }
 
 impl CliHttpSettings {
@@ -508,6 +523,7 @@ impl Default for CliHttpSettings {
         Self {
             enabled: false,
             port: Self::DEFAULT_PORT,
+            scope: HttpScope::Local,
             extra: Extra::default(),
         }
     }

@@ -44,8 +44,30 @@ const CACHE_TTL_MS: u64 = 60 * 60 * 1000;
 /// 给 AI 的说明（`initialize`、`server/discover` 的 `instructions`）。
 const INSTRUCTIONS: &str = "Termlet is the user's SSH client. These tools list the servers saved in Termlet that the user allows AI tools to use, run shell commands on them and transfer single files, with credentials that stay inside Termlet (you never see passwords or keys). Use them instead of running ssh, scp or sftp yourself. Start with list_hosts and pass a host's id or name to the other tools. Every call goes through the user's settings in Termlet: the external CLI switch, per-host access, dangerous-command rules that need the user's approval, and an audit log. If a call fails with command_denied or command_blocked, do not try to get around the rule; tell the user and let them run the command themselves.";
 
+/// 局域网中的客户端看到的说明：没有传文件的工具，小的文本文件用 `run_command` 读写。
+const INSTRUCTIONS_LAN: &str = "Termlet is the user's SSH client. These tools list the servers saved in Termlet that the user allows AI tools to use and run shell commands on them, with credentials that stay inside Termlet (you never see passwords or keys). Use them instead of running ssh yourself. You are connected to Termlet over the local network from another computer, so there are no file transfer tools: upload_file and download_file would read and write files on the computer running Termlet, not on yours. For small text files, use run_command: cat to read a file, and a heredoc (cat > file <<'EOF' ... EOF) to write one. Start with list_hosts and pass a host's id or name to run_command. Every call goes through the user's settings in Termlet: the external CLI switch, per-host access, dangerous-command rules that need the user's approval, and an audit log. If a call fails with command_denied or command_blocked, do not try to get around the rule; tell the user and let them run the command themselves.";
+
 /// 请求没有 `_meta` 中的版本、之前也没有 `initialize` 时的说明。
 const NOT_INITIALIZED: &str = "missing _meta[\"io.modelcontextprotocol/protocolVersion\"]: include it in every request (protocol 2026-07-28), or send initialize first (2025-11-25 and earlier)";
+
+/// 客户端在哪里。HTTP 按 TCP 对端区分；stdio 总是本机。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Reach {
+    /// 这台电脑上的 AI 工具（stdio，或经回环地址的 HTTP）
+    #[default]
+    Local,
+    /// 局域网中的另一台电脑：只有不碰这台电脑上的文件的工具（见 [`Tool::local_files`]）
+    Lan,
+}
+
+impl Reach {
+    fn instructions(self) -> &'static str {
+        match self {
+            Reach::Local => INSTRUCTIONS,
+            Reach::Lan => INSTRUCTIONS_LAN,
+        }
+    }
+}
 
 /// 一个请求按哪个版本处理。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -211,6 +233,8 @@ pub struct ToolCall {
     pub client: String,
     /// 请求的 `_meta.progressToken`：客户端要进度通知时才有（字符串或整数）
     pub progress_token: Option<Value>,
+    /// 客户端在哪里
+    pub reach: Reach,
 }
 
 impl ToolCall {
@@ -227,6 +251,12 @@ impl ToolCall {
         std::iter::once(caller_marker(&self.client))
             .chain(rest)
             .collect()
+    }
+
+    /// 这个客户端不能用这个工具时的结果（局域网中的客户端调用传文件的工具），不交给 Termlet；能用时为 `None`。
+    pub fn refusal(&self, lang: Lang) -> Option<Outcome> {
+        (self.reach == Reach::Lan && self.tool.local_files())
+            .then(|| tools::lan_unavailable(self.tool, lang))
     }
 
     /// 这个调用的进度通知；客户端没有在请求中要（没有 `progressToken`）时为 `None`，不发。
@@ -269,9 +299,21 @@ pub fn caller_marker(client: &str) -> String {
     }
 }
 
-/// 处理一个请求。`session` 是旧协议下握手时记住的会话（请求带 `_meta` 中的版本时不用它）：stdio 一个进程一个；
-/// HTTP 按会话 ID 找，找不到时由传输层按请求头补一个。没有会话的旧协议请求只能 `ping`。
+/// 处理这台电脑上的客户端的一个请求，见 [`request_in`]。
 pub fn request(id: &Value, method: &str, params: Option<Value>, session: Option<&Session>) -> Step {
+    request_in(id, method, params, session, Reach::Local)
+}
+
+/// 处理一个请求。`session` 是旧协议下握手时记住的会话（请求带 `_meta` 中的版本时不用它）：stdio 一个进程一个；
+/// HTTP 按会话 ID 找，找不到时由传输层按请求头补一个。没有会话的旧协议请求只能 `ping`。`reach` 决定说明与
+/// `tools/list` 中有哪些工具（局域网中的客户端没有传文件的工具）。
+pub fn request_in(
+    id: &Value,
+    method: &str,
+    params: Option<Value>,
+    session: Option<&Session>,
+    reach: Reach,
+) -> Step {
     let params = match params {
         None | Some(Value::Null) => Map::new(),
         Some(Value::Object(params)) => params,
@@ -285,7 +327,7 @@ pub fn request(id: &Value, method: &str, params: Option<Value>, session: Option<
         }
     };
     if method == "initialize" {
-        return initialize(id, &params);
+        return initialize(id, &params, reach);
     }
     let meta = params
         .get("_meta")
@@ -307,20 +349,20 @@ pub fn request(id: &Value, method: &str, params: Option<Value>, session: Option<
     };
     let reply = |result| Step::Reply(result_message(id, finish(era, result)));
     match method {
-        "server/discover" if era.is_modern() => reply(discover()),
+        "server/discover" if era.is_modern() => reply(discover(reach)),
         "ping" => reply(Map::new()),
         "tools/list" => {
             let mut result = Map::new();
             result.insert(
                 "tools".into(),
-                tools::list(era.annotations(), era.structured()),
+                tools::list(reach, era.annotations(), era.structured()),
             );
             if era.is_modern() {
                 cacheable(&mut result);
             }
             reply(result)
         }
-        "tools/call" => call_tool(id, era, client, &params),
+        "tools/call" => call_tool(id, era, client, &params, reach),
         _ => Step::Reply(error_message(
             id,
             METHOD_NOT_FOUND,
@@ -331,7 +373,7 @@ pub fn request(id: &Value, method: &str, params: Option<Value>, session: Option<
 }
 
 /// 旧版本的握手：支持客户端要的版本时用它，否则回答支持的最新版本。
-fn initialize(id: &Value, params: &Map<String, Value>) -> Step {
+fn initialize(id: &Value, params: &Map<String, Value>, reach: Reach) -> Step {
     let requested = params
         .get("protocolVersion")
         .and_then(Value::as_str)
@@ -345,14 +387,20 @@ fn initialize(id: &Value, params: &Map<String, Value>) -> Step {
                 "protocolVersion": version,
                 "capabilities": { "tools": {} },
                 "serverInfo": server_info(),
-                "instructions": INSTRUCTIONS,
+                "instructions": reach.instructions(),
             }),
         ),
         session: Session { version, client },
     }
 }
 
-fn call_tool(id: &Value, era: Era, client: String, params: &Map<String, Value>) -> Step {
+fn call_tool(
+    id: &Value,
+    era: Era,
+    client: String,
+    params: &Map<String, Value>,
+    reach: Reach,
+) -> Step {
     let invalid = |message: &str| Step::Reply(error_message(id, INVALID_PARAMS, message, None));
     let Some(name) = params.get("name").and_then(Value::as_str) else {
         return invalid("params.name (the tool to call) must be a string");
@@ -378,6 +426,7 @@ fn call_tool(id: &Value, era: Era, client: String, params: &Map<String, Value>) 
         arguments,
         client,
         progress_token,
+        reach,
     })
 }
 
@@ -453,16 +502,16 @@ fn server_info() -> Value {
     })
 }
 
-fn discover() -> Map<String, Value> {
+fn discover(reach: Reach) -> Map<String, Value> {
     let mut result = Map::new();
     result.insert("supportedVersions".into(), json!(MODERN_VERSIONS));
     result.insert("capabilities".into(), json!({ "tools": {} }));
-    result.insert("instructions".into(), json!(INSTRUCTIONS));
+    result.insert("instructions".into(), json!(reach.instructions()));
     cacheable(&mut result);
     result
 }
 
-/// 新版本中可缓存的结果必须带的字段：工具随程序的版本固定，不含用户的数据。
+/// 新版本中可缓存的结果必须带的字段：工具随程序的版本（与客户端在本机还是局域网，地址不同）固定，不含用户的数据。
 fn cacheable(result: &mut Map<String, Value>) {
     result.insert("ttlMs".into(), json!(CACHE_TTL_MS));
     result.insert("cacheScope".into(), json!("public"));

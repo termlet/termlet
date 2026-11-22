@@ -17,7 +17,7 @@ use tokio::task::JoinHandle;
 use super::error::tr;
 use super::events::CliEvent;
 use super::handler;
-use super::http::{self, Http, HttpOptions, HttpStatus, TokenView};
+use super::http::{self, Http, HttpOptions, HttpStatus, TokenKind, TokenView};
 use super::listen::{Conn, Listener};
 use crate::audit::AuditLog;
 use crate::paths::DataDir;
@@ -199,15 +199,15 @@ impl CliService {
         self.http.refresh()
     }
 
-    /// 界面显示、复制用的 HTTP 令牌（读数据库与保险库，在后台执行器上调用）。
-    pub fn http_token(&self) -> crate::Result<TokenView> {
-        http::token::view(&self.shared.store)
+    /// 界面显示、复制用的 HTTP 令牌（本机的或局域网的；读数据库与保险库，在后台执行器上调用）。
+    pub fn http_token(&self, kind: TokenKind) -> crate::Result<TokenView> {
+        http::token::view(&self.shared.store, kind)
     }
 
-    /// 重新生成 HTTP 令牌，立即生效（用旧令牌的 AI 工具随即被拒绝），返回新令牌。保险库锁定时返回
-    /// [`crate::CoreError::VaultLocked`]。在后台执行器上调用。
-    pub fn regenerate_http_token(&self) -> crate::Result<SecretString> {
-        http::token::regenerate(&self.shared.store)
+    /// 重新生成 HTTP 令牌（本机的或局域网的，另一个不变），立即生效（用旧令牌的 AI 工具随即被拒绝），返回新令牌。
+    /// 保险库锁定时返回 [`crate::CoreError::VaultLocked`]。在后台执行器上调用。
+    pub fn regenerate_http_token(&self, kind: TokenKind) -> crate::Result<SecretString> {
+        http::token::regenerate(&self.shared.store, kind)
     }
 
     /// 监听的通道。

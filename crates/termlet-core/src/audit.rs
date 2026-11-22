@@ -20,7 +20,7 @@ use regex::Regex;
 use rusqlite::{Connection, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
-use crate::proto::mcp::{CALLER_HTTP, CALLER_MARKER};
+use crate::proto::mcp::{CALLER_HTTP, CALLER_LAN, CALLER_MARKER};
 use crate::store::Store;
 use crate::{CoreError, Result};
 
@@ -220,6 +220,18 @@ pub fn mcp_over_http(caller: &str) -> bool {
     let mut items = caller.split(" < ");
     let first = items.next().unwrap_or_default();
     mcp_client(first).is_some() && items.next() == Some(CALLER_HTTP)
+}
+
+/// 局域网中的另一台电脑经 HTTP 的 MCP 调用：`mcp:<客户端名> < http < lan:<IP>`，返回对方的 IP；别的为 `None`。
+pub fn mcp_lan_peer(caller: &str) -> Option<&str> {
+    if !mcp_over_http(caller) {
+        return None;
+    }
+    let third = caller.split(" < ").nth(2)?;
+    third
+        .strip_prefix(CALLER_LAN)?
+        .strip_prefix(':')
+        .filter(|ip| !ip.is_empty())
 }
 
 /// 一条审计记录。写入时 `id`、`source`、`partial`、`truncated`、`detail_size` 不用填。
@@ -1038,6 +1050,21 @@ mod tests {
         assert_eq!(mcp_client("mcp:cursor < http < Cursor.exe"), Some("cursor"));
         for caller in ["mcp:cursor < Cursor.exe", "bash < http", "http", "mcp:x"] {
             assert!(!mcp_over_http(caller), "{caller}");
+        }
+        // 局域网的调用：第三项是 lan:<IP>
+        assert_eq!(
+            mcp_lan_peer("mcp:cursor < http < lan:192.168.1.23"),
+            Some("192.168.1.23")
+        );
+        assert_eq!(mcp_lan_peer("mcp < http < lan:10.0.0.2"), Some("10.0.0.2"));
+        for caller in [
+            "mcp:cursor < http < Cursor.exe",
+            "mcp:cursor < lan:192.168.1.23",
+            "bash < http < lan:192.168.1.23",
+            "mcp:cursor < http < lan:",
+            "mcp:cursor < http",
+        ] {
+            assert_eq!(mcp_lan_peer(caller), None, "{caller}");
         }
         assert_eq!(
             AuditSource::of(AuditAction::Exec, "mcp:codex < http"),

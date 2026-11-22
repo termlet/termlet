@@ -58,7 +58,8 @@ const SOURCES: [AuditSource; 3] = [AuditSource::Cli, AuditSource::Mcp, AuditSour
 
 /// 各列的宽度（rem）；内容列占余下的宽度。
 const TIME_WIDTH: f32 = 9.;
-const SOURCE_WIDTH: f32 = 8.;
+/// 来源：放得下“MCP·局域网 192.168.100.200”（客户端名截掉）
+const SOURCE_WIDTH: f32 = 11.;
 const HOST_WIDTH: f32 = 7.;
 const ACTION_WIDTH: f32 = 6.;
 const RESULT_WIDTH: f32 = 4.;
@@ -210,9 +211,22 @@ pub(super) fn source_label(source: AuditSource) -> SharedString {
 }
 
 /// 一条记录的来源：MCP 的调用带上客户端自报的名字（`MCP（claude-code）`），经 HTTP 的写在前面（`MCP·HTTP（Cursor）`：
-/// 列表中的这一列放不下全文时，截掉的是客户端名而不是 HTTP）。
+/// 列表中的这一列放不下全文时，截掉的是客户端名而不是 HTTP），局域网中的另一台电脑来的写它的地址
+/// （`MCP·局域网 192.168.1.23（Cursor）`）。
 pub(super) fn entry_source(entry: &AuditEntry) -> SharedString {
     let http = termlet_core::audit::mcp_over_http(&entry.caller);
+    if entry.source == AuditSource::Mcp
+        && let Some(address) = termlet_core::audit::mcp_lan_peer(&entry.caller)
+    {
+        return match termlet_core::audit::mcp_client(&entry.caller) {
+            Some(client) if !client.is_empty() => t!(
+                "cli_ui.audit.source_mcp_client_lan",
+                address = address,
+                client = client
+            ),
+            _ => t!("cli_ui.audit.source_mcp_lan", address = address),
+        };
+    }
     match termlet_core::audit::mcp_client(&entry.caller) {
         Some(client) if entry.source == AuditSource::Mcp && !client.is_empty() => {
             if http {
@@ -1285,6 +1299,12 @@ mod tests {
         assert_eq!(entry_source(&mcp), "MCP·HTTP（Cursor）");
         mcp.caller = "mcp < http".into();
         assert_eq!(entry_source(&mcp), "MCP·HTTP");
+        // 局域网中的另一台电脑：写它的地址（写在客户端名前面）
+        mcp.caller = "mcp:Cursor < http < lan:192.168.1.23".into();
+        assert_eq!(entry_source(&mcp), "MCP·局域网 192.168.1.23（Cursor）");
+        mcp.caller = "mcp < http < lan:192.168.1.23".into();
+        assert_eq!(entry_source(&mcp), "MCP·局域网 192.168.1.23");
+        mcp.caller = "mcp:Cursor < http < Cursor.exe".into();
         // 被取消的写“已取消”；别的失败照旧
         mcp.status = AuditStatus::Failed;
         mcp.error_code = "canceled".into();
@@ -1299,6 +1319,8 @@ mod tests {
         i18n::set_language(Language::En);
         mcp.caller = "mcp:Cursor < http".into();
         assert_eq!(entry_source(&mcp), "MCP·HTTP (Cursor)");
+        mcp.caller = "mcp:Cursor < http < lan:192.168.1.23".into();
+        assert_eq!(entry_source(&mcp), "MCP·LAN 192.168.1.23 (Cursor)");
         mcp.error_code = "canceled".into();
         assert_eq!(entry_status(&mcp), "Canceled");
         assert_eq!(status_label(AuditStatus::Denied), "Denied");

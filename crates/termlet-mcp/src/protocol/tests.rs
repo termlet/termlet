@@ -187,6 +187,7 @@ fn tool_calls_are_handed_to_the_transport() {
         false,
         Ok(Response::Hosts(Vec::new())),
         Lang::En,
+        Reach::Local,
     );
     let answer = call.reply(outcome);
     assert_eq!(answer["id"], "a");
@@ -301,4 +302,93 @@ fn progress_follows_the_token() {
             .is_none()
     );
     assert!(legacy_call("2025-11-25", json!(1.5)).progress().is_none());
+}
+
+// 局域网中的客户端：说明中写明没有传文件的工具、怎样用 run_command 读写小文件；tools/list 只有两个工具；直接调用
+// 传文件的工具时交给传输层的调用带着 Lan，由 refusal 给出工具执行错误（不交给 Termlet）
+#[test]
+fn lan_clients_see_two_tools() {
+    let init = |reach| {
+        let params = json!({
+            "protocolVersion": "2025-11-25",
+            "capabilities": {},
+            "clientInfo": { "name": "Cursor", "version": "3" },
+        });
+        match request_in(&json!(1), "initialize", Some(params), None, reach) {
+            Step::Initialized { reply, .. } => reply,
+            other => panic!("应握手：{other:?}"),
+        }
+    };
+    let lan = init(Reach::Lan)["result"]["instructions"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(
+        lan.contains("local network") && lan.contains("heredoc"),
+        "{lan}"
+    );
+    let local = init(Reach::Local)["result"]["instructions"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(!local.contains("local network"), "{local}");
+
+    let names = |reply: &Value| -> Vec<String> {
+        reply["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_string())
+            .collect()
+    };
+    let session = legacy("2025-11-25");
+    let listed = reply(request_in(
+        &json!(2),
+        "tools/list",
+        None,
+        Some(&session),
+        Reach::Lan,
+    ));
+    assert_eq!(names(&listed), ["list_hosts", "run_command"]);
+    let modern = reply(request_in(
+        &json!(3),
+        "tools/list",
+        Some(meta(json!({}))),
+        None,
+        Reach::Lan,
+    ));
+    assert_eq!(names(&modern), ["list_hosts", "run_command"]);
+    let discover = reply(request_in(
+        &json!(4),
+        "server/discover",
+        Some(meta(json!({}))),
+        None,
+        Reach::Lan,
+    ));
+    assert!(
+        discover["result"]["instructions"]
+            .as_str()
+            .unwrap()
+            .contains("local network")
+    );
+
+    let call = |tool: &str, reach| {
+        let params = json!({ "name": tool, "arguments": {} });
+        match request_in(&json!(5), "tools/call", Some(params), Some(&session), reach) {
+            Step::Call(call) => call,
+            other => panic!("应交给传输层执行：{other:?}"),
+        }
+    };
+    let refused = call("download_file", Reach::Lan).refusal(Lang::En).unwrap();
+    assert!(refused.is_error());
+    assert!(call("run_command", Reach::Lan).refusal(Lang::En).is_none());
+    assert!(call("list_hosts", Reach::Lan).refusal(Lang::En).is_none());
+    assert!(
+        call("upload_file", Reach::Local)
+            .refusal(Lang::En)
+            .is_none()
+    );
+    // 本机的客户端照旧四个工具
+    let all = reply(request(&json!(6), "tools/list", None, Some(&session)));
+    assert_eq!(names(&all).len(), 4);
 }

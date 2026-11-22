@@ -16,6 +16,10 @@ pub const CALLER_MARKER: &str = "mcp";
 /// 审计据此写明传输方式；stdio 的调用没有这一项。
 pub const CALLER_HTTP: &str = "http";
 
+/// 局域网中的另一台电脑经 HTTP 的调用：紧跟 [`CALLER_HTTP`] 的一项是 `lan:<对方的 IP>`（查不到那边的进程，
+/// 没有进程链）：`["mcp:<客户端名>", "http", "lan:<IP>"]`。
+pub const CALLER_LAN: &str = "lan";
+
 /// Codex 中工具调用的超时（秒）：一条命令（含等用户批准危险命令的最多 60 秒）最长能运行多久。Codex 默认 60 秒，
 /// 等批准再执行时就会超时；这是总时长，进度通知不能延长它，所以放宽到 15 分钟。
 pub const CODEX_TOOL_TIMEOUT_SECS: u32 = 900;
@@ -26,7 +30,12 @@ pub const HTTP_PATH: &str = "/mcp";
 /// HTTP 接入的地址。应用只在 IPv4 的回环地址上监听，所以写 `127.0.0.1` 而不写 `localhost`（有的运行时会先把
 /// localhost 解析成 `::1`）。
 pub fn http_url(port: u16) -> String {
-    format!("http://127.0.0.1:{port}{HTTP_PATH}")
+    http_url_at("127.0.0.1", port)
+}
+
+/// 局域网中的另一台电脑用的地址：这台电脑在局域网中的 IPv4 地址（应用在局域网上只监听 IPv4）。
+pub fn http_url_at(host: &str, port: u16) -> String {
+    format!("http://{host}:{port}{HTTP_PATH}")
 }
 
 /// 配置片段连到 MCP 服务的方式。
@@ -385,6 +394,10 @@ mod tests {
     fn http_address() {
         assert_eq!(http_url(47800), URL);
         assert_eq!(http_url(1), "http://127.0.0.1:1/mcp");
+        assert_eq!(
+            http_url_at("192.168.1.5", 47800),
+            "http://192.168.1.5:47800/mcp"
+        );
     }
 
     // HTTP 的命令：Claude Code 写进用户级（--scope user），Gemini CLI 带 -s user；请求头按系统加引号

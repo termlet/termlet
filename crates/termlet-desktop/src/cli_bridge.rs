@@ -771,14 +771,26 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
 }
 
 /// 批准框的标题，按来源写：MCP 的写客户端的名字（常见的 AI 工具写产品名，见 [`client_display_name`]；没有报名字时
-/// 写“AI 工具”），其余是命令行工具。
+/// 写“AI 工具”），局域网中的另一台电脑来的另写明它的地址；其余是命令行工具。
 fn approval_title(host: &str, caller: &str) -> gpui_kit::SharedString {
-    match termlet_core::audit::mcp_client(caller) {
-        None => t!("cli.approval.title", host = host),
-        Some("") => t!("cli.approval.title_mcp_unnamed", host = host),
-        Some(client) => t!(
+    let lan = termlet_core::audit::mcp_lan_peer(caller);
+    match (termlet_core::audit::mcp_client(caller), lan) {
+        (None, _) => t!("cli.approval.title", host = host),
+        (Some(""), None) => t!("cli.approval.title_mcp_unnamed", host = host),
+        (Some(""), Some(address)) => t!(
+            "cli.approval.title_mcp_lan_unnamed",
+            address = address,
+            host = host
+        ),
+        (Some(client), None) => t!(
             "cli.approval.title_mcp",
             client = client_display_name(client),
+            host = host
+        ),
+        (Some(client), Some(address)) => t!(
+            "cli.approval.title_mcp_lan",
+            client = client_display_name(client),
+            address = address,
             host = host
         ),
     }
@@ -1135,7 +1147,20 @@ mod tests {
             title("mcp:Visual Studio Code < http"),
             "VS Code (MCP) wants to run a dangerous command on “web”"
         );
+        // 局域网中的另一台电脑：写明它的地址
+        assert_eq!(
+            title("mcp:cursor-vscode < http < lan:192.168.1.23"),
+            "Cursor (MCP, from 192.168.1.23) wants to run a dangerous command on “web”"
+        );
         crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        assert_eq!(
+            title("mcp:cursor-vscode < http < lan:192.168.1.23"),
+            "Cursor（MCP，来自 192.168.1.23）要在“web”上执行危险命令"
+        );
+        assert_eq!(
+            title("mcp < http < lan:10.0.0.8"),
+            "AI 工具（MCP，来自 10.0.0.8）要在“web”上执行危险命令"
+        );
     }
 
     // 剩余秒数向上取整：刚打开时是完整的秒数、最后不到一秒时是 1；正好在整秒上时等一整秒再变
