@@ -74,6 +74,8 @@ mod testkit;
 mod toolbar;
 mod topmost;
 mod tray;
+#[cfg(test)]
+mod ui_limits_tests;
 mod ui_scale;
 mod ui_state;
 mod usage_ui;

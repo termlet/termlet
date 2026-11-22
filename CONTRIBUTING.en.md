@@ -136,6 +136,18 @@ The full conventions are in [CLAUDE.md](CLAUDE.md) (in Chinese; it is also the p
 - How features work is described in the [user guide](docs/guide.en.md) (update `docs/guide.md` and `docs/guide.en.md` together); the README only gives an overview.
 - The design is described in the [architecture document](docs/rust/技术方案.md) (in Chinese).
 
+### New features and options
+
+Termlet deliberately stays small and clear, so please open an issue to discuss additions first:
+
+- Say who needs it, whether it overlaps with an existing feature, and whether it could be an option of one; "another app has it" isn't a reason on its own.
+- If a good default solves it, don't add an option. New features are off by default or appear only when used, and don't do work at startup or keep running in the background.
+- The UI has limits (controls per settings page, description length, context menu items, toolbar buttons shown by default), checked by `ui_limits_tests` in `cargo test`. If you go over, merge, fold or cut instead of raising the limit.
+- Reuse the terms the UI already uses; don't introduce synonyms.
+- Explain why a new dependency is needed; the lock file should only gain the new packages.
+
+The full rules are in the "防臃肿" (avoiding bloat) section of [CLAUDE.md](CLAUDE.md) (in Chinese).
+
 ## Releasing (maintainers)
 
 Building, signing and publishing all happen on GitHub Actions; see the comments at the top of `.github/workflows/release.yml`.

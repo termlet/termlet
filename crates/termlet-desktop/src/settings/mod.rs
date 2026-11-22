@@ -81,7 +81,7 @@ pub enum Page {
 }
 
 impl Page {
-    const ALL: [Page; 14] = [
+    pub(crate) const ALL: [Page; 14] = [
         Page::General,
         Page::Toolbar,
         Page::Terminal,
@@ -98,7 +98,7 @@ impl Page {
         Page::About,
     ];
 
-    fn title(self) -> SharedString {
+    pub(crate) fn title(self) -> SharedString {
         match self {
             Page::General => t!("settings.nav.general"),
             Page::Toolbar => t!("toolbar.nav"),
@@ -137,7 +137,7 @@ impl Page {
     }
 
     /// 导航项的 ID（按分类命名，加入新的分类不影响别的）。
-    fn nav_id(self) -> SharedString {
+    pub(crate) fn nav_id(self) -> SharedString {
         match self {
             Page::General => "settings-nav-general".into(),
             Page::Toolbar => "settings-nav-toolbar".into(),
