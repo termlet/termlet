@@ -1855,7 +1855,8 @@ fn device_row(device: &Device, this_device: Option<&str>, cx: &App) -> impl Into
 }
 
 impl Render for SyncPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = crate::settings::search::hits(window, cx);
         let status = self.model.read(cx).status().clone();
         let muted = cx.theme().muted_foreground;
         let body = match status.config.clone() {
@@ -1871,10 +1872,14 @@ impl Render for SyncPage {
                 }),
             )
             .child(
-                div()
-                    .text_xs()
-                    .text_color(muted)
-                    .child(prose(t!("sync_ui.description"))),
+                hits.mark(
+                    div()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(prose(t!("sync_ui.description"))),
+                    "sync-page",
+                    cx,
+                ),
             )
             .child(body)
     }

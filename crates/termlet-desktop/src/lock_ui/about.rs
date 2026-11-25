@@ -31,6 +31,7 @@ use super::update::status_text;
 use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::prose::prose;
+use crate::settings::search::Hits;
 use crate::t;
 
 /// 设置“关于”页最上面的一块：logo、名称、版本（可复制版本信息）、简介、署名，官网等链接与版权。
@@ -388,7 +389,7 @@ impl AboutExtras {
         }));
     }
 
-    fn render_updates(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_updates(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
         let (muted, warning) = (theme.muted_foreground, theme.warning);
         let state = super::update_model(cx).map(|model| model.read(cx).state().clone());
@@ -451,10 +452,14 @@ impl AboutExtras {
         v_flex()
             .gap_2()
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("lock_ui.update.section")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("lock_ui.update.section")),
+                    "about-updates",
+                    cx,
+                ),
             )
             .child(
                 Checkbox::new("about-auto-update")
@@ -537,7 +542,7 @@ impl AboutExtras {
     }
 
     /// 隐私：发送匿名使用统计（说明、查看发送的内容…、隐私说明）与自动发送崩溃报告。
-    fn render_privacy(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_privacy(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
         let (muted, warning) = (theme.muted_foreground, theme.warning);
         let env_off = crate::usage_ui::env_off(cx);
@@ -563,74 +568,16 @@ impl AboutExtras {
                     .child(t!("lock_ui.privacy.section")),
             )
             .child(
-                v_flex()
-                    .gap_1()
-                    .child(
-                        Checkbox::new("about-usage")
-                            .label(t!("lock_ui.privacy.usage"))
-                            .checked(self.usage && env_off.is_none())
-                            .disabled(env_off.is_some())
-                            .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                                this.usage = *checked;
-                                cx.notify();
-                            })),
-                    )
-                    .child(
-                        div()
-                            .pl_6()
-                            .text_xs()
-                            .text_color(muted)
-                            .child(prose(t!("lock_ui.privacy.usage_hint"))),
-                    )
-                    .when_some(env_off, |this, name| {
-                        this.child(note(
-                            "about-usage-env-off",
-                            t!("lock_ui.privacy.usage_env_off", name = name),
-                            warning,
-                        ))
-                    })
-                    .when(paused, |this| {
-                        this.child(note(
-                            "about-usage-paused",
-                            t!("lock_ui.privacy.usage_paused"),
-                            muted,
-                        ))
-                    })
-                    .child(
-                        h_flex()
-                            .pl_6()
-                            .pt_1()
-                            .flex_wrap()
-                            .gap_2()
-                            .child(
-                                Button::new("about-usage-view")
-                                    .outline()
-                                    .small()
-                                    .label(t!("lock_ui.privacy.usage_view"))
-                                    .on_click(|_, window, cx| {
-                                        crate::usage_ui::open_view(window, cx);
-                                    }),
-                            )
-                            .child(
-                                Button::new("about-privacy-policy")
-                                    .ghost()
-                                    .small()
-                                    .icon(IconName::ExternalLink)
-                                    .label(t!("lock_ui.privacy.policy"))
-                                    .on_click(|_, _, cx| cx.open_url(crate::website::privacy())),
-                            ),
-                    ),
-            )
-            .when(show_crash_report, |this| {
-                this.child(
+                hits.mark(
                     v_flex()
                         .gap_1()
                         .child(
-                            Checkbox::new("about-crash-report")
-                                .label(t!("lock_ui.diag.crash_report"))
-                                .checked(self.crash_report)
+                            Checkbox::new("about-usage")
+                                .label(t!("lock_ui.privacy.usage"))
+                                .checked(self.usage && env_off.is_none())
+                                .disabled(env_off.is_some())
                                 .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                                    this.crash_report = *checked;
+                                    this.usage = *checked;
                                     cx.notify();
                                 })),
                         )
@@ -639,23 +586,95 @@ impl AboutExtras {
                                 .pl_6()
                                 .text_xs()
                                 .text_color(muted)
-                                .child(prose(t!("lock_ui.diag.crash_report_hint"))),
+                                .child(prose(t!("lock_ui.privacy.usage_hint"))),
+                        )
+                        .when_some(env_off, |this, name| {
+                            this.child(note(
+                                "about-usage-env-off",
+                                t!("lock_ui.privacy.usage_env_off", name = name),
+                                warning,
+                            ))
+                        })
+                        .when(paused, |this| {
+                            this.child(note(
+                                "about-usage-paused",
+                                t!("lock_ui.privacy.usage_paused"),
+                                muted,
+                            ))
+                        })
+                        .child(
+                            h_flex()
+                                .pl_6()
+                                .pt_1()
+                                .flex_wrap()
+                                .gap_2()
+                                .child(
+                                    Button::new("about-usage-view")
+                                        .outline()
+                                        .small()
+                                        .label(t!("lock_ui.privacy.usage_view"))
+                                        .on_click(|_, window, cx| {
+                                            crate::usage_ui::open_view(window, cx);
+                                        }),
+                                )
+                                .child(
+                                    Button::new("about-privacy-policy")
+                                        .ghost()
+                                        .small()
+                                        .icon(IconName::ExternalLink)
+                                        .label(t!("lock_ui.privacy.policy"))
+                                        .on_click(|_, _, cx| {
+                                            cx.open_url(crate::website::privacy())
+                                        }),
+                                ),
                         ),
+                    "about-usage",
+                    cx,
+                ),
+            )
+            .when(show_crash_report, |this| {
+                this.child(
+                    hits.mark(
+                        v_flex()
+                            .gap_1()
+                            .child(
+                                Checkbox::new("about-crash-report")
+                                    .label(t!("lock_ui.diag.crash_report"))
+                                    .checked(self.crash_report)
+                                    .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                                        this.crash_report = *checked;
+                                        cx.notify();
+                                    })),
+                            )
+                            .child(
+                                div()
+                                    .pl_6()
+                                    .text_xs()
+                                    .text_color(muted)
+                                    .child(prose(t!("lock_ui.diag.crash_report_hint"))),
+                            ),
+                        "about-crash-report",
+                        cx,
+                    ),
                 )
             })
     }
 
-    fn render_diagnostics(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_diagnostics(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement {
         let muted = cx.theme().muted_foreground;
         let available = super::services(cx).is_some();
         let logs_dir = super::services(cx).map(|s| s.logs_dir.clone());
         v_flex()
             .gap_2()
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("lock_ui.diag.section")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("lock_ui.diag.section")),
+                    "about-diagnostics",
+                    cx,
+                ),
             )
             .child(
                 h_flex()
@@ -713,16 +732,16 @@ impl AboutExtras {
                     .text_color(muted)
                     .child(prose(t!("lock_ui.diag.hint"))),
             )
-            .child(self.render_log_level(cx))
+            .child(self.render_log_level(hits, cx))
     }
 }
 
 impl AboutExtras {
     /// 日志的详细程度：排查问题时调高；启动时用参数或环境变量指定了的，说明这里的选项暂不起作用。
-    fn render_log_level(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_log_level(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement {
         let muted = cx.theme().muted_foreground;
         let overridden = termlet_core::logging::overridden();
-        v_flex()
+        let level = v_flex()
             .gap_1()
             .child(
                 h_flex()
@@ -752,30 +771,42 @@ impl AboutExtras {
                             source = source.describe()
                         ))),
                 )
-            })
+            });
+        hits.mark(level, "diag-log-level", cx)
     }
 }
 
 impl Render for AboutExtras {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let border = cx.theme().border;
+        let hits = crate::settings::search::hits(window, cx);
         match self.part {
             AboutPart::Updates => v_flex().gap_4().child(
                 div()
                     .pt_3()
                     .border_t_1()
                     .border_color(border)
-                    .child(self.render_updates(cx)),
+                    .child(self.render_updates(&hits, cx)),
             ),
-            AboutPart::Privacy => v_flex().gap_4().child(self.render_privacy(cx)).child(
-                div()
-                    .pt_3()
-                    .border_t_1()
-                    .border_color(border)
-                    .child(self.render_diagnostics(cx)),
-            ),
+            AboutPart::Privacy => v_flex()
+                .gap_4()
+                .child(self.render_privacy(&hits, cx))
+                .child(
+                    div()
+                        .pt_3()
+                        .border_t_1()
+                        .border_color(border)
+                        .child(self.render_diagnostics(&hits, cx)),
+                ),
         }
     }
+}
+
+/// “隐私与诊断”中有没有“自动发送崩溃报告”（设置搜索据此数命中的项；[`AboutExtras`] 另按打开时的值，开过的关掉后
+/// 照样显示）。
+pub(crate) fn crash_report_shown(cx: &App) -> bool {
+    AppState::store(cx).local_settings().logs.crash_report
+        || super::update_model(cx).is_some_and(|model| model.read(cx).has_crash_endpoint())
 }
 
 /// 诊断信息中的更新状态（不含版本以外的内容）。

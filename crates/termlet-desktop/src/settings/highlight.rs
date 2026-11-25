@@ -527,7 +527,8 @@ impl HighlightPage {
 }
 
 impl Render for HighlightPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = super::search::hits(window, cx);
         self.refresh_memo(cx);
         let scheme = match &self.scheme {
             Some(scheme) => scheme.clone(),
@@ -611,59 +612,71 @@ impl Render for HighlightPage {
         v_flex()
             .gap_3()
             .child(
-                v_flex()
-                    .gap_1()
-                    .child(
-                        Checkbox::new("settings-highlight")
-                            .label(t!("settings.highlight.enable"))
-                            .checked(self.enabled)
-                            .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                                this.enabled = *checked;
-                                cx.notify();
-                            })),
-                    )
-                    .child(
-                        div()
-                            .pl_6()
-                            .text_xs()
-                            .text_color(muted)
-                            .child(prose(t!("settings.highlight.hint"))),
-                    ),
+                hits.mark(
+                    v_flex()
+                        .gap_1()
+                        .child(
+                            Checkbox::new("settings-highlight")
+                                .label(t!("settings.highlight.enable"))
+                                .checked(self.enabled)
+                                .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                                    this.enabled = *checked;
+                                    cx.notify();
+                                })),
+                        )
+                        .child(
+                            div()
+                                .pl_6()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(prose(t!("settings.highlight.hint"))),
+                        ),
+                    "settings-highlight",
+                    cx,
+                ),
             )
             .child(
-                v_flex()
-                    .id("highlight-rules")
-                    .gap_1p5()
-                    .when(!self.enabled, |this| this.opacity(0.5))
-                    .child(header)
-                    .children(rules)
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(
-                                Button::new("highlight-add")
-                                    .outline()
-                                    .small()
-                                    .icon(IconName::Plus)
-                                    .label(t!("settings.highlight.add"))
-                                    .disabled(full)
-                                    .on_click(cx.listener(|this, _, window, cx| {
-                                        let rule = HighlightRule {
-                                            color: HighlightColor::Red.name().into(),
-                                            enabled: true,
-                                            ..Default::default()
-                                        };
-                                        this.insert_rule(this.rules.len(), &rule, window, cx);
-                                        if let Some(row) = this.rules.last() {
-                                            row.pattern.update(cx, |s, cx| s.focus(window, cx));
-                                        }
-                                        cx.notify();
-                                    })),
-                            )
-                            .child(add_preset),
-                    ),
+                hits.mark(
+                    v_flex()
+                        .id("highlight-rules")
+                        .gap_1p5()
+                        .when(!self.enabled, |this| this.opacity(0.5))
+                        .child(header)
+                        .children(rules)
+                        .child(
+                            h_flex()
+                                .gap_2()
+                                .child(
+                                    Button::new("highlight-add")
+                                        .outline()
+                                        .small()
+                                        .icon(IconName::Plus)
+                                        .label(t!("settings.highlight.add"))
+                                        .disabled(full)
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            let rule = HighlightRule {
+                                                color: HighlightColor::Red.name().into(),
+                                                enabled: true,
+                                                ..Default::default()
+                                            };
+                                            this.insert_rule(this.rules.len(), &rule, window, cx);
+                                            if let Some(row) = this.rules.last() {
+                                                row.pattern.update(cx, |s, cx| s.focus(window, cx));
+                                            }
+                                            cx.notify();
+                                        })),
+                                )
+                                .child(add_preset),
+                        ),
+                    "highlight-rules",
+                    cx,
+                ),
             )
-            .child(self.render_preview(&scheme, &colors, cx))
+            .child(hits.mark(
+                div().child(self.render_preview(&scheme, &colors, cx)),
+                "settings-highlight-preview",
+                cx,
+            ))
     }
 }
 

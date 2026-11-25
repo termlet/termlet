@@ -225,7 +225,7 @@ fn settings_follow_external_changes_and_merge_on_save(cx: &mut TestAppContext) {
     .unwrap();
 }
 
-// 设置这一栏窄（最小窗口）时左侧分类只显示图标，内容区照常；窗口宽时照常显示分类名
+// 设置这一栏窄（最小窗口）时左侧分类只显示图标，搜索框移到内容上方，内容区照常；窗口宽时照常显示分类名
 #[gpui_kit::test]
 fn narrow_settings_show_icons_only(cx: &mut TestAppContext) {
     let handle = crate::testkit::open_workspace_sized(
@@ -247,6 +247,12 @@ fn narrow_settings_show_icons_only(cx: &mut TestAppContext) {
         assert!(
             page.size.width > gpui_kit::rems(20.).to_pixels(rem),
             "{page:?}"
+        );
+        // 导航放不下搜索框：在内容上方
+        let search = window.find("settings-search").bounds();
+        assert!(
+            search.left() >= page.left() && search.bottom() <= page.top(),
+            "{search:?} / {page:?}"
         );
         window.click(Page::Terminal.nav_id(), cx);
         window.render_frame(cx);

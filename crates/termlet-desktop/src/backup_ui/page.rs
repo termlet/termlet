@@ -36,6 +36,7 @@ use super::{PasswordCheck, PasswordPair, counts_more_text, counts_text, errors};
 mod schedule;
 use crate::app_state::AppState;
 use crate::prose::prose;
+use crate::settings::search::Hits;
 use crate::t;
 
 /// 端口转发的管理者：恢复替换了全部数据后要停止正在运行的转发（规则可能已不存在）。
@@ -620,7 +621,7 @@ impl BackupPage {
             .into_any_element()
     }
 
-    fn render_full(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    fn render_full(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let theme = cx.theme();
         let (muted, warning) = (theme.muted_foreground, theme.warning);
         let (border, radius) = (theme.border, theme.radius);
@@ -829,10 +830,14 @@ impl BackupPage {
                 }),
             )
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("backup_ui.page.full_title")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("backup_ui.page.full_title")),
+                    "backup-full",
+                    cx,
+                ),
             )
             .child(
                 div()
@@ -910,7 +915,7 @@ impl BackupPage {
             .into_any_element()
     }
 
-    fn render_snapshots(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    fn render_snapshots(&self, hits: &Hits, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let theme = cx.theme();
         let (muted, border, radius, danger) = (
             theme.muted_foreground,
@@ -981,10 +986,14 @@ impl BackupPage {
             .border_t_1()
             .border_color(border)
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("backup_ui.page.snapshots_title")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("backup_ui.page.snapshots_title")),
+                    "backup-snapshots",
+                    cx,
+                ),
             )
             .child(
                 Checkbox::new("backup-auto")
@@ -1070,14 +1079,15 @@ impl BackupPage {
 }
 
 impl Render for BackupPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = crate::settings::search::hits(window, cx);
         v_flex()
             .id("backup-page")
             .test_support()
             .gap_4()
-            .child(self.render_full(cx))
-            .child(self.render_schedule(cx))
-            .child(self.render_snapshots(cx))
+            .child(self.render_full(&hits, cx))
+            .child(self.render_schedule(&hits, cx))
+            .child(self.render_snapshots(&hits, cx))
     }
 }
 

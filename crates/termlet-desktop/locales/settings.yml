@@ -47,6 +47,18 @@ settings.busy:
   zh-TW: 正在備份或還原，完成後才能關閉設定或把它移到別的視窗。
   ja: バックアップまたは復元の実行中です。完了してから設定を閉じるか、別のウィンドウに移動してください。
   ko: 백업 또는 복원이 진행 중입니다. 완료된 후에 설정을 닫거나 다른 창으로 옮기세요.
+settings.search.placeholder:
+  zh-CN: 搜索设置
+  en: Search settings
+  zh-TW: 搜尋設定
+  ja: 設定を検索
+  ko: 설정 검색
+settings.search.none:
+  zh-CN: 没有匹配的设置
+  en: No matching settings
+  zh-TW: 沒有符合的設定
+  ja: 一致する設定はありません
+  ko: 일치하는 설정이 없습니다
 settings.nav.general:
   zh-CN: 通用
   en: General
@@ -1187,6 +1199,18 @@ settings.keys.fixed:
   zh-TW: 無法修改的快速鍵
   ja: 変更できないショートカットキー
   ko: 변경할 수 없는 바로 가기 키
+settings.keys.search:
+  zh-CN: 按名称或按键搜索
+  en: Search by name or key
+  zh-TW: 依名稱或按鍵搜尋
+  ja: 名前またはキーで検索
+  ko: 이름 또는 키로 검색
+settings.keys.no_match:
+  zh-CN: 没有匹配的快捷键
+  en: No matching shortcuts
+  zh-TW: 沒有符合的快速鍵
+  ja: 一致するショートカットキーはありません
+  ko: 일치하는 바로 가기 키가 없습니다
 settings.keys.needs_modifier:
   zh-CN: "%{key} 不能作为快捷键：需要带 Ctrl 或 Alt，否则会影响输入。"
   en: "%{key} can't be a shortcut. Add Ctrl or Alt so it doesn't get in the way of typing."

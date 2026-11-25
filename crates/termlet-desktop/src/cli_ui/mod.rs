@@ -21,13 +21,10 @@ mod tool;
 
 use std::path::{Path, PathBuf};
 
-use gpui_kit::SharedString;
 use termlet_core::cli::http::lan::LanAddress;
 
 pub(crate) use audit::{open_audit, refresh_open_audit};
-pub(crate) use page::CliPage;
-
-use crate::t;
+pub(crate) use page::{CliPage, Part as CliPart};
 
 /// 开发构建中的命令行工具：cargo 把 termlet 编译在 termlet-desktop 的旁边（安装版中同一目录的 termlet.exe 就是
 /// Termlet.exe 本身，所以只认程序叫 termlet-desktop 的时候）。不是开发构建、或旁边没有时为 `None`。
@@ -37,11 +34,6 @@ fn dev_cli(exe: &Path) -> Option<PathBuf> {
         .is_some_and(|stem| stem == "termlet-desktop")
         && dev.is_file())
     .then_some(dev)
-}
-
-/// 设置导航中这一页的名称（与 `termlet` 的错误说明中“设置中的「AI 与自动化」”一致）。
-pub(crate) fn page_title() -> SharedString {
-    t!("cli_ui.nav")
 }
 
 /// 这一页用到的本机环境：应用程序的路径与用户主目录。测试中换成临时目录，不碰真实的 PATH 与 AI 工具的目录。

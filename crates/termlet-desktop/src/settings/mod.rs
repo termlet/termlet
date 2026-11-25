@@ -6,6 +6,7 @@
 //!   这里的旧值覆盖。没有未保存的修改时别处改了设置，界面跟着重新载入（[`SettingsForm::reload_from_store`]）。
 //! - 立即执行的操作（导入、清除、复制、安装等，与“保存”无关）的结果写在保存条左边的提示行里，换分类时清掉。
 //! - 锁定时清空各页中输入到一半的密码。
+//! - 导航顶上可以搜索（[`search`]）：按分类名、设置项的标题与说明过滤分类，命中的项加底色。
 
 mod fonts;
 mod highlight;
@@ -14,6 +15,7 @@ mod known_hosts;
 mod local;
 pub(crate) mod panel;
 mod schemes;
+pub(crate) mod search;
 pub(crate) mod section;
 mod shortcuts;
 mod startup;
@@ -106,19 +108,25 @@ impl Page {
     ];
 
     pub(crate) fn title(self) -> SharedString {
+        t!(self.title_key())
+    }
+
+    /// 分类名的文案键（搜索时按五种语言的分类名匹配）。“AI 与自动化”与 `termlet` 的错误说明中“设置中的「AI 与
+    /// 自动化」”一致。
+    fn title_key(self) -> &'static str {
         match self {
-            Page::General => t!("settings.nav.general"),
-            Page::Terminal => t!("settings.nav.terminal"),
-            Page::Local => t!("settings.nav.local"),
-            Page::Colors => t!("settings.nav.colors"),
-            Page::Connection => t!("settings.nav.connection"),
-            Page::Security => crate::lock_ui::security_title(),
-            Page::Cli => crate::cli_ui::page_title(),
-            Page::Backup => t!("settings.nav.backup"),
-            Page::Sync => t!("sync_ui.nav"),
-            Page::Shortcuts => t!("settings.nav.shortcuts"),
-            Page::Privacy => t!("settings.nav.privacy"),
-            Page::About => t!("settings.nav.about"),
+            Page::General => "settings.nav.general",
+            Page::Terminal => "settings.nav.terminal",
+            Page::Local => "settings.nav.local",
+            Page::Colors => "settings.nav.colors",
+            Page::Connection => "settings.nav.connection",
+            Page::Security => "lock_ui.nav.security",
+            Page::Cli => "cli_ui.nav",
+            Page::Backup => "settings.nav.backup",
+            Page::Sync => "sync_ui.nav",
+            Page::Shortcuts => "settings.nav.shortcuts",
+            Page::Privacy => "settings.nav.privacy",
+            Page::About => "settings.nav.about",
         }
     }
 
@@ -234,7 +242,7 @@ impl Fold {
 }
 
 /// “配色与高亮”中显示的页签。
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum ColorsTab {
     Schemes,
     Highlight,
@@ -286,6 +294,16 @@ pub fn open(target: impl Into<Target>, window: &mut Window, cx: &mut App) {
 
 pub(crate) struct SettingsForm {
     page: Page,
+    /// 导航顶上的搜索框（见 [`search`]）
+    search: Entity<InputState>,
+    /// 搜索命中的项（没有在搜索时什么也不命中），各页渲染时据此加底色
+    hits: Rc<search::Hits>,
+    /// 有命中的分类与各自命中的项数；没有在搜索时为 `None`（导航显示全部分类）
+    found: Option<Vec<(Page, usize)>>,
+    /// 画完这一帧后滚到第一个命中的项（搜索的文字变了、搜索时换了分类）
+    reveal: bool,
+    /// 搜索展开的几节（不是自己点开的）：边输入边搜时，不再命中的收起，免得越开越多
+    search_opened: HashSet<search::Place>,
     /// 展开着的几节（默认都收起）
     folds: HashSet<Fold>,
     /// “配色与高亮”中显示的页签
@@ -519,7 +537,8 @@ impl SettingsForm {
         let allowed_proxy_commands = termlet_core::ssh::proxy_command::allowed_count(&store);
         let highlight = cx.new(|cx| HighlightPage::new(&settings.highlight, window, cx));
         let local_page = cx.new(|cx| LocalPage::new(&local_settings.shells, window, cx));
-        let shortcuts = cx.new(|_| ShortcutsPage::new(&settings.keybindings, terminal.right_click));
+        let shortcuts = cx
+            .new(|cx| ShortcutsPage::new(&settings.keybindings, terminal.right_click, window, cx));
         let known_hosts = cx.new(|cx| KnownHostsPage::new(window, cx));
         let security_page =
             cx.new(|cx| crate::lock_ui::SecurityPage::new(&local_settings, window, cx));
@@ -609,6 +628,22 @@ impl SettingsForm {
             cx.observe(&backup_page, |this, _, cx| this.refresh_dirty(cx)),
             cx.observe(&schemes, |this, _, cx| this.refresh_dirty(cx)),
         ]);
+        let search = cx.new(|cx| {
+            InputState::new(window, cx)
+                .placeholder(t!("settings.search.placeholder"))
+                .clean_on_escape()
+        });
+        subscriptions.push(cx.subscribe_in(
+            &search,
+            window,
+            |this, _, event: &InputEvent, window, cx| {
+                if matches!(event, InputEvent::Change) {
+                    this.on_search(window, cx);
+                }
+            },
+        ));
+        // 设置关了：撤销这个窗口中登记的搜索结果
+        subscriptions.push(cx.on_release(|this, cx| search::withdraw(&this.hits, cx)));
         let focus = cx.focus_handle();
         subscriptions.push(cx.observe_keystrokes({
             let focus = focus.clone();
@@ -621,6 +656,11 @@ impl SettingsForm {
         let target = target.into();
         let mut this = Self {
             page: target.page(),
+            search,
+            hits: Rc::default(),
+            found: None,
+            reveal: false,
+            search_opened: HashSet::new(),
             folds: HashSet::new(),
             colors_tab: ColorsTab::Schemes,
             focus,
@@ -850,10 +890,8 @@ impl SettingsForm {
         }
         if differs(&|s, _| s.keybindings == settings.keybindings) {
             let right_click = terminal.right_click;
-            self.shortcuts.update(cx, |p, cx| {
-                p.stop_recording(cx);
-                *p = ShortcutsPage::new(&settings.keybindings, right_click);
-            });
+            self.shortcuts
+                .update(cx, |p, cx| p.reload(&settings.keybindings, right_click, cx));
         }
         let schemes_differ = differs(&|s, _| {
             s.terminal.scheme_light == terminal.scheme_light
@@ -988,6 +1026,10 @@ impl SettingsForm {
                 cx.notify();
             });
         }
+        // 搜索时换了分类：画好后滚到这一页第一个命中的项
+        if self.found.is_some() {
+            self.reveal = true;
+        }
         cx.notify();
     }
 
@@ -1010,24 +1052,184 @@ impl SettingsForm {
         cx.notify();
     }
 
-    /// 展开或收起一节。
+    /// 展开或收起一节（自己点的：之后搜索不再替它收起）。
     fn toggle_fold(&mut self, fold: Fold, cx: &mut Context<Self>) {
         if !self.folds.remove(&fold) {
             self.folds.insert(fold);
         }
+        self.search_opened.remove(&search::Place::Fold(fold));
         cx.notify();
     }
 
     /// 一节可以展开、收起的标题。
     fn fold_header(&self, fold: Fold, cx: &mut Context<Self>) -> Field {
-        field().child(section::fold(
+        let header = field().child(section::fold(
             fold.id(),
             fold.title(),
             self.folds.contains(&fold),
             true,
             cx.listener(move |this, _, _, cx| this.toggle_fold(fold, cx)),
             cx,
-        ))
+        ));
+        self.hits.mark(header, fold.id(), cx)
+    }
+
+    // ------------------------------------------------------------ 搜索
+
+    /// 把焦点移到搜索框（Ctrl+F、⌘F）。
+    pub(crate) fn focus_search(&self, window: &mut Window, cx: &mut App) {
+        self.search.update(cx, |state, cx| state.focus(window, cx));
+    }
+
+    /// 搜索框中现在的文字（重新建设置时带过去）。
+    pub(crate) fn query(&self, cx: &App) -> SharedString {
+        self.search.read(cx).value()
+    }
+
+    /// 换上搜索的文字并搜索（重新建设置时）。
+    pub(crate) fn set_query(&mut self, query: &str, window: &mut Window, cx: &mut Context<Self>) {
+        self.search.update(cx, |state, cx| {
+            state.set_value(query.to_string(), window, cx)
+        });
+        self.on_search(window, cx);
+    }
+
+    /// 搜索的文字变了：找出有命中的分类与项。现在的分类没有命中时换到第一个有命中的；命中的项在收起的一节里、另一个
+    /// 页签上的展开、切过去（搜索结束后照样开着，不打乱正在看的地方），画好后滚到第一个命中的项。快捷键页有命中的行
+    /// 时把文字带到那一页的搜索框，只显示命中的行。
+    fn on_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let query = self.search.read(cx).value().to_string();
+        let terms = search::terms(&query);
+        if terms.is_empty() {
+            // 搜索展开的几节照样开着，不打乱正在看的地方
+            self.search_opened.clear();
+            self.hits = Rc::default();
+            self.found = None;
+            self.shortcuts
+                .update(cx, |p, cx| p.set_query("", window, cx));
+            cx.notify();
+            return;
+        }
+        let shortcuts = self.shortcuts.read(cx).count_matches(&terms, cx);
+        self.shortcuts.update(cx, |p, cx| {
+            p.set_query(if shortcuts > 0 { &query } else { "" }, window, cx)
+        });
+        let found = search::find(&terms, shortcuts, cx);
+        let mut tabs = Vec::new();
+        let mut wanted = HashSet::new();
+        for place in found.items.iter().filter_map(|item| item.place) {
+            match place {
+                search::Place::Colors(tab) => tabs.push(tab),
+                place => {
+                    wanted.insert(place);
+                }
+            }
+        }
+        let stale: Vec<search::Place> = self
+            .search_opened
+            .iter()
+            .filter(|place| !wanted.contains(place))
+            .copied()
+            .collect();
+        for place in stale {
+            self.search_opened.remove(&place);
+            self.set_place_open(place, false, cx);
+        }
+        for place in wanted {
+            if !self.place_open(place, cx) {
+                self.set_place_open(place, true, cx);
+                self.search_opened.insert(place);
+            }
+        }
+        if let Some(tab) = tabs.first()
+            && !tabs.contains(&self.colors_tab)
+        {
+            self.set_colors_tab(*tab, cx);
+        }
+        self.hits = Rc::new(search::Hits::new(&found.items));
+        let first = found.pages.first().map(|(page, _)| *page);
+        let here = found.pages.iter().any(|(page, _)| *page == self.page);
+        self.found = Some(found.pages);
+        match first {
+            Some(page) if !here => self.set_page(page, cx),
+            _ => {
+                self.reveal = true;
+                cx.notify();
+            }
+        }
+    }
+
+    /// 收起的一节（含“AI 与自动化”中默认收起的部分）现在开着没有；页签算开着。
+    fn place_open(&self, place: search::Place, cx: &App) -> bool {
+        match place {
+            search::Place::Fold(fold) => self.folds.contains(&fold),
+            search::Place::Cli(part) => self.cli_page.read(cx).part_open(part),
+            search::Place::Colors(_) => true,
+        }
+    }
+
+    /// 展开或收起一节（搜索用）。
+    fn set_place_open(&mut self, place: search::Place, open: bool, cx: &mut Context<Self>) {
+        match place {
+            search::Place::Fold(fold) if open => {
+                self.folds.insert(fold);
+            }
+            search::Place::Fold(fold) => {
+                self.folds.remove(&fold);
+            }
+            search::Place::Cli(part) => self
+                .cli_page
+                .update(cx, |p, cx| p.set_part_open(part, open, cx)),
+            search::Place::Colors(_) => {}
+        }
+    }
+
+    /// 滚到第一个命中的项（上一帧画出的位置），上方留出标签的位置；命中的项都已经看得到时不动。
+    fn reveal_first_hit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some((top, bottom)) = self.hits.drawn_span() else {
+            return;
+        };
+        let view = self.page_scroll.bounds();
+        if top >= view.top() && bottom <= view.bottom() {
+            return;
+        }
+        let margin = rems(2.5).to_pixels(window.rem_size());
+        let offset = self.page_scroll.offset();
+        let max = self.page_scroll.max_offset().y;
+        let y = (offset.y - (top - margin - view.top())).clamp(-max, px(0.));
+        if y != offset.y {
+            self.page_scroll.set_offset(point(offset.x, y));
+            // 记下的位置是滚动前的：下一帧画出来之前不再按它滚
+            self.hits.begin_frame();
+            cx.notify();
+        }
+    }
+
+    /// 搜索框（导航顶上；设置这一栏窄时在内容上方）与没有命中时的说明。
+    fn render_search(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let muted = cx.theme().muted_foreground;
+        let none = self.found.as_ref().is_some_and(|pages| pages.is_empty());
+        v_flex()
+            .flex_none()
+            .gap_2()
+            .child(
+                Input::new(&self.search)
+                    .id("settings-search")
+                    .small()
+                    .cleanable(true)
+                    .prefix(Icon::new(IconName::Search).xsmall().text_color(muted)),
+            )
+            .when(none, |this| {
+                this.child(
+                    div()
+                        .id("settings-search-none")
+                        .test_support()
+                        .px_1()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(prose(t!("settings.search.none"))),
+                )
+            })
     }
 
     /// 校验没过：去出错的地方并说明原因（不合法的值在收起的一节中时展开它）。
@@ -1333,27 +1535,43 @@ impl SettingsForm {
 
     // ------------------------------------------------------------ 渲染
 
-    /// 左侧的分类导航；`compact` 时只显示图标（悬停显示分类名）。
+    /// 左侧的分类导航；`compact` 时只显示图标（悬停显示分类名），搜索框移到内容上方。搜索时只列出有命中的分类，
+    /// 分类名后写命中的项数。
     fn render_nav(
         &self,
         compact: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
+        let pages: Vec<(Page, usize)> = match &self.found {
+            Some(found) => found.clone(),
+            None => Page::ALL.map(|page| (page, 0)).to_vec(),
+        };
         // 逐项渲染（不经 SidebarMenu）：导航项的 ID 见 Page::nav_id
-        let items = Page::ALL.map(|page| {
-            let this = cx.entity().downgrade();
-            SidebarMenuItem::new(page.title())
-                .icon(page.icon())
-                .active(self.page == page)
-                .collapsed(compact)
-                .on_click(move |_, _, cx| {
-                    let _ = this.update(cx, |this, cx| this.set_page(page, cx));
-                })
-                .render(page.nav_id(), window, cx)
-                .into_any_element()
-        });
-        let current = Page::ALL.iter().position(|p| *p == self.page).unwrap_or(0);
+        let items = pages
+            .iter()
+            .map(|&(page, count)| {
+                let this = cx.entity().downgrade();
+                let mut item = SidebarMenuItem::new(page.title())
+                    .icon(page.icon())
+                    .active(self.page == page)
+                    .collapsed(compact)
+                    .on_click(move |_, _, cx| {
+                        let _ = this.update(cx, |this, cx| this.set_page(page, cx));
+                    });
+                if count > 0 {
+                    item = item.suffix(move |_, cx| {
+                        div()
+                            .text_xs()
+                            .text_color(cx.theme().muted_foreground)
+                            .child(count.to_string())
+                    });
+                }
+                item.render(page.nav_id(), window, cx).into_any_element()
+            })
+            .collect::<Vec<_>>();
+        let visible: Vec<Page> = pages.iter().map(|(page, _)| *page).collect();
+        let current = visible.iter().position(|p| *p == self.page).unwrap_or(0);
         let column = if compact {
             div()
                 .flex_none()
@@ -1363,17 +1581,22 @@ impl SettingsForm {
         } else {
             crate::page_nav::column(cx)
         };
+        let nav = crate::page_nav::frame("settings-nav", &self.nav_focus, window, cx)
+            .on_key_down(
+                cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
+                    if let Some(ix) = crate::page_nav::step(event, current, visible.len()) {
+                        this.set_page(visible[ix], cx);
+                        cx.stop_propagation();
+                    }
+                }),
+            )
+            .child(v_flex().gap_1().children(items));
         column.child(
-            crate::page_nav::frame("settings-nav", &self.nav_focus, window, cx)
-                .on_key_down(
-                    cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
-                        if let Some(ix) = crate::page_nav::step(event, current, Page::ALL.len()) {
-                            this.set_page(Page::ALL[ix], cx);
-                            cx.stop_propagation();
-                        }
-                    }),
-                )
-                .child(v_flex().gap_1().children(items)),
+            v_flex()
+                .h_full()
+                .gap_2()
+                .when(!compact, |this| this.child(self.render_search(cx)))
+                .child(div().flex_1().min_h_0().child(nav)),
         )
     }
 
@@ -1387,7 +1610,7 @@ impl SettingsForm {
         cx: &Context<Self>,
     ) -> Field {
         let checked = *slot(self);
-        field().child(
+        let field = field().child(
             v_flex()
                 .gap_1()
                 .child(
@@ -1409,7 +1632,8 @@ impl SettingsForm {
                             .child(prose(hint)),
                     )
                 }),
-        )
+        );
+        self.hits.mark(field, id, cx)
     }
 
     fn render_general(&mut self, cx: &mut Context<Self>) -> AnyElement {
@@ -1447,32 +1671,48 @@ impl SettingsForm {
                         .gap_3()
                         .child(
                             div().flex_1().child(
-                                field()
-                                    .label(t!("settings.language"))
-                                    .child(Select::new(&self.language).id("settings-language")),
+                                self.hits.mark(
+                                    field()
+                                        .label(t!("settings.language"))
+                                        .child(Select::new(&self.language).id("settings-language")),
+                                    "settings-language",
+                                    cx,
+                                ),
                             ),
                         )
                         .child(
                             div().flex_1().child(
-                                field()
-                                    .label(t!("settings.app_theme"))
-                                    .child(Select::new(&self.theme).id("settings-theme")),
+                                self.hits.mark(
+                                    field()
+                                        .label(t!("settings.app_theme"))
+                                        .child(Select::new(&self.theme).id("settings-theme")),
+                                    "settings-theme",
+                                    cx,
+                                ),
                             ),
                         )
                         .child(
                             div().flex_1().child(
-                                field()
-                                    .label(t!("settings.icons"))
-                                    .child(Select::new(&self.icons).id("settings-icons")),
+                                self.hits.mark(
+                                    field()
+                                        .label(t!("settings.icons"))
+                                        .child(Select::new(&self.icons).id("settings-icons")),
+                                    "settings-icons",
+                                    cx,
+                                ),
                             ),
                         ),
                 ),
             )
             .child(
-                field()
-                    .label(t!("settings.ui_scale"))
-                    .description(prose(scale_hint))
-                    .child(Select::new(&self.ui_scale).id("settings-ui-scale")),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.ui_scale"))
+                        .description(prose(scale_hint))
+                        .child(Select::new(&self.ui_scale).id("settings-ui-scale")),
+                    "settings-ui-scale",
+                    cx,
+                ),
             )
             .child(self.checkbox(
                 "settings-confirm-close",
@@ -1510,10 +1750,14 @@ impl SettingsForm {
             })
             // Tab 的位置与竖排时按主机分组（本机设置）
             .child(
-                field()
-                    .label(t!("settings.tab_position"))
-                    .description(prose(t!("settings.tab_position_hint")))
-                    .child(self.tab_position_radio(cx)),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.tab_position"))
+                        .description(prose(t!("settings.tab_position_hint")))
+                        .child(self.tab_position_radio(cx)),
+                    "settings-tab-position",
+                    cx,
+                ),
             )
             .child(self.checkbox(
                 "settings-group-tabs-by-host",
@@ -1523,21 +1767,29 @@ impl SettingsForm {
                 cx,
             ))
             .child(
-                field()
-                    .label(t!("settings.remote_editor"))
-                    .description_fn(move |_, _| {
-                        v_flex()
-                            .gap_1()
-                            .child(prose(t!("settings.remote_editor_hint")))
-                            .child(prose(editors_found.clone()))
-                    })
-                    .child(Select::new(&self.remote_editor).id("settings-remote-editor")),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.remote_editor"))
+                        .description_fn(move |_, _| {
+                            v_flex()
+                                .gap_1()
+                                .child(prose(t!("settings.remote_editor_hint")))
+                                .child(prose(editors_found.clone()))
+                        })
+                        .child(Select::new(&self.remote_editor).id("settings-remote-editor")),
+                    "settings-remote-editor",
+                    cx,
+                ),
             )
             .child(
-                field()
-                    .label(t!("startup_open.label"))
-                    .description(prose(t!("startup_open.hint")))
-                    .child(self.startup.clone()),
+                self.hits.mark(
+                    field()
+                        .label(t!("startup_open.label"))
+                        .description(prose(t!("startup_open.hint")))
+                        .child(self.startup.clone()),
+                    "settings-startup",
+                    cx,
+                ),
             )
             .into_any_element()
     }
@@ -1597,12 +1849,16 @@ impl SettingsForm {
                 cx,
             )))
             .child(
-                field()
-                    .label(t!("schemes.terminal_field"))
-                    .description(prose(t!("schemes.terminal_field_hint")))
-                    .child(schemes::slot_button(&scheme).on_click(
-                        cx.listener(|this, _, _, cx| this.set_page(Target::Schemes, cx)),
-                    )),
+                self.hits.mark(
+                    field()
+                        .label(t!("schemes.terminal_field"))
+                        .description(prose(t!("schemes.terminal_field_hint")))
+                        .child(schemes::slot_button(&scheme).on_click(
+                            cx.listener(|this, _, _, cx| this.set_page(Target::Schemes, cx)),
+                        )),
+                    "settings-scheme-slot",
+                    cx,
+                ),
             )
             .child(
                 field().child(
@@ -1610,25 +1866,37 @@ impl SettingsForm {
                         .gap_3()
                         .child(
                             div().flex_1().child(
-                                field()
-                                    .label(t!("settings.font_size"))
-                                    .child(Input::new(&self.font_size).id("settings-font-size")),
+                                self.hits.mark(
+                                    field().label(t!("settings.font_size")).child(
+                                        Input::new(&self.font_size).id("settings-font-size"),
+                                    ),
+                                    "settings-font-size",
+                                    cx,
+                                ),
                             ),
                         )
                         .child(
                             div().flex_1().child(
-                                field()
-                                    .label(t!("settings.scrollback"))
-                                    .child(Input::new(&self.scrollback).id("settings-scrollback")),
+                                self.hits.mark(
+                                    field().label(t!("settings.scrollback")).child(
+                                        Input::new(&self.scrollback).id("settings-scrollback"),
+                                    ),
+                                    "settings-scrollback",
+                                    cx,
+                                ),
                             ),
                         ),
                 ),
             )
             .child(
-                field()
-                    .label(t!("settings.font.label"))
-                    .description(prose(font_hint))
-                    .child(Select::new(&self.font_family).id("settings-font-family")),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.font.label"))
+                        .description(prose(font_hint))
+                        .child(Select::new(&self.font_family).id("settings-font-family")),
+                    "settings-font-family",
+                    cx,
+                ),
             )
             .when(!missing.is_empty(), |this| {
                 this.child(
@@ -1674,10 +1942,14 @@ impl SettingsForm {
                 ),
             )
             .child(
-                field()
-                    .label(t!("settings.cursor.label"))
-                    .description(prose(t!("settings.cursor.hint")))
-                    .child(self.cursor_shape_radio(cx)),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.cursor.label"))
+                        .description(prose(t!("settings.cursor.hint")))
+                        .child(self.cursor_shape_radio(cx)),
+                    "settings-cursor-shape",
+                    cx,
+                ),
             )
             .child(self.checkbox(
                 "settings-cursor-blink",
@@ -1696,9 +1968,13 @@ impl SettingsForm {
                 cx,
             ))
             .child(
-                field()
-                    .label(t!("settings.right_click.label"))
-                    .child(Select::new(&self.right_click).id("settings-right-click")),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.right_click.label"))
+                        .child(Select::new(&self.right_click).id("settings-right-click")),
+                    "settings-right-click",
+                    cx,
+                ),
             )
             // 只在 macOS 上有：其他系统上 Alt 本来就作为 Meta
             .when(
@@ -1745,10 +2021,14 @@ impl SettingsForm {
                     cx,
                 ))
                 .child(
-                    field()
-                        .label(t!("settings.monitor_bar.label"))
-                        .description(prose(t!("settings.monitor_bar.hint")))
-                        .child(self.monitor_bar_radio(cx)),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.monitor_bar.label"))
+                            .description(prose(t!("settings.monitor_bar.hint")))
+                            .child(self.monitor_bar_radio(cx)),
+                        "settings-monitor-bar",
+                        cx,
+                    ),
                 )
                 .child(self.checkbox(
                     "settings-tab-activity",
@@ -1792,26 +2072,30 @@ impl SettingsForm {
                     cx,
                 ))
                 .child(
-                    field()
-                        .label(t!("settings.session_log_dir"))
-                        .description(prose(t!("settings.session_log_dir_hint")))
-                        .child(
-                            h_flex()
-                                .gap_2()
-                                .child(
-                                    div()
-                                        .flex_1()
-                                        .child(Input::new(&self.log_dir).id("settings-log-dir")),
-                                )
-                                .child(
-                                    Button::new("settings-log-dir-browse")
-                                        .outline()
-                                        .label(t!("settings.browse"))
-                                        .on_click(cx.listener(|this, _, window, cx| {
-                                            this.pick_dir(|this| &this.log_dir, window, cx)
-                                        })),
-                                ),
-                        ),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.session_log_dir"))
+                            .description(prose(t!("settings.session_log_dir_hint")))
+                            .child(
+                                h_flex()
+                                    .gap_2()
+                                    .child(
+                                        div().flex_1().child(
+                                            Input::new(&self.log_dir).id("settings-log-dir"),
+                                        ),
+                                    )
+                                    .child(
+                                        Button::new("settings-log-dir-browse")
+                                            .outline()
+                                            .label(t!("settings.browse"))
+                                            .on_click(cx.listener(|this, _, window, cx| {
+                                                this.pick_dir(|this| &this.log_dir, window, cx)
+                                            })),
+                                    ),
+                            ),
+                        "settings-log-dir",
+                        cx,
+                    ),
                 )
                 .child(
                     self.checkbox(
@@ -1833,26 +2117,28 @@ impl SettingsForm {
                     }),
                 )
                 .child(
-                    field()
-                        .label(t!("settings.record_dir"))
-                        .description(prose(t!("settings.record_dir_hint")))
-                        .child(
-                            h_flex()
-                                .gap_2()
-                                .child(
-                                    div().flex_1().child(
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.record_dir"))
+                            .description(prose(t!("settings.record_dir_hint")))
+                            .child(
+                                h_flex()
+                                    .gap_2()
+                                    .child(div().flex_1().child(
                                         Input::new(&self.record_dir).id("settings-record-dir"),
+                                    ))
+                                    .child(
+                                        Button::new("settings-record-dir-browse")
+                                            .outline()
+                                            .label(t!("settings.browse"))
+                                            .on_click(cx.listener(|this, _, window, cx| {
+                                                this.pick_dir(|this| &this.record_dir, window, cx)
+                                            })),
                                     ),
-                                )
-                                .child(
-                                    Button::new("settings-record-dir-browse")
-                                        .outline()
-                                        .label(t!("settings.browse"))
-                                        .on_click(cx.listener(|this, _, window, cx| {
-                                            this.pick_dir(|this| &this.record_dir, window, cx)
-                                        })),
-                                ),
-                        ),
+                            ),
+                        "settings-record-dir",
+                        cx,
+                    ),
                 )
             })
             .child(history_header)
@@ -1865,21 +2151,25 @@ impl SettingsForm {
                     cx,
                 ))
                 .child(
-                    field().child(
-                        v_flex()
-                            .pl_6()
-                            .gap_2()
-                            .items_start()
-                            .child(
-                                Button::new("settings-clear-history")
-                                    .outline()
-                                    .small()
-                                    .label(t!("settings.clear_history"))
-                                    .on_click(cx.listener(|this, _, window, cx| {
-                                        this.confirm_clear_history(window, cx)
-                                    })),
-                            )
-                            .child(self.render_shell_snippets(cx)),
+                    self.hits.mark(
+                        field().child(
+                            v_flex()
+                                .pl_6()
+                                .gap_2()
+                                .items_start()
+                                .child(
+                                    Button::new("settings-clear-history")
+                                        .outline()
+                                        .small()
+                                        .label(t!("settings.clear_history"))
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.confirm_clear_history(window, cx)
+                                        })),
+                                )
+                                .child(self.render_shell_snippets(cx)),
+                        ),
+                        "settings-clear-history",
+                        cx,
                     ),
                 )
                 .child(self.command_suggest_field(cx))
@@ -1904,7 +2194,7 @@ impl SettingsForm {
                 .text_color(cx.theme().muted_foreground)
                 .child(prose(text))
         };
-        field().child(
+        let field = field().child(
             v_flex()
                 .gap_1()
                 .child(
@@ -1921,7 +2211,8 @@ impl SettingsForm {
                 .when(!history_on, |this| {
                     this.child(hint(t!("settings.command_suggest_needs_history")))
                 }),
-        )
+        );
+        self.hits.mark(field, "settings-command-suggest", cx)
     }
 
     /// “让命令历史更准确”：可展开的 shell 集成说明与配置片段。
@@ -2010,14 +2301,18 @@ impl SettingsForm {
         let advanced_open = self.folds.contains(&Fold::ConnectionAdvanced);
         v_form()
             .child(
-                field()
-                    .label(t!("settings.keepalive"))
-                    .description(prose(t!("settings.keepalive_hint")))
-                    .child(
-                        div()
-                            .w(rems(10.))
-                            .child(Input::new(&self.keepalive).id("settings-keepalive")),
-                    ),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.keepalive"))
+                        .description(prose(t!("settings.keepalive_hint")))
+                        .child(
+                            div()
+                                .w(rems(10.))
+                                .child(Input::new(&self.keepalive).id("settings-keepalive")),
+                        ),
+                    "settings-keepalive",
+                    cx,
+                ),
             )
             .child(self.checkbox(
                 "settings-auto-reconnect",
@@ -2034,72 +2329,100 @@ impl SettingsForm {
                 cx,
             ))
             .child(
-                field()
-                    .label(t!("settings.external_launch"))
-                    .description(prose(t!("settings.external_launch_hint")))
-                    .child(self.external_launch_radio(cx)),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.external_launch"))
+                        .description(prose(t!("settings.external_launch_hint")))
+                        .child(self.external_launch_radio(cx)),
+                    "settings-external-launch",
+                    cx,
+                ),
             )
             // 少用的：ssh-agent 地址、X11 转发的显示、借给服务器的本机代理、确认过的代理命令
             .child(advanced_header)
             .when(advanced_open, |this| {
                 this.child(
-                    field()
-                        .label(t!("settings.agent_path"))
-                        .description(prose(t!("settings.agent_path_hint")))
-                        .child(Input::new(&self.agent_path).id("settings-agent-path")),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.agent_path"))
+                            .description(prose(t!("settings.agent_path_hint")))
+                            .child(Input::new(&self.agent_path).id("settings-agent-path")),
+                        "settings-agent-path",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("settings.x11_display"))
-                        .description(prose(t!("settings.x11_display_hint")))
-                        .child(Input::new(&self.x11_display).id("settings-x11-display")),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.x11_display"))
+                            .description(prose(t!("settings.x11_display_hint")))
+                            .child(Input::new(&self.x11_display).id("settings-x11-display")),
+                        "settings-x11-display",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("settings.local_proxy"))
-                        .description(prose(t!(
-                            "settings.local_proxy_hint",
-                            system = self
-                                .system_proxy
-                                .clone()
-                                .unwrap_or_else(|| t!("settings.local_proxy_none").to_string())
-                        )))
-                        .child(Input::new(&self.local_proxy).id("settings-local-proxy")),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.local_proxy"))
+                            .description(prose(t!(
+                                "settings.local_proxy_hint",
+                                system = self
+                                    .system_proxy
+                                    .clone()
+                                    .unwrap_or_else(|| t!("settings.local_proxy_none").to_string())
+                            )))
+                            .child(Input::new(&self.local_proxy).id("settings-local-proxy")),
+                        "settings-local-proxy",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("settings.local_proxy_port"))
-                        .description(prose(t!("settings.local_proxy_port_hint")))
-                        .child(Input::new(&self.local_proxy_port).id("settings-local-proxy-port")),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.local_proxy_port"))
+                            .description(prose(t!("settings.local_proxy_port_hint")))
+                            .child(
+                                Input::new(&self.local_proxy_port).id("settings-local-proxy-port"),
+                            ),
+                        "settings-local-proxy-port",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("settings.proxy_commands"))
-                        .description(prose(t!("settings.proxy_commands_hint")))
-                        .child(
-                            h_flex()
-                                .gap_3()
-                                .items_center()
-                                .child(div().text_sm().child(if self.allowed_proxy_commands == 0 {
-                                    t!("settings.proxy_commands_none")
-                                } else {
-                                    t!(
-                                        "settings.proxy_commands_count",
-                                        count = self.allowed_proxy_commands
-                                    )
-                                }))
-                                .when(self.allowed_proxy_commands > 0, |this| {
-                                    this.child(
-                                        Button::new("settings-forget-proxy-commands")
-                                            .outline()
-                                            .small()
-                                            .label(t!("settings.proxy_commands_forget"))
-                                            .on_click(cx.listener(|this, _, window, cx| {
-                                                this.forget_proxy_commands(window, cx)
-                                            })),
-                                    )
-                                }),
-                        ),
+                    self.hits.mark(
+                        field()
+                            .label(t!("settings.proxy_commands"))
+                            .description(prose(t!("settings.proxy_commands_hint")))
+                            .child(
+                                h_flex()
+                                    .gap_3()
+                                    .items_center()
+                                    .child(div().text_sm().child(
+                                        if self.allowed_proxy_commands == 0 {
+                                            t!("settings.proxy_commands_none")
+                                        } else {
+                                            t!(
+                                                "settings.proxy_commands_count",
+                                                count = self.allowed_proxy_commands
+                                            )
+                                        },
+                                    ))
+                                    .when(self.allowed_proxy_commands > 0, |this| {
+                                        this.child(
+                                            Button::new("settings-forget-proxy-commands")
+                                                .outline()
+                                                .small()
+                                                .label(t!("settings.proxy_commands_forget"))
+                                                .on_click(cx.listener(|this, _, window, cx| {
+                                                    this.forget_proxy_commands(window, cx)
+                                                })),
+                                        )
+                                    }),
+                            ),
+                        "settings-proxy-commands",
+                        cx,
+                    ),
                 )
             })
             .into_any_element()
@@ -2190,35 +2513,43 @@ impl SettingsForm {
         v_flex()
             .gap_3()
             // 关于 Termlet：版本、简介、官网等链接与版权
-            .child(crate::lock_ui::app_info(cx))
+            .child(self.hits.mark(
+                div().child(crate::lock_ui::app_info(cx)),
+                "about-app-info",
+                cx,
+            ))
             .child(
-                field()
-                    .label(t!("settings.data_dir"))
-                    .when(portable, |field| {
-                        field.description(prose(t!("settings.data_dir_portable")))
-                    })
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .min_w_0()
-                                    .text_sm()
-                                    .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
-                                    .child(data_dir.clone()),
-                            )
-                            .child(
-                                Button::new("settings-open-data-dir")
-                                    .outline()
-                                    .small()
-                                    .icon(IconName::FolderOpen)
-                                    .label(t!("settings.open_data_dir"))
-                                    .on_click(move |_, _, cx| {
-                                        cx.open_url(&data_dir);
-                                    }),
-                            ),
-                    ),
+                self.hits.mark(
+                    field()
+                        .label(t!("settings.data_dir"))
+                        .when(portable, |field| {
+                            field.description(prose(t!("settings.data_dir_portable")))
+                        })
+                        .child(
+                            h_flex()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w_0()
+                                        .text_sm()
+                                        .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
+                                        .child(data_dir.clone()),
+                                )
+                                .child(
+                                    Button::new("settings-open-data-dir")
+                                        .outline()
+                                        .small()
+                                        .icon(IconName::FolderOpen)
+                                        .label(t!("settings.open_data_dir"))
+                                        .on_click(move |_, _, cx| {
+                                            cx.open_url(&data_dir);
+                                        }),
+                                ),
+                        ),
+                    "settings-data-dir",
+                    cx,
+                ),
             )
             // 更新、诊断信息与崩溃上报
             .child(self.about_extras.clone())
@@ -2249,19 +2580,19 @@ impl SettingsForm {
             Page::Connection => vec![self.render_connection(cx)],
             Page::Security => vec![
                 v_form()
-                    .child(field().child(section::heading(
-                        t!("settings.section.app_lock"),
-                        true,
+                    .child(self.hits.mark(
+                        field().child(section::heading(t!("settings.section.app_lock"), true, cx)),
+                        "settings-app-lock",
                         cx,
-                    )))
+                    ))
                     .child(field().child(self.security_page.clone()))
                     .into_any_element(),
                 v_form()
-                    .child(field().child(section::heading(
-                        t!("settings.nav.known_hosts"),
-                        false,
+                    .child(self.hits.mark(
+                        field().child(section::heading(t!("settings.nav.known_hosts"), false, cx)),
+                        "settings-known-hosts",
                         cx,
-                    )))
+                    ))
                     .child(field().child(self.known_hosts.clone()))
                     .into_any_element(),
             ],
@@ -2364,6 +2695,12 @@ impl SettingsForm {
 
 impl Render for SettingsForm {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // 各页渲染时按窗口取搜索结果、给命中的项加底色；画好后（记下了位置）需要时滚到第一个命中的项
+        search::publish(&self.hits, window, cx);
+        self.hits.begin_frame();
+        if std::mem::take(&mut self.reveal) {
+            cx.defer_in(window, |this, window, cx| this.reveal_first_hit(window, cx));
+        }
         let blocks = self.render_blocks(cx);
         // 按上一帧的宽度：窄时分类导航只显示图标
         let width = self.bounds.get().size.width;
@@ -2410,40 +2747,55 @@ impl Render for SettingsForm {
                             .child(self.render_nav(compact, window, cx)),
                     )
                     .child(
-                        div()
-                            .relative()
+                        v_flex()
                             .flex_1()
                             .min_w_0()
+                            // 窄时导航放不下搜索框：放在内容上方
+                            .when(compact, |this| {
+                                this.child(
+                                    div().flex_none().px_5().pt_3().child(
+                                        div()
+                                            .max_w(rems(CONTENT_MAX_WIDTH))
+                                            .child(self.render_search(cx)),
+                                    ),
+                                )
+                            })
                             .child(
-                                // 标题与各块是滚动区的直接子元素：并进来的一处（工具栏）可以按序号滚到顶上
-                                v_flex()
-                                    .id("settings-page")
-                                    .test_support()
-                                    .size_full()
-                                    .overflow_y_scroll()
-                                    .track_scroll(&self.page_scroll)
-                                    .gap_3()
-                                    .px_5()
-                                    .pt_3()
-                                    .pb_6()
+                                div()
+                                    .relative()
+                                    .flex_1()
+                                    .min_h_0()
                                     .child(
-                                        div()
-                                            .flex_none()
-                                            .w_full()
-                                            .max_w(rems(CONTENT_MAX_WIDTH))
-                                            .text_base()
-                                            .font_medium()
-                                            .child(self.page.title()),
+                                        // 标题与各块是滚动区的直接子元素：并进来的一处（工具栏）可以按序号滚到顶上
+                                        v_flex()
+                                            .id("settings-page")
+                                            .test_support()
+                                            .size_full()
+                                            .overflow_y_scroll()
+                                            .track_scroll(&self.page_scroll)
+                                            .gap_3()
+                                            .px_5()
+                                            .pt_3()
+                                            .pb_6()
+                                            .child(
+                                                div()
+                                                    .flex_none()
+                                                    .w_full()
+                                                    .max_w(rems(CONTENT_MAX_WIDTH))
+                                                    .text_base()
+                                                    .font_medium()
+                                                    .child(self.page.title()),
+                                            )
+                                            .children(blocks.into_iter().map(|block| {
+                                                div()
+                                                    .flex_none()
+                                                    .w_full()
+                                                    .max_w(rems(CONTENT_MAX_WIDTH))
+                                                    .child(block)
+                                            })),
                                     )
-                                    .children(blocks.into_iter().map(|block| {
-                                        div()
-                                            .flex_none()
-                                            .w_full()
-                                            .max_w(rems(CONTENT_MAX_WIDTH))
-                                            .child(block)
-                                    })),
-                            )
-                            .vertical_scrollbar(&self.page_scroll),
+                                    .vertical_scrollbar(&self.page_scroll),
+                            ),
                     ),
             )
             .child(self.render_save_bar(cx))

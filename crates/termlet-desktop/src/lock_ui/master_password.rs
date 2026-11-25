@@ -238,7 +238,8 @@ impl MasterPassword {
 }
 
 impl Render for MasterPassword {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = crate::settings::search::hits(window, cx);
         let theme = cx.theme();
         let (danger, success, muted, border) = (
             theme.danger,
@@ -266,10 +267,14 @@ impl Render for MasterPassword {
             .border_t_1()
             .border_color(border)
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("lock_ui.master.title")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("lock_ui.master.title")),
+                    "master-password",
+                    cx,
+                ),
             )
             .child(
                 div()

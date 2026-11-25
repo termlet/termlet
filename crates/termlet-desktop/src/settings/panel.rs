@@ -2,7 +2,7 @@
 //! [`crate::workspace::Workspace::open_settings`]），可以与终端并排、移到别的窗口。
 //!
 //! - Tab 名“设置”，有未保存的修改时前面加“● ”（与编辑器的 Tab 相同）；右键菜单有保存、放弃修改、关闭与关闭几个 Tab。
-//! - Ctrl+S（macOS ⌘S）保存，Ctrl+Shift+W（⌘W）关闭。输入框中按 Enter 不保存整页，Esc 也不关；Enter 照对话框里的
+//! - Ctrl+S（macOS ⌘S）保存，Ctrl+Shift+W（⌘W）关闭，Ctrl+F（⌘F）到导航顶上的搜索框。输入框中按 Enter 不保存整页，Esc 也不关；Enter 照对话框里的
 //!   做法转成 `Confirm` 动作，各页自己处理（备份、定时备份、同步的表单按 Enter 执行当前一步），没人处理时什么也不做。
 //! - 有未保存的修改时关闭先问：保存、放弃修改、取消。一次关几个 Tab、关窗口、退出时并进汇总的确认。备份、恢复进行中
 //!   不能关闭。
@@ -38,6 +38,8 @@ actions!(
         Save,
         /// 关闭设置 Tab（有未保存的修改时先问）
         CloseTab,
+        /// 把焦点移到设置的搜索框
+        FocusSearch,
     ]
 );
 
@@ -46,8 +48,8 @@ pub fn init(cx: &mut App) {
     cx.bind_keys(key_bindings(cx.platform_info().os));
 }
 
-/// 设置 Tab 固定的快捷键：保存与关闭，与编辑器的 Tab 相同（`KeyBinding::new` 不认 `secondary-`，分开写）；单行输入框
-/// 不处理的 Enter 转成 `Confirm`（与 gpui-kit 的对话框相同）。
+/// 设置 Tab 固定的快捷键：保存与关闭，与编辑器的 Tab 相同（`KeyBinding::new` 不认 `secondary-`，分开写），查找到
+/// 搜索框；单行输入框不处理的 Enter 转成 `Confirm`（与 gpui-kit 的对话框相同）。
 pub(crate) fn key_bindings(os: gpui_kit::OperatingSystem) -> Vec<KeyBinding> {
     let context = Some(KEY_CONTEXT);
     let confirm = KeyBinding::new("enter", Confirm { secondary: false }, context);
@@ -55,12 +57,14 @@ pub(crate) fn key_bindings(os: gpui_kit::OperatingSystem) -> Vec<KeyBinding> {
         vec![
             KeyBinding::new("cmd-s", Save, context),
             KeyBinding::new("cmd-w", CloseTab, context),
+            KeyBinding::new("cmd-f", FocusSearch, context),
             confirm,
         ]
     } else {
         vec![
             KeyBinding::new("ctrl-s", Save, context),
             KeyBinding::new("ctrl-shift-w", CloseTab, context),
+            KeyBinding::new("ctrl-f", FocusSearch, context),
             confirm,
         ]
     }
@@ -121,16 +125,29 @@ impl SettingsPanel {
         self.form.update(cx, |form, cx| form.show(target, cx));
     }
 
+    /// 里面的设置（测试用）。
+    #[cfg(test)]
+    pub(super) fn form(&self) -> Entity<SettingsForm> {
+        self.form.clone()
+    }
+
     /// 现在有没有未保存的修改（关闭窗口前的汇总用）。
     pub(crate) fn has_changes(&self, cx: &App) -> bool {
         self.form.read(cx).has_changes(cx)
     }
 
-    /// 重新建设置（显示同一分类）：移到别的窗口、换了界面语言时。原来有焦点时新的也拿到焦点。
+    /// 重新建设置（显示同一分类，搜索的文字照留）：移到别的窗口、换了界面语言时。原来有焦点时新的也拿到焦点。
     fn rebuild(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let focused = self.form.read(cx).focus.contains_focused(window, cx);
         let page = self.form.read(cx).page();
-        self.form = cx.new(|cx| SettingsForm::new(page, window, cx));
+        let query = self.form.read(cx).query(cx);
+        self.form = cx.new(|cx| {
+            let mut form = SettingsForm::new(page, window, cx);
+            if !query.is_empty() {
+                form.set_query(&query, window, cx);
+            }
+            form
+        });
         self.watch(window, cx);
         if focused {
             let focus = self.form.read(cx).focus.clone();
@@ -347,6 +364,10 @@ impl Render for SettingsPanel {
             .size_full()
             .on_action(cx.listener(|this, _: &Save, window, cx| this.save(window, cx)))
             .on_action(cx.listener(|this, _: &CloseTab, window, cx| this.request_close(window, cx)))
+            .on_action(cx.listener(|this, _: &FocusSearch, window, cx| {
+                this.form
+                    .update(cx, |form, cx| form.focus_search(window, cx))
+            }))
             .child(self.form.clone())
     }
 }

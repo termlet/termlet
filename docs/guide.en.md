@@ -489,6 +489,7 @@ Notes:
 ### Shortcuts
 
 - In Settings → Shortcuts you can add or remove keys for each action or restore the defaults. Conflicts tell you which action uses the key, and changes apply as soon as you save.
+- The search box at the top filters by action name (in any of the five interface languages) or by key, such as "split", "粘贴" or "ctrl+shift+c"; when a fixed shortcut matches, that section expands.
 - Windows and Linux use Ctrl:
   - Custom shortcuts need Ctrl or Alt, except F1–F24 and Shift with Insert, Delete, Home, End, Page Up or Page Down.
   - You can switch to the keys of Xshell or MobaXterm in one click, e.g. Xshell's Alt+1–9 to switch tabs, Alt+I for the compose bar, Alt+Enter for full screen and Ctrl+Alt+F to open SFTP on the right, or MobaXterm's Ctrl+Alt+←/→, Ctrl+Alt+F1–F9 and Ctrl+Alt+T.
@@ -1532,6 +1533,11 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 - Since 0.3.4 a few pages are merged: Toolbar is under General, Color Schemes and Highlighting became Colors & Highlighting, Host Keys is under Security, and the privacy, diagnostics and log detail parts of About became Privacy & Diagnostics. "Customize Toolbar…" on a title bar button's context menu, the Keyword highlighting button in the toolbar and "Customize Toolbar…" and "Keyword Highlighting…" in the command palette still go straight there (opening that section or switching to that tab).
 - Settings you rarely need sit in sections you can expand: click the title to expand or collapse them.
+- The search box above the categories (Ctrl+F, ⌘F on macOS; above the content when the tab is narrow):
+  - filters by page name and by the titles and descriptions of settings, lists only the pages with matches followed by how many, and highlights the matching settings;
+  - a match in a collapsed section or on another tab expands the section or switches the tab, and the page scrolls to the first match (sections stay open after the search);
+  - text in all five interface languages matches, so "字体" finds Font even with the English interface; with several words separated by spaces each one has to match;
+  - a search that finds shortcuts carries over to the search box on the Shortcuts page; Esc clears the box.
 
 - Interface languages: Simplified Chinese, Traditional Chinese, English, Japanese and Korean (the Japanese and Korean translations are the developer's own; corrections are welcome).
 - Interface size (under General; use system setting / 90%–150%, for this computer):

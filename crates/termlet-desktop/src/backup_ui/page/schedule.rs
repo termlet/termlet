@@ -707,7 +707,11 @@ impl BackupPage {
             .into_any_element()
     }
 
-    pub(super) fn render_schedule(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    pub(super) fn render_schedule(
+        &self,
+        hits: &crate::settings::search::Hits,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
         let theme = cx.theme();
         let (muted, border) = (theme.muted_foreground, theme.border);
         let busy = self.busy.is_some();
@@ -748,10 +752,14 @@ impl BackupPage {
                 }),
             )
             .child(
-                div()
-                    .text_sm()
-                    .font_medium()
-                    .child(t!("backup_ui.schedule.title")),
+                hits.mark(
+                    div()
+                        .text_sm()
+                        .font_medium()
+                        .child(t!("backup_ui.schedule.title")),
+                    "backup-schedule",
+                    cx,
+                ),
             )
             .child(
                 div()

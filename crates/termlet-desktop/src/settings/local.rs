@@ -213,7 +213,8 @@ impl LocalPage {
 }
 
 impl Render for LocalPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = super::search::hits(window, cx);
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let border = theme.border;
@@ -241,10 +242,14 @@ impl Render for LocalPage {
             );
         } else {
             form = form.child(
-                field()
-                    .label(t!("local_shell.default_label"))
-                    .description(default_hint(cx))
-                    .child(Select::new(&self.default_select).id("settings-default-shell")),
+                hits.mark(
+                    field()
+                        .label(t!("local_shell.default_label"))
+                        .description(default_hint(cx))
+                        .child(Select::new(&self.default_select).id("settings-default-shell")),
+                    "settings-default-shell",
+                    cx,
+                ),
             );
             let last = targets.len().saturating_sub(1);
             let rows = targets.iter().enumerate().map(|(i, target)| {
@@ -324,31 +329,39 @@ impl Render for LocalPage {
                     })
             });
             form = form.child(
-                field()
-                    .label(t!("local_shell.shown_label"))
-                    .description(prose(t!("local_shell.shown_hint")))
-                    .child(
-                        v_flex()
-                            .border_1()
-                            .border_color(border)
-                            .rounded(radius)
-                            .overflow_hidden()
-                            .children(rows),
-                    ),
+                hits.mark(
+                    field()
+                        .label(t!("local_shell.shown_label"))
+                        .description(prose(t!("local_shell.shown_hint")))
+                        .child(
+                            v_flex()
+                                .border_1()
+                                .border_color(border)
+                                .rounded(radius)
+                                .overflow_hidden()
+                                .children(rows),
+                        ),
+                    "settings-shells-shown",
+                    cx,
+                ),
             );
         }
         form.child(
-            field().child(
-                h_flex().child(
-                    Button::new("settings-shell-new")
-                        .outline()
-                        .small()
-                        .icon(IconName::Plus)
-                        .label(t!("local_shell.new"))
-                        .on_click(
-                            cx.listener(|this, _, window, cx| this.open_editor(None, window, cx)),
-                        ),
+            hits.mark(
+                field().child(
+                    h_flex().child(
+                        Button::new("settings-shell-new")
+                            .outline()
+                            .small()
+                            .icon(IconName::Plus)
+                            .label(t!("local_shell.new"))
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.open_editor(None, window, cx)
+                            })),
+                    ),
                 ),
+                "settings-shell-new",
+                cx,
             ),
         )
         .child(

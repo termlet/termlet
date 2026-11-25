@@ -31,6 +31,7 @@ use super::rules::{
 use super::skill::SkillSection;
 use super::tool::ToolSection;
 use crate::prose::{ProseLabel as _, prose};
+use crate::settings::search::Hits;
 use crate::t;
 
 /// “命中规则时”的选项，按界面上的顺序。
@@ -45,6 +46,15 @@ pub(super) struct CustomRule {
     /// 正则不能使用的原因（随输入更新）；数量超出上限另算，见 [`CliPage::custom_errors`]
     error: Option<RuleError>,
     _subscription: Subscription,
+}
+
+/// 这一页默认收起的部分。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum Part {
+    /// 接入方式：termlet 命令、Agent Skill、MCP 服务
+    Access,
+    /// 内置的危险命令规则
+    Builtin,
 }
 
 pub(crate) struct CliPage {
@@ -152,6 +162,23 @@ impl CliPage {
             self.access_open = true;
             cx.notify();
         }
+    }
+
+    /// 默认收起的一部分现在开着没有（设置搜索命中其中的项时展开）。
+    pub(crate) fn part_open(&self, part: Part) -> bool {
+        match part {
+            Part::Access => self.access_open,
+            Part::Builtin => self.builtin_open,
+        }
+    }
+
+    /// 展开或收起默认收起的一部分。
+    pub(crate) fn set_part_open(&mut self, part: Part, open: bool, cx: &mut Context<Self>) {
+        match part {
+            Part::Access => self.access_open = open,
+            Part::Builtin => self.builtin_open = open,
+        }
+        cx.notify();
     }
 
     /// 关掉了几条内置规则（设置中不认识的 ID 不算）。
@@ -268,45 +295,51 @@ impl CliPage {
         )
     }
 
-    fn render_enabled(&self, cx: &mut Context<Self>) -> Field {
+    fn render_enabled(&self, hits: &Hits, cx: &mut Context<Self>) -> Field {
+        let enabled = v_flex()
+            .gap_1()
+            .child(
+                Checkbox::new("cli-enabled")
+                    .label(t!("cli_ui.enabled"))
+                    .checked(self.enabled)
+                    .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                        this.enabled = *checked;
+                        // HTTP 的状态行据此说明要先打开这一项
+                        let http = this.mcp.read(cx).http.clone();
+                        http.update(cx, |http, cx| http.set_cli_enabled(*checked, cx));
+                        cx.notify();
+                    })),
+            )
+            .child(
+                div()
+                    .pl_6()
+                    .text_xs()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(prose(t!("cli_ui.enabled_hint"))),
+            );
+        let auto_start = v_flex()
+            .gap_1()
+            .child(
+                Checkbox::new("cli-auto-start")
+                    .prose_label(t!("cli_ui.auto_start"))
+                    .checked(self.auto_start)
+                    .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                        this.auto_start = *checked;
+                        cx.notify();
+                    })),
+            )
+            .child(
+                div()
+                    .pl_6()
+                    .text_xs()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(prose(t!("cli_ui.auto_start_hint"))),
+            );
         field().child(
             v_flex()
                 .gap_1()
-                .child(
-                    Checkbox::new("cli-enabled")
-                        .label(t!("cli_ui.enabled"))
-                        .checked(self.enabled)
-                        .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                            this.enabled = *checked;
-                            // HTTP 的状态行据此说明要先打开这一项
-                            let http = this.mcp.read(cx).http.clone();
-                            http.update(cx, |http, cx| http.set_cli_enabled(*checked, cx));
-                            cx.notify();
-                        })),
-                )
-                .child(
-                    div()
-                        .pl_6()
-                        .text_xs()
-                        .text_color(cx.theme().muted_foreground)
-                        .child(prose(t!("cli_ui.enabled_hint"))),
-                )
-                .child(
-                    Checkbox::new("cli-auto-start")
-                        .prose_label(t!("cli_ui.auto_start"))
-                        .checked(self.auto_start)
-                        .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                            this.auto_start = *checked;
-                            cx.notify();
-                        })),
-                )
-                .child(
-                    div()
-                        .pl_6()
-                        .text_xs()
-                        .text_color(cx.theme().muted_foreground)
-                        .child(prose(t!("cli_ui.auto_start_hint"))),
-                ),
+                .child(hits.mark(enabled, "cli-enabled", cx))
+                .child(hits.mark(auto_start, "cli-auto-start", cx)),
         )
     }
 
@@ -487,79 +520,108 @@ impl CliPage {
 }
 
 impl Render for CliPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = crate::settings::search::hits(window, cx);
         v_form()
-            .child(self.render_enabled(cx))
+            .child(self.render_enabled(&hits, cx))
             .child(Self::hint(t!("cli_ui.intro"), cx))
             .child(
-                field()
-                    .label(t!("cli_ui.audit.label"))
-                    .description(prose(t!("cli_ui.audit.hint")))
-                    .child(
-                        h_flex().child(
-                            Button::new("cli-open-audit")
-                                .outline()
-                                .small()
-                                .icon(IconName::FileText)
-                                .label(t!("cli_ui.audit.open"))
-                                .on_click(|_, window, cx| super::open_audit(window, cx)),
+                hits.mark(
+                    field()
+                        .label(t!("cli_ui.audit.label"))
+                        .description(prose(t!("cli_ui.audit.hint")))
+                        .child(
+                            h_flex().child(
+                                Button::new("cli-open-audit")
+                                    .outline()
+                                    .small()
+                                    .icon(IconName::FileText)
+                                    .label(t!("cli_ui.audit.open"))
+                                    .on_click(|_, window, cx| super::open_audit(window, cx)),
+                            ),
                         ),
-                    ),
+                    "cli-audit",
+                    cx,
+                ),
             )
             // 接入方式（命令行工具、Agent Skill、MCP）是一次性的安装说明，默认收起
-            .child(field().child(crate::settings::section::fold(
+            .child(hits.mark(
+                field().child(crate::settings::section::fold(
+                    "cli-access",
+                    t!("cli_ui.section.tool"),
+                    self.access_open,
+                    true,
+                    cx.listener(|this, _, _, cx| {
+                        this.access_open = !this.access_open;
+                        cx.notify();
+                    }),
+                    cx,
+                )),
                 "cli-access",
-                t!("cli_ui.section.tool"),
-                self.access_open,
-                true,
-                cx.listener(|this, _, _, cx| {
-                    this.access_open = !this.access_open;
-                    cx.notify();
-                }),
                 cx,
-            )))
+            ))
             .when(self.access_open, |this| {
                 this.child(
-                    field()
-                        .label(t!("cli_ui.tool.label"))
-                        .child(self.tool.clone()),
+                    hits.mark(
+                        field()
+                            .label(t!("cli_ui.tool.label"))
+                            .child(self.tool.clone()),
+                        "cli-tool",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("cli_ui.skill.label"))
-                        .description(prose(t!("cli_ui.skill.hint")))
-                        .child(self.skill.clone()),
+                    hits.mark(
+                        field()
+                            .label(t!("cli_ui.skill.label"))
+                            .description(prose(t!("cli_ui.skill.hint")))
+                            .child(self.skill.clone()),
+                        "cli-skill",
+                        cx,
+                    ),
                 )
                 .child(
-                    field()
-                        .label(t!("cli_ui.mcp.label"))
-                        .description(prose(t!("cli_ui.mcp.hint")))
-                        .child(self.mcp.clone()),
+                    hits.mark(
+                        field()
+                            .label(t!("cli_ui.mcp.label"))
+                            .description(prose(t!("cli_ui.mcp.hint")))
+                            .child(self.mcp.clone()),
+                        "cli-mcp",
+                        cx,
+                    ),
                 )
             })
-            .child(Self::section(t!("cli_ui.section.rules"), cx))
-            .child(Self::hint(t!("cli_ui.rules.hint"), cx))
-            .child(self.render_approval(cx))
-            // 15 条内置规则逐条列出时太长，默认收成一行（写明启用了几条）
-            .child(field().child(crate::settings::section::fold(
-                "cli-builtin-rules",
-                t!(
-                    "cli_ui.rules.builtin_count",
-                    enabled = builtin_rules().count() - self.disabled_builtin(),
-                    total = builtin_rules().count()
-                ),
-                self.builtin_open,
-                false,
-                cx.listener(|this, _, _, cx| {
-                    this.builtin_open = !this.builtin_open;
-                    cx.notify();
-                }),
+            .child(hits.mark(
+                Self::section(t!("cli_ui.section.rules"), cx),
+                "cli-rules",
                 cx,
-            )))
+            ))
+            .child(Self::hint(t!("cli_ui.rules.hint"), cx))
+            .child(hits.mark(self.render_approval(cx), "cli-approval", cx))
+            // 15 条内置规则逐条列出时太长，默认收成一行（写明启用了几条）
+            .child(hits.mark(
+                field().child(crate::settings::section::fold(
+                    "cli-builtin-rules",
+                    t!(
+                        "cli_ui.rules.builtin_count",
+                        enabled = builtin_rules().count() - self.disabled_builtin(),
+                        total = builtin_rules().count()
+                    ),
+                    self.builtin_open,
+                    false,
+                    cx.listener(|this, _, _, cx| {
+                        this.builtin_open = !this.builtin_open;
+                        cx.notify();
+                    }),
+                    cx,
+                )),
+                "cli-builtin-rules",
+                cx,
+            ))
             .when(self.builtin_open, |this| {
                 this.child(self.render_builtin(cx))
             })
-            .child(self.render_custom(cx))
-            .child(self.render_test(cx))
+            .child(hits.mark(self.render_custom(cx), "cli-custom-rules", cx))
+            .child(hits.mark(self.render_test(cx), "cli-rule-test", cx))
     }
 }

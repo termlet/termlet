@@ -28,9 +28,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
-use gpui_kit::{
-    App, AppContext as _, Context, Entity, Global, SharedString, Task, Window, actions,
-};
+use gpui_kit::{App, AppContext as _, Context, Entity, Global, Task, Window, actions};
 use termlet_core::applock::{AppLock, LockPlatform, LockStatus, Verification};
 use termlet_core::crash::CrashLog;
 use termlet_core::diag::Diagnostics;
@@ -43,7 +41,7 @@ use termlet_core::update::{
 use crate::app_state::AppState;
 use crate::t;
 
-pub(crate) use about::{AboutExtras, AboutPart, app_info};
+pub(crate) use about::{AboutExtras, AboutPart, app_info, crash_report_shown};
 pub(crate) use crash::{check_crashes, open_crash_log};
 pub(crate) use lock_screen::LockScreen;
 pub(crate) use security::SecurityPage;
@@ -575,11 +573,6 @@ pub(crate) fn sync_lock_model(cx: &mut App) {
     };
     let model = services.lock_model.clone();
     model.update(cx, |model, cx| model.set(status, cx));
-}
-
-/// 设置导航中“安全”页的名称。
-pub(crate) fn security_title() -> SharedString {
-    t!("lock_ui.nav.security")
 }
 
 /// 登记退出前的确认（“重启并安装”用），见 [`QuitGuard`]。

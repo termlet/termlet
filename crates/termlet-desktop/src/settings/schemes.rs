@@ -691,7 +691,8 @@ impl SchemesPage {
 }
 
 impl Render for SchemesPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = super::search::hits(window, cx);
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let dark_ui = theme.is_dark();
@@ -710,105 +711,119 @@ impl Render for SchemesPage {
             .id("settings-schemes")
             .gap_4()
             .child(
-                v_flex()
-                    .gap_1()
-                    .child(
-                        h_flex()
-                            .gap_3()
-                            .items_start()
-                            .child(div().flex_1().child(
-                                field().label(t!("schemes.slot_light")).child(
-                                    Select::new(&self.light_select).id("settings-scheme-light"),
-                                ),
-                            ))
-                            .child(div().flex_1().child(
-                                field().label(t!("schemes.slot_dark")).child(
-                                    Select::new(&self.dark_select).id("settings-scheme-dark"),
-                                ),
-                            )),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(muted)
-                            .child(prose(t!("schemes.slots_hint"))),
-                    ),
+                hits.mark(
+                    v_flex()
+                        .gap_1()
+                        .child(
+                            h_flex()
+                                .gap_3()
+                                .items_start()
+                                .child(div().flex_1().child(
+                                    field().label(t!("schemes.slot_light")).child(
+                                        Select::new(&self.light_select).id("settings-scheme-light"),
+                                    ),
+                                ))
+                                .child(div().flex_1().child(
+                                    field().label(t!("schemes.slot_dark")).child(
+                                        Select::new(&self.dark_select).id("settings-scheme-dark"),
+                                    ),
+                                )),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(prose(t!("schemes.slots_hint"))),
+                        ),
+                    "settings-scheme-slots",
+                    cx,
+                ),
             )
             .child(
-                v_flex()
-                    .gap_1()
-                    .child(
-                        Checkbox::new("settings-min-contrast")
-                            .label(t!("schemes.min_contrast"))
-                            .checked(self.min_contrast)
-                            .on_change(cx.listener(|this, checked: &bool, _, cx| {
-                                this.min_contrast = *checked;
-                                cx.notify();
-                            })),
-                    )
-                    .child(
-                        div()
-                            .pl_6()
-                            .text_xs()
-                            .text_color(muted)
-                            .child(prose(t!("schemes.min_contrast_hint"))),
-                    ),
-            )
-            .child(
-                h_flex()
-                    .gap_2()
-                    .child(
-                        div()
-                            .w(rems(12.))
-                            // 搜索框中的 Enter（设置把它转成 Confirm）什么也不做
-                            .on_action(|_: &gpui_kit::base::actions::Confirm, _, _| {})
-                            .child(
-                                Input::new(&self.query)
-                                    .small()
-                                    .prefix(Icon::new(IconName::Search).xsmall().text_color(muted))
-                                    .id("scheme-search"),
-                            ),
-                    )
-                    .child(
-                        TabBar::new("scheme-filter")
-                            .segmented()
-                            .small()
-                            .selected_index(filter_ix)
-                            .on_click(cx.listener(|this, ix: &usize, _, cx| {
-                                if let Some(filter) = Filter::ALL.get(*ix) {
-                                    this.filter = *filter;
+                hits.mark(
+                    v_flex()
+                        .gap_1()
+                        .child(
+                            Checkbox::new("settings-min-contrast")
+                                .label(t!("schemes.min_contrast"))
+                                .checked(self.min_contrast)
+                                .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                                    this.min_contrast = *checked;
                                     cx.notify();
-                                }
-                            }))
-                            .child(Tab::new().label(t!("schemes.filter.all")))
-                            .child(Tab::new().label(t!("schemes.filter.light")))
-                            .child(Tab::new().label(t!("schemes.filter.dark"))),
-                    )
-                    .child(div().flex_1())
-                    .child(
-                        Button::new("scheme-import")
-                            .outline()
-                            .small()
-                            .icon(IconName::Download)
-                            .label(t!("schemes.import"))
-                            .disabled(full)
-                            .when(full, |this| {
-                                this.tooltip(t!("schemes.full", count = MAX_CUSTOM_SCHEMES))
-                            })
-                            .on_click(cx.listener(|this, _, window, cx| {
-                                this.open_import(import::Source::File, window, cx)
-                            })),
-                    )
-                    .child(
-                        Button::new("scheme-export")
-                            .outline()
-                            .small()
-                            .icon(IconName::Upload)
-                            .label(t!("schemes.export"))
-                            .on_click(cx.listener(move |this, _, window, cx| {
-                                this.open_export(custom_ids.clone(), window, cx)
-                            })),
-                    ),
+                                })),
+                        )
+                        .child(
+                            div()
+                                .pl_6()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(prose(t!("schemes.min_contrast_hint"))),
+                        ),
+                    "settings-min-contrast",
+                    cx,
+                ),
+            )
+            .child(
+                hits.mark(
+                    h_flex()
+                        .gap_2()
+                        .child(
+                            div()
+                                .w(rems(12.))
+                                // 搜索框中的 Enter（设置把它转成 Confirm）什么也不做
+                                .on_action(|_: &gpui_kit::base::actions::Confirm, _, _| {})
+                                .child(
+                                    Input::new(&self.query)
+                                        .small()
+                                        .prefix(
+                                            Icon::new(IconName::Search).xsmall().text_color(muted),
+                                        )
+                                        .id("scheme-search"),
+                                ),
+                        )
+                        .child(
+                            TabBar::new("scheme-filter")
+                                .segmented()
+                                .small()
+                                .selected_index(filter_ix)
+                                .on_click(cx.listener(|this, ix: &usize, _, cx| {
+                                    if let Some(filter) = Filter::ALL.get(*ix) {
+                                        this.filter = *filter;
+                                        cx.notify();
+                                    }
+                                }))
+                                .child(Tab::new().label(t!("schemes.filter.all")))
+                                .child(Tab::new().label(t!("schemes.filter.light")))
+                                .child(Tab::new().label(t!("schemes.filter.dark"))),
+                        )
+                        .child(div().flex_1())
+                        .child(
+                            Button::new("scheme-import")
+                                .outline()
+                                .small()
+                                .icon(IconName::Download)
+                                .label(t!("schemes.import"))
+                                .disabled(full)
+                                .when(full, |this| {
+                                    this.tooltip(t!("schemes.full", count = MAX_CUSTOM_SCHEMES))
+                                })
+                                .on_click(cx.listener(|this, _, window, cx| {
+                                    this.open_import(import::Source::File, window, cx)
+                                })),
+                        )
+                        .child(
+                            Button::new("scheme-export")
+                                .outline()
+                                .small()
+                                .icon(IconName::Upload)
+                                .label(t!("schemes.export"))
+                                .on_click(cx.listener(move |this, _, window, cx| {
+                                    this.open_export(custom_ids.clone(), window, cx)
+                                })),
+                        ),
+                    "settings-scheme-files",
+                    cx,
+                ),
             )
             .child(if cards.is_empty() {
                 // 搜索不到：给出导入其他终端的配色、读取本机已装客户端的配色这两条路

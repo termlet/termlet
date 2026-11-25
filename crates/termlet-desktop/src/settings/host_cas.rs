@@ -135,39 +135,39 @@ fn key_summary(public_key: &str) -> String {
 }
 
 impl Render for HostCasSection {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hits = super::search::hits(window, cx);
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let this = cx.entity().downgrade();
-        v_flex()
+        let title = h_flex()
             .gap_2()
             .child(
-                h_flex()
-                    .gap_2()
-                    .child(
-                        div()
-                            .flex_1()
-                            .text_sm()
-                            .font_medium()
-                            .child(t!("known_hosts.ca_title")),
-                    )
-                    .child(
-                        Button::new("host-ca-import")
-                            .ghost()
-                            .small()
-                            .icon(IconName::FileDown)
-                            .label(t!("known_hosts.ca_import"))
-                            .on_click(cx.listener(|this, _, window, cx| this.import(window, cx))),
-                    )
-                    .child(
-                        Button::new("host-ca-add")
-                            .ghost()
-                            .small()
-                            .icon(IconName::Plus)
-                            .label(t!("known_hosts.ca_add"))
-                            .on_click(move |_, window, cx| open_add(this.clone(), window, cx)),
-                    ),
+                div()
+                    .flex_1()
+                    .text_sm()
+                    .font_medium()
+                    .child(t!("known_hosts.ca_title")),
             )
+            .child(
+                Button::new("host-ca-import")
+                    .ghost()
+                    .small()
+                    .icon(IconName::FileDown)
+                    .label(t!("known_hosts.ca_import"))
+                    .on_click(cx.listener(|this, _, window, cx| this.import(window, cx))),
+            )
+            .child(
+                Button::new("host-ca-add")
+                    .ghost()
+                    .small()
+                    .icon(IconName::Plus)
+                    .label(t!("known_hosts.ca_add"))
+                    .on_click(move |_, window, cx| open_add(this.clone(), window, cx)),
+            );
+        v_flex()
+            .gap_2()
+            .child(hits.mark(title, "host-cas", cx))
             .child(
                 div()
                     .text_xs()
