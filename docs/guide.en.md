@@ -11,7 +11,7 @@
 - [Installation](#installation): [Downloads](#downloads) · [Windows](#windows) · [Windows portable](#windows-portable) · [macOS](#macos) · [Linux](#linux) · [Data folder](#data-folder) · [Lost master key](#lost-master-key) · [Checking your download](#checking-your-download)
 - [Hosts](#hosts): [Host list](#host-list) · [Identifying the remote system](#identifying-the-remote-system) · [Host dialog](#host-dialog) · [Copying the address and duplicating hosts](#copying-the-address-and-duplicating-hosts) · [Profiles and group defaults](#profiles-and-group-defaults) · [Test connection](#test-connection) · [Telnet and serial ports](#telnet-and-serial-ports) · [Importing hosts](#importing-hosts)
 - [Connection and authentication](#connection-and-authentication): [Authentication](#authentication) · [OpenSSH certificates](#openssh-certificates) · [Verification codes (TOTP)](#verification-codes-totp) · [Proxy](#proxy) · [Proxy command (ProxyCommand)](#proxy-command-proxycommand) · [Jump hosts](#jump-hosts) · [Legacy devices](#legacy-devices) · [Agent forwarding](#agent-forwarding) · [X11 forwarding](#x11-forwarding) · [Host keys](#host-keys) · [Quick connect](#quick-connect) · [IPv6 and dual stack](#ipv6-and-dual-stack) · [Connection not responding](#connection-not-responding) · [Automatic reconnection](#automatic-reconnection)
-- [Terminal](#terminal): [Shortcuts](#shortcuts) · [Command palette](#command-palette) · [Tab menu and right-click](#tab-menu-and-right-click) · [Paste protection](#paste-protection) · [sudo password filling](#sudo-password-filling) · [Session logs](#session-logs) · [Session recording and playback](#session-recording-and-playback) · [New output and notifications](#new-output-and-notifications) · [Pasting screenshots](#pasting-screenshots) · [Encoding](#encoding) · [Commands after login](#commands-after-login) · [Snippets](#snippets) · [Command history](#command-history) · [Command suggestions](#command-suggestions) · [Tabs, panes and workspaces](#tabs-panes-and-workspaces) · [Vertical tabs](#vertical-tabs) · [Sync input](#sync-input) · [Compose bar (broadcast input)](#compose-bar-broadcast-input) · [Keyword highlighting](#keyword-highlighting) · [Terminal color schemes](#terminal-color-schemes) · [Resource monitor and network latency](#resource-monitor-and-network-latency) · [File transfers in the terminal](#file-transfers-in-the-terminal) · [Reconnecting and closing](#reconnecting-and-closing)
+- [Terminal](#terminal): [Shortcuts](#shortcuts) · [Command palette](#command-palette) · [Tab menu and right-click](#tab-menu-and-right-click) · [Paste protection](#paste-protection) · [sudo password filling](#sudo-password-filling) · [Session logs](#session-logs) · [Session recording and playback](#session-recording-and-playback) · [New output and notifications](#new-output-and-notifications) · [Pasting screenshots](#pasting-screenshots) · [Encoding](#encoding) · [Commands after login](#commands-after-login) · [Snippets](#snippets) · [Command history](#command-history) · [Command suggestions](#command-suggestions) · [Tabs, panes and workspaces](#tabs-panes-and-workspaces) · [Vertical tabs](#vertical-tabs) · [Sync input](#sync-input) · [Compose bar (broadcast input)](#compose-bar-broadcast-input) · [Batch run tab](#batch-run-tab) · [Keyword highlighting](#keyword-highlighting) · [Terminal color schemes](#terminal-color-schemes) · [Resource monitor and network latency](#resource-monitor-and-network-latency) · [File transfers in the terminal](#file-transfers-in-the-terminal) · [Reconnecting and closing](#reconnecting-and-closing)
 - [Local terminals and WSL](#local-terminals-and-wsl): [Local shells](#local-shells) · [WSL](#wsl)
 - [SFTP](#sftp): [Opening](#opening) · [Opening as root](#opening-as-root) · [Remote file name encoding](#remote-file-name-encoding) · [Two panes](#two-panes) · [Following the terminal folder](#following-the-terminal-folder) · [File operations](#file-operations) · [Keyboard](#keyboard) · [Browsing](#browsing) · [Columns](#columns) · [Changing permissions](#changing-permissions) · [Transfers](#transfers) · [Clearing and summaries](#clearing-and-summaries) · [Transfer progress on the taskbar](#transfer-progress-on-the-taskbar) · [Resuming and reconnecting](#resuming-and-reconnecting) · [Editing remote files](#editing-remote-files) · [Opening in VS Code / Zed](#opening-in-vs-code--zed) · [SCP when the server has no SFTP](#scp-when-the-server-has-no-sftp)
 - [Keys](#keys): [Importing and generating keys](#importing-and-generating-keys) · [Deploying public keys](#deploying-public-keys) · [Exporting private keys](#exporting-private-keys) · [Using keys in hosts](#using-keys-in-hosts) · [Certificates](#certificates)
@@ -744,10 +744,26 @@ Default shortcuts:
   - or the ones you pick.
 - Enter sends, Shift+Enter adds a line, ↑ ↓ go through the commands you sent.
 - It is checked against the dangerous command rules first and asks for confirmation on a match.
-- **Run and Compare** runs it in each terminal and collects the output:
-  - identical output (with the exit code) is grouped together;
-  - the other groups show the lines that differ from most hosts, which makes misconfigured machines easy to spot;
-  - it needs bash or sh on the remote; local Windows terminals, Telnet and serial ports are not supported.
+- **Run and Compare** runs it in the chosen terminals and shows the results in a [Batch run](#batch-run-tab) tab (targeting those terminals) instead of a dialog; running again in the same window reuses that tab unless it's still running.
+
+### Batch run tab
+
+The compose bar, sync input and snippets only *send* text, and you read the results in each terminal; to run something on several targets and see the results merged, use a batch run.
+
+- Open it with "Batch Run…" in a group's context menu (targets the hosts in the group, subgroups included) or in the command palette (choose hosts first); the compose bar's "Run and Compare" opens it too.
+- Targets:
+  - **Hosts**: runs over new connections without opening terminals, with the same credentials as a terminal (hosts don't need "Allow AI tools and scripts to use this host"). The target button opens "Choose Hosts", where you pick them by group (subgroups included), tag or search; Telnet and serial hosts can't be picked, and those in a group are listed as "Not run". It can't ask anything: hosts whose fingerprint isn't confirmed yet, or that need a password or verification code typed in, are listed as "Unreachable"; use "Open in Terminal" in the results to connect once, then try again.
+  - **Open terminals**: runs in the terminals (needs bash or sh, with the terminal at a prompt), with their current directory and environment, which is the way to reach hosts behind a bastion; local Windows terminals, Telnet and serial ports are not supported. Switching to this target picks all connected terminals in the window by default.
+- Command: it can span several lines; "Insert Snippet" puts a snippet at the cursor (filling in its parameters first); Ctrl+Enter (⌘↩ on macOS) or "Run and Compare" runs it, and ↑ on the first line or ↓ on the last recalls the commands run in that tab.
+- The command is checked against the dangerous command rules once before it runs, and a confirmation on a match says how many targets. Up to 10 run at a time with no time limit, and "Stop" stops them (SIGTERM for commands on hosts, Ctrl+C in terminals).
+- Results:
+  - a summary line with the count per status (succeeded, failed, unreachable, timed out, canceled, not run, as in the command-line tool) and the time taken;
+  - targets with the same output and exit code are merged into a group; the first group shows its full output and the others show only the lines that differ from it (you can switch to the full output);
+  - targets without an exit code (unreachable, canceled, not run) are listed under "Didn't succeed" with the reason;
+  - "Retry Unsuccessful" runs the command again on just those, and "Copy Results" copies the command, the groups and the reasons as text;
+  - up to 256 KB of output is kept per target; only the latest run is kept, and nothing is saved.
+- Terminals stay usable while it runs; the tab can move to another window; closing the tab or window while it runs asks first, and closing stops it.
+- The audit log gets one entry per target with the source "Batch run", and every target of a run shares a batch ID (open terminals that couldn't run the command, for example because they were busy, aren't recorded).
 
 ### Keyword highlighting
 
@@ -1622,7 +1638,7 @@ Default shortcuts:
   | `backup`, `backup_scheduled` | A full backup created or restored by hand; a scheduled backup made |
   | `app_lock`, `master_password` | The app lock unlocked; unlocked with the master password |
   | `import_ssh_config`, `import_xshell`, `import_finalshell`, `import_mobaxterm`, `import_tabby`, `import_termora`, `import_windterm`, `import_electerm`, `import_netcatty`, `import_shellrs`, `import_nyaterm`, `import_nyaterm_snippets`, `import_termlet_file` | Imported from that source (`import_nyaterm_snippets` is quick commands exported from NyaTerm, `import_termlet_file` is a Termlet host file) |
-  | `batch_exec` | Ran a batch (`exec -g` and the like on the command line, `run_command_on_hosts` over MCP) |
+  | `batch_exec` | Ran a batch (`exec -g` and the like on the command line, `run_command_on_hosts` over MCP, the Batch run tab) |
 
 ### Diagnostics
 

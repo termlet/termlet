@@ -496,9 +496,13 @@ pub fn batch_group_title(
 }
 
 /// 没有成功的一台：`web-9：连不上（connect_failed：Connection refused）`。退出码不是 0 的不在这里（在输出的分组中）。
+/// 没有执行的（不是 SSH 主机、达到失败的上限）原因就是说明本身，不再加上错误码的通用说明。
 pub fn batch_problem(result: &BatchHostResult, lang: Lang) -> String {
     let status = batch_status(result.status, lang);
     let reason = match &result.error {
+        Some(error) if result.status == BatchStatus::Skipped && !error.message.is_empty() => {
+            error.message.clone()
+        }
         Some(error) => human_text(lang, &error.code, &error.message),
         None => String::new(),
     };
@@ -532,6 +536,43 @@ mod tests {
             human("cli_disabled").unwrap().zh
         );
         assert_eq!(human_text(Lang::En, CODE_USAGE, "bad"), "bad");
+    }
+
+    // 没有成功的一台：没有执行的只写说明（不是 SSH 主机），连不上的写错误码的说明与补充
+    #[test]
+    fn batch_problems_explain_the_reason_once() {
+        let skipped = BatchHostResult {
+            name: "sw-1".into(),
+            status: BatchStatus::Skipped,
+            error: Some(termlet_proto::ErrorBody::new(
+                ErrorCode::HostNotAllowed,
+                "不是 SSH 主机",
+            )),
+            ..Default::default()
+        };
+        assert_eq!(
+            batch_problem(&skipped, Lang::Zh),
+            "sw-1：未执行（不是 SSH 主机）"
+        );
+        let unallowed = BatchHostResult {
+            error: Some(termlet_proto::ErrorBody::new(ErrorCode::HostNotAllowed, "")),
+            ..skipped.clone()
+        };
+        assert!(batch_problem(&unallowed, Lang::Zh).contains("允许"));
+        let unreachable = BatchHostResult {
+            name: "web-3".into(),
+            status: BatchStatus::Unreachable,
+            error: Some(termlet_proto::ErrorBody::new(
+                ErrorCode::AuthFailed,
+                "termlet@web-3",
+            )),
+            ..Default::default()
+        };
+        let text = batch_problem(&unreachable, Lang::Zh);
+        assert!(
+            text.starts_with("web-3：连不上（") && text.contains("termlet@web-3"),
+            "{text}"
+        );
     }
 
     // 快过期的证书：写到分钟的失效时间、还剩几分钟，跳板机的写明哪一台

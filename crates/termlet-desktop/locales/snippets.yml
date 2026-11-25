@@ -323,6 +323,24 @@ picker.submit_compose:
   zh-TW: 放到撰寫列
   ja: コンポーズバーに入れる
   ko: 작성 표시줄에 넣기
+picker.submit_insert_command:
+  zh-CN: 插入
+  en: Insert
+  zh-TW: 插入
+  ja: 挿入
+  ko: 삽입
+picker.hint_insert_command:
+  zh-CN: Enter 插入到命令中
+  en: Enter inserts it into the command
+  zh-TW: Enter 插入到指令中
+  ja: Enter でコマンドに挿入
+  ko: Enter로 명령에 삽입
+picker.placeholder_snippets:
+  zh-CN: 搜索快捷命令
+  en: Search snippets
+  zh-TW: 搜尋快速指令
+  ja: スニペットを検索
+  ko: 스니펫 검색
 snippets.danger_title:
   zh-CN: 要执行这条危险命令吗？
   en: Run this dangerous command?

@@ -3,7 +3,7 @@
 //! - 发送到：当前 Tab（显示着的全部窗格，同步输入的网格中是网格里的全部）、同一主机、全部终端，或自选。
 //! - Enter 发送（每行加回车，不用括号粘贴），Shift+Enter 换行，↑ ↓ 翻看这次打开以来发送过的命令（最多 50 条），Esc 关闭。
 //! - 发送前总是检查危险命令规则（与粘贴、CLI 共用），命中时先确认。
-//! - “执行并对比”在各终端中执行（见 [`crate::terminal_panel::TerminalPanel::run_command`]），结果分组显示。
+//! - “执行并对比”交给批量执行 Tab（[`crate::batch_run`]）：在选中的终端里执行，结果在那个 Tab 中分组对比。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
@@ -19,7 +19,6 @@ use gpui_kit::{
 use termlet_core::guard::{Guard, find_danger};
 
 use crate::app_state::AppState;
-use crate::batch_results::{self, HostResult};
 use crate::i18n;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
@@ -51,7 +50,6 @@ pub struct ComposeBar {
     history: Vec<String>,
     /// 正在翻看的历史；`None` 为在最新之后（编辑中的内容）
     cursor: Option<usize>,
-    busy: bool,
     _intercept: Subscription,
 }
 
@@ -92,7 +90,6 @@ impl ComposeBar {
             mode: Mode::View,
             history: Vec::new(),
             cursor: None,
-            busy: false,
             _intercept: intercept,
         }
     }
@@ -178,9 +175,6 @@ impl ComposeBar {
 
     /// 发送：先检查危险命令；成功后记入历史、清空输入框。
     fn send(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.busy {
-            return;
-        }
         let lines = self.lines(cx);
         let targets = self.targets(window, cx);
         if lines.is_empty() || targets.is_empty() {
@@ -207,68 +201,30 @@ impl ComposeBar {
         });
     }
 
-    /// 执行并对比：各终端同时执行，结果框实时显示。
+    /// 执行并对比：交给批量执行 Tab（目标是现在选中的终端，立即执行），结果在那里看；危险命令由它检查。
     fn compare(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.busy {
-            return;
-        }
         let lines = self.lines(cx);
         let targets = self.targets(window, cx);
         if lines.is_empty() || targets.is_empty() {
             return;
         }
-        let this = cx.entity().downgrade();
-        let checked = lines.clone();
-        self.confirm_danger(&checked, targets.len(), window, cx, move |window, cx| {
-            tracing::info!(
-                lines = lines.len(),
-                targets = targets.len(),
-                "撰写栏：执行并对比"
-            );
-            termlet_core::usage::mark(termlet_core::usage::Feature::Compose);
-            let command = lines.join("\n");
-            let list: Vec<(EntityId, SharedString)> = targets
-                .iter()
-                .map(|p| (p.entity_id(), p.read(cx).name().clone()))
-                .collect();
-            let results = batch_results::open(command.clone().into(), list, window, cx);
-            let _ = this.update(cx, |this, cx| {
-                this.busy = true;
-                cx.notify();
-            });
-            let jobs: Vec<_> = targets
-                .iter()
-                .map(|panel| {
-                    let id = panel.entity_id();
-                    let title = panel.read(cx).name().clone();
-                    let job = panel.update(cx, |p, cx| p.run_command(command.clone(), cx));
-                    (id, title, job)
-                })
-                .collect();
-            let count = jobs.len();
-            let done = std::rc::Rc::new(std::cell::Cell::new(0usize));
-            for (id, title, job) in jobs {
-                let (results, this, done) = (results.downgrade(), this.clone(), done.clone());
-                let command = command.clone();
-                window
-                    .spawn(cx, async move |cx| {
-                        let outcome = job.await.map(|out| (out.exit_code, out.output));
-                        let _ = cx.update(|window, cx| {
-                            let _ = results
-                                .update(cx, |r, cx| r.push(HostResult { id, title, outcome }, cx));
-                            done.set(done.get() + 1);
-                            // 全部返回后才记入历史、清空输入框（即使全部失败）
-                            if done.get() == count {
-                                let _ = this.update(cx, |this, cx| {
-                                    this.busy = false;
-                                    this.remember(command);
-                                    this.input.update(cx, |s, cx| s.set_value("", window, cx));
-                                    cx.notify();
-                                });
-                            }
-                        });
-                    })
-                    .detach();
+        tracing::info!(
+            lines = lines.len(),
+            targets = targets.len(),
+            "撰写栏：执行并对比（在批量执行 Tab 中）"
+        );
+        termlet_core::usage::mark(termlet_core::usage::Feature::Compose);
+        let command = lines.join("\n");
+        self.remember(command.clone());
+        self.input.update(cx, |s, cx| s.set_value("", window, cx));
+        cx.notify();
+        let workspace = self.workspace.clone();
+        // 等这次更新结束再打开（其中要更新工作区与新的 Tab）
+        window.defer(cx, move |window, cx| {
+            if let Some(workspace) = workspace.upgrade() {
+                workspace.update(cx, |w, cx| {
+                    w.run_batch_in_terminals(targets, &command, window, cx)
+                });
             }
         });
     }
@@ -440,8 +396,7 @@ impl Render for ComposeBar {
                     .icon(IconName::GitCompare)
                     .label(t!("compose.compare"))
                     .tooltip(t!("compose.compare_hint"))
-                    .disabled(empty || self.busy)
-                    .loading(self.busy)
+                    .disabled(empty)
                     .on_click(cx.listener(|this, _, window, cx| this.compare(window, cx))),
             )
             .child(
@@ -449,7 +404,7 @@ impl Render for ComposeBar {
                     .primary()
                     .small()
                     .label(t!("compose.send"))
-                    .disabled(empty || self.busy)
+                    .disabled(empty)
                     .on_click(cx.listener(|this, _, window, cx| this.send(window, cx))),
             )
             .child(

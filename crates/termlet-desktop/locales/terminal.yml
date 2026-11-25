@@ -455,6 +455,12 @@ close.quit_unsaved:
   zh-TW: "%{count} 個檔案有未儲存的變更，結束後變更將會遺失。"
   ja: "%{count} 個のファイルに保存されていない変更があります。終了すると変更は失われます。"
   ko: 파일 %{count}개에 저장하지 않은 변경 내용이 있습니다. 종료하면 변경 내용이 사라집니다.
+close.batch_running:
+  zh-CN: "%{count} 个批量执行还没有结束，关闭后会停止。"
+  en: "%{count} batch runs haven't finished and will stop."
+  zh-TW: "%{count} 個批次執行還沒有結束，關閉後會停止。"
+  ja: "%{count} 個の一括実行がまだ終わっていません。閉じると停止します。"
+  ko: 일괄 실행 %{count}개가 아직 끝나지 않았습니다. 닫으면 중지됩니다.
 close.quit_confirm:
   zh-CN: 退出
   en: Quit

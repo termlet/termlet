@@ -136,7 +136,7 @@ pub fn start(cx: &mut App) {
         match CliService::start(config) {
             Ok((started, events)) => {
                 // MCP 的 HTTP 接入按界面语言写工具结果中的说明（界面语言在这之前已经设好）
-                started.set_language(mcp_language(i18n::language()));
+                started.set_language(i18n::core_lang(i18n::language()));
                 service = Some(started);
                 cx.spawn(async move |cx| {
                     while let Ok(event) = events.recv().await {
@@ -186,20 +186,10 @@ pub fn start(cx: &mut App) {
     .detach();
 }
 
-/// 界面语言对应的 MCP 工具说明的语言：简体、繁体中文用中文，其余用英文（核心中的说明只有这两种）。
-fn mcp_language(language: i18n::Language) -> termlet_core::proto::Lang {
-    match language {
-        i18n::Language::ZhCn | i18n::Language::ZhTw => termlet_core::proto::Lang::Zh,
-        i18n::Language::En | i18n::Language::Ja | i18n::Language::Ko => {
-            termlet_core::proto::Lang::En
-        }
-    }
-}
-
 /// 界面语言变了：MCP 的 HTTP 接入的工具说明随之换（命名管道上的请求按命令行工具自己的语言）。
 pub(crate) fn set_language(language: i18n::Language, cx: &App) {
     if let Some(service) = cx.try_global::<Bridge>().and_then(|b| b.service.as_ref()) {
-        service.set_language(mcp_language(language));
+        service.set_language(i18n::core_lang(language));
     }
 }
 

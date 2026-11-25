@@ -239,6 +239,12 @@ palette.op.compose:
   zh-TW: 開啟撰寫列
   ja: コンポーズバーを開く
   ko: 작성 표시줄 열기
+palette.op.batch_run:
+  zh-CN: 批量执行…
+  en: Batch Run…
+  zh-TW: 批次執行…
+  ja: 一括実行…
+  ko: 일괄 실행…
 palette.op.host_tools:
   zh-CN: 打开主机工具
   en: Show Host Tools
@@ -323,3 +329,9 @@ palette.tab_detail_replay:
   zh-TW: "重播"
   ja: "再生"
   ko: "재생"
+palette.tab_detail_batch:
+  zh-CN: 批量执行
+  en: Batch run
+  zh-TW: 批次執行
+  ja: 一括実行
+  ko: 일괄 실행

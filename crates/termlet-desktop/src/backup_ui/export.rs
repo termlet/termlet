@@ -2,7 +2,7 @@
 //! 是否包含端口转发、是否包含凭据（含凭据时设置两次一致的密码，整个文件用它加密），看过将导出的数量（含一并导出的
 //! 跳板机）后选择保存位置。导出后说明没有导出的 Telnet、串口主机（ssh_config 只能描述 SSH 主机）。
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -27,12 +27,12 @@ use termlet_core::id::{GroupId, HostId};
 use termlet_core::model::{Group, Host};
 use termlet_core::runtime;
 use termlet_core::secret::SecretString;
-use termlet_core::store::{Record, Store};
+use termlet_core::store::Store;
 
 use super::{PasswordCheck, PasswordPair, errors};
 use crate::app_state::AppState;
 use crate::prose::{ProseLabel as _, prose};
-use crate::sidebar::rows::{self, RowKey, RowKind, RowOptions};
+use crate::sidebar::rows::{TreeRow, group_members, tree_rows};
 use crate::t;
 
 /// 主机树中一行的高度（rem）。
@@ -65,82 +65,6 @@ pub(super) fn open(hosts: Vec<HostId>, window: &mut Window, cx: &mut App) -> Ent
             .on_ok(on_ok)
     });
     view
-}
-
-/// 主机树中的一行（不在分组中的主机在最外层，与侧边栏相同）。
-#[derive(Clone, Debug, PartialEq)]
-enum TreeRow {
-    Group {
-        id: GroupId,
-        name: String,
-        depth: usize,
-    },
-    Host {
-        id: HostId,
-        name: String,
-        address: String,
-        depth: usize,
-    },
-}
-
-/// 由侧边栏的行生成：分组树全部展开；收藏只是另一种列法，不重复列出。
-fn tree_rows(groups: &[Record<Group>], hosts: &[Record<Host>]) -> Vec<TreeRow> {
-    let expanded: BTreeSet<String> = groups
-        .iter()
-        .map(|g| g.id.as_str().to_string())
-        .chain([rows::HOSTS_SECTION.to_string()])
-        .collect();
-    let options = RowOptions {
-        expanded: &expanded,
-        workspaces: &[],
-        locals: &[],
-        query: "",
-        show_address: true,
-        dragging: false,
-    };
-    rows::build_rows(groups, hosts, &options)
-        .into_iter()
-        .filter_map(|row| match (row.key, row.kind) {
-            (RowKey::Group(id), RowKind::Group { name, .. }) => Some(TreeRow::Group {
-                id,
-                name,
-                depth: row.depth,
-            }),
-            (
-                RowKey::Host {
-                    id,
-                    favorite: false,
-                },
-                RowKind::Host { name, address, .. },
-            ) => Some(TreeRow::Host {
-                id,
-                name,
-                address: address.unwrap_or_default(),
-                depth: row.depth,
-            }),
-            _ => None,
-        })
-        .collect()
-}
-
-/// 每个分组（含各级子分组）中的主机：分组行之后、缩进比它深的主机行。
-fn group_members(rows: &[TreeRow]) -> HashMap<GroupId, Vec<HostId>> {
-    let mut members = HashMap::new();
-    for (i, row) in rows.iter().enumerate() {
-        let TreeRow::Group { id, depth, .. } = row else {
-            continue;
-        };
-        let mut hosts = Vec::new();
-        for next in &rows[i + 1..] {
-            match next {
-                TreeRow::Group { depth: d, .. } if d > depth => {}
-                TreeRow::Host { id, depth: d, .. } if d > depth => hosts.push(id.clone()),
-                _ => break,
-            }
-        }
-        members.insert(id.clone(), hosts);
-    }
-    members
 }
 
 /// 导出完成后的说明。
@@ -213,7 +137,7 @@ impl ExportDialog {
     fn load_rows(&mut self) {
         let groups = self.store.list::<Group>();
         let hosts = self.store.list::<Host>();
-        self.rows = tree_rows(&groups, &hosts);
+        self.rows = tree_rows(&groups, &hosts, "");
         self.members = group_members(&self.rows);
         self.order = self
             .rows
@@ -396,6 +320,7 @@ impl ExportDialog {
                 name,
                 address,
                 depth,
+                ..
             } => {
                 let host = id.clone();
                 Checkbox::new(super::element_id("export-host", id.as_str()))
@@ -772,7 +697,7 @@ mod tests {
             .unwrap();
         store.create(group("空"), None, Position::Last).unwrap();
 
-        let rows = tree_rows(&store.list::<Group>(), &store.list::<Host>());
+        let rows = tree_rows(&store.list::<Group>(), &store.list::<Host>(), "");
         let hosts: Vec<&HostId> = rows
             .iter()
             .filter_map(|r| match r {

@@ -160,6 +160,15 @@ pub fn set_language(language: Language) {
     TEST_LANGUAGE.with(|l| l.set(language));
 }
 
+/// 界面语言对应的核心的说明的语言（MCP 工具的说明、批量执行的出错说明）：简体、繁体中文用中文，其余用英文（核心中的
+/// 说明只有这两种）。
+pub fn core_lang(language: Language) -> termlet_core::proto::Lang {
+    match language {
+        Language::ZhCn | Language::ZhTw => termlet_core::proto::Lang::Zh,
+        Language::En | Language::Ja | Language::Ko => termlet_core::proto::Lang::En,
+    }
+}
+
 /// 当前的界面语言。
 pub fn language() -> Language {
     #[cfg(test)]

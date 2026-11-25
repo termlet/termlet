@@ -134,8 +134,18 @@ pub enum TerminalPanelEvent {
     OpenOverview,
 }
 
-/// 执行并对比时每台主机最多取回的输出。
-const RUN_OUTPUT_LIMIT: usize = 256 << 10;
+/// 批量执行在终端里执行时每个终端最多取回的输出（主机上执行的上限相同，见 `batch_run`）。
+pub(crate) const RUN_OUTPUT_LIMIT: usize = 256 << 10;
+
+/// 在终端中执行不了的原因（[`TerminalPanel::run_command`]）。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RunError {
+    /// 本地终端、Telnet、串口：要 bash / sh
+    Unsupported,
+    /// 终端没有连接
+    NotConnected,
+    Terminal(termlet_core::termrun::TerminalError),
+}
 /// 运行超过这么久的命令结束时发通知。
 const NOTIFY_COMMAND_AFTER: Duration = Duration::from_secs(10);
 /// 登录后执行的命令：出现提示符，或输出后这么久没有新的输出时发送，最多等这么久。
@@ -2081,29 +2091,22 @@ impl TerminalPanel {
         }
     }
 
-    /// 在这个终端中执行一条命令并取回输出与退出码（撰写栏的“执行并对比”）；失败时为说明。
+    /// 在这个终端中执行一条命令并取回输出与退出码（批量执行的“已打开的终端”）；`canceled` 完成时停止（向终端发送
+    /// Ctrl+C）。
     pub fn run_command(
         &mut self,
         command: String,
+        canceled: impl std::future::Future<Output = ()> + Send + 'static,
         cx: &mut Context<Self>,
-    ) -> Task<Result<termlet_core::termrun::TerminalOutput, SharedString>> {
-        use termlet_core::termrun::TerminalError;
+    ) -> Task<Result<termlet_core::termrun::TerminalOutput, RunError>> {
         if matches!(self.session, Session::Local { .. }) || self.is_raw() {
-            return Task::ready(Err(t!("batch.unsupported")));
+            return Task::ready(Err(RunError::Unsupported));
         }
         if !self.is_live(cx) {
-            return Task::ready(Err(t!("batch.not_connected")));
+            return Task::ready(Err(RunError::NotConnected));
         }
-        let task = self.run_in_terminal(command, RUN_OUTPUT_LIMIT, std::future::pending(), cx);
-        cx.background_spawn(async move {
-            task.await.map_err(|e| match e {
-                TerminalError::Busy => t!("batch.busy"),
-                TerminalError::Closed => t!("batch.closed"),
-                TerminalError::TooLong => t!("batch.too_long"),
-                TerminalError::NotOpen => t!("batch.not_connected"),
-                TerminalError::Canceled => t!("batch.canceled"),
-            })
-        })
+        let task = self.run_in_terminal(command, RUN_OUTPUT_LIMIT, canceled, cx);
+        cx.background_spawn(async move { task.await.map_err(RunError::Terminal) })
     }
 
     /// 在这个终端中执行一条命令（见 [`termlet_core::termrun`]；撰写栏、`termlet exec --terminal`）：输出最多 `limit`

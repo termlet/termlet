@@ -59,7 +59,6 @@ pub(super) const LONG_DESCRIPTIONS: &[(&str, usize)] = &[
     ("cli_ui.rules.custom_hint", 59),
     ("cli_ui.rules.hint", 178),
     ("cli_ui.skill.hint", 160),
-    ("compose.compare_hint", 42),
     ("editor.binary_hint", 51),
     ("forward.any_warning", 43),
     ("forward.dialog_hint", 61),

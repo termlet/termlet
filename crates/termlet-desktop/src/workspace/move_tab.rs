@@ -34,6 +34,7 @@ use gpui_kit::{
 use termlet_core::sftp::SessionId;
 
 use super::{Workspace, collect_tab_groups};
+use crate::batch_run::BatchPanel;
 use crate::editor::EditorPanel;
 use crate::host_tools::LogPanel;
 use crate::prose::prose;
@@ -58,6 +59,7 @@ pub(crate) enum MovingTab {
     Editor(Entity<EditorPanel>),
     Logs(Entity<LogPanel>),
     Replay(Entity<ReplayPanel>),
+    Batch(Entity<BatchPanel>),
 }
 
 /// 移走的 Tab 用着的、可能要跟着它换窗口的东西。
@@ -74,7 +76,10 @@ impl MovingTab {
         match self {
             MovingTab::Terminal(p) => Released::Terminal(p.read(cx).connection_group().to_string()),
             MovingTab::Editor(p) => Released::Editor(p.read(cx).session_id()),
-            MovingTab::Sftp(_) | MovingTab::Logs(_) | MovingTab::Replay(_) => Released::None,
+            MovingTab::Sftp(_)
+            | MovingTab::Logs(_)
+            | MovingTab::Replay(_)
+            | MovingTab::Batch(_) => Released::None,
         }
     }
 
@@ -85,6 +90,7 @@ impl MovingTab {
             MovingTab::Editor(p) => p.entity_id(),
             MovingTab::Logs(p) => p.entity_id(),
             MovingTab::Replay(p) => p.entity_id(),
+            MovingTab::Batch(p) => p.entity_id(),
         }
     }
 
@@ -93,7 +99,10 @@ impl MovingTab {
         match self {
             MovingTab::Terminal(p) => p.read(cx).move_blocker(),
             MovingTab::Sftp(p) => p.read(cx).move_blocker(),
-            MovingTab::Editor(_) | MovingTab::Logs(_) | MovingTab::Replay(_) => None,
+            MovingTab::Editor(_)
+            | MovingTab::Logs(_)
+            | MovingTab::Replay(_)
+            | MovingTab::Batch(_) => None,
         }
     }
 }
@@ -298,6 +307,9 @@ impl Workspace {
         if let Some(p) = self.live_logs().into_iter().find(|p| is(p.entity_id())) {
             return Some(p.read(cx).title_text());
         }
+        if let Some(p) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
+            return Some(p.read(cx).title_text(cx));
+        }
         self.live_replays()
             .into_iter()
             .find(|p| is(p.entity_id()))
@@ -342,6 +354,9 @@ impl Workspace {
         }
         if let Some(p) = self.live_logs().into_iter().find(|p| is(p.entity_id())) {
             return Some(MovingTab::Logs(p));
+        }
+        if let Some(p) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
+            return Some(MovingTab::Batch(p));
         }
         self.live_replays()
             .into_iter()
@@ -450,6 +465,13 @@ impl Workspace {
                 self.dock_area
                     .update(cx, |dock, cx| dock.remove_panel(panel, window, cx));
             }
+            MovingTab::Batch(panel) => {
+                self.batch_watch.remove(&id);
+                self.batches.retain(|p| p.entity_id() != id);
+                let panel = panel.clone();
+                self.dock_area
+                    .update(cx, |dock, cx| dock.remove_panel(panel, window, cx));
+            }
         }
         cx.notify();
     }
@@ -521,6 +543,12 @@ impl Workspace {
                 self.watch_replay(&panel, window, cx);
                 self.add_to_dock(panel_handle(panel.clone()), window, cx);
                 self.show_replay(&panel, window, cx);
+            }
+            MovingTab::Batch(panel) => {
+                panel.update(cx, |p, cx| p.rebind_window(window, cx));
+                self.watch_batch(&panel, window, cx);
+                self.add_to_dock(panel_handle(panel.clone()), window, cx);
+                self.show_batch(&panel, window, cx);
             }
         }
         cx.notify();

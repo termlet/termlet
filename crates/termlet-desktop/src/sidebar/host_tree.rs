@@ -992,9 +992,19 @@ impl HostTree {
                     crate::backup_ui::open_export(hosts, window, cx)
                 }
             };
+            // 在这个窗口中打开批量执行 Tab，目标是分组中的主机
+            let batch = {
+                let id = id.clone();
+                move |_: &ClickEvent, window: &mut Window, cx: &mut App| {
+                    if let Some(workspace) = crate::workspace::Workspace::in_window(window, cx) {
+                        workspace.update(cx, |w, cx| w.open_batch_for_group(&id, window, cx));
+                    }
+                }
+            };
             menu.item(PopupMenuItem::new(t!("hosts.menu.new_host_in_group")).on_click(new_host))
                 .item(PopupMenuItem::new(t!("hosts.menu.new_subgroup")).on_click(new_group))
                 .separator()
+                .item(PopupMenuItem::new(t!("hosts.menu.batch_run")).on_click(batch))
                 .item(
                     PopupMenuItem::new(t!("hosts.menu.edit_group"))
                         .action(Box::new(EditSelected))
@@ -1962,8 +1972,8 @@ impl Render for DragPreview {
     }
 }
 
-/// 分组及其各级子分组中的主机（导出分组用）。
-fn hosts_under(store: &Store, group: &GroupId) -> Vec<HostId> {
+/// 分组及其各级子分组中的主机（导出分组、分组的“批量执行…”用）。
+pub(crate) fn hosts_under(store: &Store, group: &GroupId) -> Vec<HostId> {
     let groups = store.list::<Group>();
     let mut inside: std::collections::HashSet<String> =
         std::iter::once(group.as_str().to_string()).collect();

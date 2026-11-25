@@ -32,6 +32,7 @@ use termlet_core::ssh::Prompter;
 use termlet_core::store::StoreEvent;
 
 use crate::app_state::AppState;
+use crate::batch_run::BatchPanel;
 use crate::compose::{ComposeBar, ComposeEvent, Mode as ComposeMode};
 use crate::editor::{EditorPanel, EditorPanelEvent};
 use crate::host_tools::{
@@ -117,6 +118,7 @@ actions!(
     ]
 );
 
+mod batch_tabs;
 mod close_tabs;
 #[cfg(test)]
 mod editor_encoding_tests;
@@ -288,6 +290,9 @@ pub struct Workspace {
     /// 会话录制的回放 Tab
     replays: Vec<WeakEntity<ReplayPanel>>,
     replay_watch: HashMap<EntityId, [Subscription; 2]>,
+    /// 批量执行的 Tab
+    batches: Vec<WeakEntity<BatchPanel>>,
+    batch_watch: HashMap<EntityId, [Subscription; 2]>,
     /// 这个窗口在 SFTP 管理器中的标识（会话与传输按窗口区分）
     owner: String,
     sftp: termlet_core::sftp::SftpManager,
@@ -525,6 +530,8 @@ impl Workspace {
             log_watch: HashMap::new(),
             replays: Vec::new(),
             replay_watch: HashMap::new(),
+            batches: Vec::new(),
+            batch_watch: HashMap::new(),
             owner: window_owner(window),
             sftp: AppState::sftp(cx),
             forwards: AppState::global(cx).forwards.read(cx).manager().clone(),
@@ -666,11 +673,17 @@ impl Workspace {
             .iter()
             .filter(|e| has(e.entity_id()) && e.read(cx).is_dirty(cx))
             .count();
+        let running = self
+            .live_batches()
+            .iter()
+            .filter(|b| has(b.entity_id()) && b.read(cx).is_running())
+            .count();
         crate::close_confirm::CloseSummary {
             pending,
             unsaved,
             connected,
             local,
+            running,
         }
     }
 
@@ -1024,6 +1037,7 @@ impl Workspace {
             .chain(self.editors.iter().cloned().map(TabRef::Editor))
             .chain(self.logs.iter().cloned().map(TabRef::Logs))
             .chain(self.replays.iter().cloned().map(TabRef::Replay))
+            .chain(self.batches.iter().cloned().map(TabRef::Batch))
             .collect();
         let syncing = self.is_syncing();
         crate::command_palette::open(cx.entity().downgrade(), current, tabs, syncing, window, cx);

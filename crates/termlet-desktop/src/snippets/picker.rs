@@ -1,6 +1,7 @@
 //! 快捷命令选择器（在终端中按 Ctrl+Shift+Space）：搜索快捷命令与这台主机的命令历史，Enter 发送到终端、
 //! Tab 只写入不执行。带参数的快捷命令（`{{名称}}`、`{{名称:默认值}}`）先填写参数再发送。
 //! 历史：Shift+Delete 删除这一条，Ctrl+S 存为快捷命令。快捷命令的新建、编辑在侧边栏的“快捷命令”页。
+//! 批量执行的“插入快捷命令”也用它（[`open_insert`]）：只列快捷命令，选好（填好参数）后交给调用方插入，不发送。
 //!
 //! 这些按键在输入框中各有用途，所以在快捷键分发之前拦下（`intercept_keystrokes`）；只处理焦点在选择器内的按键
 //! （别的窗口、选择器上面的对话框、锁屏中的按键都不管）。
@@ -42,7 +43,22 @@ pub fn open(
     window: &mut Window,
     cx: &mut App,
 ) {
-    let picker = cx.new(|cx| CommandPicker::new(target, preset, window, cx));
+    let picker = cx.new(|cx| CommandPicker::new(target, preset, None, window, cx));
+    show(picker, window, cx);
+}
+
+/// 打开选择器，选好（带参数的填好）后把内容交给 `insert`，不发送（批量执行的“插入快捷命令”）。只列快捷命令。
+pub fn open_insert(
+    insert: impl Fn(String, &mut Window, &mut App) + 'static,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    let insert: Insert = Rc::new(insert);
+    let picker = cx.new(|cx| CommandPicker::new(None, None, Some(insert), window, cx));
+    show(picker, window, cx);
+}
+
+fn show(picker: Entity<CommandPicker>, window: &mut Window, cx: &mut App) {
     let first = Rc::new(Cell::new(true));
     let width = rems(36.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, window, cx| {
@@ -56,6 +72,9 @@ pub fn open(
             .child(picker.clone())
     });
 }
+
+/// 选好后插入到别处（[`open_insert`]）。
+type Insert = Rc<dyn Fn(String, &mut Window, &mut App)>;
 
 /// 选择器里另外的几个组合（按系统：macOS 上用 ⌘）：放到撰写栏、删除这条历史、存为快捷命令。
 struct PickerKeys {
@@ -122,6 +141,8 @@ pub struct CommandPicker {
     filling: Option<Filling>,
     /// 直接为某条快捷命令填写参数时，Esc 关闭而不是回到列表
     preset: bool,
+    /// 选好后插入到别处，不发送（[`open_insert`]）
+    insert: Option<Insert>,
     error: Option<SharedString>,
     scroll: ScrollHandle,
     /// 每一项在列表容器中的子元素序号（中间夹着分类标题），滚动到选中项时用
@@ -134,11 +155,17 @@ impl CommandPicker {
     fn new(
         target: Option<WeakEntity<TerminalPanel>>,
         preset: Option<(SnippetId, Option<bool>)>,
+        insert: Option<Insert>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let store = AppState::store(cx);
-        let query = cx.new(|cx| InputState::new(window, cx).placeholder(t!("picker.placeholder")));
+        let placeholder = if insert.is_some() {
+            t!("picker.placeholder_snippets")
+        } else {
+            t!("picker.placeholder")
+        };
+        let query = cx.new(|cx| InputState::new(window, cx).placeholder(placeholder));
         let subscriptions = vec![cx.subscribe(&query, |this, _, event: &InputEvent, cx| {
             if matches!(event, InputEvent::Change) {
                 this.refilter(cx);
@@ -170,6 +197,7 @@ impl CommandPicker {
             selected: 0,
             filling: None,
             preset: preset.is_some(),
+            insert,
             error: None,
             scroll: ScrollHandle::new(),
             child_index: Vec::new(),
@@ -273,6 +301,8 @@ impl CommandPicker {
         match key {
             "up" if plain => self.move_selection(-1, cx),
             "down" if plain => self.move_selection(1, cx),
+            // 插入到别处时 Enter、Tab 都是插入
+            "enter" | "tab" if plain && self.insert.is_some() => self.choose_compose(window, cx),
             "enter" if plain => self.choose(None, window, cx),
             "tab" if plain => self.choose(Some(false), window, cx),
             _ if pressed(keystroke, extra.compose, os) => self.choose_compose(window, cx),
@@ -415,9 +445,13 @@ impl CommandPicker {
         }
     }
 
-    /// 关闭选择器，把内容放进这个窗口的撰写栏。
+    /// 关闭选择器，把内容放进这个窗口的撰写栏（插入到别处时交给调用方）。
     fn compose(&mut self, text: String, window: &mut Window, cx: &mut Context<Self>) {
         window.close_dialog(cx);
+        if let Some(insert) = self.insert.clone() {
+            insert(text, window, cx);
+            return;
+        }
         if let Some(workspace) = crate::cli_bridge::workspace_in(window, cx) {
             workspace.update(cx, |w, cx| w.compose_text(&text, window, cx));
         }
@@ -468,7 +502,9 @@ impl CommandPicker {
         let theme = cx.theme();
         let preview = self.filled_text(cx).unwrap_or_default();
         let preview = preview.trim_end_matches(['\r', '\n']).to_string();
-        let submit_label = if filling.compose {
+        let submit_label = if self.insert.is_some() {
+            t!("picker.submit_insert_command")
+        } else if filling.compose {
             t!("picker.submit_compose")
         } else if filling.run == Some(false) {
             t!("picker.submit_insert")
@@ -586,7 +622,11 @@ impl CommandPicker {
             }))
             .on_click(cx.listener(move |this, _, window, cx| {
                 this.selected = ix;
-                this.choose(None, window, cx);
+                if this.insert.is_some() {
+                    this.choose_compose(window, cx);
+                } else {
+                    this.choose(None, window, cx);
+                }
             }));
         match item {
             Item::Snippet(snippet) => row
@@ -703,7 +743,8 @@ impl Render for CommandPicker {
             }
             list = list.child(self.render_item(ix, item, cx));
         }
-        let can_send = self.can_send(cx);
+        let inserting = self.insert.is_some();
+        let can_send = !inserting && self.can_send(cx);
         let on_history = matches!(self.items.get(self.selected), Some(Item::History(_)));
         let extra = PickerKeys::of(cx.platform_info().os);
         v_flex()
@@ -743,17 +784,22 @@ impl Render for CommandPicker {
                         this.child(t!("picker.hint_send"))
                             .child(t!("picker.hint_insert"))
                     })
-                    .when(!can_send, |this| {
+                    .when(inserting, |this| {
+                        this.child(t!("picker.hint_insert_command"))
+                    })
+                    .when(!can_send && !inserting, |this| {
                         this.child(
                             div()
                                 .text_color(theme.warning)
                                 .child(prose(t!("snippets.no_terminal"))),
                         )
                     })
-                    .child(prose(t!(
-                        "picker.hint_compose",
-                        key = extra.label(extra.compose)
-                    )))
+                    .when(!inserting, |this| {
+                        this.child(prose(t!(
+                            "picker.hint_compose",
+                            key = extra.label(extra.compose)
+                        )))
+                    })
                     .when(on_history, |this| {
                         this.child(prose(t!(
                             "picker.hint_history",

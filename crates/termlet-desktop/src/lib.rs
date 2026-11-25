@@ -10,7 +10,7 @@ mod appearance;
 mod args;
 mod assets;
 mod backup_ui;
-mod batch_results;
+mod batch_run;
 mod boot;
 mod brand;
 mod brand_icons;

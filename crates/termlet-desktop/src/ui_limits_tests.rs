@@ -145,13 +145,24 @@ fn right_click_menu(
     .unwrap()
 }
 
-// 保存的 SSH 主机的终端 Tab 菜单（主机连不上也一样：这些项不看连接状态），侧边栏中这台主机的右键菜单
+// 保存的 SSH 主机的终端 Tab 菜单（主机连不上也一样：这些项不看连接状态），侧边栏中这台主机与它的分组的右键菜单
 #[gpui_kit::test]
 fn context_menus_stay_short(cx: &mut TestAppContext) {
     let handle = open_workspace_sized(cx, size(px(1280.), px(800.)));
     set_language(Language::ZhCn);
-    let host = cx.update(|cx| {
-        AppState::store(cx)
+    let (group, host) = cx.update(|cx| {
+        let store = AppState::store(cx);
+        let group = store
+            .create(
+                termlet_core::model::Group {
+                    name: "生产".into(),
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+        let host = store
             .create(
                 Host {
                     name: "web".into(),
@@ -160,10 +171,11 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
                     username: "alice".into(),
                     ..Default::default()
                 },
-                None,
+                Some(group.as_str().into()),
                 Position::Last,
             )
-            .unwrap()
+            .unwrap();
+        (group, host)
     });
     let workspace = cx
         .update_window(handle, |_, window, cx| {
@@ -201,6 +213,18 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
     assert!(
         groups <= MENU_GROUPS_TARGET,
         "侧边栏主机的菜单 {groups} 组，上限 {MENU_GROUPS_TARGET}"
+    );
+
+    // 侧边栏的分组：现在 6 项、3 组
+    let row: ElementId = SharedString::from(format!("row-group-{}", group.as_str())).into();
+    let (items, groups) = right_click_menu(cx, handle, row);
+    assert!(
+        items <= MENU_ITEMS_TARGET,
+        "侧边栏分组的菜单 {items} 项，上限 {MENU_ITEMS_TARGET}"
+    );
+    assert!(
+        groups <= MENU_GROUPS_TARGET,
+        "侧边栏分组的菜单 {groups} 组，上限 {MENU_GROUPS_TARGET}"
     );
 }
 

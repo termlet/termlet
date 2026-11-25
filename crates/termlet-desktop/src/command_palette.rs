@@ -21,6 +21,7 @@ use termlet_core::model::{Host, Workspace as SavedWorkspace};
 use termlet_core::quick::{self, QuickTarget};
 
 use crate::app_state::AppState;
+use crate::batch_run::BatchPanel;
 use crate::editor::EditorPanel;
 use crate::host_tools::LogPanel;
 use crate::host_tools::target::ToolsState;
@@ -59,6 +60,8 @@ pub enum TabRef {
     Logs(WeakEntity<LogPanel>),
     /// 会话录制的回放
     Replay(WeakEntity<ReplayPanel>),
+    /// 批量执行
+    Batch(WeakEntity<BatchPanel>),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -85,6 +88,8 @@ enum Op {
     RevealHost,
     MultiExec,
     Compose,
+    /// 新开批量执行的 Tab（先选主机）
+    BatchRun,
     HostTools,
     HostToolsOverview,
     /// 把当前终端所连主机的概览弹出成置顶的小窗
@@ -137,6 +142,7 @@ impl Op {
             Op::NewHost
             | Op::NewGroup
             | Op::OpenRecording
+            | Op::BatchRun
             | Op::SnippetBar
             | Op::ToggleTheme
             | Op::ToggleTabPosition
@@ -361,6 +367,7 @@ impl CommandPalette {
                     true,
                 ),
                 (Op::Compose, t!("palette.op.compose"), true),
+                (Op::BatchRun, t!("palette.op.batch_run"), true),
                 (
                     Op::HostTools,
                     if tools_open {
@@ -484,6 +491,10 @@ impl CommandPalette {
                         p.upgrade()?.read(cx).title_text(),
                         t!("palette.tab_detail_replay"),
                     ),
+                    TabRef::Batch(p) => (
+                        p.upgrade()?.read(cx).title_text(cx),
+                        t!("palette.tab_detail_batch"),
+                    ),
                 };
                 Some(Entry {
                     category: Category::Tab,
@@ -533,6 +544,11 @@ impl CommandPalette {
                     workspace.update(cx, |w, cx| w.show_replay(&panel, window, cx));
                 }
             }
+            Target::Tab(TabRef::Batch(panel)) => {
+                if let Some(panel) = panel.upgrade() {
+                    workspace.update(cx, |w, cx| w.show_batch(&panel, window, cx));
+                }
+            }
             Target::Workspace(id) => {
                 workspace.update(cx, |w, cx| w.open_saved_workspace(&id, window, cx))
             }
@@ -540,6 +556,7 @@ impl CommandPalette {
                 Op::NewHost => host_dialog::open_new(None, window, cx),
                 Op::NewGroup => group_dialog::open_new(None, window, cx),
                 Op::OpenRecording => workspace.update(cx, |w, cx| w.pick_recording(window, cx)),
+                Op::BatchRun => workspace.update(cx, |w, cx| w.open_batch(window, cx)),
                 Op::ToggleTheme => workspace.update(cx, |w, cx| w.toggle_theme(window, cx)),
                 Op::ToggleTabPosition => {
                     workspace.update(cx, |w, cx| w.toggle_tab_position(window, cx))

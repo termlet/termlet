@@ -1,0 +1,487 @@
+_version: 2
+batch.title:
+  zh-CN: 批量执行
+  en: Batch run
+  zh-TW: 批次執行
+  ja: 一括実行
+  ko: 일괄 실행
+batch.tab_group:
+  zh-CN: "批量执行 · %{name}"
+  en: "Batch run · %{name}"
+  zh-TW: "批次執行 · %{name}"
+  ja: 一括実行 · %{name}
+  ko: 일괄 실행 · %{name}
+batch.tab_hosts:
+  zh-CN: "批量执行 · %{count} 台主机"
+  en: "Batch run · %{count} hosts"
+  zh-TW: "批次執行 · %{count} 台主機"
+  ja: 一括実行 · ホスト %{count} 台
+  ko: 일괄 실행 · 호스트 %{count}대
+batch.tab_terminals:
+  zh-CN: "批量执行 · %{count} 个终端"
+  en: "Batch run · %{count} terminals"
+  zh-TW: "批次執行 · %{count} 個終端機"
+  ja: 一括実行 · ターミナル %{count} 個
+  ko: 일괄 실행 · 터미널 %{count}개
+batch.tab_running:
+  zh-CN: 执行中
+  en: Running
+  zh-TW: 執行中
+  ja: 実行中
+  ko: 실행 중
+batch.target_hosts:
+  zh-CN: 主机
+  en: Hosts
+  zh-TW: 主機
+  ja: ホスト
+  ko: 호스트
+batch.target_terminals:
+  zh-CN: 已打开的终端
+  en: Open terminals
+  zh-TW: 已開啟的終端機
+  ja: 開いているターミナル
+  ko: 열려 있는 터미널
+batch.hosts_hint:
+  zh-CN: 不打开终端，新建连接执行
+  en: Runs over new connections, without opening terminals
+  zh-TW: 不開啟終端機，建立新連線執行
+  ja: ターミナルを開かず、新しい接続で実行します
+  ko: 터미널을 열지 않고 새 연결로 실행합니다
+batch.terminals_hint:
+  zh-CN: 在终端里执行（要 bash / sh），沿用当前目录与环境
+  en: Runs in the terminals (needs bash / sh), with their current directory and environment
+  zh-TW: 在終端機裡執行（需要 bash / sh），沿用目前的目錄與環境
+  ja: ターミナル内で実行します（bash / sh が必要）。現在のディレクトリと環境がそのまま使われます
+  ko: 터미널 안에서 실행합니다(bash / sh 필요). 현재 디렉터리와 환경을 그대로 사용합니다
+batch.pick_hosts:
+  zh-CN: 选择主机…
+  en: Choose Hosts…
+  zh-TW: 選擇主機…
+  ja: ホストを選択…
+  ko: 호스트 선택…
+batch.hosts:
+  zh-CN: "%{count} 台主机"
+  en: "%{count} hosts"
+  zh-TW: "%{count} 台主機"
+  ja: ホスト %{count} 台
+  ko: 호스트 %{count}대
+batch.terminals:
+  zh-CN: "%{count} 个终端"
+  en: "%{count} terminals"
+  zh-TW: "%{count} 個終端機"
+  ja: ターミナル %{count} 個
+  ko: 터미널 %{count}개
+batch.group_hosts:
+  zh-CN: "%{name} · %{count} 台主机"
+  en: "%{name} · %{count} hosts"
+  zh-TW: "%{name} · %{count} 台主機"
+  ja: "%{name} · ホスト %{count} 台"
+  ko: "%{name} · 호스트 %{count}대"
+batch.pick_terminals:
+  zh-CN: 选择终端
+  en: Choose Terminals
+  zh-TW: 選擇終端機
+  ja: ターミナルを選択
+  ko: 터미널 선택
+batch.no_terminals:
+  zh-CN: 这个窗口里没有连接着的终端
+  en: No connected terminals in this window
+  zh-TW: 這個視窗裡沒有連線中的終端機
+  ja: このウィンドウには接続中のターミナルがありません
+  ko: 이 창에 연결된 터미널이 없습니다
+batch.name_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
+batch.placeholder:
+  zh-CN: 输入要执行的命令，可以多行
+  en: Type the command to run; it can span several lines
+  zh-TW: 輸入要執行的指令，可以多行
+  ja: 実行するコマンドを入力（複数行も可）
+  ko: 실행할 명령을 입력하세요. 여러 줄도 됩니다
+batch.insert_snippet:
+  zh-CN: 插入快捷命令
+  en: Insert Snippet
+  zh-TW: 插入快速指令
+  ja: スニペットを挿入
+  ko: 스니펫 삽입
+batch.command_hint:
+  zh-CN: "%{key} 执行，在首行按 ↑、末行按 ↓ 翻看执行过的命令"
+  en: "%{key} runs it; ↑ on the first line or ↓ on the last recalls earlier commands"
+  zh-TW: "%{key} 執行，在第一行按 ↑、最後一行按 ↓ 瀏覽執行過的指令"
+  ja: "%{key} で実行。先頭行で ↑、最終行で ↓ を押すと実行済みのコマンドを表示します"
+  ko: "%{key}로 실행합니다. 첫 줄에서 ↑, 마지막 줄에서 ↓를 누르면 실행한 명령을 다시 불러옵니다"
+batch.stop:
+  zh-CN: 停止
+  en: Stop
+  zh-TW: 停止
+  ja: 停止
+  ko: 중지
+batch.retry:
+  zh-CN: 重试未成功的
+  en: Retry Unsuccessful
+  zh-TW: 重試未成功的
+  ja: 成功しなかったものを再試行
+  ko: 실패한 대상 다시 시도
+batch.copy:
+  zh-CN: 复制结果
+  en: Copy Results
+  zh-TW: 複製結果
+  ja: 結果をコピー
+  ko: 결과 복사
+batch.copied:
+  zh-CN: 已复制结果
+  en: Results copied
+  zh-TW: 已複製結果
+  ja: 結果をコピーしました
+  ko: 결과를 복사했습니다
+batch.empty:
+  zh-CN: 选好目标、写好命令后执行，结果按输出分组显示在这里。
+  en: Choose the targets, type a command and run it. The results show up here, grouped by output.
+  zh-TW: 選好目標、寫好指令後執行，結果會依輸出分組顯示在這裡。
+  ja: 対象を選んでコマンドを入力し、実行してください。結果は出力ごとにまとめてここに表示されます。
+  ko: 대상을 고르고 명령을 입력한 후 실행하세요. 결과는 출력별로 묶여 여기에 표시됩니다.
+batch.danger_hosts:
+  zh-CN: 确定在 %{count} 台主机上执行这条命令吗？
+  en: Run this command on %{count} hosts?
+  zh-TW: 確定要在 %{count} 台主機上執行這條指令嗎？
+  ja: このコマンドをホスト %{count} 台で実行しますか？
+  ko: 이 명령을 호스트 %{count}대에서 실행하시겠습니까?
+batch.danger_terminals:
+  zh-CN: 确定在 %{count} 个终端中执行这条命令吗？
+  en: Run this command in %{count} terminals?
+  zh-TW: 確定要在 %{count} 個終端機中執行這條指令嗎？
+  ja: このコマンドをターミナル %{count} 個で実行しますか？
+  ko: 이 명령을 터미널 %{count}개에서 실행하시겠습니까?
+batch.close_running:
+  zh-CN: 批量执行还没有结束，关闭这个 Tab 会停止它。
+  en: The batch run hasn't finished. Closing this tab stops it.
+  zh-TW: 批次執行還沒有結束，關閉這個分頁會停止它。
+  ja: 一括実行はまだ終わっていません。このタブを閉じると停止します。
+  ko: 일괄 실행이 아직 끝나지 않았습니다. 이 탭을 닫으면 중지됩니다.
+batch.stop_and_close:
+  zh-CN: 停止并关闭
+  en: Stop and Close
+  zh-TW: 停止並關閉
+  ja: 停止して閉じる
+  ko: 중지하고 닫기
+batch.status.ok:
+  zh-CN: 成功
+  en: Succeeded
+  zh-TW: 成功
+  ja: 成功
+  ko: 성공
+batch.status.failed:
+  zh-CN: 失败
+  en: Failed
+  zh-TW: 失敗
+  ja: 失敗
+  ko: 실패
+batch.status.unreachable:
+  zh-CN: 连不上
+  en: Unreachable
+  zh-TW: 連不上
+  ja: 接続不可
+  ko: 연결 불가
+batch.status.timeout:
+  zh-CN: 超时
+  en: Timed out
+  zh-TW: 逾時
+  ja: タイムアウト
+  ko: 시간 초과
+batch.status.canceled:
+  zh-CN: 已取消
+  en: Canceled
+  zh-TW: 已取消
+  ja: キャンセル済み
+  ko: 취소됨
+batch.status.skipped:
+  zh-CN: 未执行
+  en: Not run
+  zh-TW: 未執行
+  ja: 未実行
+  ko: 실행 안 함
+batch.count:
+  zh-CN: "%{status} %{count}"
+  en: "%{status} %{count}"
+  zh-TW: "%{status} %{count}"
+  ja: "%{status} %{count}"
+  ko: "%{status} %{count}"
+batch.separator:
+  zh-CN: ，
+  en: ", "
+  zh-TW: ，
+  ja: 、
+  ko: ", "
+batch.group_count:
+  zh-CN: 输出分为 %{count} 组
+  en: "%{count} different outputs"
+  zh-TW: 輸出分為 %{count} 組
+  ja: 出力は %{count} グループ
+  ko: 출력 %{count}개 그룹
+batch.elapsed:
+  zh-CN: 用时 %{seconds} 秒
+  en: took %{seconds} s
+  zh-TW: 用時 %{seconds} 秒
+  ja: 所要時間 %{seconds} 秒
+  ko: 소요 시간 %{seconds}초
+batch.running:
+  zh-CN: 还在执行（%{count} 个）：%{names}
+  en: "Still running (%{count}): %{names}"
+  zh-TW: 仍在執行（%{count} 個）：%{names}
+  ja: 実行中（%{count} 個）：%{names}
+  ko: "아직 실행 중(%{count}개): %{names}"
+batch.same_group:
+  zh-CN: 输出相同（%{count} 个）
+  en: Same output (%{count})
+  zh-TW: 輸出相同（%{count} 個）
+  ja: 同じ出力（%{count} 個）
+  ko: 같은 출력(%{count}개)
+batch.base_group:
+  zh-CN: 多数（%{count} 个）
+  en: Most (%{count})
+  zh-TW: 多數（%{count} 個）
+  ja: 多数（%{count} 個）
+  ko: 대다수(%{count}개)
+batch.first_group:
+  zh-CN: 第一组（%{count} 个）
+  en: First group (%{count})
+  zh-TW: 第一組（%{count} 個）
+  ja: 最初のグループ（%{count} 個）
+  ko: 첫 번째 그룹(%{count}개)
+batch.other_group:
+  zh-CN: 不同（%{count} 个）
+  en: Different (%{count})
+  zh-TW: 不同（%{count} 個）
+  ja: 相違（%{count} 個）
+  ko: 다름(%{count}개)
+batch.exit_code:
+  zh-CN: 退出码 %{code}
+  en: Exit code %{code}
+  zh-TW: 結束代碼 %{code}
+  ja: 終了コード %{code}
+  ko: 종료 코드 %{code}
+batch.show_diff:
+  zh-CN: 只看差异
+  en: Differences only
+  zh-TW: 只看差異
+  ja: 差分のみ
+  ko: 차이만 보기
+batch.show_full:
+  zh-CN: 完整输出
+  en: Full output
+  zh-TW: 完整輸出
+  ja: すべての出力
+  ko: 전체 출력
+batch.no_output:
+  zh-CN: （没有输出）
+  en: (no output)
+  zh-TW: （沒有輸出）
+  ja: （出力なし）
+  ko: (출력 없음)
+batch.too_long_diff:
+  zh-CN: 输出过长，不显示逐行差异
+  en: The output is too long to show line-by-line differences
+  zh-TW: 輸出過長，不顯示逐行差異
+  ja: 出力が長すぎるため、行ごとの差分は表示しません
+  ko: 출력이 너무 길어 줄 단위 차이를 표시하지 않습니다
+batch.truncated:
+  zh-CN: 输出超过 256 KB，只取回了开头
+  en: The output is over 256 KB; only the beginning was kept
+  zh-TW: 輸出超過 256 KB，只取回了開頭
+  ja: 出力が 256 KB を超えたため、先頭部分だけを取得しました
+  ko: 출력이 256KB를 넘어 앞부분만 가져왔습니다
+batch.problems:
+  zh-CN: 没有成功（%{count} 个）
+  en: Didn't succeed (%{count})
+  zh-TW: 沒有成功（%{count} 個）
+  ja: 成功しなかったもの（%{count} 個）
+  ko: 성공하지 못함(%{count}개)
+batch.open_terminal:
+  zh-CN: 在终端中打开
+  en: Open in Terminal
+  zh-TW: 在終端機中開啟
+  ja: ターミナルで開く
+  ko: 터미널에서 열기
+batch.copy_group:
+  zh-CN: "%{names}（退出码 %{code}）"
+  en: "%{names} (exit code %{code})"
+  zh-TW: "%{names}（結束代碼 %{code}）"
+  ja: "%{names}（終了コード %{code}）"
+  ko: "%{names}(종료 코드 %{code})"
+batch.copy_problem:
+  zh-CN: "%{name}：%{status}，%{reason}"
+  en: "%{name}: %{status}, %{reason}"
+  zh-TW: "%{name}：%{status}，%{reason}"
+  ja: "%{name}：%{status}、%{reason}"
+  ko: "%{name}: %{status}, %{reason}"
+batch.copy_problem_short:
+  zh-CN: "%{name}：%{status}"
+  en: "%{name}: %{status}"
+  zh-TW: "%{name}：%{status}"
+  ja: "%{name}：%{status}"
+  ko: "%{name}: %{status}"
+batch.reason_detail:
+  zh-CN: "%{reason}（%{detail}）"
+  en: "%{reason} (%{detail})"
+  zh-TW: "%{reason}（%{detail}）"
+  ja: "%{reason}（%{detail}）"
+  ko: "%{reason}(%{detail})"
+batch.reason.not_ssh:
+  zh-CN: 不是 SSH 主机（Telnet、串口不能批量执行）
+  en: Not an SSH host (Telnet and serial hosts can't run batches)
+  zh-TW: 不是 SSH 主機（Telnet、序列埠不能批次執行）
+  ja: SSH ホストではありません（Telnet、シリアルポートは一括実行できません）
+  ko: SSH 호스트가 아닙니다(Telnet, 직렬 포트는 일괄 실행할 수 없습니다)
+batch.reason.connect_failed:
+  zh-CN: 连接失败
+  en: Couldn't connect
+  zh-TW: 連線失敗
+  ja: 接続できませんでした
+  ko: 연결하지 못했습니다
+batch.reason.algorithm:
+  zh-CN: 与服务器没有共同的加密算法
+  en: No encryption algorithm in common with the server
+  zh-TW: 與伺服器沒有共同的加密演算法
+  ja: サーバーと共通の暗号アルゴリズムがありません
+  ko: 서버와 공통된 암호화 알고리즘이 없습니다
+batch.reason.credential_missing:
+  zh-CN: 没有保存密码或私钥，请在终端中连接
+  en: No saved password or key; connect in a terminal
+  zh-TW: 沒有儲存密碼或私鑰，請在終端機中連線
+  ja: パスワードも秘密鍵も保存されていません。ターミナルで接続してください
+  ko: 저장된 비밀번호나 개인 키가 없습니다. 터미널에서 연결하세요
+batch.reason.hostkey_unknown:
+  zh-CN: 第一次连接，要先在终端中确认指纹
+  en: First connection; confirm the fingerprint in a terminal first
+  zh-TW: 第一次連線，要先在終端機中確認指紋
+  ja: 初めての接続です。先にターミナルでフィンガープリントを確認してください
+  ko: 처음 연결하는 호스트입니다. 먼저 터미널에서 지문을 확인하세요
+batch.reason.hostkey_mismatch:
+  zh-CN: 主机指纹与记录的不一致
+  en: The host fingerprint doesn't match the saved one
+  zh-TW: 主機指紋與記錄的不一致
+  ja: ホストのフィンガープリントが記録と一致しません
+  ko: 호스트 지문이 기록과 일치하지 않습니다
+batch.reason.hostkey_rejected:
+  zh-CN: 主机指纹没有被接受
+  en: The host fingerprint wasn't accepted
+  zh-TW: 主機指紋沒有被接受
+  ja: ホストのフィンガープリントが承認されていません
+  ko: 호스트 지문이 승인되지 않았습니다
+batch.reason.auth_failed:
+  zh-CN: 认证失败
+  en: Authentication failed
+  zh-TW: 驗證失敗
+  ja: 認証に失敗しました
+  ko: 인증에 실패했습니다
+batch.reason.interaction:
+  zh-CN: 要输入验证码等，请在终端中连接
+  en: Needs a verification code or similar; connect in a terminal
+  zh-TW: 需要輸入驗證碼等，請在終端機中連線
+  ja: 認証コードなどの入力が必要です。ターミナルで接続してください
+  ko: 인증 코드 등을 입력해야 합니다. 터미널에서 연결하세요
+batch.reason.proxy_command:
+  zh-CN: 代理命令还没有确认，请先在终端中连接一次
+  en: The proxy command hasn't been confirmed; connect in a terminal once first
+  zh-TW: 代理指令還沒有確認，請先在終端機中連線一次
+  ja: プロキシコマンドがまだ確認されていません。先にターミナルで一度接続してください
+  ko: 프록시 명령이 아직 확인되지 않았습니다. 먼저 터미널에서 한 번 연결하세요
+batch.reason.key_passphrase:
+  zh-CN: 私钥有密码但没有保存，请在终端中连接
+  en: The key has a passphrase that isn't saved; connect in a terminal
+  zh-TW: 私鑰有密碼但沒有儲存，請在終端機中連線
+  ja: 秘密鍵のパスフレーズが保存されていません。ターミナルで接続してください
+  ko: 개인 키의 암호가 저장되어 있지 않습니다. 터미널에서 연결하세요
+batch.reason.key_invalid:
+  zh-CN: 私钥不能用
+  en: The private key can't be used
+  zh-TW: 私鑰無法使用
+  ja: 秘密鍵を使用できません
+  ko: 개인 키를 사용할 수 없습니다
+batch.reason.vault:
+  zh-CN: 保存的凭据已锁定
+  en: Saved credentials are locked
+  zh-TW: 儲存的憑證已鎖定
+  ja: 保存された資格情報がロックされています
+  ko: 저장된 자격 증명이 잠겨 있습니다
+batch.reason.host_gone:
+  zh-CN: 主机已删除
+  en: The host was deleted
+  zh-TW: 主機已刪除
+  ja: ホストは削除されました
+  ko: 호스트가 삭제되었습니다
+batch.unsupported:
+  zh-CN: 本地的 Windows 终端、Telnet、串口不支持（需要 bash / sh）
+  en: Not supported in local Windows terminals, Telnet or serial connections (needs bash / sh)
+  zh-TW: 本機的 Windows 終端機、Telnet、序列埠不支援（需要 bash / sh）
+  ja: ローカルの Windows ターミナル、Telnet、シリアルポートには対応していません（bash / sh が必要）
+  ko: 로컬 Windows 터미널, Telnet, 직렬 포트에서는 지원하지 않습니다(bash / sh 필요)
+batch.not_connected:
+  zh-CN: 终端没有连接
+  en: The terminal isn't connected
+  zh-TW: 終端機沒有連線
+  ja: ターミナルが接続されていません
+  ko: 터미널이 연결되어 있지 않습니다
+batch.busy:
+  zh-CN: 终端正忙（正在运行程序、全屏程序或传输文件），请回到 shell 提示符后重试
+  en: The terminal is busy (running a program, a full-screen program or a file transfer). Return to the shell prompt and try again.
+  zh-TW: 終端機正忙（正在執行程式、全螢幕程式或傳輸檔案），請回到 shell 提示字元後再試一次
+  ja: ターミナルが使用中です（プログラム、全画面プログラム、ファイル転送のいずれかを実行中）。シェルのプロンプトに戻ってからやり直してください
+  ko: 터미널이 사용 중입니다(프로그램, 전체 화면 프로그램 또는 파일 전송 실행 중). 셸 프롬프트로 돌아간 후 다시 시도하세요
+batch.closed:
+  zh-CN: 终端已关闭
+  en: The terminal was closed
+  zh-TW: 終端機已關閉
+  ja: ターミナルは閉じられました
+  ko: 터미널이 닫혔습니다
+batch.too_long:
+  zh-CN: 命令太长，不能在终端中执行（请改用主机目标，或改用脚本文件）
+  en: The command is too long to run in a terminal (use the Hosts target or a script file instead)
+  zh-TW: 指令太長，無法在終端機中執行（請改用主機目標，或改用指令碼檔案）
+  ja: コマンドが長すぎるため、ターミナルで実行できません（ホストを対象にするか、スクリプトファイルを使用してください）
+  ko: 명령이 너무 길어 터미널에서 실행할 수 없습니다(호스트를 대상으로 하거나 스크립트 파일을 사용하세요)
+batch.pick_title:
+  zh-CN: 选择主机
+  en: Choose Hosts
+  zh-TW: 選擇主機
+  ja: ホストを選択
+  ko: 호스트 선택
+batch.pick_search:
+  zh-CN: 搜索主机
+  en: Search hosts
+  zh-TW: 搜尋主機
+  ja: ホストを検索
+  ko: 호스트 검색
+batch.pick_all:
+  zh-CN: 全部 SSH 主机（%{count} 台）
+  en: All SSH hosts (%{count})
+  zh-TW: 全部 SSH 主機（%{count} 台）
+  ja: すべての SSH ホスト（%{count} 台）
+  ko: 모든 SSH 호스트(%{count}대)
+batch.pick_not_ssh:
+  zh-CN: Telnet、串口不能批量执行
+  en: Telnet and serial hosts can't run batches
+  zh-TW: Telnet、序列埠不能批次執行
+  ja: Telnet、シリアルポートは一括実行できません
+  ko: Telnet, 직렬 포트는 일괄 실행할 수 없습니다
+batch.pick_empty:
+  zh-CN: 没有匹配的主机
+  en: No matching hosts
+  zh-TW: 沒有符合的主機
+  ja: 一致するホストがありません
+  ko: 일치하는 호스트가 없습니다
+batch.pick_by_tag:
+  zh-CN: 按标签添加：
+  en: "Add by tag:"
+  zh-TW: 依標籤新增：
+  ja: タグで追加：
+  ko: "태그로 추가:"
+batch.pick_count:
+  zh-CN: 已选 %{count} 台
+  en: "%{count} selected"
+  zh-TW: 已選 %{count} 台
+  ja: "%{count} 台を選択中"
+  ko: "%{count}대 선택됨"

@@ -1955,6 +1955,7 @@ fn compose_bar_sends_to_all_terminals(cx: &mut TestAppContext) {
     );
 }
 
+// 撰写栏的“执行并对比”：在选中的终端里执行，结果在批量执行 Tab 中（不再弹出对话框），使用统计记下批量执行
 #[gpui_kit::test]
 fn compose_bar_runs_and_compares_on_ssh_terminals(cx: &mut TestAppContext) {
     let Some((address, port)) = test_server() else {
@@ -2032,13 +2033,18 @@ fn compose_bar_runs_and_compares_on_ssh_terminals(cx: &mut TestAppContext) {
     })
     .unwrap();
     wait_until(cx, handle, "两个终端都执行完", |window, cx| {
-        window.try_find("batch-results").is_some()
+        window.try_find("batch-panel").is_some()
+            && window.try_find("batch-results").is_some()
             && workspace
                 .read(cx)
                 .terminal_screens(cx)
                 .iter()
                 .all(|s| s.lines().any(|l| l.trim_start().starts_with("pid-")))
     });
+    assert!(
+        feature_marked(Feature::BatchExec),
+        "使用统计的功能名单记下批量执行"
+    );
 }
 
 // 真实的服务器：终端底部的状态条显示资源；点状态条在主机工具中打开概览页（CPU、内存、网络、磁盘、进程），

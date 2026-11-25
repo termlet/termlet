@@ -123,10 +123,15 @@ impl Workspace {
                 replay.update(cx, |replay, cx| replay.close_tab(cx));
             }
         }
+        for batch in self.live_batches() {
+            if has(batch.entity_id()) {
+                batch.update(cx, |batch, cx| batch.close_tab(cx));
+            }
+        }
     }
 
     /// 关闭一个 Tab，与点它的 × 相同（各自的确认照旧）：鼠标中键单击 Tab（见 `dock_skin`）。不是终端、文件管理、
-    /// 编辑器、日志查看器、回放的 Tab 时什么也不做。
+    /// 编辑器、日志查看器、回放、批量执行的 Tab 时什么也不做。
     pub(crate) fn request_close_tab(
         &mut self,
         panel: PanelId,
@@ -148,6 +153,8 @@ impl Workspace {
             logs.update(cx, |logs, cx| logs.close_tab(cx));
         } else if let Some(replay) = self.live_replays().into_iter().find(|p| is(p.entity_id())) {
             replay.update(cx, |replay, cx| replay.close_tab(cx));
+        } else if let Some(batch) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
+            batch.update(cx, |batch, cx| batch.request_close(window, cx));
         }
     }
 }

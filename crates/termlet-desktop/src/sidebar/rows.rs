@@ -361,6 +361,95 @@ fn host_row(host: &Record<Host>, depth: usize, in_favorites: bool, show_address:
     }
 }
 
+/// 勾选主机用的树（导出主机、批量执行选择主机）中的一行：不在分组中的主机在最外层，与侧边栏相同。
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum TreeRow {
+    Group {
+        id: GroupId,
+        name: String,
+        depth: usize,
+    },
+    Host {
+        id: HostId,
+        name: String,
+        address: String,
+        /// SSH 主机（Telnet、串口不能批量执行）
+        ssh: bool,
+        depth: usize,
+    },
+}
+
+/// 由侧边栏的行生成：分组树全部展开；收藏只是另一种列法，不重复列出。`query` 不为空时是按名称平铺的匹配的主机
+/// （与侧边栏的搜索相同）。
+pub(crate) fn tree_rows(
+    groups: &[Record<Group>],
+    hosts: &[Record<Host>],
+    query: &str,
+) -> Vec<TreeRow> {
+    let expanded: BTreeSet<String> = groups
+        .iter()
+        .map(|g| g.id.as_str().to_string())
+        .chain([HOSTS_SECTION.to_string()])
+        .collect();
+    let options = RowOptions {
+        expanded: &expanded,
+        workspaces: &[],
+        locals: &[],
+        query,
+        show_address: true,
+        dragging: false,
+    };
+    build_rows(groups, hosts, &options)
+        .into_iter()
+        .filter_map(|row| match (row.key, row.kind) {
+            (RowKey::Group(id), RowKind::Group { name, .. }) => Some(TreeRow::Group {
+                id,
+                name,
+                depth: row.depth,
+            }),
+            (
+                RowKey::Host {
+                    id,
+                    favorite: false,
+                },
+                RowKind::Host {
+                    name,
+                    address,
+                    protocol,
+                    ..
+                },
+            ) => Some(TreeRow::Host {
+                id,
+                name,
+                address: address.unwrap_or_default(),
+                ssh: protocol == Protocol::Ssh,
+                depth: row.depth,
+            }),
+            _ => None,
+        })
+        .collect()
+}
+
+/// 每个分组（含各级子分组）中的主机：分组行之后、缩进比它深的主机行。
+pub(crate) fn group_members(rows: &[TreeRow]) -> HashMap<GroupId, Vec<HostId>> {
+    let mut members = HashMap::new();
+    for (i, row) in rows.iter().enumerate() {
+        let TreeRow::Group { id, depth, .. } = row else {
+            continue;
+        };
+        let mut hosts = Vec::new();
+        for next in &rows[i + 1..] {
+            match next {
+                TreeRow::Group { depth: d, .. } if d > depth => {}
+                TreeRow::Host { id, depth: d, .. } if d > depth => hosts.push(id.clone()),
+                _ => break,
+            }
+        }
+        members.insert(id.clone(), hosts);
+    }
+    members
+}
+
 /// 每个分组（含各级子分组）中的主机数。
 fn host_counts<'a>(
     groups: &'a [Record<Group>],
