@@ -53,11 +53,11 @@
 - 许可页的说明只有简体中文、繁體中文与英文版，日文、韩文系统上显示英文版；后面附的许可证全文是英文原文。
 - 同意许可后可以更改安装位置（默认 `%LOCALAPPDATA%\Programs\Termlet`，升级时沿用原来的位置）。
 - 只为当前用户安装，不需要管理员权限。
-- 安装目录中是 `Termlet.exe` 与命令行工具 `bin\termlet.exe`，并创建开始菜单与桌面快捷方式。
+- 安装目录中是 `Termlet.exe`、它旁边的 `conpty.dll` 与 `OpenConsole.exe`（本地终端用的 ConPTY，见"本地 shell"）与命令行工具 `bin\termlet.exe`，并创建开始菜单与桌面快捷方式。
 
 ### Windows 便携版
 
-- `termlet-<版本>-win-x64-portable.zip` 中是一个 `Termlet` 文件夹：`Termlet.exe`、`portable.txt`、`bin\termlet.exe`、`licenses` 与许可说明，相对位置不要改动。
+- `termlet-<版本>-win-x64-portable.zip` 中是一个 `Termlet` 文件夹：`Termlet.exe`、`conpty.dll`、`OpenConsole.exe`、`portable.txt`、`bin\termlet.exe`、`licenses` 与许可说明，相对位置不要改动。
 - 解压到任意能写入的文件夹（桌面、U 盘等，不要放进 Program Files）后运行其中的 `Termlet.exe`，不安装、不需要管理员权限。
 - 程序旁边有 `portable.txt` 时是便携版：
   - 数据保存在程序旁边的 `data` 文件夹（日志、本机快照、会话日志的默认位置等都在其中）；
@@ -846,6 +846,10 @@
 - 右键菜单可打开、设为默认、从侧边栏移除（或"在侧边栏中显示"）、管理本地终端。
 - 设置中可添加自定义的本地终端（命令行、起始目录、环境变量）。
 - 分屏、撰写栏、关键词高亮都可用；每次打开都读取系统最新的环境变量。
+- Windows 上本地终端与 WSL 经程序旁边附带的微软 ConPTY 运行（`conpty.dll` 与 `OpenConsole.exe`，取自 Windows Terminal，比系统自带的新）：
+  - vim、htop、tmux、mc、pi 等开了鼠标的程序能收到点击、拖动与滚轮；
+  - 在这些程序中要用 Termlet 的选区（复制文字），按住 Shift 拖动。
+- 本地终端打不开时，可以删掉程序目录（安装版的安装目录、便携版的 `Termlet` 文件夹）中的 `conpty.dll` 与 `OpenConsole.exe`，换回系统自带的 ConPTY（程序又收不到鼠标）；更新后它们会重新装上。
 
 ### WSL
 

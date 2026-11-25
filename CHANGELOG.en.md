@@ -27,6 +27,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 - A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent. Snippets that are only typed, not run, aren't checked. Before, snippets skipped the dangerous command rules (the compose bar and sync input both checked them).
 - In SFTP, a new folder or a renamed item is selected once it's created or renamed (if the filter would hide it, the filter is cleared first); before, the selection stayed where it was.
 - Removed "Open SFTP on the Right" (from the terminal tab menu, the command palette, the macOS menu bar and the shortcuts): to put SFTP next to a terminal, open it and drag its tab onto one side of the terminal's content to split the pane. The command palette gains "Open SFTP File Manager for This Host", which works like the "SFTP" button in the title bar (a new tab sharing the terminal's connection and following its folder), even when that button is hidden. A shortcut you assigned to it no longer does anything and the key is free for other actions; your other shortcuts are unaffected.
+- On Windows, local terminals and WSL now run through the Microsoft ConPTY that ships with Termlet (`conpty.dll` and `OpenConsole.exe` from Windows Terminal 1.25, next to Termlet.exe), which is newer than the one built into Windows: programs that use the mouse, such as vim, htop, tmux, mc and pi, now get clicks, drags and the wheel. Before, dragging only made a Termlet selection and the wheel turned into arrow keys in full-screen programs; hold Shift while dragging to select with Termlet instead. The portable package ships them too. If local terminals fail to open, delete the two files to go back to the built-in ConPTY (see "Local shells" in the user guide).
 
 ### Fixed
 
@@ -35,6 +36,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Usage statistics
 
 - The feature list (`features`) has one more item, `batch_exec`: ran a batch (`exec -g` and the like on the command line, `run_command_on_hosts` over MCP, the Batch run tab including the compose bar's "Run and Compare"), 51 items in all.
+
+### Security
+
+- On Windows, Termlet now limits where DLLs loaded by name are searched to its own folder and System32 at startup: before, a DLL with the same name (such as `conpty.dll`) placed in the current folder or on PATH could be loaded (DLL planting).
 
 ## 0.3.3 (2026-11-22)
 

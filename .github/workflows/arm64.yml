@@ -73,5 +73,12 @@ jobs:
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
+      # Windows 上与 windows.yml 相同：测试经随带的 ConPTY（arm64 的那份只在这里与 release.yml 中实际运行过）；
+      # TERMLET_TEST_CONPTY 只有 Windows 的测试读
+      - name: 放入随带的 ConPTY
+        if: runner.os == 'Windows'
+        run: node scripts/release.mjs conpty --arch arm64 --into target/debug/deps
       - name: 测试
+        env:
+          TERMLET_TEST_CONPTY: '1'
         run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io

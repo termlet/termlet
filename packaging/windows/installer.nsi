@@ -4,8 +4,8 @@
 ;   makensis /INPUTCHARSET UTF8 /DVERSION=1.0.0 /DVERSION_NUMERIC=1.0.0.0 /DARCH=x64 /DSTAGE=<暂存目录> /DOUTFILE=<安装包> installer.nsi
 ; ARCH 是暂存目录中程序的架构：x64 或 arm64（不给时为 x64）。两种安装包只有安装前的检查不同（安装程序本身都是
 ; 32 位的 NSIS，arm64 的 Windows 经仿真运行它），装到同一个位置、写同样的注册表项，可以互相覆盖升级。
-; 暂存目录中：Termlet.exe、bin\termlet.exe、licenses\、license_zh_CN.txt / license_zh_TW.txt / license_en.txt（带 BOM、CRLF）、
-; helper.ps1（带 BOM）。
+; 暂存目录中：Termlet.exe、conpty.dll 与 OpenConsole.exe（这个架构的微软 ConPTY，见 release.mjs 的 CONPTY）、bin\termlet.exe、
+; licenses\、license_zh_CN.txt / license_zh_TW.txt / license_en.txt（带 BOM、CRLF）、helper.ps1（带 BOM）。
 ;
 ; 安装向导的行为：
 ; - 许可 → 选择安装位置（默认 %LOCALAPPDATA%\Programs\Termlet，升级时沿用原来的位置）→ 安装 → 完成（可勾选运行 Termlet）；
@@ -13,14 +13,15 @@
 ;   AGPL-3.0 的英文全文，见 release.mjs 的 writeNotices）：日文、韩文系统上显示英文版（不做机器翻译），许可页的上方写明这一点；
 ; - 只为当前用户安装，不需要管理员权限；需要 64 位的 Windows 10 1809（内部版本 17763）或更高版本，arm64 的安装包
 ;   只能装在 arm64 的 Windows 上（x64 的安装包在 arm64 的 Windows 11 上经仿真也能用）；
-; - 安装目录根部放 Termlet.exe，命令行工具放 bin\termlet.exe（文件名不分大小写，二者不能放在同一目录）；
+; - 安装目录根部放 Termlet.exe 与它旁边的 conpty.dll、OpenConsole.exe（本地终端先用它们，删掉则改用系统自带的 ConPTY），
+;   命令行工具放 bin\termlet.exe（文件名不分大小写，二者不能放在同一目录）；
 ; - 开始菜单与桌面快捷方式；自动更新时（--updated）只刷新已有的，用户删掉的不再创建；
 ; - 自动更新：Termlet 下载并核对安装包后以 /S --updated [--force-run] /D=<安装目录> 运行，--force-run 时装完启动 Termlet。
 ;   “重启并安装”（--updated --force-run）时用户在等 Termlet 重新打开：不再静默，只显示一个进度窗口（“正在更新 Termlet”，
 ;   跳过许可、位置与完成页，没有要点的按钮，装完自动关闭）；Termlet 传的仍是 /S（已发布的版本也这样传），由 .onInit
 ;   改回显示。退出 Termlet 时顺带安装（只有 --updated）照旧静默；
-; - 安装、卸载前处理运行中的 Termlet（helper.ps1）：只剩后台实例（没有窗口，例如为命令行工具服务的）或命令行工具时
-;   直接结束；有窗口时询问（静默运行时等它退出，最多 30 秒，之后结束）；
+; - 安装、卸载前处理运行中的 Termlet（helper.ps1）：只剩后台实例（没有窗口，例如为命令行工具服务的）、命令行工具或
+;   安装目录中的 OpenConsole.exe 时直接结束；有窗口时询问（静默运行时等它退出，最多 30 秒，之后结束）；
 ; - 卸载：从当前用户的 PATH 中移除 bin、删除快捷方式与更新缓存；用户数据目录（%APPDATA%\termlet）保留。
 ;
 ; 在 Git Bash 中运行安装程序时要设 MSYS_NO_PATHCONV=1，否则 /S 会被转换成路径。
@@ -204,7 +205,7 @@ Function ${PREFIX}StopRunning
     nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action Check -Dir "$INSTDIR"'
     Pop $0
     ${If} $0 == 1
-      ; 只剩后台实例或命令行工具：直接结束（与仓库的安装约定相同，不用询问）
+      ; 只剩后台实例、命令行工具或安装目录中的 OpenConsole.exe：直接结束（与仓库的安装约定相同，不用询问）
       nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action StopBackground -Dir "$INSTDIR"'
       Pop $0
       Goto check
@@ -320,6 +321,8 @@ Section "Termlet"
 
   SetOutPath "$INSTDIR"
   File "${STAGE}\Termlet.exe"
+  File "${STAGE}\conpty.dll"
+  File "${STAGE}\OpenConsole.exe"
   SetOutPath "$INSTDIR\bin"
   File "${STAGE}\bin\termlet.exe"
   ; 第三方许可：整个目录换成这个版本的
@@ -371,6 +374,8 @@ Section "Uninstall"
 
   ; 只删除安装的文件：安装目录是用户选的，其中可能还有别的文件
   Delete "$INSTDIR\Termlet.exe"
+  Delete "$INSTDIR\conpty.dll"
+  Delete "$INSTDIR\OpenConsole.exe"
   Delete "$INSTDIR\bin\termlet.exe"
   RMDir "$INSTDIR\bin"
   RMDir /r "$INSTDIR\licenses"

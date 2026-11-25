@@ -28,8 +28,9 @@
 #
 # 产物（每个是一个 zip，保留 14 天；release job 与本机的 release.mjs fetch 下载后合进一个目录）：
 #   windows-x64   termlet-<版本>-win-x64.exe、termlet-<版本>-win-x64-portable.zip（便携版），latest.yml（依次列出这两个），
-#                 stage/（打包用的暂存目录：程序、许可文本、version.txt；sign 核对其中的 Termlet.exe 内置了公钥，以后
-#                 有了代码签名证书时在本机签名其中的程序后 build --stage 重新打安装包与便携版）
+#                 stage/（打包用的暂存目录：程序、随带的 ConPTY、许可文本、version.txt；collect 核对 ConPTY 与固定的摘要
+#                 相同，sign 核对其中的 Termlet.exe 内置了公钥，以后有了代码签名证书时在本机签名其中的程序后
+#                 build --stage 重新打安装包与便携版）
 #   windows-arm64 termlet-<版本>-win-arm64.exe、termlet-<版本>-win-arm64-portable.zip，latest-arm64.yml，stage-arm64/
 #                 （实验版，job 失败时没有这个产物）
 #   linux-x64     termlet-<版本>-linux-x64.tar.gz、.deb、.rpm、.AppImage，latest-linux.yml（依次列出这四个）
@@ -159,12 +160,17 @@ jobs:
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
+      # 测试经随带的 ConPTY（与 arm64.yml 相同）；打包时 build 再取一次放进暂存目录（用同一个缓存的包）
+      - name: 放入随带的 ConPTY（arm64）
+        if: matrix.arch == 'arm64'
+        run: node scripts/release.mjs conpty --arch arm64 --into target/debug/deps
       - name: 核心测试（arm64）
         if: matrix.arch == 'arm64'
         timeout-minutes: 45
         env:
           CARGO_PROFILE_DEV_DEBUG: '0'
           CARGO_INCREMENTAL: '0'
+          TERMLET_TEST_CONPTY: '1'
         run: cargo nextest run --locked --profile ci -p termlet-core -p termlet-cli -p termlet-proto -p termlet-io
       # release.mjs 先看环境变量 MAKENSIS
       - name: 安装 NSIS
@@ -176,9 +182,9 @@ jobs:
           if ($hash -ne $env:NSIS_SHA256) { throw "NSIS 的 SHA-256 不符：$hash" }
           Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
           "MAKENSIS=$env:RUNNER_TEMP\nsis-$env:NSIS_VERSION\makensis.exe" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-      # 发布构建（Cargo.toml 的发布配置）、确认程序内置了更新公钥且是这个架构的、准备暂存目录、打安装包与便携版 zip
-      # （同一个暂存目录，便携版的内容见 release.mjs 的 buildPortableZip）、写这个架构的清单（latest.yml 或
-      # latest-arm64.yml）
+      # 发布构建（Cargo.toml 的发布配置）、确认程序内置了更新公钥且是这个架构的、准备暂存目录（其中这个架构的 ConPTY
+      # 按固定的版本从 nuget.org 下载、核对摘要，见 release.mjs 的 CONPTY）、打安装包与便携版 zip（同一个暂存目录，
+      # 便携版的内容见 release.mjs 的 buildPortableZip）、写这个架构的清单（latest.yml 或 latest-arm64.yml）
       - name: 构建与打包
         run: node scripts/release.mjs build --arch "$TERMLET_ARCH" --out dist
       - id: upload

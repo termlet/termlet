@@ -1,4 +1,9 @@
-//! 本机的伪终端：Windows 上是 ConPTY（程序目录下有 conpty.dll 时优先用它），其他平台是 `/dev/ptmx`。
+//! 本机的伪终端：Windows 上是 ConPTY，其他平台是 `/dev/ptmx`。
+//!
+//! Windows 的安装包与便携版在程序旁边附带微软的 conpty.dll 与 OpenConsole.exe（`scripts/release.mjs` 的 `CONPTY`）：
+//! portable-pty 第一次开伪终端时按名字加载 conpty.dll（桌面端启动时已把 DLL 的搜索限定为程序目录与 System32），
+//! 有就用它，它再启动同一目录的 OpenConsole.exe，比系统自带的新（程序开的鼠标上报等模式能传到终端）；没有时用
+//! 系统自带的。一个进程中只决定一次。
 //!
 //! 读写各用一个线程：读到的输出经有界通道交给终端（终端解析跟不上时读线程等待，形成背压）；
 //! 写入放进队列由写线程发送，界面线程从不阻塞。子进程退出、输出读完后发出结束事件（带退出码）。
@@ -305,6 +310,65 @@ mod tests {
         let (text, _) = collect_until(&io, "-done", Duration::from_secs(10));
         assert!(text.contains("typed-"), "输出：{text:?}");
         io.input.resize(GridSize::new(100, 30));
+        io.input.write(b"exit\r");
+    }
+
+    /// 随带的 ConPTY（CI 用 `release.mjs conpty --into target/debug/deps` 放在测试程序旁边，并设
+    /// `TERMLET_TEST_CONPTY=1`）：程序开的鼠标上报原样传到终端（系统自带的 ConPTY 会吞掉 `?1000h`），
+    /// 承载终端的是测试程序旁边的 OpenConsole.exe。没设时跳过。
+    #[cfg(windows)]
+    #[test]
+    fn bundled_conpty_passes_mouse_modes() {
+        if std::env::var_os("TERMLET_TEST_CONPTY").is_none_or(|v| v != "1") {
+            eprintln!("没有设 TERMLET_TEST_CONPTY=1，跳过");
+            return;
+        }
+        let exe = std::env::current_exe().unwrap();
+        let dir = exe.parent().unwrap();
+        let host = dir.join("OpenConsole.exe");
+        assert!(
+            dir.join("conpty.dll").is_file() && host.is_file(),
+            "测试程序旁边没有随带的 ConPTY：{}",
+            dir.display()
+        );
+
+        let io = spawn(
+            launch(
+                "cmd.exe",
+                &["/d", "/q", "/k", "echo \x1b[?1000h\x1b[?1006hmouse-on"],
+            ),
+            GridSize::new(80, 24),
+        )
+        .unwrap();
+        let (text, closed) = collect_until(&io, "\x1b[?1006h", Duration::from_secs(15));
+        assert_eq!(closed, None, "输出：{text:?}");
+        assert!(
+            text.contains("\x1b[?1000h") && text.contains("\x1b[?1006h"),
+            "鼠标上报的模式没有传到终端：{text:?}"
+        );
+
+        // 伪终端还开着时看本进程启动的 OpenConsole.exe
+        let script = format!(
+            "Get-CimInstance Win32_Process | Where-Object {{ $_.ParentProcessId -eq {} -and \
+             $_.Name -eq 'OpenConsole.exe' }} | ForEach-Object {{ $_.ExecutablePath }}",
+            std::process::id()
+        );
+        let out = std::process::Command::new("powershell.exe")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .output()
+            .unwrap();
+        let paths = String::from_utf8_lossy(&out.stdout);
+        let expected = host.to_string_lossy();
+        assert!(
+            paths.lines().any(|p| {
+                let p = p.trim();
+                p.strip_prefix(r"\\?\")
+                    .unwrap_or(p)
+                    .eq_ignore_ascii_case(&expected)
+            }),
+            "承载终端的不是 {expected}：{paths:?}"
+        );
+        eprintln!("本地终端经随带的 ConPTY：{expected}");
         io.input.write(b"exit\r");
     }
 }

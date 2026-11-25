@@ -21,3 +21,8 @@ success-output = "final"
 [[profile.ci.overrides]]
 filter = 'test(detect_and_run_windows)'
 success-output = "final"
+
+# 随带的 ConPTY（CI 设 TERMLET_TEST_CONPTY=1 时才测，否则跳过并打印原因）：通过时也列出输出，看得到真的测了
+[[profile.ci.overrides]]
+filter = 'test(bundled_conpty_passes_mouse_modes)'
+success-output = "final"

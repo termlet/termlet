@@ -56,5 +56,12 @@ jobs:
           fallback: none
       - name: clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # 本地终端的测试与发布版一样经随带的 ConPTY：测试程序在 target/debug/deps 中运行，portable-pty 先加载程序目录下
+      # 的 conpty.dll（版本与摘要固定在 release.mjs 的 CONPTY，从 nuget.org 下载后核对）。TERMLET_TEST_CONPTY 让
+      # localpty 的测试核对鼠标上报的模式能传到终端、承载终端的是旁边的 OpenConsole.exe
+      - name: 放入随带的 ConPTY
+        run: node scripts/release.mjs conpty --arch x64 --into target/debug/deps
       - name: 测试
+        env:
+          TERMLET_TEST_CONPTY: '1'
         run: cargo nextest run --workspace --locked --profile ci

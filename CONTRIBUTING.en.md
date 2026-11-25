@@ -72,6 +72,8 @@ cargo test --workspace                             # all tests; the UI integrati
 cargo test -p termlet-core                         # only the core (without building the UI)
 cargo nextest run --workspace                      # the same test runner as CI (cargo install cargo-nextest --locked); run doc tests with cargo test --workspace --doc
 cargo test -p termlet-terminal --release throughput -- --ignored --nocapture   # terminal parsing throughput
+node scripts/release.mjs conpty --into target/debug    # Windows: put the ConPTY shipped with the installer next to the cargo run program (the built-in one is used by default; delete the two files to go back)
+                                                   # CI's Windows tests put it into target/debug/deps and set TERMLET_TEST_CONPTY=1 to check that mouse modes reach the terminal
 node packaging/render-icons.mjs                    # regenerate the icons after changing the logo (needs Chrome or Edge)
 ```
 
@@ -188,7 +190,8 @@ Building, signing and publishing all happen on GitHub Actions; see the comments 
 ```bash
 node scripts/release.mjs prepare <version>          # before a release: bump the version in Cargo.toml (and Cargo.lock), and turn the "unreleased" section at the top of the changelogs into this version with today's date (try --dry-run first)
 node scripts/release.mjs notes <version>            # check and print this version's GitHub Release notes (its sections of the Chinese and English changelogs)
-node scripts/release.mjs build [--arch x64|arm64]  # local release build plus the installer termlet-<version>-win-x64.exe, the portable termlet-<version>-win-x64-portable.zip and latest.yml (listing both), into target/dist; for arm64, the two -win-arm64 packages and latest-arm64.yml (staging folder stage-arm64; cross-compiles when the local toolchain is another architecture, which needs the Rust target and MSVC's ARM64 build tools)
+node scripts/release.mjs build [--arch x64|arm64]  # local release build plus the installer termlet-<version>-win-x64.exe, the portable termlet-<version>-win-x64-portable.zip and latest.yml (listing both), into target/dist; for arm64, the two -win-arm64 packages and latest-arm64.yml (staging folder stage-arm64; cross-compiles when the local toolchain is another architecture, which needs the Rust target and MSVC's ARM64 build tools); the ConPTY shipped next to the program is downloaded from nuget.org at the version pinned in release.mjs's CONPTY and checked against its digests
+node scripts/release.mjs conpty [--arch x64|arm64] --into <folder>   # fetch the shipped ConPTY (conpty.dll, OpenConsole.exe) on its own; the downloaded package is cached in target/conpty
 node scripts/release.mjs manifest --file <package> [--file <package>]...   # write the version file latest-linux.yml / latest-linux-arm64.yml (listing the tar.gz, deb, rpm and AppImage) or latest-mac.yml (called by CI after packaging)
 node scripts/release.mjs fetch --tag v<version>     # local release (fallback): download what CI built for this tag (packages and version files of every platform and architecture) into target/dist/v<version> (gh auth login first)
 node scripts/release.mjs sign --key <signing key file> [--dir <folder>]   # sign the latest*.yml files and create SHA256SUMS

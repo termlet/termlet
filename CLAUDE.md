@@ -38,6 +38,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/post-input.ps1 -Proc
 cargo test -p termlet-terminal --release throughput -- --ignored --nocapture   # 终端解析吞吐
 TERMLET_TEST_SSH=127.0.0.1:2222 cargo test -p termlet-core --release --lib sftp::tests::bench -- --ignored --nocapture --test-threads 1
                                                    # SFTP / SCP / 命令行传输的吞吐（同一文件连续传 5 次，打印每次的 MB/s；TERMLET_BENCH_MB 等见 bench.rs）
+node scripts/release.mjs conpty --into target/debug/deps && TERMLET_TEST_CONPTY=1 cargo test -p termlet-core --lib localpty
+                                                   # Windows 安装包附带的 ConPTY（版本与摘要固定在 release.mjs 的 CONPTY）：放到测试程序旁边，核对鼠标上报能传到终端；
+                                                   # 放进 target/debug 则 cargo run 也用它。测完删掉这两个文件，否则之后的本机测试都经它（CI 的 Windows 测试都经它）
 python scripts/file-icons.py                       # 重新生成 SFTP 的彩色文件图标（Catppuccin vscode-icons，版本与校验和写在脚本里；生成的表与 mocha.txt 不要手改）
 python scripts/brand-icons.py                      # 重新生成系统与品牌标志（Simple Icons，版本与校验和、收录名单写在脚本里；生成的 SVG、LICENSE 与 brand_icons/table.rs 不要手改）
 ```

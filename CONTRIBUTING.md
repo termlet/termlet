@@ -71,6 +71,8 @@ cargo test --workspace                             # 全部测试；UI 集成测
 cargo test -p termlet-core                         # 只测核心（不编译界面）
 cargo nextest run --workspace                      # 与 CI 相同的测试运行器（cargo install cargo-nextest --locked）；文档测试另用 cargo test --workspace --doc
 cargo test -p termlet-terminal --release throughput -- --ignored --nocapture   # 终端解析吞吐
+node scripts/release.mjs conpty --into target/debug    # Windows：把安装包附带的 ConPTY 放到 cargo run 的程序旁边（默认用系统自带的；删掉这两个文件即换回）
+                                                   # CI 的 Windows 测试放进 target/debug/deps，并设 TERMLET_TEST_CONPTY=1 核对鼠标上报能传到终端
 node packaging/render-icons.mjs                    # 修改 logo 后重新生成图标（需要本机有 Chrome 或 Edge）
 ```
 
@@ -187,7 +189,8 @@ Termlet 刻意保持小而清楚，加东西前请先开 issue 讨论：
 ```bash
 node scripts/release.mjs prepare <版本>             # 发版前的准备：改 Cargo.toml（与 Cargo.lock）的版本号，把更新日志最上面“未发布”的一节改成版本号与今天的日期（--dry-run 先看一遍）
 node scripts/release.mjs notes <版本>               # 核对并打印这一版的 GitHub Release 说明（更新日志中这一版的中英文两节）
-node scripts/release.mjs build [--arch x64|arm64]  # 在本机发布构建并打安装包 termlet-<版本>-win-x64.exe、便携版 termlet-<版本>-win-x64-portable.zip 与 latest.yml（依次列出这两个），输出到 target/dist；arm64 是 -win-arm64 的两个包与 latest-arm64.yml（暂存目录 stage-arm64；与本机工具链的架构不同时交叉编译，要装好 Rust 目标与 MSVC 的 ARM64 生成工具）
+node scripts/release.mjs build [--arch x64|arm64]  # 在本机发布构建并打安装包 termlet-<版本>-win-x64.exe、便携版 termlet-<版本>-win-x64-portable.zip 与 latest.yml（依次列出这两个），输出到 target/dist；arm64 是 -win-arm64 的两个包与 latest-arm64.yml（暂存目录 stage-arm64；与本机工具链的架构不同时交叉编译，要装好 Rust 目标与 MSVC 的 ARM64 生成工具）；程序旁附带的 ConPTY 按 release.mjs 的 CONPTY 固定的版本从 nuget.org 下载并核对摘要
+node scripts/release.mjs conpty [--arch x64|arm64] --into <目录>   # 单独取附带的 ConPTY（conpty.dll、OpenConsole.exe），下载的包缓存在 target/conpty
 node scripts/release.mjs manifest --file <包> [--file <包>]...   # 给 Linux、macOS 的包写版本描述文件 latest-linux.yml / latest-linux-arm64.yml（依次列出 tar.gz、deb、rpm、AppImage）、latest-mac.yml（CI 打包后调用）
 node scripts/release.mjs fetch --tag v<版本>        # 本机发布（后备）：下载 CI 为这个标签构建的产物（各平台、各架构的包与清单）到 target/dist/v<版本>（要先 gh auth login）
 node scripts/release.mjs sign --key <密钥文件> [--dir <目录>]   # 给 latest*.yml 签名并生成 SHA256SUMS

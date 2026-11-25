@@ -3,8 +3,8 @@
 # 作者：ruan
 #
 #   -Action Check           检查安装目录中运行的 Termlet。退出码：0 没有；1 只有后台实例（没有窗口，例如为命令行工具
-#                           服务的 headless 实例）或命令行工具；2 有带窗口的 Termlet
-#   -Action StopBackground  结束后台实例与命令行工具（带窗口的不动）
+#                           服务的 headless 实例）、命令行工具或随带的 OpenConsole.exe；2 有带窗口的 Termlet
+#   -Action StopBackground  结束后台实例、命令行工具与 OpenConsole.exe（带窗口的不动）
 #   -Action StopAll         全部结束（静默安装等了一段时间仍未退出时）
 #   -Action RemovePath      从当前用户的 PATH 中移除 <安装目录>\bin（保留 REG_SZ / REG_EXPAND_SZ 类型，
 #                           比较时不区分大小写、忽略末尾的分隔符，与 termlet-core 的 userpath 相同）
@@ -21,9 +21,11 @@ $root = [System.IO.Path]::GetFullPath($Dir).TrimEnd('\', '/')
 $app = Join-Path $root 'Termlet.exe'
 
 function Get-TermletProcesses {
-    # 名称比较不区分大小写：Termlet.exe（应用）与 bin\termlet.exe（命令行工具）都在其中
+    # 名称比较不区分大小写：Termlet.exe（应用）与 bin\termlet.exe（命令行工具）都在其中。随带的 OpenConsole.exe
+    # （本地终端的宿主）平时随 Termlet 退出，留下的也要结束，否则覆盖、删除它时文件被占用；只认安装目录中的，
+    # Windows Terminal 等别的程序的不动
     $prefix = $root + '\'
-    Get-CimInstance -ClassName Win32_Process -Filter "Name = 'termlet.exe'" |
+    Get-CimInstance -ClassName Win32_Process -Filter "Name = 'termlet.exe' OR Name = 'OpenConsole.exe'" |
         Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) }
 }
 

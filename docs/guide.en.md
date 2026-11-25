@@ -53,11 +53,11 @@
 - The notice on the license page exists only in Simplified Chinese, Traditional Chinese and English; Japanese and Korean systems show the English one. The full license text after it is the English original.
 - After you accept the license agreement you can change the installation folder (default `%LOCALAPPDATA%\Programs\Termlet`; upgrades keep the existing folder).
 - It installs for the current user only and needs no administrator rights.
-- The installation folder holds `Termlet.exe` and the command-line tool `bin\termlet.exe`, and Start menu and desktop shortcuts are created.
+- The installation folder holds `Termlet.exe`, the `conpty.dll` and `OpenConsole.exe` next to it (the ConPTY used by local terminals, see "Local shells") and the command-line tool `bin\termlet.exe`, and Start menu and desktop shortcuts are created.
 
 ### Windows portable
 
-- `termlet-<version>-win-x64-portable.zip` holds a `Termlet` folder: `Termlet.exe`, `portable.txt`, `bin\termlet.exe`, `licenses` and the license notice. Keep them where they are relative to each other.
+- `termlet-<version>-win-x64-portable.zip` holds a `Termlet` folder: `Termlet.exe`, `conpty.dll`, `OpenConsole.exe`, `portable.txt`, `bin\termlet.exe`, `licenses` and the license notice. Keep them where they are relative to each other.
 - Unzip it into any folder you can write to (the desktop, a USB drive and so on, not Program Files) and run `Termlet.exe` inside. Nothing is installed and no administrator rights are needed.
 - With `portable.txt` next to the program, Termlet runs as the portable version:
   - Data is kept in the `data` folder next to the program (logs, local snapshots, the default session log location and so on are all inside).
@@ -846,6 +846,10 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - The context menu opens, sets as default, removes from the sidebar (or shows in the sidebar) or manages local terminals.
 - You can add your own local terminals in Settings (command line, start folder, environment variables).
 - Split panes, the compose bar and keyword highlighting all work, and each terminal picks up the system's latest environment variables.
+- On Windows, local terminals and WSL run through the Microsoft ConPTY shipped next to the program (`conpty.dll` and `OpenConsole.exe`, taken from Windows Terminal and newer than the one built into Windows):
+  - programs that use the mouse, such as vim, htop, tmux, mc and pi, get clicks, drags and the wheel;
+  - to select text with Termlet in those programs (to copy it), hold Shift while dragging.
+- If local terminals fail to open, you can delete `conpty.dll` and `OpenConsole.exe` from the program's folder (the installation folder, or the `Termlet` folder of the portable version) to go back to the ConPTY built into Windows (programs then get no mouse input again); an update puts them back.
 
 ### WSL
 

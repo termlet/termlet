@@ -45,17 +45,24 @@
 //       不给 --out 时打印到标准输出。
 //   node scripts/release.mjs build [--arch x64|arm64] [--out <目录>] [--skip-cargo] [--stage <暂存目录>]
 //       cargo build --release（termlet-desktop 与 termlet-cli，--locked），确认程序内置了更新公钥、是这个架构的程序，
-//       准备暂存目录（x64 是 stage，arm64 是 stage-arm64），调用 makensis 打出安装包 termlet-<版本>-win-<架构>.exe，
-//       再从同一个暂存目录打便携版 termlet-<版本>-win-<架构>-portable.zip（其中一个 Termlet 文件夹：Termlet.exe、
-//       bin\termlet.exe、licenses、许可协议与便携标记 portable.txt，见 packaging/windows/portable.txt），计算哈希并写出
-//       这个架构的版本描述文件（x64 是 latest.yml，arm64 是 latest-arm64.yml；先列安装程序，它是 path；再列便携版，
-//       应用只按 -win-<架构>.exe 找安装包，官网从中取便携版的大小与 SHA-512）。
+//       准备暂存目录（x64 是 stage，arm64 是 stage-arm64；Termlet.exe 旁边放这个架构的 ConPTY，见 conpty），调用 makensis
+//       打出安装包 termlet-<版本>-win-<架构>.exe，再从同一个暂存目录打便携版 termlet-<版本>-win-<架构>-portable.zip（其中
+//       一个 Termlet 文件夹：Termlet.exe、conpty.dll、OpenConsole.exe、bin\termlet.exe、licenses、许可协议与便携标记
+//       portable.txt，见 packaging/windows/portable.txt），计算哈希并写出这个架构的版本描述文件（x64 是 latest.yml，
+//       arm64 是 latest-arm64.yml；先列安装程序，它是 path；再列便携版，应用只按 -win-<架构>.exe 找安装包，官网从中取
+//       便携版的大小与 SHA-512）。
 //       --arch 默认为本机 Rust 工具链的架构；与工具链不同时加 --target 交叉编译（要装好这个 Rust 目标与 MSVC 对应
 //       架构的生成工具）。输出目录默认为 <cargo 的 target 目录>/dist；makensis 按 MAKENSIS 环境变量、PATH、NSIS 的
 //       默认安装位置、electron-builder 的缓存依次查找。--skip-cargo 用已有的发布构建（例如刚构建过）。
 //       --stage 用现成的暂存目录打包（例如 fetch 下载的、其中的程序签过名的）：不构建、不重新准备暂存目录，
-//       暂存目录中记的版本要与 Cargo.toml 的相同，架构按其中的 Termlet.exe 定（给了 --arch 时要一致）；输出目录
-//       默认为暂存目录的上一级。
+//       暂存目录中记的版本要与 Cargo.toml 的相同，架构按其中的 Termlet.exe 定（给了 --arch 时要一致），ConPTY 的文件
+//       要与固定的摘要相同；输出目录默认为暂存目录的上一级。
+//   node scripts/release.mjs conpty [--arch x64|arm64] --into <目录>
+//       把这个架构的微软 ConPTY（conpty.dll 与 OpenConsole.exe，见 CONPTY）放进目录：按固定的版本从 nuget.org 下载
+//       NuGet 包（缓存在 <cargo 的 target 目录>/conpty/<版本>，已有就不再下载），核对包与取出的每个文件的 SHA-256、
+//       程序的架构。--arch 默认为本机 Rust 工具链的架构。build 准备暂存目录时同样取它；CI 的 Windows 测试先放进
+//       target/debug/deps（测试程序在那里运行），让本地终端的测试与发布版一样经随带的 ConPTY；本机要试随带的 ConPTY
+//       时放进 target/debug（cargo run 的程序旁边），删掉这两个文件则改回系统自带的。
 //   node scripts/release.mjs collect --from <产物目录> --out <目录> --digest <产物名>=<SHA-256>... [--tag v<版本>]
 //                                    [--require-arm64]
 //       CI 的签名与发布 job 用，在碰任何秘密之前运行：actions/download-artifact 以 skip-decompress 把这次运行的产物原样
@@ -248,6 +255,52 @@ const LICENSE_FILES = [
   // 系统与品牌标志（Simple Icons）的来源、许可与商标说明（由 scripts/brand-icons.py 生成）
   ['crates/termlet-desktop/assets/brand-icons/LICENSE', 'simple-icons.txt'],
 ]
+/**
+ * 随 Windows 的安装包与便携版附带的微软 ConPTY：NuGet 包 Microsoft.Windows.Console.ConPTY（MIT，源码在
+ * microsoft/terminal）中的 conpty.dll 与 OpenConsole.exe，原样放在 Termlet.exe 旁边。portable-pty 先加载程序目录下的
+ * conpty.dll，它再启动同一目录的 OpenConsole.exe 承载本地终端：比系统自带的新，程序开的鼠标上报等模式能传到终端。
+ * 删掉这两个文件则改用系统自带的。版本与摘要都固定（conpty 命令下载并核对）；升级时改这里的版本与全部摘要
+ * （先确认新文件有微软的签名），许可文本换成对应的 Windows Terminal 标签的，再回归本地终端。
+ * files：各架构要取的文件，[包中的位置, 文件名, SHA-256]
+ */
+const CONPTY = {
+  version: '1.25.261109001',
+  // nupkg 的 SHA-256（nuget.org 记录的 SHA-512 是 wA6Fbai2mUlsF2J+pmtWEoRTHiAisIGobFxJ9u4r9XFEug9JnOn0zucPLIb/ez93Jm4JUXr8pj+XAswWZpzLXg==）
+  sha256: '3d77f535df848e44225c2a8912ac844fecb23f3057732b639f3034b587496f09',
+  files: {
+    x64: [
+      [
+        'runtimes/win-x64/native/conpty.dll',
+        'conpty.dll',
+        'e971856f89748dc3b458125e9afdd79b5e9574a7c937676116d3cbbd3b71f492',
+      ],
+      [
+        'build/native/runtimes/x64/OpenConsole.exe',
+        'OpenConsole.exe',
+        'b17e48b07ef153b420f0a6e178bacd31fb4c3390e21ae746586213fc0719a775',
+      ],
+    ],
+    arm64: [
+      [
+        'runtimes/win-arm64/native/conpty.dll',
+        'conpty.dll',
+        '3608cef830a1c4fbbf3981594ad3f64ebe2df6db98fe43a48a4ca7d2875d8959',
+      ],
+      [
+        'build/native/runtimes/arm64/OpenConsole.exe',
+        'OpenConsole.exe',
+        'c04334f450b5731930b63a28ac4da8a058367242dbcf2fb9b323ea25e5a23252',
+      ],
+    ],
+  },
+}
+const CONPTY_URL =
+  'https://api.nuget.org/v3-flatcontainer/microsoft.windows.console.conpty/' +
+  `${CONPTY.version}/microsoft.windows.console.conpty.${CONPTY.version}.nupkg`
+/** 暂存目录、安装目录与便携版中 ConPTY 的文件（与 Termlet.exe 同一目录） */
+const CONPTY_FILES = ['conpty.dll', 'OpenConsole.exe']
+/** ConPTY 的来源与许可（只放进 Windows 的包；开头写着上面的版本，build 时核对） */
+const CONPTY_LICENSE = ['packaging/licenses/windows-terminal-conpty.txt', 'windows-terminal-conpty.txt']
 /** Rust 依赖的许可文本写在这个文件中（安装目录 licenses 下） */
 const RUST_LICENSES = 'third-party-rust.txt'
 /**
@@ -677,16 +730,19 @@ function writeRustLicenses(path, target) {
 }
 
 /**
- * 随程序分发的许可文本写进 dir：许可说明 license_*.txt（接上许可证全文），licenses 下的第三方许可（Rust 依赖按 target 平台列出）。
- * windows 为真时许可协议带 BOM、用 CRLF（NSIS 的许可页按 BOM 识别 UTF-8）。
+ * 随程序分发的许可文本写进 dir：许可说明 license_*.txt（接上许可证全文），licenses 下的第三方许可（Rust 依赖按 target 平台列出，
+ * Windows 另有随带的 ConPTY 的）。windows 为真时许可协议带 BOM、用 CRLF（NSIS 的许可页按 BOM 识别 UTF-8）。
  */
 function writeNotices(dir, target, windows) {
   mkdirSync(join(dir, 'licenses'), { recursive: true })
-  for (const [from, to] of LICENSE_FILES) {
+  const conpty = target.includes('-windows-')
+  for (const [from, to] of conpty ? [...LICENSE_FILES, CONPTY_LICENSE] : LICENSE_FILES) {
     const path = join(root, from)
     if (!existsSync(path)) fail(`找不到许可文本 ${from}`)
     copyFileSync(path, join(dir, 'licenses', to))
   }
+  if (conpty && !readFileSync(join(root, CONPTY_LICENSE[0]), 'utf8').includes(CONPTY.version))
+    fail(`${CONPTY_LICENSE[0]} 中没有写 ConPTY 的版本 ${CONPTY.version}：升级 ConPTY 时许可文本要一起换`)
   writeRustLicenses(join(dir, 'licenses', RUST_LICENSES), target)
   const fullText = readFileSync(join(root, LICENSE_TEXT), 'utf8').replace(/\r\n/g, '\n').trimEnd()
   for (const name of LICENSE_AGREEMENTS) {
@@ -788,11 +844,90 @@ function checkWindowsArch(path, arch) {
 }
 
 /**
- * 现成的暂存目录（build --stage）：安装程序要的文件都在，记的版本与 Cargo.toml 的相同，程序内置了公钥；
- * 返回其中的程序的架构（两个程序要相同）。
+ * dir 中有这个架构的 ConPTY 文件（CONPTY_FILES），与固定的摘要相同，PE 头也是这个架构的（防止常量中写错了架构）。
+ * 不对时抛出（fetch、collect 要先清理临时目录）
+ */
+function checkConpty(dir, arch) {
+  for (const [, name, digest] of CONPTY.files[arch]) {
+    const path = join(dir, name)
+    if (!existsSync(path)) throw new Error(`${dir} 中没有 ${name}`)
+    const actual = sha(path, 'sha256', 'hex')
+    if (actual !== digest)
+      throw new Error(`${path} 的 SHA-256 是 ${actual}，与 ConPTY ${CONPTY.version}（${arch}）的 ${digest} 不同`)
+    const machine = readWindowsArch(path)
+    if (machine !== arch) throw new Error(`${path} 是 ${machine} 的程序，应为 ${arch}`)
+  }
+}
+
+/**
+ * 取出这个架构的 ConPTY：NuGet 包缓存在 <target>/conpty/<版本>（没有或摘要不对时从 nuget.org 下载、核对），
+ * 这个架构的文件取到其中的 <架构> 目录并核对。返回那个目录（其中是 CONPTY_FILES）
+ */
+async function conptyDir(arch) {
+  const cache = join(cargoTargetDir(), 'conpty', CONPTY.version)
+  const pkg = join(cache, basename(CONPTY_URL))
+  if (!existsSync(pkg) || sha(pkg, 'sha256', 'hex') !== CONPTY.sha256) {
+    mkdirSync(cache, { recursive: true })
+    console.log(`下载 ConPTY ${CONPTY.version}：${CONPTY_URL}`)
+    let body
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const res = await fetch(CONPTY_URL, { signal: AbortSignal.timeout(120_000) })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        body = Buffer.from(await res.arrayBuffer())
+        break
+      } catch (e) {
+        if (attempt === 3) fail(`下载 ConPTY 失败：${e.message}`)
+        console.warn(`下载 ConPTY 失败（${e.message}），重试`)
+      }
+    }
+    const actual = createHash('sha256').update(body).digest('hex')
+    if (actual !== CONPTY.sha256)
+      fail(`下载的 ConPTY 包的 SHA-256 是 ${actual}，应为 ${CONPTY.sha256}`)
+    writeFileSync(pkg, body)
+  }
+  const dir = join(cache, arch)
+  const tmp = mkdtempSync(join(tmpdir(), 'termlet-conpty-'))
+  let error = null
+  try {
+    extractZip(pkg, tmp, CONPTY.files[arch].map(([entry]) => entry))
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    for (const [entry, name] of CONPTY.files[arch]) copyFileSync(join(tmp, entry), join(dir, name))
+    checkConpty(dir, arch)
+  } catch (e) {
+    error = e
+  }
+  rmSync(tmp, { recursive: true, force: true })
+  if (error) fail(`取出 ConPTY 的文件失败：${error.message}`)
+  return dir
+}
+
+/** conpty 命令：把这个架构的 ConPTY 放进 --into 指定的目录 */
+async function conptyCommand(values) {
+  if (!values.into) fail('用法：conpty [--arch x64|arm64] --into <目录>')
+  const arch = archOption(values) ?? hostArch()
+  const dir = await conptyDir(arch)
+  const into = resolve(values.into)
+  mkdirSync(into, { recursive: true })
+  for (const name of CONPTY_FILES) copyFileSync(join(dir, name), join(into, name))
+  const placed = CONPTY_FILES.map((f) => join(into, f)).join('、')
+  console.log(`已放入 ConPTY ${CONPTY.version}（${arch}）：${placed}`)
+}
+
+/**
+ * 现成的暂存目录（build --stage）：安装程序要的文件都在，记的版本与 Cargo.toml 的相同，程序内置了公钥，
+ * ConPTY 是固定的那个；返回其中的程序的架构（两个程序要相同）。
  */
 function checkStage(stage, version) {
-  const needed = ['Termlet.exe', 'bin/termlet.exe', 'helper.ps1', 'licenses', ...LICENSE_AGREEMENTS]
+  const needed = [
+    'Termlet.exe',
+    ...CONPTY_FILES,
+    'bin/termlet.exe',
+    'helper.ps1',
+    'licenses',
+    ...LICENSE_AGREEMENTS,
+  ]
   for (const f of needed) if (!existsSync(join(stage, f))) fail(`暂存目录中没有 ${f}：${stage}`)
   const marker = join(stage, STAGE_VERSION)
   const staged = existsSync(marker) ? readFileSync(marker, 'utf8').trim() : '(没有记录)'
@@ -802,6 +937,11 @@ function checkStage(stage, version) {
   checkAppKeys(join(stage, 'Termlet.exe'))
   const arch = windowsArchOf(join(stage, 'Termlet.exe'))
   checkWindowsArch(join(stage, 'bin/termlet.exe'), arch)
+  try {
+    checkConpty(stage, arch)
+  } catch (e) {
+    fail(e.message)
+  }
   return arch
 }
 
@@ -879,10 +1019,10 @@ function writeManifest(files, out) {
 }
 
 /**
- * 便携版 zip：一个 Termlet 文件夹，其中是暂存目录中的程序、第三方许可与许可协议（与安装目录相同：命令行工具在
- * bin\termlet.exe，按上一级的 Termlet.exe 找应用；关于页按程序旁的 licenses 找许可），加上便携标记 portable.txt
- * （有它时数据放在旁边的 data 中）。不放安装程序用的 helper.ps1、记版本的 version.txt，也没有卸载程序与 data。
- * 用系统自带的 tar.exe（bsdtar）打 zip：Git Bash 的 tar 不认 zip。
+ * 便携版 zip：一个 Termlet 文件夹，其中是暂存目录中的程序、ConPTY、第三方许可与许可协议（与安装目录相同：ConPTY 在
+ * Termlet.exe 旁边，命令行工具在 bin\termlet.exe，按上一级的 Termlet.exe 找应用；关于页按程序旁的 licenses 找许可），
+ * 加上便携标记 portable.txt（有它时数据放在旁边的 data 中）。不放安装程序用的 helper.ps1、记版本的 version.txt，
+ * 也没有卸载程序与 data。用系统自带的 tar.exe（bsdtar）打 zip：Git Bash 的 tar 不认 zip。
  */
 function buildPortableZip(stage, zip) {
   const tmp = mkdtempSync(join(tmpdir(), 'termlet-portable-'))
@@ -890,6 +1030,7 @@ function buildPortableZip(stage, zip) {
     const dir = join(tmp, PORTABLE_FOLDER)
     mkdirSync(join(dir, 'bin'), { recursive: true })
     copyFileSync(join(stage, 'Termlet.exe'), join(dir, 'Termlet.exe'))
+    for (const name of CONPTY_FILES) copyFileSync(join(stage, name), join(dir, name))
     copyFileSync(join(stage, 'bin/termlet.exe'), join(dir, 'bin/termlet.exe'))
     cpSync(join(stage, 'licenses'), join(dir, 'licenses'), { recursive: true })
     for (const name of LICENSE_AGREEMENTS) copyFileSync(join(stage, name), join(dir, name))
@@ -924,7 +1065,12 @@ function archOption(values) {
   return arch
 }
 
-function build(values) {
+/** 本机 Rust 工具链的架构（不是 Windows 的 x64、arm64 时按 x64） */
+function hostArch(host = rustHost()) {
+  return Object.keys(WINDOWS_ARCHES).find((a) => WINDOWS_ARCHES[a].target === host) ?? 'x64'
+}
+
+async function build(values) {
   if (process.platform !== 'win32') fail('目前只打 Windows 安装包，请在 Windows 上运行')
   const version = workspaceVersion()
   const numeric = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
@@ -941,7 +1087,7 @@ function build(values) {
   } else {
     // 没给 --arch 时按本机工具链；与工具链的架构不同时交叉编译（产物在 target/<目标>/release）
     const host = rustHost()
-    arch ??= Object.keys(WINDOWS_ARCHES).find((a) => WINDOWS_ARCHES[a].target === host) ?? 'x64'
+    arch ??= hostArch(host)
     const { target: triple } = WINDOWS_ARCHES[arch]
     const cross = triple !== host
     if (!values['skip-cargo']) {
@@ -979,6 +1125,9 @@ function build(values) {
     mkdirSync(join(stage, 'bin'), { recursive: true })
     copyFileSync(app, join(stage, 'Termlet.exe'))
     copyFileSync(cli, join(stage, 'bin/termlet.exe'))
+    // 这个架构的 ConPTY 放在 Termlet.exe 旁边（与安装目录、便携版中的位置相同）
+    const conpty = await conptyDir(arch)
+    for (const name of CONPTY_FILES) copyFileSync(join(conpty, name), join(stage, name))
     writeNotices(stage, triple, true)
     writeFileSync(
       join(stage, 'helper.ps1'),
@@ -1104,14 +1253,17 @@ function checkReleaseRun(run, values, repo) {
     fail(`CI 构建的提交 ${run.head_sha} 不是本机标签 ${values.tag} 的提交 ${local}`)
 }
 
-/** 解开产物的 zip：Windows 上用系统自带的 bsdtar（Git Bash 的 tar 不认 zip），其他系统用 unzip。都拒绝 .. 路径 */
-function extractZip(zip, dir) {
+/**
+ * 解开 zip（给了 entries 时只取其中的这几项）：Windows 上用系统自带的 bsdtar（Git Bash 的 tar 不认 zip），其他系统用
+ * unzip。都拒绝 .. 路径
+ */
+function extractZip(zip, dir, entries = []) {
   mkdirSync(dir, { recursive: true })
   if (process.platform === 'win32') {
     const tar = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
-    execFileSync(tar, ['-xf', zip, '-C', dir], { stdio: 'inherit' })
+    execFileSync(tar, ['-xf', zip, '-C', dir, ...entries], { stdio: 'inherit' })
   } else {
-    execFileSync('unzip', ['-q', zip, '-d', dir], { stdio: 'inherit' })
+    execFileSync('unzip', ['-q', zip, ...entries, '-d', dir], { stdio: 'inherit' })
   }
 }
 
@@ -1208,7 +1360,7 @@ function checkFetched(dir, values, platforms) {
     if (files.join('\n') !== pkgs.join('\n'))
       throw new Error(`${name} 列出的是 ${files.join('、') || '（没有文件）'}，应为 ${pkgs.join('、')}`)
   }
-  // 取到的 Windows 各架构的暂存目录：版本相同，其中的程序是这个架构的
+  // 取到的 Windows 各架构的暂存目录：版本相同，其中的程序是这个架构的；暂存目录与便携版中的 ConPTY 是固定的那个
   for (const [arch, { stage }] of Object.entries(WINDOWS_ARCHES)) {
     if (!platforms.includes(`win-${arch}`)) continue
     for (const f of [`${stage}/Termlet.exe`, `${stage}/${STAGE_VERSION}`]) {
@@ -1219,6 +1371,20 @@ function checkFetched(dir, values, platforms) {
       throw new Error(`${stage} 的版本 ${staged} 与 ${MANIFEST} 的 ${version} 不一致`)
     const actual = readWindowsArch(join(dir, stage, 'Termlet.exe'))
     if (actual !== arch) throw new Error(`${stage}/Termlet.exe 是 ${actual} 的程序，应为 ${arch}`)
+    checkConpty(join(dir, stage), arch)
+    const tmp = mkdtempSync(join(tmpdir(), 'termlet-portable-check-'))
+    try {
+      const portable = `termlet-${version}-win-${arch}-portable.zip`
+      const entries = CONPTY_FILES.map((f) => `${PORTABLE_FOLDER}/${f}`)
+      try {
+        extractZip(join(dir, portable), tmp, entries)
+      } catch {
+        throw new Error(`${portable} 中取不出 ${entries.join('、')}`)
+      }
+      checkConpty(join(tmp, PORTABLE_FOLDER), arch)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
   }
   return version
 }
@@ -2666,6 +2832,7 @@ const { values, positionals } = parseArgs({
     target: { type: 'string' },
     arch: { type: 'string' },
     stage: { type: 'string' },
+    into: { type: 'string' },
     tag: { type: 'string' },
     run: { type: 'string' },
     repo: { type: 'string' },
@@ -2687,7 +2854,8 @@ const { values, positionals } = parseArgs({
 })
 if (command === 'prepare') prepare(values, positionals[0])
 else if (command === 'notes') notesCommand(values, positionals[0])
-else if (command === 'build') build(values)
+else if (command === 'build') await build(values)
+else if (command === 'conpty') await conptyCommand(values)
 else if (command === 'manifest') {
   if (!values.file?.length) fail('用法：manifest --file <包> [--file <同一平台的其他包>]... [--out <目录>]')
   const files = values.file.map((f) => resolve(f))
@@ -2711,6 +2879,6 @@ else if (command === 'licenses') {
 else if (command === 'selftest') selftest()
 else
   fail(
-    '用法见脚本开头的注释：prepare、notes、build、manifest、collect、fetch、sign、sign-config、publish、publish-config、' +
+    '用法见脚本开头的注释：prepare、notes、build、conpty、manifest、collect、fetch、sign、sign-config、publish、publish-config、' +
       'newkey、licenses、notices、show、selftest',
   )

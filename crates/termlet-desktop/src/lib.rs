@@ -21,6 +21,7 @@ mod close_confirm;
 mod command_palette;
 mod compose;
 mod dialog_token;
+pub mod dll_search;
 mod dock_skin;
 mod editor;
 mod forward_dialog;
