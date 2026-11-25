@@ -419,7 +419,7 @@ mod tests {
                 window.render_frame(cx);
                 window.click("open-settings", cx);
                 window.render_frame(cx);
-                window.click(Page::KnownHosts.nav_id(), cx);
+                window.click(Page::Security.nav_id(), cx);
                 window.render_frame(cx);
                 let toasts = window.notifications(cx).len();
                 // 页上的那一节与它做的相同：选好文件后导入

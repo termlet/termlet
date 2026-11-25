@@ -5,7 +5,7 @@ use gpui_kit::component::dock::{DockPlacement, PanelId, panel_handle};
 use gpui_kit::{Context, Entity, Focusable as _, Window};
 
 use super::Workspace;
-use crate::settings::Page;
+use crate::settings::Target;
 use crate::settings::panel::{SettingsPanel, SettingsPanelEvent};
 
 impl Workspace {
@@ -14,23 +14,24 @@ impl Workspace {
         self.settings_tab.as_ref().and_then(|p| p.upgrade())
     }
 
-    /// 打开设置，显示 `page` 分类：已经开着时切过去。保险库没有解锁、应用锁定时不打开。
+    /// 打开设置，去 `target`（一个分类或其中的某一处）：已经开着时切过去。保险库没有解锁、应用锁定时不打开。
     pub(crate) fn open_settings(
         &mut self,
-        page: Page,
+        target: impl Into<Target>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let target = target.into();
         if self.vault_gate.is_some() || crate::lock_ui::is_locked(cx) {
             return;
         }
-        tracing::debug!(page = ?page, "打开设置");
+        tracing::debug!(target = ?target, "打开设置");
         if let Some(panel) = self.live_settings() {
-            panel.update(cx, |panel, cx| panel.show_page(page, cx));
+            panel.update(cx, |panel, cx| panel.show(target, cx));
             self.show_settings(&panel, window, cx);
             return;
         }
-        let panel = SettingsPanel::new(page, window, cx);
+        let panel = SettingsPanel::new(target, window, cx);
         self.watch_settings(&panel, window, cx);
         self.dock_area.update(cx, |dock, cx| {
             dock.add_panel_view(

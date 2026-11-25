@@ -1,6 +1,6 @@
-//! 设置“关于”页中的三节：更新（自动检查更新、状态、检查更新、重启并安装、前往下载）、隐私（发送匿名使用统计、
+//! 设置中的三节：更新（自动检查更新、状态、检查更新、重启并安装、前往下载）在“关于”页；隐私（发送匿名使用统计、
 //! 查看发送的内容…、隐私说明、自动发送崩溃报告：“什么数据会离开这台电脑”放在一起）与诊断和崩溃报告（复制诊断信息、
-//! 导出诊断信息…、打开日志目录、崩溃记录…、日志的详细程度）。
+//! 导出诊断信息…、打开日志目录、崩溃记录…、日志的详细程度）在“隐私与诊断”页（[`AboutPart`]）。
 //!
 //! “自动检查更新”“发送匿名使用统计”“自动发送崩溃报告”“日志的详细程度”是草稿，随设置的“保存”写入（日志的详细
 //! 程度保存后立即生效，关掉使用统计后删除本机的 `usage.json`）；其余操作立即执行。“自动发送崩溃报告”只在有接收地址
@@ -210,7 +210,18 @@ fn third_party_licenses() -> Option<PathBuf> {
     .clone()
 }
 
+/// [`AboutExtras`] 显示哪几节。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AboutPart {
+    /// “关于”页：更新
+    Updates,
+    /// “隐私与诊断”页：隐私、诊断与崩溃报告
+    Privacy,
+}
+
 pub(crate) struct AboutExtras {
+    /// 显示哪几节（设置换页时给出）
+    part: AboutPart,
     auto_check_update: bool,
     log_level: Entity<ChoiceState<LogLevel>>,
     /// 发送匿名使用统计
@@ -249,6 +260,7 @@ impl AboutExtras {
         // 是否显示“自动发送崩溃报告”要看有没有接收地址
         super::ensure_crash_endpoint(cx);
         Self {
+            part: AboutPart::Updates,
             auto_check_update: settings.general.auto_check_update,
             log_level,
             usage: local.usage.enabled,
@@ -263,6 +275,14 @@ impl AboutExtras {
     /// 正在复制、导出诊断信息（这时设置不重新载入这一节）。
     pub(crate) fn is_busy(&self) -> bool {
         self.diag_busy
+    }
+
+    /// 换成显示 `part` 的几节。
+    pub(crate) fn set_part(&mut self, part: AboutPart, cx: &mut Context<Self>) {
+        if self.part != part {
+            self.part = part;
+            cx.notify();
+        }
     }
 
     /// 写进设置（随设置的“保存”）。
@@ -739,29 +759,22 @@ impl AboutExtras {
 impl Render for AboutExtras {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let border = cx.theme().border;
-        v_flex()
-            .gap_4()
-            .child(
+        match self.part {
+            AboutPart::Updates => v_flex().gap_4().child(
                 div()
                     .pt_3()
                     .border_t_1()
                     .border_color(border)
                     .child(self.render_updates(cx)),
-            )
-            .child(
-                div()
-                    .pt_3()
-                    .border_t_1()
-                    .border_color(border)
-                    .child(self.render_privacy(cx)),
-            )
-            .child(
+            ),
+            AboutPart::Privacy => v_flex().gap_4().child(self.render_privacy(cx)).child(
                 div()
                     .pt_3()
                     .border_t_1()
                     .border_color(border)
                     .child(self.render_diagnostics(cx)),
-            )
+            ),
+        }
     }
 }
 

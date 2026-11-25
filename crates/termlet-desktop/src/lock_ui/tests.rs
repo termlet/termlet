@@ -584,10 +584,6 @@ fn about_extras_show_update_state_and_write_drafts(cx: &mut TestAppContext) {
         window.render_frame(cx);
         assert!(window.try_find("update-status").is_some());
         assert!(window.try_find("update-restart").is_none());
-        assert!(
-            window.try_find("about-crash-report").is_none(),
-            "没有接收地址时不显示自动发送崩溃报告"
-        );
         window.click("update-check", cx);
         window.click("about-auto-update", cx);
     })
@@ -624,6 +620,18 @@ fn about_extras_show_update_state_and_write_drafts(cx: &mut TestAppContext) {
             m.set_state(before.clone(), std::time::Instant::now(), cx)
         })
     });
+
+    // “隐私与诊断”页：没有接收地址时不显示自动发送崩溃报告
+    cx.update(|cx| page.update(cx, |p, cx| p.set_part(super::AboutPart::Privacy, cx)));
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("update-status").is_none(), "更新在“关于”页");
+        assert!(
+            window.try_find("about-crash-report").is_none(),
+            "没有接收地址时不显示自动发送崩溃报告"
+        );
+    })
+    .unwrap();
 
     // 有接收地址：显示开关
     cx.update(|cx| {

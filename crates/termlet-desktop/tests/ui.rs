@@ -87,18 +87,21 @@ fn settings_nav_works_with_keyboard(cx: &mut TestAppContext) {
         window.press("down", cx);
         window.render_frame(cx);
         assert!(
-            window.try_find("settings-toolbar").is_some(),
-            "↓ 到工具栏页"
+            window.try_find("settings-font-size").is_some(),
+            "↓ 到终端页"
         );
         window.press("down", cx);
         window.render_frame(cx);
         assert!(
-            window.try_find("settings-font-size").is_some(),
-            "再 ↓ 到终端页"
+            window.try_find("settings-font-size").is_none(),
+            "再 ↓ 离开终端页"
         );
         window.press("end", cx);
         window.render_frame(cx);
-        assert!(window.try_find("settings-font-size").is_none());
+        assert!(
+            window.try_find("about-copyright").is_some(),
+            "End 到最后的“关于”页"
+        );
         window.press("home", cx);
         window.render_frame(cx);
         assert!(
@@ -921,7 +924,7 @@ fn scheme_card_click_sets_the_slot_on_save(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-schemes", cx);
+        window.click("settings-nav-colors", cx);
         window.render_frame(cx);
         // 搜索 Dracula：它的卡片排到最前
         window.click("scheme-search", cx);
@@ -1111,7 +1114,7 @@ fn custom_scheme_is_saved_with_settings_and_deleted_with_its_references(cx: &mut
             window.render_frame(cx);
             window.click("open-settings", cx);
             window.render_frame(cx);
-            window.click("settings-nav-schemes", cx);
+            window.click("settings-nav-colors", cx);
             window.render_frame(cx);
             // 设置一直开着：搜索框里可能还有上一次的文字
             window.click("scheme-search", cx);
@@ -1226,7 +1229,7 @@ fn ctrl_s_in_settings_saves_and_known_hosts_page_lists_nothing(cx: &mut TestAppC
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-known-hosts", cx);
+        window.click("settings-nav-security", cx);
         window.render_frame(cx);
         assert!(
             window.try_find("known-hosts-search").is_some(),
@@ -2335,7 +2338,9 @@ fn deleting_a_settings_row_keeps_focus_in_settings(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-highlight", cx);
+        window.click("settings-nav-colors", cx);
+        window.render_frame(cx);
+        window.within("settings-colors-tabs").click(1usize, cx);
         window.render_frame(cx);
         // 在一条规则的输入框里输入后删掉这一行：获得焦点的输入框随这一行消失
         window.click(("highlight-pattern", 0usize), cx);
@@ -2367,7 +2372,9 @@ fn open_highlight_settings(cx: &mut TestAppContext, handle: AnyWindowHandle) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-highlight", cx);
+        window.click("settings-nav-colors", cx);
+        window.render_frame(cx);
+        window.within("settings-colors-tabs").click(1usize, cx);
         window.render_frame(cx);
     })
     .unwrap();
@@ -2727,7 +2734,7 @@ fn scheme_library_offers_import_when_nothing_matches(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-schemes", cx);
+        window.click("settings-nav-colors", cx);
         window.render_frame(cx);
         assert!(window.try_find("scheme-no-match-installed").is_none());
         window.click("scheme-search", cx);
@@ -3214,7 +3221,7 @@ fn about_page_shows_the_copyright(cx: &mut TestAppContext) {
     .unwrap();
 }
 
-// “关于”的“隐私”一组：发送匿名使用统计默认勾选，取消后保存才写进本机设置；能打开查看发送的内容
+// “隐私与诊断”的“隐私”一组：发送匿名使用统计默认勾选，取消后保存才写进本机设置；能打开查看发送的内容
 #[gpui_kit::test]
 fn about_page_turns_usage_statistics_off_on_save(cx: &mut TestAppContext) {
     let handle = open_workspace(cx);
@@ -3223,7 +3230,7 @@ fn about_page_turns_usage_statistics_off_on_save(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-about", cx);
+        window.click("settings-nav-privacy", cx);
         window.render_frame(cx);
         assert_eq!(window.find("about-usage").checked(), Some(true));
         assert!(window.try_find("about-privacy-policy").is_some());
@@ -3252,7 +3259,7 @@ fn about_page_turns_usage_statistics_off_on_save(cx: &mut TestAppContext) {
         window.render_frame(cx);
         window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-nav-about", cx);
+        window.click("settings-nav-privacy", cx);
         window.render_frame(cx);
         assert_eq!(window.find("about-usage").checked(), Some(false));
         // 按钮在下面：往下滚到整个露出来为止（点的是按钮的中央，只露出一半时会点到页面外面）

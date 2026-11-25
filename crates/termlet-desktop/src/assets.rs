@@ -12,6 +12,7 @@ use crate::sftp::file_icons;
 icon_assets!(
     ExtraIcons,
     [
+        Activity,
         AppWindow,
         ArrowDownLeft,
         ArrowDownToLine,

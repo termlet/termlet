@@ -442,12 +442,12 @@ Notes:
 
 ### Host keys
 
-- Host keys are confirmed on first connection and recorded in the database; search and delete them under Settings → Host Keys.
+- Host keys are confirmed on first connection and recorded in the database; search and delete them under Host keys in Settings → Security.
 - When a host key changes, the connection is refused, and a dialog explains the risk and lists the presented and recorded fingerprints. After checking with the administrator you can remove the old record and reconnect.
 - Like OpenSSH, Termlet asks for the key type already recorded, so a new key type added on the server is not mistaken for a changed key.
 - If the server no longer offers the recorded type and presents a different one, it is not treated as a first connection: a prominent warning says someone may be impersonating the host, and you have to check before you can "Accept anyway and connect".
 - **Host certificates**:
-  - Under "Trusted Host CAs" on the Host Keys page, add a CA's public key with the host patterns it applies to (like `@cert-authority` in known_hosts: comma-separated, with `*`, `?` and `!`, and `[host]:port` for ports other than 22), or import the `@cert-authority` lines from a known_hosts file.
+  - Under "Trusted Host CAs" in the host keys part of Settings → Security, add a CA's public key with the host patterns it applies to (like `@cert-authority` in known_hosts: comma-separated, with `*`, `?` and `!`, and `[host]:port` for ports other than 22), or import the `@cert-authority` lines from a known_hosts file.
   - Host certificates from these hosts that a trusted CA issued (still valid and listing the address you connect to) are then accepted on first connection without asking about the fingerprint, and nothing is recorded.
   - Certificates from other CAs, and expired ones or ones for another name, are checked by the host key inside them as usual.
   - Stored on this computer only and not synced.
@@ -769,7 +769,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 - Colors error, failed, warning, ok, IPv4 and IPv6 addresses and so on.
 - Only in text the program has not colored, and not in full-screen programs such as vim.
-- Edit the rules (keywords or regular expressions) and colors, or turn it off, with the "Keyword highlighting" button in the title bar (the same as Settings → Highlighting).
+- Edit the rules (keywords or regular expressions) and colors, or turn it off, with the "Keyword highlighting" button in the title bar (the same as the Highlighting tab in Settings → Colors & Highlighting).
 - Colors:
   - The menu has three groups: red, green, yellow, blue, magenta and cyan take whichever of the scheme's normal and bright version is clearer on the background (mostly the bright one on dark schemes); Dark Red, Dark Green and so on always use colors 1–6 of the scheme; Bright Red, Bright Green and so on always use colors 9–14. On some schemes two groups share a color; the swatches in the menu show what you actually get.
   - "Custom Color…" opens a color picker: click a color, or type a value (such as `#ff8800`) in the hex field and press Enter; click the swatch in front of the rule to change it later.
@@ -781,7 +781,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Terminal color schemes
 
-- In Settings → Color Schemes, choose the scheme used in light mode and the one used in dark mode. Any scheme can go in either; use the same one in both for a dark terminal in a light interface.
+- On the Color Schemes tab in Settings → Colors & Highlighting, choose the scheme used in light mode and the one used in dark mode. Any scheme can go in either; use the same one in both for a dark terminal in a light interface.
 - When you switch the interface between light and dark (Settings → General or the command palette), the terminal follows.
 - Programs that turn on theme change notifications (DEC 2031), such as Claude Code and Neovim, are told when the terminal background switches between light and dark and change their own colors.
 - 39 schemes are built in (Solarized, Catppuccin, Tokyo Night, Gruvbox, Dracula, Nord, One Dark Pro, Ayu, VS Code, Monokai (VS Code) and more, each with its source and license).
@@ -1517,20 +1517,21 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 | Page | Contents |
 |---|---|
-| General | language, appearance (light / dark / follow the system), icons (color / monochrome, for file icons and system and brand logos), interface size, confirm before closing, show addresses in the host list, minimize to the system tray when closing the window (Windows), transfer progress on the taskbar (Windows, macOS, Linux), opening remote folders in an editor, open at startup |
-| Toolbar | — |
-| Terminal | font size (13 by default), scrollback, font, copy on select, right-click behavior, cursor style and blinking, resource usage and network latency, status bar (full / compact), check before pasting, new-output markers and notifications, file transfer detection and clearing finished transfers, sudo password filling, session logs, session recording (recording input, the recordings folder), command history, shell integration snippets, command suggestions |
-| Color Schemes | — |
+| General | language, appearance (light / dark / follow the system), icons (color / monochrome, for file icons and system and brand logos), interface size, confirm before closing, show addresses in the host list, minimize to the system tray when closing the window (Windows), transfer progress on the taskbar (Windows, macOS, Linux), tab position, opening remote folders in an editor, open at startup; a Toolbar section (collapsed by default): which title bar buttons to show and in what order |
+| Terminal | Appearance: color scheme, font size (13 by default), scrollback, font, cursor style and blinking; Behavior: copy on select, right-click behavior, check before pasting, sudo password filling; collapsed by default: Status bar and notifications (resource usage and network latency, full / compact status bar, new-output markers, notifications when long commands or transfers finish), File transfers (detecting ZModem and trzsz, clearing finished transfers), Session logs and recording (folders, recording input), Command history and suggestions (clearing the history, shell integration snippets, command suggestions) |
 | Local Terminals | — |
-| Highlighting | — |
-| Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, ssh-agent address, opening by bastion hosts and other programs |
-| Host Keys | — |
-| Security | app lock |
-| AI & automation | allowing access from AI tools and scripts, dangerous command rules, the termlet command and PATH, Agent Skill, MCP server configuration and HTTP, audit log |
+| Colors & Highlighting | two tabs: color schemes and keyword highlighting |
+| Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, opening by bastion hosts and other programs; collapsed by default, "ssh-agent, X11 and local proxy": ssh-agent address, local X display, the local proxy lent to servers and its port, confirmed proxy commands |
+| Security | app lock; host keys (trusted host CAs and recorded fingerprints) |
+| AI & automation | allowing access from AI tools and scripts, audit log, dangerous command rules (the built-in rules collapsed into one line); collapsed by default, "Ways to connect": the termlet command and PATH, Agent Skill, MCP server configuration and HTTP |
 | Backup | full backups and restore, local snapshots |
 | Sync | — |
-| Shortcuts | — |
-| About | version with "Copy version info" (version, operating system and architecture, for problem reports), website, changelog, send feedback, license agreement, third-party licenses, data folder, updates, privacy (usage statistics and crash reports), diagnostics |
+| Shortcuts | shortcuts you can change and key presets; the fixed ones (SFTP, editor, host tools, vertical tabs, mouse) are collapsed by default |
+| Privacy & Diagnostics | privacy (usage statistics and crash reports), diagnostics, crash records, log detail |
+| About | version with "Copy version info" (version, operating system and architecture, for problem reports), website, changelog, send feedback, license agreement, third-party licenses, data folder, updates |
+
+- Since 0.3.4 a few pages are merged: Toolbar is under General, Color Schemes and Highlighting became Colors & Highlighting, Host Keys is under Security, and the privacy, diagnostics and log detail parts of About became Privacy & Diagnostics. "Customize Toolbar…" on a title bar button's context menu, the Keyword highlighting button in the toolbar and "Customize Toolbar…" and "Keyword Highlighting…" in the command palette still go straight there (opening that section or switching to that tab).
+- Settings you rarely need sit in sections you can expand: click the title to expand or collapse them.
 
 - Interface languages: Simplified Chinese, Traditional Chinese, English, Japanese and Korean (the Japanese and Korean translations are the developer's own; corrections are welcome).
 - Interface size (under General; use system setting / 90%–150%, for this computer):
@@ -1574,7 +1575,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 ### Toolbar
 
 - The toolbar can be customized (for this computer, not synced):
-  - under Settings > Toolbar, pick which buttons to show, move them up or down, or restore the defaults;
+  - in the Toolbar section of Settings → General, pick which buttons to show, move them up or down, or restore the defaults;
   - or right-click a title bar button for "Hide this button" and "Customize Toolbar…".
 - A Compose bar button is available but hidden by default.
 - Hidden buttons stay available from the command palette and their shortcuts.
@@ -1617,7 +1618,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - The server also works out the country or region from the IP address, doesn't keep the address itself and stores only daily counts.
 - This computer keeps only two dates (`{data folder}/usage.json`: the first and the last message) and the feature list not yet sent (`{data folder}/usage-features.json`).
 - There is no pop-up about it; it is stated in the license agreement and the privacy policy on the website.
-- Turn it off any time under Settings → About → Privacy (which also deletes both files and stops keeping the feature list); "View what is sent…" shows the exact message.
+- Turn it off any time under Settings → Privacy & Diagnostics (which also deletes both files and stops keeping the feature list); "View what is sent…" shows the exact message.
 - Each message sent is also written to the log.
 - The environment variables `TERMLET_USAGE_URL=off` or `DO_NOT_TRACK=1` turn it off too; the `termlet` command-line tool sends nothing itself.
 - To prevent abuse, Cloudflare rate-limits requests by network address; blocked requests may briefly appear with their address in Cloudflare's security logs. Termlet itself does not read or store addresses.
@@ -1649,7 +1650,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Diagnostics
 
-- Under Settings → About, "Copy diagnostics" or "Export diagnostics…" (saved as a text file).
+- Under Settings → Privacy & Diagnostics, "Copy diagnostics" or "Export diagnostics…" (saved as a text file).
 - It gives the version, environment, a settings summary, item counts and the end of the logs (logs are in `{data folder}/logs`).
 - It leaves out host addresses, credentials, command contents and the audit log.
 - Attach it when reporting a problem.
@@ -1657,7 +1658,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 ### Logs
 
 - `{data folder}/logs/termlet.<date>.log`, one file per day, kept for 14 days.
-- When troubleshooting, set "Log detail" under Settings → About to "Detailed" (every step) or "Full" (also SSH and SFTP protocol details). It takes effect as soon as you save, so switch back to "Normal" when you're done.
+- When troubleshooting, set "Log detail" under Settings → Privacy & Diagnostics to "Detailed" (every step) or "Full" (also SSH and SFTP protocol details). It takes effect as soon as you save, so switch back to "Normal" when you're done.
 - You can also set it at startup: `Termlet.exe --log-level detailed` (or `--verbose`), `--log-level full`, or a `tracing` filter (such as `--log-level "info,termlet_core::ssh=trace"`).
 - The environment variable `TERMLET_LOG` takes the same values and wins over the option.
 - When set at startup, the setting takes effect the next time Termlet starts normally.
@@ -1666,9 +1667,9 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 ### Crash records
 
 - Crash information stays on this computer by default (in the log folder, keeping the latest 20).
-- The next start tells you the previous run had an error, and "Crash records…" under About shows them.
+- The next start tells you the previous run had an error, and "Crash records…" under Privacy & Diagnostics shows them.
 - "Send crash reports automatically" (off by default) only sends a scrubbed summary, never memory dumps or logs.
-- The switch is under About → Privacy, and reports go to `api.termlet.dev` (the address comes from the signed remote configuration, and the switch is hidden without it).
+- The switch is under Privacy & Diagnostics, and reports go to `api.termlet.dev` (the address comes from the signed remote configuration, and the switch is hidden without it).
 - Reports the server rejects are marked "Rejected by the server", are not sent again and do not hold up later reports.
 
 ### Uninstalling

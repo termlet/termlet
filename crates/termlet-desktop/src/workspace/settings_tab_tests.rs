@@ -257,3 +257,148 @@ fn narrow_settings_show_icons_only(cx: &mut TestAppContext) {
     })
     .unwrap();
 }
+
+// 原来单独成类、并进别的分类的几处，从标题栏、命令面板、菜单打开时直接去那里：工具栏展开并滚到它，终端配色、
+// 关键词高亮切到各自的页签；分类只剩 12 个
+#[gpui_kit::test]
+fn merged_places_open_directly(cx: &mut TestAppContext) {
+    use crate::settings::Target;
+    let (handle, _workspace) = open_settings(cx);
+    assert_eq!(Page::ALL.len(), 12);
+    cx.update_window(handle, |_, window, cx| {
+        assert!(
+            window.try_find("settings-toolbar").is_none(),
+            "工具栏默认收起"
+        );
+        crate::settings::open(Target::Toolbar, window, cx);
+        window.render_frame(cx);
+        window.render_frame(cx);
+        let page = window.find("settings-page").bounds();
+        let toolbar = window.find("settings-fold-toolbar").bounds();
+        assert!(
+            window.try_find("settings-toolbar").is_some(),
+            "展开了工具栏"
+        );
+        assert!(
+            toolbar.top() >= page.top() && toolbar.bottom() <= page.bottom(),
+            "滚到了工具栏：{toolbar:?} / {page:?}"
+        );
+
+        crate::settings::open(Target::Highlight, window, cx);
+        window.render_frame(cx);
+        assert!(
+            window.try_find("settings-highlight").is_some(),
+            "关键词高亮页签"
+        );
+        assert!(window.try_find("scheme-search").is_none());
+        // 从导航进来时停在上次的页签
+        window.click(Page::General.nav_id(), cx);
+        window.render_frame(cx);
+        window.click(Page::Colors.nav_id(), cx);
+        window.render_frame(cx);
+        assert!(
+            window.try_find("settings-highlight").is_some(),
+            "仍是关键词高亮"
+        );
+
+        crate::settings::open(Target::Schemes, window, cx);
+        window.render_frame(cx);
+        assert!(window.try_find("scheme-search").is_some(), "终端配色页签");
+    })
+    .unwrap();
+}
+
+// 低频的几节默认收起，点标题展开、再点收起；收起的不算进一页的控件
+#[gpui_kit::test]
+fn low_frequency_sections_start_folded(cx: &mut TestAppContext) {
+    // 窗口高一些：展开后的内容不用滚动就点得到
+    let handle = crate::testkit::open_workspace_sized(
+        cx,
+        gpui_kit::size(gpui_kit::px(1280.), gpui_kit::px(1600.)),
+    );
+    set_language(Language::ZhCn);
+    click_gear(cx, handle);
+    cx.update_window(handle, |_, window, cx| {
+        window.click(Page::Terminal.nav_id(), cx);
+        window.render_frame(cx);
+        assert!(window.try_find("settings-font-size").is_some(), "外观常开");
+        assert!(
+            window.try_find("settings-paste-warning").is_some(),
+            "行为常开"
+        );
+        for (fold, inside) in [
+            ("settings-fold-status-bar", "settings-monitor"),
+            ("settings-fold-file-transfer", "settings-file-transfer"),
+            ("settings-fold-logs", "settings-session-log"),
+            ("settings-fold-history", "settings-command-history"),
+        ] {
+            assert!(window.try_find(inside).is_none(), "{fold} 默认收起");
+            window.click(fold, cx);
+            window.render_frame(cx);
+            assert!(window.try_find(inside).is_some(), "{fold} 展开");
+            window.click(fold, cx);
+            window.render_frame(cx);
+            assert!(window.try_find(inside).is_none(), "{fold} 再点收起");
+        }
+
+        window.click(Page::Connection.nav_id(), cx);
+        window.render_frame(cx);
+        assert!(window.try_find("settings-agent-path").is_none());
+        window.click("settings-fold-connection-advanced", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("settings-agent-path").is_some());
+
+        window.click(Page::Cli.nav_id(), cx);
+        window.render_frame(cx);
+        assert!(
+            window.try_find("cli-rule-power").is_none(),
+            "内置规则收成一行"
+        );
+        assert!(window.try_find("cli-tool-path-toggle").is_none());
+        window.click("cli-builtin-rules", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("cli-rule-power").is_some());
+
+        window.click(Page::Shortcuts.nav_id(), cx);
+        window.render_frame(cx);
+        assert!(
+            window.try_find("key-fixed").is_some(),
+            "不能修改的快捷键收成一行"
+        );
+    })
+    .unwrap();
+}
+
+// 不合法的值在收起的一节中：保存时停在那一页并展开那一节，看得到哪里不对，什么也不写
+#[gpui_kit::test]
+fn invalid_value_in_a_folded_section_opens_it(cx: &mut TestAppContext) {
+    let handle = crate::testkit::open_workspace_sized(
+        cx,
+        gpui_kit::size(gpui_kit::px(1280.), gpui_kit::px(1600.)),
+    );
+    set_language(Language::ZhCn);
+    click_gear(cx, handle);
+    let before = cx.update(|cx| AppState::store(cx).local_settings());
+    cx.update_window(handle, |_, window, cx| {
+        window.click(Page::Connection.nav_id(), cx);
+        window.render_frame(cx);
+        window.click("settings-fold-connection-advanced", cx);
+        window.render_frame(cx);
+        window.click("settings-local-proxy", cx);
+        window.input("not a proxy", cx);
+        window.click("settings-fold-connection-advanced", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("settings-local-proxy").is_none(), "收起了");
+        window.click(Page::General.nav_id(), cx);
+        window.render_frame(cx);
+        window.click("settings-save", cx);
+        window.render_frame(cx);
+        assert!(
+            window.try_find("settings-local-proxy").is_some(),
+            "回到连接页并展开那一节"
+        );
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert_eq!(cx.update(|cx| AppState::store(cx).local_settings()), before);
+}

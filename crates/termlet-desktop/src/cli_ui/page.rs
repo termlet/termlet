@@ -65,6 +65,10 @@ pub(crate) struct CliPage {
     pub(super) tool: Entity<ToolSection>,
     pub(super) skill: Entity<SkillSection>,
     pub(super) mcp: Entity<McpSection>,
+    /// 展开着“接入方式”（命令行工具、Agent Skill、MCP；默认收起）
+    pub(super) access_open: bool,
+    /// 展开着内置规则的列表（默认收起）
+    pub(super) builtin_open: bool,
     _test_subscription: Subscription,
 }
 
@@ -114,6 +118,8 @@ impl CliPage {
             tool,
             skill,
             mcp,
+            access_open: false,
+            builtin_open: false,
             _test_subscription: test_subscription,
         };
         for pattern in &guard.custom_rules {
@@ -138,6 +144,21 @@ impl CliPage {
         self.mcp.read(cx).http.read(cx).is_busy()
             || self.skill.read(cx).is_busy()
             || self.tool.read(cx).is_busy()
+    }
+
+    /// 保存时有不合法的值：在收起的“接入方式”中（MCP 的 HTTP 端口）时展开它，看得到哪里不对。
+    pub(crate) fn reveal_invalid(&mut self, cx: &mut Context<Self>) {
+        if self.mcp.read(cx).http.read(cx).validate().is_err() {
+            self.access_open = true;
+            cx.notify();
+        }
+    }
+
+    /// 关掉了几条内置规则（设置中不认识的 ID 不算）。
+    fn disabled_builtin(&self) -> usize {
+        builtin_rules()
+            .filter(|rule| self.disabled_rules.iter().any(|d| d == rule.id()))
+            .count()
     }
 
     /// 有不能使用的自定义规则（不合法的正则、会匹配空命令的、超出数量上限的）时不能保存。
@@ -341,7 +362,6 @@ impl CliPage {
                 )
         });
         field()
-            .label(t!("cli_ui.rules.builtin"))
             .description(prose(t!("cli_ui.rules.builtin_hint")))
             .child(
                 v_flex()
@@ -486,28 +506,59 @@ impl Render for CliPage {
                         ),
                     ),
             )
-            .child(Self::section(t!("cli_ui.section.tool"), cx))
-            .child(
-                field()
-                    .label(t!("cli_ui.tool.label"))
-                    .child(self.tool.clone()),
-            )
-            .child(
-                field()
-                    .label(t!("cli_ui.skill.label"))
-                    .description(prose(t!("cli_ui.skill.hint")))
-                    .child(self.skill.clone()),
-            )
-            .child(
-                field()
-                    .label(t!("cli_ui.mcp.label"))
-                    .description(prose(t!("cli_ui.mcp.hint")))
-                    .child(self.mcp.clone()),
-            )
+            // 接入方式（命令行工具、Agent Skill、MCP）是一次性的安装说明，默认收起
+            .child(field().child(crate::settings::section::fold(
+                "cli-access",
+                t!("cli_ui.section.tool"),
+                self.access_open,
+                true,
+                cx.listener(|this, _, _, cx| {
+                    this.access_open = !this.access_open;
+                    cx.notify();
+                }),
+                cx,
+            )))
+            .when(self.access_open, |this| {
+                this.child(
+                    field()
+                        .label(t!("cli_ui.tool.label"))
+                        .child(self.tool.clone()),
+                )
+                .child(
+                    field()
+                        .label(t!("cli_ui.skill.label"))
+                        .description(prose(t!("cli_ui.skill.hint")))
+                        .child(self.skill.clone()),
+                )
+                .child(
+                    field()
+                        .label(t!("cli_ui.mcp.label"))
+                        .description(prose(t!("cli_ui.mcp.hint")))
+                        .child(self.mcp.clone()),
+                )
+            })
             .child(Self::section(t!("cli_ui.section.rules"), cx))
             .child(Self::hint(t!("cli_ui.rules.hint"), cx))
             .child(self.render_approval(cx))
-            .child(self.render_builtin(cx))
+            // 15 条内置规则逐条列出时太长，默认收成一行（写明启用了几条）
+            .child(field().child(crate::settings::section::fold(
+                "cli-builtin-rules",
+                t!(
+                    "cli_ui.rules.builtin_count",
+                    enabled = builtin_rules().count() - self.disabled_builtin(),
+                    total = builtin_rules().count()
+                ),
+                self.builtin_open,
+                false,
+                cx.listener(|this, _, _, cx| {
+                    this.builtin_open = !this.builtin_open;
+                    cx.notify();
+                }),
+                cx,
+            )))
+            .when(self.builtin_open, |this| {
+                this.child(self.render_builtin(cx))
+            })
             .child(self.render_custom(cx))
             .child(self.render_test(cx))
     }

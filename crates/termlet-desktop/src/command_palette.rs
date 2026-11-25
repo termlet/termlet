@@ -584,8 +584,8 @@ impl CommandPalette {
                     crate::lock_ui::lock_now(cx);
                 }
                 Op::Shortcuts => settings::open(settings::Page::Shortcuts, window, cx),
-                Op::Highlight => settings::open(settings::Page::Highlight, window, cx),
-                Op::Toolbar => settings::open(settings::Page::Toolbar, window, cx),
+                Op::Highlight => settings::open(settings::Target::Highlight, window, cx),
+                Op::Toolbar => settings::open(settings::Target::Toolbar, window, cx),
                 Op::Forwards => workspace.update(cx, |w, cx| w.show_forwards(window, cx)),
                 Op::UiZoomIn => ui_scale::zoom(ui_scale::Step::In, window, cx),
                 Op::UiZoomOut => ui_scale::zoom(ui_scale::Step::Out, window, cx),

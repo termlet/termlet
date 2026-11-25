@@ -43,7 +43,7 @@ use termlet_core::update::{
 use crate::app_state::AppState;
 use crate::t;
 
-pub(crate) use about::{AboutExtras, app_info};
+pub(crate) use about::{AboutExtras, AboutPart, app_info};
 pub(crate) use crash::{check_crashes, open_crash_log};
 pub(crate) use lock_screen::LockScreen;
 pub(crate) use security::SecurityPage;

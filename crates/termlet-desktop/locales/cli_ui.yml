@@ -965,6 +965,12 @@ cli_ui.rules.builtin:
   zh-TW: 內建規則
   ja: 組み込みルール
   ko: 기본 제공 규칙
+cli_ui.rules.builtin_count:
+  zh-CN: 内置规则（启用 %{enabled} / %{total} 条）
+  en: Built-in rules (%{enabled} of %{total} on)
+  zh-TW: 內建規則（啟用 %{enabled} / %{total} 條）
+  ja: 組み込みルール（%{total} 件中 %{enabled} 件が有効）
+  ko: 기본 제공 규칙(%{total}개 중 %{enabled}개 사용)
 cli_ui.rules.builtin_hint:
   zh-CN: 取消勾选的规则不再检查。
   en: Unchecked rules are turned off.

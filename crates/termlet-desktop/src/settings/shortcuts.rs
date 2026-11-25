@@ -19,6 +19,7 @@ use termlet_core::keymap::{
 };
 use termlet_core::model::{KeybindingSettings, RightClick};
 
+use super::section;
 use crate::prose::prose;
 use crate::{keymap as app_keymap, t};
 
@@ -109,6 +110,8 @@ pub(super) struct ShortcutsPage {
     _intercept: Option<Subscription>,
     /// 录入期间窗口失去焦点就结束录入
     _activation: Option<Subscription>,
+    /// 展开着不能修改的快捷键（参考表，默认收起）
+    fixed_open: bool,
     /// 上一次录入没有成功的原因
     error: Option<(KeyAction, SharedString)>,
     /// 终端中右键的行为（固定快捷键中的说明随之变化，由设置的“终端”分类决定）
@@ -122,6 +125,7 @@ impl ShortcutsPage {
             recording: None,
             _intercept: None,
             _activation: None,
+            fixed_open: false,
             error: None,
             right_click,
         }
@@ -678,7 +682,21 @@ impl Render for ShortcutsPage {
                 )
             })
             .children(groups)
-            .child(self.render_fixed(os, cx))
+            // 不能修改的（SFTP、编辑器、主机工具、竖排 Tab、鼠标）只是参考，默认收起
+            .child(section::fold(
+                "key-fixed",
+                t!("settings.keys.fixed"),
+                self.fixed_open,
+                true,
+                cx.listener(|this, _, _, cx| {
+                    this.fixed_open = !this.fixed_open;
+                    cx.notify();
+                }),
+                cx,
+            ))
+            .when(self.fixed_open, |this| {
+                this.child(self.render_fixed(os, cx))
+            })
             .when(customized, |this| {
                 this.child(
                     h_flex().child(

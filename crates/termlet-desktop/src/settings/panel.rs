@@ -23,7 +23,7 @@ use gpui_kit::{
     actions, div, prelude::FluentBuilder as _, rems,
 };
 
-use super::{Page, SettingsForm};
+use super::{SettingsForm, Target};
 use crate::prose::prose;
 use crate::{notify, t};
 
@@ -87,10 +87,10 @@ impl Focusable for SettingsPanel {
 }
 
 impl SettingsPanel {
-    /// 新的设置 Tab，显示 `page` 分类。
-    pub(crate) fn new(page: Page, window: &mut Window, cx: &mut App) -> Entity<Self> {
+    /// 新的设置 Tab，去 `target`（一个分类或其中的某一处）。
+    pub(crate) fn new(target: Target, window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
-            let form = cx.new(|cx| SettingsForm::new(page, window, cx));
+            let form = cx.new(|cx| SettingsForm::new(target, window, cx));
             let mut this = Self {
                 form,
                 _subscriptions: Vec::new(),
@@ -116,9 +116,9 @@ impl SettingsPanel {
         ];
     }
 
-    /// 换到 `page` 分类。
-    pub(crate) fn show_page(&mut self, page: Page, cx: &mut Context<Self>) {
-        self.form.update(cx, |form, cx| form.show_page(page, cx));
+    /// 去 `target`（一个分类或其中的某一处）。
+    pub(crate) fn show(&mut self, target: Target, cx: &mut Context<Self>) {
+        self.form.update(cx, |form, cx| form.show(target, cx));
     }
 
     /// 现在有没有未保存的修改（关闭窗口前的汇总用）。

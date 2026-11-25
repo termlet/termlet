@@ -83,6 +83,66 @@ settings.nav.about:
   zh-TW: 關於
   ja: バージョン情報
   ko: 정보
+settings.nav.colors:
+  zh-CN: 配色与高亮
+  en: Colors & Highlighting
+  zh-TW: 配色與醒目提示
+  ja: 配色と強調表示
+  ko: 색 구성표 및 강조 표시
+settings.nav.privacy:
+  zh-CN: 隐私与诊断
+  en: Privacy & Diagnostics
+  zh-TW: 隱私與診斷
+  ja: プライバシーと診断
+  ko: 개인 정보 및 진단
+settings.section.appearance:
+  zh-CN: 外观
+  en: Appearance
+  zh-TW: 外觀
+  ja: 外観
+  ko: 모양
+settings.section.behavior:
+  zh-CN: 行为
+  en: Behavior
+  zh-TW: 行為
+  ja: 動作
+  ko: 동작
+settings.section.status_bar:
+  zh-CN: 状态条与通知
+  en: Status bar and notifications
+  zh-TW: 狀態列與通知
+  ja: ステータスバーと通知
+  ko: 상태 표시줄 및 알림
+settings.section.file_transfer:
+  zh-CN: 文件传输
+  en: File transfers
+  zh-TW: 檔案傳輸
+  ja: ファイル転送
+  ko: 파일 전송
+settings.section.logs:
+  zh-CN: 会话日志与录制
+  en: Session logs and recording
+  zh-TW: 工作階段記錄與錄製
+  ja: セッションログと録画
+  ko: 세션 로그 및 녹화
+settings.section.history:
+  zh-CN: 命令历史与补全
+  en: Command history and suggestions
+  zh-TW: 指令歷史記錄與補全建議
+  ja: コマンド履歴と補完
+  ko: 명령 기록 및 자동 완성
+settings.section.connection_advanced:
+  zh-CN: ssh-agent、X11 与本机代理
+  en: ssh-agent, X11 and local proxy
+  zh-TW: ssh-agent、X11 與本機代理
+  ja: ssh-agent、X11 とローカルプロキシ
+  ko: ssh-agent, X11 및 로컬 프록시
+settings.section.app_lock:
+  zh-CN: 应用锁
+  en: App lock
+  zh-TW: 應用程式鎖定
+  ja: アプリロック
+  ko: 앱 잠금
 settings.language:
   zh-CN: 语言
   en: Language
@@ -1121,6 +1181,12 @@ settings.keys.hint:
   zh-TW: 按「+」後按下新的按鍵。快速鍵由 Termlet 處理，不再傳送給遠端；需要搭配 Ctrl 或 Alt（F1–F24，以及 Shift 加 Insert、Delete、Home、End、PageUp、PageDown 除外）。
   ja: 「+」をクリックしてから新しいキーを押します。ショートカットキーは Termlet が処理し、リモートには送られません。Ctrl または Alt との組み合わせが必要です（F1～F24 と、Shift と Insert、Delete、Home、End、PageUp、PageDown の組み合わせを除く）。
   ko: +를 클릭한 후 새 키를 누르세요. 바로 가기 키는 Termlet이 처리하며 원격으로 보내지 않습니다. Ctrl 또는 Alt와 함께 눌러야 합니다(F1~F24, 그리고 Shift와 Insert, Delete, Home, End, PageUp, PageDown의 조합은 예외).
+settings.keys.fixed:
+  zh-CN: 不能修改的快捷键
+  en: Fixed shortcuts
+  zh-TW: 無法修改的快速鍵
+  ja: 変更できないショートカットキー
+  ko: 변경할 수 없는 바로 가기 키
 settings.keys.needs_modifier:
   zh-CN: "%{key} 不能作为快捷键：需要带 Ctrl 或 Alt，否则会影响输入。"
   en: "%{key} can't be a shortcut. Add Ctrl or Alt so it doesn't get in the way of typing."

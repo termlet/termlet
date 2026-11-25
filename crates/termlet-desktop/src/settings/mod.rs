@@ -14,11 +14,13 @@ mod known_hosts;
 mod local;
 pub(crate) mod panel;
 mod schemes;
+pub(crate) mod section;
 mod shortcuts;
 mod startup;
 mod toolbar;
 
 use std::cell::Cell;
+use std::collections::HashSet;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -33,6 +35,7 @@ use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::Select;
 use gpui_kit::component::sidebar::{SidebarItem as _, SidebarMenuItem};
+use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, h_flex, v_flex,
 };
@@ -64,59 +67,57 @@ use shortcuts::ShortcutsPage;
 use startup::StartupSection;
 use toolbar::ToolbarPage;
 
-/// 设置的分类。
+/// 设置的分类（左侧导航的一项）。不超过 12 个（CLAUDE.md 的“防臃肿”）；原来单独成类、后来并进别的分类的几项，从别处
+/// 打开时用 [`Target`] 直接去那里。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
+    /// 含标题栏的工具栏（一节，默认收起）
     General,
-    /// 标题栏的工具栏（标题栏按钮的右键菜单“自定义工具栏…”打开这一页）
-    Toolbar,
     Terminal,
-    Schemes,
     Local,
-    Highlight,
+    /// 配色与高亮：终端配色、关键词高亮两个页签
+    Colors,
     Connection,
-    KnownHosts,
+    /// 应用锁、主机 CA 与主机指纹
     Security,
     Cli,
     Backup,
     Sync,
     Shortcuts,
+    /// 隐私与诊断：使用统计、崩溃报告、诊断信息、日志的详细程度（原来在“关于”中）
+    Privacy,
     About,
 }
 
 impl Page {
-    pub(crate) const ALL: [Page; 14] = [
+    pub(crate) const ALL: [Page; 12] = [
         Page::General,
-        Page::Toolbar,
         Page::Terminal,
-        Page::Schemes,
         Page::Local,
-        Page::Highlight,
+        Page::Colors,
         Page::Connection,
-        Page::KnownHosts,
         Page::Security,
         Page::Cli,
         Page::Backup,
         Page::Sync,
         Page::Shortcuts,
+        Page::Privacy,
         Page::About,
     ];
 
     pub(crate) fn title(self) -> SharedString {
         match self {
             Page::General => t!("settings.nav.general"),
-            Page::Toolbar => t!("toolbar.nav"),
             Page::Terminal => t!("settings.nav.terminal"),
-            Page::Schemes => t!("schemes.nav"),
             Page::Local => t!("settings.nav.local"),
-            Page::Highlight => t!("settings.nav.highlight"),
+            Page::Colors => t!("settings.nav.colors"),
             Page::Connection => t!("settings.nav.connection"),
-            Page::KnownHosts => t!("settings.nav.known_hosts"),
             Page::Security => crate::lock_ui::security_title(),
             Page::Cli => crate::cli_ui::page_title(),
             Page::Backup => t!("settings.nav.backup"),
             Page::Sync => t!("sync_ui.nav"),
             Page::Shortcuts => t!("settings.nav.shortcuts"),
+            Page::Privacy => t!("settings.nav.privacy"),
             Page::About => t!("settings.nav.about"),
         }
     }
@@ -124,18 +125,16 @@ impl Page {
     fn icon(self) -> Icon {
         match self {
             Page::General => Icon::new(IconName::SlidersHorizontal),
-            Page::Toolbar => Icon::new(IconName::PanelTop),
             Page::Terminal => Icon::new(IconName::SquareTerminal),
-            Page::Schemes => Icon::new(IconName::Palette),
             Page::Local => Icon::new(IconName::Laptop),
-            Page::Highlight => Icon::new(IconName::Highlighter),
+            Page::Colors => Icon::new(IconName::Palette),
             Page::Connection => Icon::new(IconName::Network),
-            Page::KnownHosts => Icon::new(IconName::FingerprintPattern),
             Page::Security => Icon::new(IconName::ShieldCheck),
             Page::Cli => Icon::new(IconName::Bot),
             Page::Backup => Icon::new(IconName::DatabaseBackup),
             Page::Sync => Icon::new(IconName::Cloud),
             Page::Shortcuts => Icon::new(IconName::Keyboard),
+            Page::Privacy => Icon::new(IconName::Activity),
             Page::About => Icon::new(IconName::Info),
         }
     }
@@ -144,21 +143,101 @@ impl Page {
     pub(crate) fn nav_id(self) -> SharedString {
         match self {
             Page::General => "settings-nav-general".into(),
-            Page::Toolbar => "settings-nav-toolbar".into(),
             Page::Terminal => "settings-nav-terminal".into(),
-            Page::Schemes => "settings-nav-schemes".into(),
             Page::Local => "settings-nav-local".into(),
-            Page::Highlight => "settings-nav-highlight".into(),
+            Page::Colors => "settings-nav-colors".into(),
             Page::Connection => "settings-nav-connection".into(),
-            Page::KnownHosts => "settings-nav-known-hosts".into(),
             Page::Security => "settings-nav-security".into(),
             Page::Cli => "settings-nav-cli".into(),
             Page::Backup => "settings-nav-backup".into(),
             Page::Sync => "settings-nav-sync".into(),
             Page::Shortcuts => "settings-nav-shortcuts".into(),
+            Page::Privacy => "settings-nav-privacy".into(),
             Page::About => "settings-nav-about".into(),
         }
     }
+}
+
+/// 打开设置时要去的地方：一个分类，或者分类中的某一处。工具栏、终端配色、关键词高亮原来各是一类，并进别的分类后，
+/// 从标题栏、命令面板、菜单打开它们时仍直接去那里（展开那一节、切到那个页签）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Target {
+    Page(Page),
+    /// “通用”中的工具栏（展开并滚到那里）
+    Toolbar,
+    /// “配色与高亮”的终端配色页签
+    Schemes,
+    /// “配色与高亮”的关键词高亮页签
+    Highlight,
+    /// “连接”中的“ssh-agent、X11 与本机代理”一节（展开；那里的值不合法时）
+    ConnectionAdvanced,
+}
+
+impl Target {
+    /// 所在的分类。
+    pub(crate) fn page(self) -> Page {
+        match self {
+            Target::Page(page) => page,
+            Target::Toolbar => Page::General,
+            Target::Schemes | Target::Highlight => Page::Colors,
+            Target::ConnectionAdvanced => Page::Connection,
+        }
+    }
+}
+
+impl From<Page> for Target {
+    fn from(page: Page) -> Self {
+        Target::Page(page)
+    }
+}
+
+/// 页上可以展开、收起的一节（默认收起的低频项）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Fold {
+    /// 通用：标题栏的工具栏
+    Toolbar,
+    /// 终端：状态条与通知
+    StatusBar,
+    /// 终端：文件传输
+    FileTransfer,
+    /// 终端：会话日志与录制
+    Logs,
+    /// 终端：命令历史与补全
+    History,
+    /// 连接：ssh-agent、X11 与本机代理
+    ConnectionAdvanced,
+}
+
+impl Fold {
+    /// 标题按钮的元素 ID。
+    fn id(self) -> &'static str {
+        match self {
+            Fold::Toolbar => "settings-fold-toolbar",
+            Fold::StatusBar => "settings-fold-status-bar",
+            Fold::FileTransfer => "settings-fold-file-transfer",
+            Fold::Logs => "settings-fold-logs",
+            Fold::History => "settings-fold-history",
+            Fold::ConnectionAdvanced => "settings-fold-connection-advanced",
+        }
+    }
+
+    fn title(self) -> SharedString {
+        match self {
+            Fold::Toolbar => t!("toolbar.nav"),
+            Fold::StatusBar => t!("settings.section.status_bar"),
+            Fold::FileTransfer => t!("settings.section.file_transfer"),
+            Fold::Logs => t!("settings.section.logs"),
+            Fold::History => t!("settings.section.history"),
+            Fold::ConnectionAdvanced => t!("settings.section.connection_advanced"),
+        }
+    }
+}
+
+/// “配色与高亮”中显示的页签。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ColorsTab {
+    Schemes,
+    Highlight,
 }
 
 /// 字号、历史行数、保活间隔的范围。
@@ -193,19 +272,24 @@ const COMPACT_NAV_WIDTH: f32 = 40.;
 /// 右侧内容的最大宽度（rem）：窗口再宽也不把说明拉成很长的一行。
 const CONTENT_MAX_WIDTH: f32 = 46.;
 
-/// 打开设置，显示 `page` 分类：在这个窗口中打开设置 Tab，已经开着时切过去。不在工作区自己的更新中调用（工作区里
-/// 用 [`crate::workspace::Workspace::open_settings`]）。
-pub fn open(page: Page, window: &mut Window, cx: &mut App) {
+/// 打开设置，去 `target`（一个分类或其中的某一处）：在这个窗口中打开设置 Tab，已经开着时切过去。不在工作区自己的更新
+/// 中调用（工作区里用 [`crate::workspace::Workspace::open_settings`]）。
+pub fn open(target: impl Into<Target>, window: &mut Window, cx: &mut App) {
+    let target = target.into();
     match crate::workspace::Workspace::in_window(window, cx) {
         Some(workspace) => workspace.update(cx, |workspace, cx| {
-            workspace.open_settings(page, window, cx)
+            workspace.open_settings(target, window, cx)
         }),
-        None => tracing::warn!(page = ?page, "这个窗口不是主窗口，打不开设置"),
+        None => tracing::warn!(target = ?target, "这个窗口不是主窗口，打不开设置"),
     }
 }
 
 pub(crate) struct SettingsForm {
     page: Page,
+    /// 展开着的几节（默认都收起）
+    folds: HashSet<Fold>,
+    /// “配色与高亮”中显示的页签
+    colors_tab: ColorsTab,
     /// 整个设置的焦点：焦点在里面时操作的结果写进这里的提示行，Ctrl+S 保存
     focus: gpui_kit::FocusHandle,
     /// 左侧分页导航的焦点（见 [`crate::page_nav`]）
@@ -276,7 +360,11 @@ pub(crate) struct SettingsForm {
 }
 
 impl SettingsForm {
-    pub(crate) fn new(page: Page, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub(crate) fn new(
+        target: impl Into<Target>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let store = AppState::store(cx);
         let settings = store.settings();
         let local_settings = store.local_settings();
@@ -530,8 +618,11 @@ impl SettingsForm {
                 }
             }
         }));
+        let target = target.into();
         let mut this = Self {
-            page,
+            page: target.page(),
+            folds: HashSet::new(),
+            colors_tab: ColorsTab::Schemes,
             focus,
             nav_focus: cx.focus_handle().tab_stop(true),
             store,
@@ -581,7 +672,7 @@ impl SettingsForm {
             _subscriptions: subscriptions,
         };
         this.load_fonts(window, cx);
-        this.set_page(page, cx);
+        this.set_page(target, cx);
         this.baseline = this.collect(cx).ok();
         this
     }
@@ -591,9 +682,9 @@ impl SettingsForm {
         self.page
     }
 
-    /// 换到 `page` 分类（已经开着设置时从别处打开某一页）。
-    pub(crate) fn show_page(&mut self, page: Page, cx: &mut Context<Self>) {
-        self.set_page(page, cx);
+    /// 去 `target`（已经开着设置时从别处打开某一页、某一处）。
+    pub(crate) fn show(&mut self, target: Target, cx: &mut Context<Self>) {
+        self.set_page(target, cx);
     }
 
     /// 底部的提示行（设置 Tab 登记在窗口上，见 [`crate::notify::attach_tab`]）。
@@ -852,7 +943,20 @@ impl SettingsForm {
         self._tasks.push(task);
     }
 
-    fn set_page(&mut self, page: Page, cx: &mut Context<Self>) {
+    fn set_page(&mut self, target: impl Into<Target>, cx: &mut Context<Self>) {
+        let target = target.into();
+        let page = target.page();
+        match target {
+            Target::Toolbar => {
+                self.folds.insert(Fold::Toolbar);
+            }
+            Target::Schemes => self.colors_tab = ColorsTab::Schemes,
+            Target::Highlight => self.colors_tab = ColorsTab::Highlight,
+            Target::ConnectionAdvanced => {
+                self.folds.insert(Fold::ConnectionAdvanced);
+            }
+            Target::Page(_) => {}
+        }
         if page != Page::Shortcuts {
             // 离开快捷键页：结束录入（否则在别的页上按的键会被录成快捷键）
             self.shortcuts.update(cx, |p, cx| p.stop_recording(cx));
@@ -861,15 +965,20 @@ impl SettingsForm {
             self.notice.update(cx, |line, cx| line.clear(cx));
             self.page_scroll.set_offset(point(px(0.), px(0.)));
         }
+        // 工具栏在“通用”页上的第二块（滚动区中的第 0 个是标题）：滚到它的顶上
+        if target == Target::Toolbar {
+            self.page_scroll.scroll_to_top_of_item(2);
+        }
         self.page = page;
-        if page == Page::Highlight {
-            // 预览用“终端配色”分类中（尚未保存的）当前深浅的配色
-            let scheme = self
-                .schemes
-                .read(cx)
-                .slot_entry(cx.theme().is_dark())
-                .scheme;
-            self.highlight.update(cx, |p, cx| p.set_scheme(scheme, cx));
+        // “关于”与“隐私与诊断”共用一块，各显示自己的几节
+        let part = if page == Page::Privacy {
+            crate::lock_ui::AboutPart::Privacy
+        } else {
+            crate::lock_ui::AboutPart::Updates
+        };
+        self.about_extras.update(cx, |p, cx| p.set_part(part, cx));
+        if page == Page::Colors && self.colors_tab == ColorsTab::Highlight {
+            self.preview_highlight(cx);
         }
         if page == Page::Shortcuts {
             // 固定快捷键中“右键”的说明跟随“终端”分类中（尚未保存）的选择
@@ -879,6 +988,64 @@ impl SettingsForm {
                 cx.notify();
             });
         }
+        cx.notify();
+    }
+
+    /// 关键词高亮的预览用“终端配色”页签中（尚未保存的）当前深浅的配色。
+    fn preview_highlight(&mut self, cx: &mut Context<Self>) {
+        let scheme = self
+            .schemes
+            .read(cx)
+            .slot_entry(cx.theme().is_dark())
+            .scheme;
+        self.highlight.update(cx, |p, cx| p.set_scheme(scheme, cx));
+    }
+
+    /// 切换“配色与高亮”的页签。
+    fn set_colors_tab(&mut self, tab: ColorsTab, cx: &mut Context<Self>) {
+        self.colors_tab = tab;
+        if tab == ColorsTab::Highlight {
+            self.preview_highlight(cx);
+        }
+        cx.notify();
+    }
+
+    /// 展开或收起一节。
+    fn toggle_fold(&mut self, fold: Fold, cx: &mut Context<Self>) {
+        if !self.folds.remove(&fold) {
+            self.folds.insert(fold);
+        }
+        cx.notify();
+    }
+
+    /// 一节可以展开、收起的标题。
+    fn fold_header(&self, fold: Fold, cx: &mut Context<Self>) -> Field {
+        field().child(section::fold(
+            fold.id(),
+            fold.title(),
+            self.folds.contains(&fold),
+            true,
+            cx.listener(move |this, _, _, cx| this.toggle_fold(fold, cx)),
+            cx,
+        ))
+    }
+
+    /// 校验没过：去出错的地方并说明原因（不合法的值在收起的一节中时展开它）。
+    fn show_error(&mut self, target: Target, error: SharedString, cx: &mut Context<Self>) {
+        match target {
+            Target::Schemes => self.colors_tab = ColorsTab::Schemes,
+            Target::Highlight => self.colors_tab = ColorsTab::Highlight,
+            Target::ConnectionAdvanced => {
+                self.folds.insert(Fold::ConnectionAdvanced);
+            }
+            Target::Page(Page::Cli) => self.cli_page.update(cx, |p, cx| p.reveal_invalid(cx)),
+            Target::Page(_) | Target::Toolbar => {}
+        }
+        if target.page() != self.page {
+            self.page_scroll.set_offset(point(px(0.), px(0.)));
+        }
+        self.page = target.page();
+        self.error = Some(error);
         cx.notify();
     }
 
@@ -896,10 +1063,8 @@ impl SettingsForm {
         self.error = None;
         self.notice.update(cx, |line, cx| line.clear(cx));
         // 先校验各分类，有错误时什么也不写
-        if let Err((page, error)) = self.collect(cx) {
-            self.page = page;
-            self.error = Some(error);
-            cx.notify();
+        if let Err((target, error)) = self.collect(cx) {
+            self.show_error(target, error, cx);
             return false;
         }
         // 自定义配色的增、删、改先写进存储：新建的配色这时才有 ID，配色槽要用它（下面的 collect 读到的是换过的）
@@ -909,12 +1074,8 @@ impl SettingsForm {
             .update(cx, |page, cx| page.commit(&store, window, cx))
         {
             tracing::error!("保存终端配色失败：{e}");
-            self.page = Page::Schemes;
-            self.error = Some(t!(
-                "schemes.save_failed",
-                error = store_errors::describe(&e)
-            ));
-            cx.notify();
+            let error = t!("schemes.save_failed", error = store_errors::describe(&e));
+            self.show_error(Target::Schemes, error, cx);
             return false;
         }
         match self.collect(cx) {
@@ -960,17 +1121,15 @@ impl SettingsForm {
                     }
                 }
             }
-            Err((page, error)) => {
-                self.page = page;
-                self.error = Some(error);
-                cx.notify();
+            Err((target, error)) => {
+                self.show_error(target, error, cx);
                 false
             }
         }
     }
 
     /// 把界面上的值合进草稿；不合法时返回出错的分类与原因。
-    fn collect(&self, cx: &App) -> Result<(Settings, LocalSettings), (Page, SharedString)> {
+    fn collect(&self, cx: &App) -> Result<(Settings, LocalSettings), (Target, SharedString)> {
         let mut draft = self.draft.clone();
         let mut local = self.local.clone();
         let number = |state: &Entity<InputState>| state.read(cx).value().trim().parse::<u32>().ok();
@@ -979,7 +1138,7 @@ impl SettingsForm {
             .filter(|n| (FONT_SIZE.0 as u32..=FONT_SIZE.1 as u32).contains(n))
             .ok_or_else(|| {
                 (
-                    Page::Terminal,
+                    Page::Terminal.into(),
                     t!(
                         "settings.error.font_size",
                         min = FONT_SIZE.0,
@@ -991,7 +1150,7 @@ impl SettingsForm {
             .filter(|n| (SCROLLBACK.0..=SCROLLBACK.1).contains(n))
             .ok_or_else(|| {
                 (
-                    Page::Terminal,
+                    Page::Terminal.into(),
                     t!(
                         "settings.error.scrollback",
                         min = SCROLLBACK.0,
@@ -1003,7 +1162,7 @@ impl SettingsForm {
             .filter(|n| (KEEPALIVE.0..=KEEPALIVE.1).contains(n))
             .ok_or_else(|| {
                 (
-                    Page::Connection,
+                    Page::Connection.into(),
                     t!(
                         "settings.error.keepalive",
                         min = KEEPALIVE.0,
@@ -1014,15 +1173,17 @@ impl SettingsForm {
         self.highlight
             .read(cx)
             .apply(&mut draft.highlight, cx)
-            .map_err(|e| (Page::Highlight, e))?;
+            .map_err(|e| (Target::Highlight, e))?;
         self.local_page.read(cx).apply(&mut local.shells);
         self.security_page.read(cx).apply(&mut local);
         self.about_extras.read(cx).apply(&mut draft, &mut local, cx);
         let cli_page = self.cli_page.read(cx);
-        cli_page.validate(cx).map_err(|e| (Page::Cli, e))?;
+        cli_page.validate(cx).map_err(|e| (Page::Cli.into(), e))?;
         cli_page.apply(&mut draft, &mut local, cx);
         let backup_page = self.backup_page.read(cx);
-        backup_page.validate(cx).map_err(|e| (Page::Backup, e))?;
+        backup_page
+            .validate(cx)
+            .map_err(|e| (Page::Backup.into(), e))?;
         backup_page.apply(&mut local, cx);
         self.shortcuts.read(cx).apply(&mut draft.keybindings);
         self.startup.read(cx).apply(&mut local);
@@ -1057,7 +1218,7 @@ impl SettingsForm {
         if !x11_display.is_empty() && termlet_core::ssh::x11::Display::parse(&x11_display).is_none()
         {
             return Err((
-                Page::Connection,
+                Target::ConnectionAdvanced,
                 t!("settings.error.x11_display", display = x11_display),
             ));
         }
@@ -1067,7 +1228,7 @@ impl SettingsForm {
             && termlet_core::forward::ProxyAddress::parse(&local_proxy).is_none()
         {
             return Err((
-                Page::Connection,
+                Target::ConnectionAdvanced,
                 t!("settings.error.local_proxy", address = local_proxy),
             ));
         }
@@ -1080,7 +1241,7 @@ impl SettingsForm {
                 Ok(port) => port,
                 Err(_) => {
                     return Err((
-                        Page::Connection,
+                        Target::ConnectionAdvanced,
                         t!("settings.error.local_proxy_port", port = port),
                     ));
                 }
@@ -1382,6 +1543,20 @@ impl SettingsForm {
     }
 
     fn render_terminal(&mut self, cx: &mut Context<Self>) -> AnyElement {
+        let headers = [
+            self.fold_header(Fold::StatusBar, cx),
+            self.fold_header(Fold::FileTransfer, cx),
+            self.fold_header(Fold::Logs, cx),
+            self.fold_header(Fold::History, cx),
+        ];
+        let [status_header, transfer_header, logs_header, history_header] = headers;
+        let open = |fold| self.folds.contains(&fold);
+        let (status_open, transfer_open, logs_open, history_open) = (
+            open(Fold::StatusBar),
+            open(Fold::FileTransfer),
+            open(Fold::Logs),
+            open(Fold::History),
+        );
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let family = chosen(&self.font_family, cx).unwrap_or_default();
@@ -1415,15 +1590,19 @@ impl SettingsForm {
         // 配色在“终端配色”中设置，这里显示界面当前深浅所用的（草稿中的），单击跳过去
         let scheme = self.schemes.read(cx).slot_entry(theme.is_dark());
         v_form()
+            // 外观：配色、字号、字体与光标
+            .child(field().child(section::heading(
+                t!("settings.section.appearance"),
+                true,
+                cx,
+            )))
             .child(
                 field()
                     .label(t!("schemes.terminal_field"))
                     .description(prose(t!("schemes.terminal_field_hint")))
-                    .child(
-                        schemes::slot_button(&scheme).on_click(
-                            cx.listener(|this, _, _, cx| this.set_page(Page::Schemes, cx)),
-                        ),
-                    ),
+                    .child(schemes::slot_button(&scheme).on_click(
+                        cx.listener(|this, _, _, cx| this.set_page(Target::Schemes, cx)),
+                    )),
             )
             .child(
                 field().child(
@@ -1494,6 +1673,21 @@ impl SettingsForm {
                         .child("$ ls -la ~/app && echo 0O 1lI {}[] => 中文 ✓"),
                 ),
             )
+            .child(
+                field()
+                    .label(t!("settings.cursor.label"))
+                    .description(prose(t!("settings.cursor.hint")))
+                    .child(self.cursor_shape_radio(cx)),
+            )
+            .child(self.checkbox(
+                "settings-cursor-blink",
+                t!("settings.cursor_blink"),
+                None,
+                |this| &mut this.draft.terminal.cursor_blink,
+                cx,
+            ))
+            // 行为：复制粘贴、右键、粘贴检查与 sudo 密码
+            .child(field().child(section::heading(t!("settings.section.behavior"), false, cx)))
             .child(self.checkbox(
                 "settings-copy-on-select",
                 t!("settings.copy_on_select"),
@@ -1519,72 +1713,11 @@ impl SettingsForm {
                     ))
                 },
             )
-            .child(
-                field()
-                    .label(t!("settings.cursor.label"))
-                    .description(prose(t!("settings.cursor.hint")))
-                    .child(self.cursor_shape_radio(cx)),
-            )
-            .child(self.checkbox(
-                "settings-cursor-blink",
-                t!("settings.cursor_blink"),
-                None,
-                |this| &mut this.draft.terminal.cursor_blink,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-monitor",
-                t!("settings.monitor"),
-                Some(t!("settings.monitor_hint")),
-                |this| &mut this.draft.terminal.monitor,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-latency",
-                t!("settings.latency"),
-                None,
-                |this| &mut this.draft.terminal.latency,
-                cx,
-            ))
-            .child(
-                field()
-                    .label(t!("settings.monitor_bar.label"))
-                    .description(prose(t!("settings.monitor_bar.hint")))
-                    .child(self.monitor_bar_radio(cx)),
-            )
             .child(self.checkbox(
                 "settings-paste-warning",
                 t!("settings.paste_warning"),
                 Some(t!("settings.paste_warning_hint")),
                 |this| &mut this.draft.terminal.paste_warning,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-tab-activity",
-                t!("settings.tab_activity"),
-                Some(t!("settings.tab_activity_hint")),
-                |this| &mut this.draft.terminal.tab_activity,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-notify-done",
-                t!("settings.notify_command_done"),
-                Some(t!("settings.notify_command_done_hint")),
-                |this| &mut this.draft.terminal.notify_command_done,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-file-transfer",
-                t!("settings.file_transfer"),
-                Some(t!("settings.file_transfer_hint")),
-                |this| &mut this.draft.terminal.file_transfer,
-                cx,
-            ))
-            .child(self.checkbox(
-                "settings-transfer-auto-clear",
-                t!("settings.transfer_auto_clear"),
-                Some(t!("settings.transfer_auto_clear_hint")),
-                |this| &mut this.draft.terminal.transfer_auto_clear,
                 cx,
             ))
             .child(self.checkbox(
@@ -1594,102 +1727,163 @@ impl SettingsForm {
                 |this| &mut this.draft.terminal.password_fill,
                 cx,
             ))
-            .child(self.checkbox(
-                "settings-session-log",
-                t!("settings.session_log"),
-                Some(t!("settings.session_log_hint")),
-                |this| &mut this.draft.terminal.session_log,
-                cx,
-            ))
-            .child(
-                field()
-                    .label(t!("settings.session_log_dir"))
-                    .description(prose(t!("settings.session_log_dir_hint")))
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .child(Input::new(&self.log_dir).id("settings-log-dir")),
-                            )
-                            .child(
-                                Button::new("settings-log-dir-browse")
-                                    .outline()
-                                    .label(t!("settings.browse"))
-                                    .on_click(cx.listener(|this, _, window, cx| {
-                                        this.pick_dir(|this| &this.log_dir, window, cx)
-                                    })),
-                            ),
-                    ),
-            )
-            .child(
-                self.checkbox(
-                    "settings-record-input",
-                    t!("settings.record_input"),
-                    Some(t!("settings.record_input_hint")),
-                    |this| &mut this.draft.terminal.record_input,
+            // 低频的几节默认收起
+            .child(status_header)
+            .when(status_open, |this| {
+                this.child(self.checkbox(
+                    "settings-monitor",
+                    t!("settings.monitor"),
+                    Some(t!("settings.monitor_hint")),
+                    |this| &mut this.draft.terminal.monitor,
                     cx,
+                ))
+                .child(self.checkbox(
+                    "settings-latency",
+                    t!("settings.latency"),
+                    None,
+                    |this| &mut this.draft.terminal.latency,
+                    cx,
+                ))
+                .child(
+                    field()
+                        .label(t!("settings.monitor_bar.label"))
+                        .description(prose(t!("settings.monitor_bar.hint")))
+                        .child(self.monitor_bar_radio(cx)),
                 )
-                // 开启时说明风险：输入的密码也会写进文件
-                .when(self.draft.terminal.record_input, |this| {
-                    this.child(
-                        div()
-                            .pl_6()
-                            .text_xs()
-                            .text_color(cx.theme().warning)
-                            .child(prose(t!("settings.record_input_warning"))),
-                    )
-                }),
-            )
-            .child(
-                field()
-                    .label(t!("settings.record_dir"))
-                    .description(prose(t!("settings.record_dir_hint")))
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .child(Input::new(&self.record_dir).id("settings-record-dir")),
-                            )
-                            .child(
-                                Button::new("settings-record-dir-browse")
-                                    .outline()
-                                    .label(t!("settings.browse"))
-                                    .on_click(cx.listener(|this, _, window, cx| {
-                                        this.pick_dir(|this| &this.record_dir, window, cx)
-                                    })),
-                            ),
-                    ),
-            )
-            .child(self.checkbox(
-                "settings-command-history",
-                t!("settings.command_history"),
-                Some(t!("settings.command_history_hint")),
-                |this| &mut this.draft.terminal.command_history,
-                cx,
-            ))
-            .child(
-                field().child(
-                    v_flex()
-                        .pl_6()
-                        .gap_2()
-                        .items_start()
+                .child(self.checkbox(
+                    "settings-tab-activity",
+                    t!("settings.tab_activity"),
+                    Some(t!("settings.tab_activity_hint")),
+                    |this| &mut this.draft.terminal.tab_activity,
+                    cx,
+                ))
+                .child(self.checkbox(
+                    "settings-notify-done",
+                    t!("settings.notify_command_done"),
+                    Some(t!("settings.notify_command_done_hint")),
+                    |this| &mut this.draft.terminal.notify_command_done,
+                    cx,
+                ))
+            })
+            .child(transfer_header)
+            .when(transfer_open, |this| {
+                this.child(self.checkbox(
+                    "settings-file-transfer",
+                    t!("settings.file_transfer"),
+                    Some(t!("settings.file_transfer_hint")),
+                    |this| &mut this.draft.terminal.file_transfer,
+                    cx,
+                ))
+                .child(self.checkbox(
+                    "settings-transfer-auto-clear",
+                    t!("settings.transfer_auto_clear"),
+                    Some(t!("settings.transfer_auto_clear_hint")),
+                    |this| &mut this.draft.terminal.transfer_auto_clear,
+                    cx,
+                ))
+            })
+            .child(logs_header)
+            .when(logs_open, |this| {
+                this.child(self.checkbox(
+                    "settings-session-log",
+                    t!("settings.session_log"),
+                    Some(t!("settings.session_log_hint")),
+                    |this| &mut this.draft.terminal.session_log,
+                    cx,
+                ))
+                .child(
+                    field()
+                        .label(t!("settings.session_log_dir"))
+                        .description(prose(t!("settings.session_log_dir_hint")))
                         .child(
-                            Button::new("settings-clear-history")
-                                .outline()
-                                .small()
-                                .label(t!("settings.clear_history"))
-                                .on_click(cx.listener(|this, _, window, cx| {
-                                    this.confirm_clear_history(window, cx)
-                                })),
+                            h_flex()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .child(Input::new(&self.log_dir).id("settings-log-dir")),
+                                )
+                                .child(
+                                    Button::new("settings-log-dir-browse")
+                                        .outline()
+                                        .label(t!("settings.browse"))
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.pick_dir(|this| &this.log_dir, window, cx)
+                                        })),
+                                ),
+                        ),
+                )
+                .child(
+                    self.checkbox(
+                        "settings-record-input",
+                        t!("settings.record_input"),
+                        Some(t!("settings.record_input_hint")),
+                        |this| &mut this.draft.terminal.record_input,
+                        cx,
+                    )
+                    // 开启时说明风险：输入的密码也会写进文件
+                    .when(self.draft.terminal.record_input, |this| {
+                        this.child(
+                            div()
+                                .pl_6()
+                                .text_xs()
+                                .text_color(cx.theme().warning)
+                                .child(prose(t!("settings.record_input_warning"))),
                         )
-                        .child(self.render_shell_snippets(cx)),
-                ),
-            )
-            .child(self.command_suggest_field(cx))
+                    }),
+                )
+                .child(
+                    field()
+                        .label(t!("settings.record_dir"))
+                        .description(prose(t!("settings.record_dir_hint")))
+                        .child(
+                            h_flex()
+                                .gap_2()
+                                .child(
+                                    div().flex_1().child(
+                                        Input::new(&self.record_dir).id("settings-record-dir"),
+                                    ),
+                                )
+                                .child(
+                                    Button::new("settings-record-dir-browse")
+                                        .outline()
+                                        .label(t!("settings.browse"))
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.pick_dir(|this| &this.record_dir, window, cx)
+                                        })),
+                                ),
+                        ),
+                )
+            })
+            .child(history_header)
+            .when(history_open, |this| {
+                this.child(self.checkbox(
+                    "settings-command-history",
+                    t!("settings.command_history"),
+                    Some(t!("settings.command_history_hint")),
+                    |this| &mut this.draft.terminal.command_history,
+                    cx,
+                ))
+                .child(
+                    field().child(
+                        v_flex()
+                            .pl_6()
+                            .gap_2()
+                            .items_start()
+                            .child(
+                                Button::new("settings-clear-history")
+                                    .outline()
+                                    .small()
+                                    .label(t!("settings.clear_history"))
+                                    .on_click(cx.listener(|this, _, window, cx| {
+                                        this.confirm_clear_history(window, cx)
+                                    })),
+                            )
+                            .child(self.render_shell_snippets(cx)),
+                    ),
+                )
+                .child(self.command_suggest_field(cx))
+            })
             .into_any_element()
     }
 
@@ -1812,6 +2006,8 @@ impl SettingsForm {
     }
 
     fn render_connection(&mut self, cx: &mut Context<Self>) -> AnyElement {
+        let advanced_header = self.fold_header(Fold::ConnectionAdvanced, cx);
+        let advanced_open = self.folds.contains(&Fold::ConnectionAdvanced);
         v_form()
             .child(
                 field()
@@ -1839,69 +2035,73 @@ impl SettingsForm {
             ))
             .child(
                 field()
-                    .label(t!("settings.agent_path"))
-                    .description(prose(t!("settings.agent_path_hint")))
-                    .child(Input::new(&self.agent_path).id("settings-agent-path")),
-            )
-            .child(
-                field()
                     .label(t!("settings.external_launch"))
                     .description(prose(t!("settings.external_launch_hint")))
                     .child(self.external_launch_radio(cx)),
             )
-            .child(
-                field()
-                    .label(t!("settings.x11_display"))
-                    .description(prose(t!("settings.x11_display_hint")))
-                    .child(Input::new(&self.x11_display).id("settings-x11-display")),
-            )
-            .child(
-                field()
-                    .label(t!("settings.local_proxy"))
-                    .description(prose(t!(
-                        "settings.local_proxy_hint",
-                        system = self
-                            .system_proxy
-                            .clone()
-                            .unwrap_or_else(|| t!("settings.local_proxy_none").to_string())
-                    )))
-                    .child(Input::new(&self.local_proxy).id("settings-local-proxy")),
-            )
-            .child(
-                field()
-                    .label(t!("settings.local_proxy_port"))
-                    .description(prose(t!("settings.local_proxy_port_hint")))
-                    .child(Input::new(&self.local_proxy_port).id("settings-local-proxy-port")),
-            )
-            .child(
-                field()
-                    .label(t!("settings.proxy_commands"))
-                    .description(prose(t!("settings.proxy_commands_hint")))
-                    .child(
-                        h_flex()
-                            .gap_3()
-                            .items_center()
-                            .child(div().text_sm().child(if self.allowed_proxy_commands == 0 {
-                                t!("settings.proxy_commands_none")
-                            } else {
-                                t!(
-                                    "settings.proxy_commands_count",
-                                    count = self.allowed_proxy_commands
-                                )
-                            }))
-                            .when(self.allowed_proxy_commands > 0, |this| {
-                                this.child(
-                                    Button::new("settings-forget-proxy-commands")
-                                        .outline()
-                                        .small()
-                                        .label(t!("settings.proxy_commands_forget"))
-                                        .on_click(cx.listener(|this, _, window, cx| {
-                                            this.forget_proxy_commands(window, cx)
-                                        })),
-                                )
-                            }),
-                    ),
-            )
+            // 少用的：ssh-agent 地址、X11 转发的显示、借给服务器的本机代理、确认过的代理命令
+            .child(advanced_header)
+            .when(advanced_open, |this| {
+                this.child(
+                    field()
+                        .label(t!("settings.agent_path"))
+                        .description(prose(t!("settings.agent_path_hint")))
+                        .child(Input::new(&self.agent_path).id("settings-agent-path")),
+                )
+                .child(
+                    field()
+                        .label(t!("settings.x11_display"))
+                        .description(prose(t!("settings.x11_display_hint")))
+                        .child(Input::new(&self.x11_display).id("settings-x11-display")),
+                )
+                .child(
+                    field()
+                        .label(t!("settings.local_proxy"))
+                        .description(prose(t!(
+                            "settings.local_proxy_hint",
+                            system = self
+                                .system_proxy
+                                .clone()
+                                .unwrap_or_else(|| t!("settings.local_proxy_none").to_string())
+                        )))
+                        .child(Input::new(&self.local_proxy).id("settings-local-proxy")),
+                )
+                .child(
+                    field()
+                        .label(t!("settings.local_proxy_port"))
+                        .description(prose(t!("settings.local_proxy_port_hint")))
+                        .child(Input::new(&self.local_proxy_port).id("settings-local-proxy-port")),
+                )
+                .child(
+                    field()
+                        .label(t!("settings.proxy_commands"))
+                        .description(prose(t!("settings.proxy_commands_hint")))
+                        .child(
+                            h_flex()
+                                .gap_3()
+                                .items_center()
+                                .child(div().text_sm().child(if self.allowed_proxy_commands == 0 {
+                                    t!("settings.proxy_commands_none")
+                                } else {
+                                    t!(
+                                        "settings.proxy_commands_count",
+                                        count = self.allowed_proxy_commands
+                                    )
+                                }))
+                                .when(self.allowed_proxy_commands > 0, |this| {
+                                    this.child(
+                                        Button::new("settings-forget-proxy-commands")
+                                            .outline()
+                                            .small()
+                                            .label(t!("settings.proxy_commands_forget"))
+                                            .on_click(cx.listener(|this, _, window, cx| {
+                                                this.forget_proxy_commands(window, cx)
+                                            })),
+                                    )
+                                }),
+                        ),
+                )
+            })
             .into_any_element()
     }
 
@@ -2025,6 +2225,86 @@ impl SettingsForm {
             .into_any_element()
     }
 
+    /// 这一页的内容，分成几块（滚动区的直接子元素，第一块之前是标题）。并进来的一处单独成块：从别处打开它时滚到
+    /// 那一块的顶上（[`Target::Toolbar`] 是“通用”页的第二块）。
+    fn render_blocks(&mut self, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        match self.page {
+            Page::General => {
+                let toolbar_header = self.fold_header(Fold::Toolbar, cx);
+                let toolbar = self
+                    .folds
+                    .contains(&Fold::Toolbar)
+                    .then(|| self.toolbar.clone());
+                vec![
+                    self.render_general(cx),
+                    v_form()
+                        .child(toolbar_header)
+                        .children(toolbar.map(|toolbar| field().child(toolbar)))
+                        .into_any_element(),
+                ]
+            }
+            Page::Terminal => vec![self.render_terminal(cx)],
+            Page::Local => vec![self.local_page.clone().into_any_element()],
+            Page::Colors => vec![self.render_colors(cx)],
+            Page::Connection => vec![self.render_connection(cx)],
+            Page::Security => vec![
+                v_form()
+                    .child(field().child(section::heading(
+                        t!("settings.section.app_lock"),
+                        true,
+                        cx,
+                    )))
+                    .child(field().child(self.security_page.clone()))
+                    .into_any_element(),
+                v_form()
+                    .child(field().child(section::heading(
+                        t!("settings.nav.known_hosts"),
+                        false,
+                        cx,
+                    )))
+                    .child(field().child(self.known_hosts.clone()))
+                    .into_any_element(),
+            ],
+            Page::Cli => vec![self.cli_page.clone().into_any_element()],
+            Page::Backup => vec![self.backup_page.clone().into_any_element()],
+            Page::Sync => vec![self.sync_page.clone().into_any_element()],
+            Page::Shortcuts => vec![self.shortcuts.clone().into_any_element()],
+            Page::Privacy => vec![self.about_extras.clone().into_any_element()],
+            Page::About => vec![self.render_about(cx)],
+        }
+    }
+
+    /// 配色与高亮：页签切换终端配色与关键词高亮。
+    fn render_colors(&mut self, cx: &mut Context<Self>) -> AnyElement {
+        let tab = self.colors_tab;
+        v_flex()
+            .gap_3()
+            .child(
+                TabBar::new("settings-colors-tabs")
+                    .segmented()
+                    .small()
+                    .selected_index(match tab {
+                        ColorsTab::Schemes => 0,
+                        ColorsTab::Highlight => 1,
+                    })
+                    .on_click(cx.listener(|this, ix: &usize, _, cx| {
+                        let tab = if *ix == 1 {
+                            ColorsTab::Highlight
+                        } else {
+                            ColorsTab::Schemes
+                        };
+                        this.set_colors_tab(tab, cx);
+                    }))
+                    .child(Tab::new().label(t!("schemes.nav")))
+                    .child(Tab::new().label(t!("settings.nav.highlight"))),
+            )
+            .child(match tab {
+                ColorsTab::Schemes => self.schemes.clone().into_any_element(),
+                ColorsTab::Highlight => self.highlight.clone().into_any_element(),
+            })
+            .into_any_element()
+    }
+
     /// 底部的保存条：左边是校验错误、提示行与“有未保存的修改”，右边是“放弃修改”“保存”。“保存”一直可点（没有修改时
     /// 什么也不写），“放弃修改”有修改时才可点；备份、恢复进行中两个都不可点。
     fn render_save_bar(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -2084,22 +2364,7 @@ impl SettingsForm {
 
 impl Render for SettingsForm {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let body = match self.page {
-            Page::General => self.render_general(cx),
-            Page::Toolbar => self.toolbar.clone().into_any_element(),
-            Page::Terminal => self.render_terminal(cx),
-            Page::Schemes => self.schemes.clone().into_any_element(),
-            Page::Local => self.local_page.clone().into_any_element(),
-            Page::Highlight => self.highlight.clone().into_any_element(),
-            Page::Connection => self.render_connection(cx),
-            Page::KnownHosts => self.known_hosts.clone().into_any_element(),
-            Page::Security => self.security_page.clone().into_any_element(),
-            Page::Cli => self.cli_page.clone().into_any_element(),
-            Page::Backup => self.backup_page.clone().into_any_element(),
-            Page::Sync => self.sync_page.clone().into_any_element(),
-            Page::Shortcuts => self.shortcuts.clone().into_any_element(),
-            Page::About => self.render_about(cx),
-        };
+        let blocks = self.render_blocks(cx);
         // 按上一帧的宽度：窄时分类导航只显示图标
         let width = self.bounds.get().size.width;
         let compact =
@@ -2150,28 +2415,33 @@ impl Render for SettingsForm {
                             .flex_1()
                             .min_w_0()
                             .child(
-                                div()
+                                // 标题与各块是滚动区的直接子元素：并进来的一处（工具栏）可以按序号滚到顶上
+                                v_flex()
                                     .id("settings-page")
                                     .test_support()
                                     .size_full()
                                     .overflow_y_scroll()
                                     .track_scroll(&self.page_scroll)
+                                    .gap_3()
                                     .px_5()
-                                    .py_3()
+                                    .pt_3()
+                                    .pb_6()
                                     .child(
-                                        v_flex()
+                                        div()
+                                            .flex_none()
                                             .w_full()
                                             .max_w(rems(CONTENT_MAX_WIDTH))
-                                            .gap_3()
-                                            .pb_3()
-                                            .child(
-                                                div()
-                                                    .text_base()
-                                                    .font_medium()
-                                                    .child(self.page.title()),
-                                            )
-                                            .child(body),
-                                    ),
+                                            .text_base()
+                                            .font_medium()
+                                            .child(self.page.title()),
+                                    )
+                                    .children(blocks.into_iter().map(|block| {
+                                        div()
+                                            .flex_none()
+                                            .w_full()
+                                            .max_w(rems(CONTENT_MAX_WIDTH))
+                                            .child(block)
+                                    })),
                             )
                             .vertical_scrollbar(&self.page_scroll),
                     ),
@@ -2394,7 +2664,7 @@ mod tests {
         .unwrap();
     }
 
-    // 换分类时内容回到顶上：在“关于”页滚到下面后换到“通用”，“通用”不沿用滚动位置（实测时因此误点了勾选框）
+    // 换分类时内容回到顶上：在“终端”页滚到下面后换到“通用”，“通用”不沿用滚动位置（实测时因此误点了勾选框）
     #[gpui_kit::test]
     fn switching_pages_scrolls_back_to_the_top(cx: &mut TestAppContext) {
         let handle = open_workspace(cx);
@@ -2403,9 +2673,9 @@ mod tests {
             window.render_frame(cx);
             window.click("open-settings", cx);
             window.render_frame(cx);
-            window.click(Page::About.nav_id(), cx);
+            window.click(Page::Terminal.nav_id(), cx);
             window.render_frame(cx);
-            let top = window.find("about-copy-version").bounds().top();
+            let top = window.find("settings-font-size").bounds().top();
             window.scroll(
                 "settings-page",
                 gpui_kit::ScrollDelta::Pixels(gpui_kit::point(
@@ -2415,14 +2685,14 @@ mod tests {
                 cx,
             );
             window.render_frame(cx);
-            let scrolled = window.find("about-copy-version").bounds().top();
-            assert!(scrolled < top, "“关于”页滚动了：{top:?} → {scrolled:?}");
+            let scrolled = window.find("settings-font-size").bounds().top();
+            assert!(scrolled < top, "“终端”页滚动了：{top:?} → {scrolled:?}");
 
             window.click(Page::General.nav_id(), cx);
             window.render_frame(cx);
-            window.click(Page::About.nav_id(), cx);
+            window.click(Page::Terminal.nav_id(), cx);
             window.render_frame(cx);
-            assert_eq!(window.find("about-copy-version").bounds().top(), top);
+            assert_eq!(window.find("settings-font-size").bounds().top(), top);
         })
         .unwrap();
     }
@@ -2521,16 +2791,26 @@ mod tests {
             window.render_frame(cx);
             window.click(Page::Terminal.nav_id(), cx);
             window.render_frame(cx);
-            // 在资源监控之后，测试窗口中要往下滚才看得到
-            window.scroll(
-                "settings-page",
-                gpui_kit::ScrollDelta::Pixels(gpui_kit::point(
-                    gpui_kit::px(0.),
-                    gpui_kit::px(-600.),
-                )),
-                cx,
+            // 在默认收起的“状态条与通知”中：滚到下面展开它，再往下滚才看得到
+            let down = |window: &mut gpui_kit::Window, cx: &mut gpui_kit::App| {
+                window.scroll(
+                    "settings-page",
+                    gpui_kit::ScrollDelta::Pixels(gpui_kit::point(
+                        gpui_kit::px(0.),
+                        gpui_kit::px(-600.),
+                    )),
+                    cx,
+                );
+                window.render_frame(cx);
+            };
+            down(window, cx);
+            assert!(
+                window.try_find("settings-monitor-bar").is_none(),
+                "默认收起"
             );
+            window.click("settings-fold-status-bar", cx);
             window.render_frame(cx);
+            down(window, cx);
             window.within("settings-monitor-bar").click(1usize, cx);
             window.render_frame(cx);
             window.click("settings-save", cx);

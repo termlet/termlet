@@ -238,7 +238,7 @@ fn nothing_is_sent_while_the_app_is_locked(cx: &mut TestAppContext) {
     );
 }
 
-/// 设置“关于”页（不经设置 Tab）。
+/// 设置的“隐私与诊断”页（不经设置 Tab）。
 struct PageHarness {
     page: Entity<AboutExtras>,
 }
@@ -255,7 +255,11 @@ fn open_about(cx: &mut TestAppContext) -> (AnyWindowHandle, Entity<AboutExtras>)
         (store.settings(), store.local_settings())
     });
     let (handle, harness) = open(cx, move |window, cx| PageHarness {
-        page: cx.new(|cx| AboutExtras::new(&settings, &local, window, cx)),
+        page: cx.new(|cx| {
+            let mut page = AboutExtras::new(&settings, &local, window, cx);
+            page.set_part(crate::lock_ui::AboutPart::Privacy, cx);
+            page
+        }),
     });
     let page = cx.read(|cx| harness.read(cx).page.clone());
     (handle, page)

@@ -18,7 +18,7 @@ use termlet_core::store::Position;
 
 use crate::app_state::AppState;
 use crate::i18n::{Language, set_language};
-use crate::settings::Page;
+use crate::settings::{Page, Target};
 use crate::testkit::{expand_host_tree, open_workspace_sized};
 use crate::toolbar::ToolbarItem;
 use crate::workspace::Workspace;
@@ -230,16 +230,12 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
 
 // ------------------------------------------------------------ 设置页的控件数
 
-/// 每个设置页默认可见的控件的目标：不超过 12 个，超过就分小节、低频项折叠进“高级”。
+/// 每个设置页默认可见的控件的目标：不超过 12 个，超过就分小节、低频项折叠（收起的一节不算）。
 const PAGE_CONTROLS_TARGET: usize = 12;
 
-/// 已经超过目标的页的上限（现状）。列表页（工具栏、关键词高亮、内置规则）的行也算在内。
-const PAGE_CONTROLS_OVER: [(Page, usize); 3] = [
-    (Page::Terminal, 22),
-    (Page::Highlight, 22),
-    // 15 条内置的危险命令规则各是一个复选框
-    (Page::Cli, 21),
-];
+/// “配色与高亮”的关键词高亮页签的上限（现状，超过目标）：列表页的行也算在内，默认 5 条规则每条 4 个（开关、关键词、
+/// 正则、区分大小写），加上示例文字、总开关与切换页签。规则改成“列表 + 编辑弹层”后再降。
+const HIGHLIGHT_CONTROLS: usize = 23;
 
 /// 设置页中的控件数：复选框、开关、下拉框、输入框（含密码、多行），单选组与分段选择（一组算一个）。
 /// 按钮、链接不算。
@@ -288,16 +284,20 @@ fn settings_pages_stay_small(cx: &mut TestAppContext) {
                 window.render_frame(cx);
                 let count = control_count(window);
                 total += count;
-                let cap = PAGE_CONTROLS_OVER
-                    .iter()
-                    .find(|(p, _)| *p == page)
-                    .map_or(PAGE_CONTROLS_TARGET, |(_, cap)| *cap);
-                if count > cap {
+                if count > PAGE_CONTROLS_TARGET {
                     failures.push(format!(
-                        "设置“{}”有 {count} 个控件，上限 {cap}（目标 {PAGE_CONTROLS_TARGET}）",
+                        "设置“{}”有 {count} 个控件，上限 {PAGE_CONTROLS_TARGET}",
                         page.title()
                     ));
                 }
+            }
+            crate::settings::open(Target::Highlight, window, cx);
+            window.render_frame(cx);
+            let count = control_count(window);
+            if count > HIGHLIGHT_CONTROLS {
+                failures.push(format!(
+                    "关键词高亮有 {count} 个控件，上限 {HIGHLIGHT_CONTROLS}（目标 {PAGE_CONTROLS_TARGET}）"
+                ));
             }
             assert!(
                 total > 0,

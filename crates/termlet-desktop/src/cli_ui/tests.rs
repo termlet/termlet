@@ -82,8 +82,14 @@ fn open(
             cx,
             |window, cx| {
                 cx.new(|cx| Harness {
+                    // 默认收起的两节（接入方式、内置规则）展开着：这里测的是它们里面的内容
                     page: page.map(|(settings, local, env)| {
-                        cx.new(|cx| CliPage::with_env(&settings, &local, env, window, cx))
+                        cx.new(|cx| {
+                            let mut page = CliPage::with_env(&settings, &local, env, window, cx);
+                            page.access_open = true;
+                            page.builtin_open = true;
+                            page
+                        })
                     }),
                 })
             },

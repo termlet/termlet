@@ -97,7 +97,7 @@ impl Workspace {
             }
             ToolbarItem::Snippets => self.open_command_picker(window, cx),
             ToolbarItem::Compose => self.toggle_compose(window, cx),
-            ToolbarItem::Highlight => self.open_settings(settings::Page::Highlight, window, cx),
+            ToolbarItem::Highlight => self.open_settings(settings::Target::Highlight, window, cx),
             ToolbarItem::Theme => self.toggle_theme(window, cx),
             ToolbarItem::Lock => {
                 crate::lock_ui::lock_now(cx);
@@ -455,7 +455,7 @@ impl Workspace {
 /// 菜单中的“自定义工具栏…”：打开设置的“工具栏”页。
 fn customize_item() -> PopupMenuItem {
     PopupMenuItem::new(t!("toolbar.customize"))
-        .on_click(|_, window, cx| settings::open(settings::Page::Toolbar, window, cx))
+        .on_click(|_, window, cx| settings::open(settings::Target::Toolbar, window, cx))
 }
 
 #[cfg(test)]
@@ -538,7 +538,7 @@ mod tests {
         );
     }
 
-    // 右键菜单的“自定义工具栏…”打开设置的“工具栏”页：调整顺序、显示撰写栏，保存后标题栏照着排；“恢复默认”后回到
+    // 右键菜单的“自定义工具栏…”打开设置“通用”页中的工具栏（展开并滚到那里）：调整顺序、显示撰写栏，保存后标题栏照着排；“恢复默认”后回到
     // 默认的顺序，设置中存空
     #[gpui_kit::test]
     fn toolbar_page_orders_shows_and_resets(cx: &mut TestAppContext) {
@@ -589,9 +589,8 @@ mod tests {
 
         cx.update_window(handle, |_, window, cx| {
             window.render_frame(cx);
+            // 设置还开着，工具栏那一节照旧展开着
             window.click("open-settings", cx);
-            window.render_frame(cx);
-            window.click("settings-nav-toolbar", cx);
             window.render_frame(cx);
             window.scroll(
                 "settings-page",
