@@ -78,6 +78,11 @@ impl Workspace {
         self.multi_exec.is_some()
     }
 
+    /// 这个终端是否在同步输入中（同步中，不是“已排除”）。
+    pub(crate) fn is_sync_member(&self, id: EntityId) -> bool {
+        self.multi_exec.as_ref().is_some_and(|s| s.is_member(id))
+    }
+
     /// 同步中的终端数；没有开启同步输入时为 `None`。
     pub fn synced_terminals(&self) -> Option<usize> {
         self.multi_exec.as_ref().map(|s| s.members.len())
@@ -1140,5 +1145,150 @@ mod tests {
         assert_eq!(focused(cx), Some(2), "第一个之前是最后一个");
         press(cx, "ctrl-alt-9");
         assert_eq!(focused(cx), Some(2), "只有三个 Tab 时第九个不动");
+    }
+
+    /// 开一个有 `n` 个本地终端的窗口，等它们都连上。
+    fn window_with_terminals(
+        cx: &mut TestAppContext,
+        n: usize,
+    ) -> (
+        gpui_kit::AnyWindowHandle,
+        gpui_kit::Entity<Workspace>,
+        Vec<gpui_kit::Entity<crate::terminal_panel::TerminalPanel>>,
+    ) {
+        cx.executor().allow_parking();
+        cx.update(gpui_kit::init);
+        cx.update(crate::init);
+        cx.update(AppState::install_in_memory);
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        let (handle, workspace) = cx.update(|cx| {
+            gpui_kit::open_window(Default::default(), cx, |window, cx| {
+                cx.new(|cx| Workspace::new(window, cx))
+            })
+            .unwrap()
+        });
+        for _ in 0..n {
+            cx.update_window(handle, |_, window, cx| {
+                workspace.update(cx, |w, cx| w.open_local_terminal(window, cx))
+            })
+            .unwrap();
+        }
+        wait(cx, "终端都启动", |cx| {
+            let terminals = workspace.read(cx).live_terminals();
+            terminals.len() == n && terminals.iter().all(|p| p.read(cx).is_live(cx))
+        });
+        let terminals = cx.update(|cx| workspace.read(cx).live_terminals());
+        (handle, workspace, terminals)
+    }
+
+    fn screen_has(
+        cx: &mut TestAppContext,
+        panel: &gpui_kit::Entity<crate::terminal_panel::TerminalPanel>,
+        text: &str,
+    ) -> bool {
+        cx.update(|cx| panel.read(cx).screen_text(cx).contains(text))
+    }
+
+    // 同步输入开着时，快捷命令（快捷命令栏、侧边栏、选择器）发给同步中的全部终端，与横幅说的一致；
+    // 撰写栏的“当前 Tab”在网格中不发给“已排除”的终端
+    #[gpui_kit::test]
+    fn snippets_and_compose_follow_sync_members(cx: &mut TestAppContext) {
+        let (handle, workspace, terminals) = window_with_terminals(cx, 3);
+        let (first, second, third) = (
+            terminals[0].clone(),
+            terminals[1].clone(),
+            terminals[2].clone(),
+        );
+        cx.update_window(handle, |_, window, cx| {
+            workspace.update(cx, |w, cx| {
+                w.toggle_multi_exec(window, cx);
+                // 排除第三个
+                w.set_sync(&third, false, cx);
+            })
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            workspace.update(cx, |w, cx| {
+                assert_eq!(w.synced_terminals(), Some(2));
+                let input = crate::snippets::command_input("echo snippet-synced", None);
+                w.deliver_command(&first, input, window, cx).unwrap();
+            })
+        })
+        .unwrap();
+        wait(cx, "同步中的终端都收到快捷命令", |cx| {
+            first
+                .read(cx)
+                .screen_text(cx)
+                .contains("echo snippet-synced")
+                && second
+                    .read(cx)
+                    .screen_text(cx)
+                    .contains("echo snippet-synced")
+        });
+        assert!(!screen_has(cx, &third, "snippet-synced"), "已排除的不发");
+
+        // 撰写栏的“当前 Tab”：网格中是同步中的终端
+        let targets = cx
+            .update_window(handle, |_, window, cx| {
+                workspace
+                    .read(cx)
+                    .compose_targets(&crate::compose::Mode::View, window, cx)
+                    .iter()
+                    .map(|p| p.entity_id())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap();
+        assert_eq!(targets, [first.entity_id(), second.entity_id()]);
+    }
+
+    // 快捷命令要执行的命中危险命令规则时先确认：取消则不写，确认后才写
+    #[gpui_kit::test]
+    fn snippets_ask_before_dangerous_commands(cx: &mut TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        let (handle, workspace, terminals) = window_with_terminals(cx, 1);
+        let panel = terminals[0].clone();
+        let send = |cx: &mut TestAppContext| {
+            cx.update_window(handle, |_, window, cx| {
+                workspace.update(cx, |w, cx| {
+                    let input = crate::snippets::command_input("sudo reboot --dry-run-x\n", None);
+                    w.deliver_command(&panel, input, window, cx).unwrap();
+                })
+            })
+            .unwrap();
+            cx.run_until_parked();
+        };
+        send(cx);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert!(window.try_find("ok").is_some(), "应弹出确认框");
+            window.click("cancel", cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        std::thread::sleep(Duration::from_millis(300));
+        assert!(!screen_has(cx, &panel, "reboot --dry-run-x"), "取消则不写");
+        send(cx);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.click("ok", cx);
+        })
+        .unwrap();
+        wait(cx, "确认后写进终端", |cx| {
+            panel
+                .read(cx)
+                .screen_text(cx)
+                .contains("reboot --dry-run-x")
+        });
+        // 只写入（不执行）的不查
+        cx.update_window(handle, |_, window, cx| {
+            workspace.update(cx, |w, cx| {
+                let input = crate::snippets::command_input("sudo reboot --insert-only", None);
+                w.deliver_command(&panel, input, window, cx).unwrap();
+            });
+            window.render_frame(cx);
+            assert!(window.try_find("ok").is_none(), "只写入的不确认");
+        })
+        .unwrap();
     }
 }

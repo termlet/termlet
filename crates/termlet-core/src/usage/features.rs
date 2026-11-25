@@ -99,11 +99,14 @@ pub enum Feature {
     ImportNyaTermSnippets,
     /// Termlet 主机文件（`.termlet-hosts`）
     ImportTermletFile,
+    // 加在最后：位置就是本机记录中的位，发布后不能挪
+    /// 批量执行（命令行、MCP 的 `run_command_on_hosts`、界面）
+    BatchExec,
 }
 
 impl Feature {
     /// 全部，按顺序（`ALL[i] as usize == i`）。
-    pub const ALL: [Feature; 50] = [
+    pub const ALL: [Feature; 51] = [
         Feature::Ssh,
         Feature::Telnet,
         Feature::Serial,
@@ -154,6 +157,7 @@ impl Feature {
         Feature::ImportNyaTerm,
         Feature::ImportNyaTermSnippets,
         Feature::ImportTermletFile,
+        Feature::BatchExec,
     ];
 
     /// 正文中的名称（与接收端的清单相同），发布后不能改。
@@ -209,6 +213,7 @@ impl Feature {
             Feature::ImportNyaTerm => "import_nyaterm",
             Feature::ImportNyaTermSnippets => "import_nyaterm_snippets",
             Feature::ImportTermletFile => "import_termlet_file",
+            Feature::BatchExec => "batch_exec",
         }
     }
 

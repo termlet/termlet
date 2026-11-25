@@ -22,7 +22,7 @@ use gpui_kit::component::{ActiveTheme as _, Icon, v_flex};
 use gpui_kit::{
     AnyWindowHandle, App, AppContext as _, AsyncApp, Entity, Global, InteractiveElement as _,
     OperatingSystem, ParentElement as _, QuitMode, StatefulInteractiveElement as _, Styled as _,
-    TestSupportExt as _, WeakEntity, div,
+    TestSupportExt as _, WeakEntity, div, prelude::FluentBuilder as _,
 };
 use termlet_core::audit::AuditLog;
 use termlet_core::cli::{ApprovalRequest, CliConfig, CliEvent, CliService, TerminalRequest};
@@ -641,7 +641,7 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
         rule.to_string()
     };
     let deadline = request.deadline;
-    let title = approval_title(&request.host_name, &request.caller);
+    let title = approval_title(&request.host_name, &request.caller, request.hosts.len());
     let description = t!(
         "cli.approval.description",
         command = request.command.clone(),
@@ -652,6 +652,8 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
         },
         rule = rule
     );
+    // 批量执行：列出这一批的主机（多时只列前面几台）
+    let hosts = (!request.hosts.is_empty()).then(|| batch_hosts_line(&request.hosts));
     // 发起请求的是认识的 AI 编程工具（Claude Code、Gemini CLI）时，标题前配上它的标志；别的 MCP 调用（如 Codex：
     // OpenAI 的标志没有收录）配上通用的 AI 图标
     let caller_brand = crate::brand_icons::for_caller(&request.caller);
@@ -701,6 +703,14 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
                 .description(
                     v_flex()
                         .gap_2()
+                        .when_some(hosts.clone(), |this, hosts| {
+                            this.child(
+                                div()
+                                    .id("approval-hosts")
+                                    .test_support()
+                                    .child(prose(hosts)),
+                            )
+                        })
                         .child(prose(description.clone()))
                         .child(
                             div()
@@ -770,10 +780,49 @@ fn ask_approval(request: ApprovalRequest, cx: &mut App) {
     });
 }
 
+/// 批量执行的批准框中列出的主机：`12 台主机：web-1、web-2……`。
+fn batch_hosts_line(hosts: &[String]) -> gpui_kit::SharedString {
+    /// 最多列出的台数。
+    const SHOWN: usize = 10;
+    let mut names = hosts
+        .iter()
+        .take(SHOWN)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(t!("cli.approval.hosts_separator").as_ref());
+    if hosts.len() > SHOWN {
+        names.push_str(t!("cli.approval.hosts_separator").as_ref());
+        names.push('…');
+    }
+    t!("cli.approval.hosts", count = hosts.len(), names = names)
+}
+
 /// 批准框的标题，按来源写：MCP 的写客户端的名字（常见的 AI 工具写产品名，见 [`client_display_name`]；没有报名字时
-/// 写“AI 工具”），局域网中的另一台电脑来的另写明它的地址；其余是命令行工具。
-fn approval_title(host: &str, caller: &str) -> gpui_kit::SharedString {
+/// 写“AI 工具”），局域网中的另一台电脑来的另写明它的地址；其余是命令行工具。批量执行（`batch` 台，单台为 0）写台数。
+fn approval_title(host: &str, caller: &str, batch: usize) -> gpui_kit::SharedString {
     let lan = termlet_core::audit::mcp_lan_peer(caller);
+    if batch > 0 {
+        return match (termlet_core::audit::mcp_client(caller), lan) {
+            (None, _) => t!("cli.approval.title_batch", count = batch),
+            (Some(""), None) => t!("cli.approval.title_mcp_unnamed_batch", count = batch),
+            (Some(""), Some(address)) => t!(
+                "cli.approval.title_mcp_lan_unnamed_batch",
+                address = address,
+                count = batch
+            ),
+            (Some(client), None) => t!(
+                "cli.approval.title_mcp_batch",
+                client = client_display_name(client),
+                count = batch
+            ),
+            (Some(client), Some(address)) => t!(
+                "cli.approval.title_mcp_lan_batch",
+                client = client_display_name(client),
+                address = address,
+                count = batch
+            ),
+        };
+    }
     match (termlet_core::audit::mcp_client(caller), lan) {
         (None, _) => t!("cli.approval.title", host = host),
         (Some(""), None) => t!("cli.approval.title_mcp_unnamed", host = host),
@@ -1114,7 +1163,7 @@ mod tests {
     // 批准框的标题按来源写：MCP 写客户端名（没有名字时写 AI 工具），命令行照旧
     #[test]
     fn approval_title_follows_the_source() {
-        let title = |caller: &str| approval_title("web", caller).to_string();
+        let title = |caller: &str| approval_title("web", caller, 0).to_string();
         crate::i18n::set_language(crate::i18n::Language::ZhCn);
         assert_eq!(
             title("claude.exe < pwsh.exe"),
@@ -1161,6 +1210,37 @@ mod tests {
             title("mcp < http < lan:10.0.0.8"),
             "AI 工具（MCP，来自 10.0.0.8）要在“web”上执行危险命令"
         );
+        // 批量执行：写台数
+        let batch = |caller: &str| approval_title("web", caller, 12).to_string();
+        assert_eq!(batch("bash"), "命令行工具要在 12 台主机上执行危险命令");
+        assert_eq!(
+            batch("mcp:claude-code < claude.exe"),
+            "Claude Code（MCP）要在 12 台主机上执行危险命令"
+        );
+        assert_eq!(
+            batch("mcp < http < lan:10.0.0.8"),
+            "AI 工具（MCP，来自 10.0.0.8）要在 12 台主机上执行危险命令"
+        );
+        let names: Vec<String> = (1..=12).map(|i| format!("web-{i}")).collect();
+        assert_eq!(
+            batch_hosts_line(&names[..2]).to_string(),
+            "2 台主机：web-1、web-2"
+        );
+        assert!(
+            batch_hosts_line(&names).ends_with("web-10、…"),
+            "{}",
+            batch_hosts_line(&names)
+        );
+        crate::i18n::set_language(crate::i18n::Language::En);
+        assert_eq!(
+            batch("mcp:cursor"),
+            "cursor (MCP) wants to run a dangerous command on 12 hosts"
+        );
+        assert_eq!(
+            batch_hosts_line(&names[..2]).to_string(),
+            "2 hosts: web-1, web-2"
+        );
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
     }
 
     // 剩余秒数向上取整：刚打开时是完整的秒数、最后不到一秒时是 1；正好在整秒上时等一整秒再变
@@ -1244,7 +1324,7 @@ mod tests {
                 host: "web".into(),
                 command: "reboot".into(),
                 terminal: true,
-                caller: Vec::new(),
+                ..Default::default()
             }))
             .unwrap()
         });

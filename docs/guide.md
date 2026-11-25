@@ -634,6 +634,7 @@
   - 名称由文字、数字、下划线组成，中间可以有空格、点、连字符。
   - `{{.Names}}` 这类 docker、kubectl 的 Go 模板原样发送。
 - 快捷命令在侧边栏的"快捷命令"中管理（勾选"发送后立即执行"即在末尾加回车），可归入分组。
+- 要执行的快捷命令命中危险命令规则时先确认，取消则不发（只写入、不执行的不检查）。同步输入开着时发给所有同步中的终端。
 - 可以导入 NyaTerm 导出的快捷命令（快捷命令页的"导入快捷命令…"，见[导入主机](#导入主机)中的 NyaTerm）。
 - **快捷命令栏**：也可以在终端下方显示一行快捷命令栏（快捷命令页的按钮或命令面板的"显示快捷命令栏"，默认不显示）。
   - 单击按钮发送到当前终端。
@@ -723,6 +724,7 @@
   - 顶部横幅可全部同步、全部排除、反选。
   - 双击标题（或点放大按钮）临时放大一个。
   - 切到 SFTP、编辑器时可点"返回网格"。
+- 快捷命令（快捷命令栏、选择器、侧边栏）同样发到所有同步中的终端，与键入、粘贴相同地检查。
 - 粘贴与危险命令：
   - 粘贴也发到所有同步中的终端，粘贴防护只确认一次，会立即执行的多行内容在粘贴时就检查危险命令。
   - 按回车前，用危险命令规则检查自上次执行以来要执行的全部内容（推算出的与各终端屏幕上的都查，粘贴时已确认过的不再重复问），命中时先确认，取消则谁都不发。
@@ -736,7 +738,7 @@
 ### 撰写栏（广播输入）
 
 - 在终端下方写好命令，发送到：
-  - 当前 Tab（显示着的窗格，同步输入的网格中是全部）；
+  - 当前 Tab（显示着的窗格；同步输入的网格中是同步中的终端，标着“已排除”的不发）；
   - 同一主机；
   - 全部终端；
   - 或自选的终端。
@@ -1620,6 +1622,7 @@
   | `backup`、`backup_scheduled` | 手动创建或恢复过完整备份；定时备份做过 |
   | `app_lock`、`master_password` | 解锁过应用锁；用主密码解锁过 |
   | `import_ssh_config`、`import_xshell`、`import_finalshell`、`import_mobaxterm`、`import_tabby`、`import_termora`、`import_windterm`、`import_electerm`、`import_netcatty`、`import_shellrs`、`import_nyaterm`、`import_nyaterm_snippets`、`import_termlet_file` | 从这个来源导入过（`import_nyaterm_snippets` 为 NyaTerm 导出的快捷命令，`import_termlet_file` 为 Termlet 主机文件） |
+  | `batch_exec` | 批量执行过（命令行的 `exec -g` 等、MCP 的 `run_command_on_hosts`） |
 
 ### 诊断信息
 
@@ -1667,6 +1670,7 @@ termlet exec <主机> --stdin < script.sh             # 从标准输入读取命
 termlet exec --terminal <主机> "kubectl get pods"   # 在 Termlet 中已打开的这台主机的终端里执行
 termlet upload <主机> ./app.tar.gz /tmp/            # 上传单个文件（scp 语义）
 termlet download <主机> /var/log/syslog .           # 下载单个文件（scp 语义）
+termlet exec -g <分组> "uptime"                     # 批量执行：一批主机同时执行，合并相同的输出（见“批量执行”）
 termlet skill install [--agent claude|agents|workbuddy | --dir <目录>]  # 安装 Agent Skill（默认 Claude Code）
 termlet skill                                      # 输出 Skill 的内容（SKILL.md）
 termlet mcp                                        # MCP 服务（由 AI 工具按配置启动，见下）
@@ -1709,6 +1713,7 @@ termlet version
   |---|---|
   | `list_hosts` | `ls` |
   | `run_command` | `exec`（参数 `terminal` 即 `--terminal`） |
+  | `run_command_on_hosts` | `exec -g / -t / -H / --all`（批量执行：参数 `hosts`、`groups`、`tags`、`exclude`、`all`、`timeout_seconds`；输出相同的主机合并返回，省 Token） |
   | `upload_file` | `upload` |
   | `download_file` | `download` |
 
@@ -1797,8 +1802,58 @@ termlet version
 | 5 | 连接或执行失败 |
 | 6 | 凭据已锁定或 Termlet 已锁定 |
 | 7 | AI 工具与脚本的访问已关闭，或 Termlet 没有运行且不允许自动启动 |
+| 8 | 批量执行：有主机没有成功（失败、连不上、超时、已取消，或因失败的上限、取消而没有开始），详情看输出 |
 
 - `exec` 执行成功时透传远程命令的退出码。
+
+### 批量执行
+
+在一批主机上执行同一条命令（或传同一个文件）：把 `<主机>` 换成选主机的选项，每台新建连接，不用打开终端。
+
+```bash
+termlet exec -g 生产 "systemctl is-active nginx"         # 分组（含子分组）；同名的分组用路径：-g 生产/web
+termlet exec -g 生产 -t nginx "nginx -t"                 # 分组与标签取交集；同一个选项写几次取并集
+termlet exec -H web-1,web-2 "df -h /"                    # 列出主机（ID 或名称）；-H @retry.txt 从文件读
+termlet exec --all -x db-1 "uptime"                      # 全部允许的主机，排除 db-1
+termlet exec -g 生产 --list                              # 只列出会选中、会跳过的主机，不执行
+termlet exec -g 生产 --script ./deploy.sh -- v1.4.2      # 本机脚本带参数执行（见下一节）
+termlet upload -g 生产 ./app.tar.gz /tmp/                # 批量上传
+termlet download -g 生产 /var/log/nginx/error.log ./logs # 批量下载：./logs/<主机名>/error.log
+```
+
+- 选主机：`-H` 列出的，加上（各 `-g` 的并集与各 `-t` 的并集取交集），再去掉 `-x` 的；`--all` 代替 `-g`、`-t`。名称相同的主机都选上。
+  - 只选“允许 AI 工具与脚本使用”的 SSH 主机；分组里没有允许的、Telnet 与串口主机列为“未执行”并写明原因（不悄悄漏掉）。
+  - 写错的主机名、分组名直接报错（退出码 2），一台都不能执行时退出码 3。
+  - 只选中一台也按批量的格式输出：批量与否由写法决定。
+- 并发与时限：
+  - `-j <数量>` 同时执行的主机数，默认 10（sshd 默认的 `MaxStartups` 下，经同一台跳板机太多未认证的连接会被丢弃），最多 64；
+  - `--timeout <秒>` 每台命令的时限，不含连接（连接另有 15 秒的上限），超时向命令发送 SIGTERM，状态为“超时”；
+  - `--max-fail <数量>` 失败（失败、连不上、超时）达到这么多台后不再开始新的主机，已开始的做完；`-j 1 --max-fail 1` 即逐台执行、出错即停。
+- 危险命令：整批只问一次，批准框写明“要在 12 台主机上执行危险命令”与这些主机；拒绝或拦截时一台都不执行（退出码 4）。
+- 输出（终端中）：每台结束时在标准错误报一行进度；全部结束后在标准输出：
+  - 退出码与输出（标准输出、标准错误）都相同的主机合并成一组，人数多的在前（`--no-group` 改为逐台）；
+  - “没有成功”的主机与原因（连不上、超时、已取消、未执行）；
+  - 最后一行汇总，如 `汇总：12 台主机：成功 9，失败 1，连不上 1，未执行 1（用时 3.2 秒）`。
+- 状态：成功（退出码为 0、传输完成）、失败（退出码不是 0，或连上之后出错）、连不上（没能连上或登录，含认证失败、指纹未确认）、超时、已取消、未执行。命令失败与连不上分开计数。
+- JSON（被管道捕获时）：结束时一个对象 `{"batch", "hosts", "summary", "approvalWaitMs"}`，`hosts` 中每台有 `status`（`ok`、`failed`、`unreachable`、`timeout`、`canceled`、`skipped`）、`exitCode`、`stdout`、`stderr`、`durationMs`，没有成功的另有 `error`（`code`、`message`）。`--json-lines` 时每台结束输出一行，最后一行是 `{"batch", "summary", "approvalWaitMs"}`。
+- `--output-dir <目录>`：每台写 `<主机名>.out` 与 `<主机名>.err`，另写 `summary.json`（与 JSON 输出相同）与 `retry.txt`（没有成功的主机的 ID，`-H @retry.txt` 只重跑它们）。
+- 批量下载时本地路径是目录，每台放进以主机名命名的子目录（重名的加上主机 ID）。
+- 执行中按 Ctrl+C 列出还没有结束的主机，再按一次取消全部（执行中的收到 SIGTERM，记为“已取消”）。
+- 退出码：执行了的主机都成功为 0，否则为 8；整批没有执行时按错误码（见下）。
+- 审计：开始了的每台一条，同一批的记录带同一个批 ID；审计日志的详情中点“同一批”只看这一批。
+- 需要同样新的 Termlet：旧版本的 Termlet 收到批量请求时，命令行工具提示更新。
+
+### 脚本与标准输入
+
+```bash
+termlet exec <主机> --script ./deploy.sh -- v1.4.2 --force   # 本机脚本经标准输入交给远程的 sh，带参数
+termlet exec <主机> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev/null"   # 本机文件作为远程命令的标准输入
+```
+
+- `--script`：按脚本首行的 `#!` 选 shell（bash、sh、zsh、dash、ksh、ash；没有 `#!` 时用 sh），执行 `bash -s -- 参数…`，脚本不落在服务器的磁盘上。脚本同样按危险命令规则检查。别的解释器用 `--input` 与自己写的命令，如 `--input x.py "python3 -"`。
+- `--input`：文件内容原样作为远程命令的标准输入，写完后结束输入（`cat`、`tee` 等读到结尾）；内容是数据，不检查危险命令。
+- 都最多 1MB、必须是 UTF-8 文本；单台、批量都能用，`--terminal` 不能用。
+
 
 ### 上传与下载
 
@@ -1839,6 +1894,8 @@ termlet version
 ### 审计
 
 - 每次 `exec`、`upload`、`download`（含失败、被拦截、经批准与被拒绝的）都记入本机的审计日志（命令原文、结果、退出码、耗时、等待批准的时长、调用方进程链），最多 10 万条。
+- 结果一栏：“已执行”（远程命令可能以非 0 的退出码结束，退出码另有一栏）、“出错”（没能执行：连不上、主机未允许等，0.3.4 之前叫“失败”）、“已取消”、“已拦截”、“已批准”、“已拒绝”。
+- 批量执行每台一条，同一批的记录带同一个批 ID：详情中点“同一批”只看这一批，筛选旁的“只看同一批”取消。
 - 在设置的"AI 与自动化"中点"查看审计日志…"（或命令面板的"查看审计日志"）查看、搜索、筛选、导出 CSV / JSON、清空。
 
 ### PATH

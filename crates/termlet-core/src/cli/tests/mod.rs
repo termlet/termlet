@@ -50,6 +50,8 @@ pub(super) struct Desktop {
     terminal: Mutex<Option<TerminalFn>>,
     /// 收到的批准请求（规则 ID）
     asked: Mutex<Vec<String>>,
+    /// 收到的批准请求中批量执行的主机（单台的为空）
+    asked_hosts: Mutex<Vec<Vec<String>>>,
     held: Mutex<Vec<ApprovalRequest>>,
     activated: Mutex<Vec<Vec<String>>>,
     /// 收到的会话文件（路径）
@@ -82,6 +84,7 @@ impl Desktop {
                     .lock()
                     .unwrap()
                     .push(request.rule.id().to_string());
+                self.asked_hosts.lock().unwrap().push(request.hosts.clone());
                 match self.approve.lock().unwrap().unwrap_or(Approve::Absent) {
                     Approve::Absent => drop(request),
                     Approve::Yes => request.answer(true),
@@ -338,6 +341,7 @@ fn blocked_and_rejected_calls_are_audited() {
         command: "sudo rm -rf /".into(),
         terminal: false,
         caller: vec!["bash".into(), "claude".into()],
+        ..Default::default()
     })));
     assert_eq!(code, "command_blocked", "没有窗口可以询问：拦截");
     assert!(message.contains("rm-root"), "{message}");
@@ -593,7 +597,7 @@ fn approval_flow() {
             host: "web".into(),
             command: "reboot".into(),
             terminal: true,
-            caller: Vec::new(),
+            ..Default::default()
         }))
         .unwrap());
     assert!(message.starts_with("denied by the user ("), "{message}");
@@ -637,6 +641,7 @@ fn approval_wait_is_not_counted_as_run_time() {
                 command: "reboot".into(),
                 terminal: true,
                 caller: Vec::new(),
+                ..Default::default()
             }))
             .unwrap()
         });
@@ -710,6 +715,7 @@ fn locked_app() {
                     command: "reboot".into(),
                     terminal: true,
                     caller: Vec::new(),
+                    ..Default::default()
                 }))
                 .unwrap()
         }
@@ -987,6 +993,7 @@ fn client_disconnect_cancels_the_request() {
                 command: "reboot".into(),
                 terminal: true,
                 caller: Vec::new(),
+                ..Default::default()
             }))
             .unwrap(),
         )
@@ -1147,4 +1154,144 @@ fn cli_plan_uses_dedicated_credential_without_totp() {
     let plan = crate::ssh::plan_for_cli(&store, &web).unwrap();
     assert_eq!(plan.target().username, "admin");
     assert!(matches!(plan.target().auth, AuthPlan::Agent));
+}
+
+fn batch_request(selector: termlet_proto::Selector, command: &str, stream: bool) -> Request {
+    Request::Batch(termlet_proto::BatchRequest {
+        selector,
+        action: termlet_proto::BatchAction::Exec {
+            command: command.into(),
+            stdin: String::new(),
+            stdin_script: false,
+        },
+        parallel: 0,
+        timeout_ms: None,
+        max_fail: None,
+        stream,
+        caller: vec!["bash".into()],
+    })
+}
+
+fn all_hosts() -> termlet_proto::Selector {
+    termlet_proto::Selector {
+        all: true,
+        ..Default::default()
+    }
+}
+
+// 批量执行：流式时先回答要执行与跳过的主机，再逐台开始与结束，最后是汇总；危险命令整批只问一次（带上全部主机）；
+// 审计每台一条（开始了的），带同一批的 ID；不流式时一个响应带全部结果
+#[test]
+fn batch_streams_results_and_asks_once() {
+    let f = Fixture::new();
+    f.add_dead_host("a", true);
+    f.add_dead_host("b", true);
+    f.add_dead_host("c", false);
+    f.desktop.set_approve(Approve::Yes);
+    let mut client = f.client(Lang::Zh);
+    assert!(client.supports_batch());
+    client
+        .send(&batch_request(all_hosts(), "sudo reboot", true))
+        .unwrap();
+    let mut frames = Vec::new();
+    loop {
+        let response = client.receive().unwrap();
+        let done = matches!(response, Response::BatchDone(_));
+        frames.push(response);
+        if done {
+            break;
+        }
+    }
+    let Response::BatchStart(start) = &frames[0] else {
+        panic!("先回答要执行的主机：{frames:?}");
+    };
+    assert_eq!(start.hosts.len(), 2);
+    assert_eq!(start.skipped.len(), 1);
+    assert!(start.batch.starts_with("b_"));
+    let started = frames
+        .iter()
+        .filter(|r| matches!(r, Response::BatchStarted(_)))
+        .count();
+    let finished: Vec<&termlet_proto::BatchHostResult> = frames
+        .iter()
+        .filter_map(|r| match r {
+            Response::BatchHost(h) => Some(h),
+            _ => None,
+        })
+        .collect();
+    assert_eq!((started, finished.len()), (2, 2));
+    assert!(
+        finished
+            .iter()
+            .all(|h| h.status == termlet_proto::BatchStatus::Unreachable)
+    );
+    let Some(Response::BatchDone(report)) = frames.last() else {
+        unreachable!()
+    };
+    assert!(report.hosts.is_empty(), "流式时已逐台发过");
+    assert_eq!(report.summary.unreachable, 2);
+    assert_eq!(report.summary.skipped, 1);
+    assert_eq!(report.batch, start.batch);
+    assert!(report.approval_wait_ms.is_some());
+    assert_eq!(f.desktop.asked(), ["power"], "整批只问一次");
+    assert_eq!(f.desktop.asked_hosts.lock().unwrap()[0], ["a", "b"]);
+    let entries = f
+        .audit
+        .list(&AuditQuery {
+            batch: start.batch.clone(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(entries.len(), 2);
+    assert!(entries.iter().all(|e| e.status == AuditStatus::Failed
+        && e.error_code == "connect_failed"
+        && e.approval_wait_ms.is_some()
+        && e.caller == "bash"));
+
+    // 不流式：一个响应，含跳过的
+    match f.call(batch_request(all_hosts(), "uptime", false)) {
+        Response::BatchDone(report) => {
+            assert_eq!(report.hosts.len(), 3);
+            assert_eq!(report.hosts[2].status, termlet_proto::BatchStatus::Skipped);
+        }
+        other => panic!("{other:?}"),
+    }
+
+    // 只列出
+    match f.call(Request::ResolveHosts(all_hosts())) {
+        Response::Resolved(resolution) => {
+            assert_eq!(resolution.hosts.len(), 2);
+            assert!(resolution.batch.is_empty());
+        }
+        other => panic!("{other:?}"),
+    }
+
+    // 拒绝：整批不执行，每台一条“已拒绝”
+    f.desktop.set_approve(Approve::No);
+    assert_eq!(
+        code_of(f.call(batch_request(all_hosts(), "reboot", true))),
+        "command_denied"
+    );
+    assert!(
+        f.entries()[..2]
+            .iter()
+            .all(|e| e.status == AuditStatus::Denied && !e.batch.is_empty())
+    );
+}
+
+// 只支持版本 1 的旧客户端照常握手（协商为 1），不会收到批量执行的回答
+#[test]
+fn old_clients_negotiate_version_one() {
+    let f = Fixture::new();
+    let client = Client::connect(
+        &f.endpoint,
+        &ClientHello {
+            protocol: 1,
+            client: "old".into(),
+            lang: Lang::Zh,
+        },
+    )
+    .unwrap();
+    assert_eq!(client.welcome().protocol, 1);
+    assert!(!client.supports_batch());
 }

@@ -64,6 +64,7 @@ The `termlet` command lets AI tools run commands and transfer files on your save
 ```bash
 termlet ls                                  # list hosts that allow CLI access
 termlet exec <host> "uptime"                # run a command; its exit code is passed through
+termlet exec -g web "uptime"                # run it on every host in a group; same output is merged
 termlet upload <host> ./app.tar.gz /tmp/    # upload one file
 termlet skill install                       # install the Agent Skill for Claude Code
 termlet mcp                                 # MCP server, started by AI tools from their configuration

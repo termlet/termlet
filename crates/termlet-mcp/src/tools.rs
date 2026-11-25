@@ -12,8 +12,9 @@ use std::path::Path;
 
 use serde_json::{Map, Value, json};
 use termlet_proto::{
-    ErrorCode, ExecRequest, ExecResponse, HostSummary, Lang, MAX_STDIN_COMMAND, OUTPUT_LIMIT,
-    Request, Response, TransferRequest, TransferResponse,
+    BatchAction, BatchReport, BatchRequest, BatchStatus, ErrorCode, ExecRequest, ExecResponse,
+    HostSummary, Lang, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request, Response, Selector,
+    TransferRequest, TransferResponse,
 };
 
 use crate::backend::{AbortSlot, Backend, Failure};
@@ -31,15 +32,17 @@ const HEAD_SHARE: usize = 4;
 pub enum Tool {
     ListHosts,
     RunCommand,
+    RunCommandOnHosts,
     UploadFile,
     DownloadFile,
 }
 
 impl Tool {
     /// `tools/list` 中的顺序。
-    const ALL: [Tool; 4] = [
+    const ALL: [Tool; 5] = [
         Tool::ListHosts,
         Tool::RunCommand,
+        Tool::RunCommandOnHosts,
         Tool::UploadFile,
         Tool::DownloadFile,
     ];
@@ -48,6 +51,7 @@ impl Tool {
         match self {
             Tool::ListHosts => "list_hosts",
             Tool::RunCommand => "run_command",
+            Tool::RunCommandOnHosts => "run_command_on_hosts",
             Tool::UploadFile => "upload_file",
             Tool::DownloadFile => "download_file",
         }
@@ -66,6 +70,7 @@ impl Tool {
         match self {
             Tool::ListHosts => "List Termlet hosts",
             Tool::RunCommand => "Run a command on a host",
+            Tool::RunCommandOnHosts => "Run a command on several hosts",
             Tool::UploadFile => "Upload a file to a host",
             Tool::DownloadFile => "Download a file from a host",
         }
@@ -78,6 +83,9 @@ impl Tool {
             }
             Tool::RunCommand => {
                 "Run a shell command on a server saved in Termlet (same as `termlet exec`) and return its exit code, stdout and stderr. Termlet logs in with the credentials it keeps; you never see them. Each call is a new SSH session, so nothing carries over between calls: put related steps in one command (for example `cd /srv/app && git pull`). Interactive programs and password prompts don't work; use non-interactive options such as `-y`. Commands that match the user's dangerous-command rules wait for the user to approve them in Termlet (up to 60 seconds); on command_denied or command_blocked, don't try to get around the rule, ask the user to run it themselves. Output is capped at 32 KB (the beginning and the end are kept), so redirect long output to a file and read it in parts."
+            }
+            Tool::RunCommandOnHosts => {
+                "Run the same shell command on several servers saved in Termlet at once (same as `termlet exec -g/-t/-H`) and get the results merged: hosts with the same exit code and output are grouped, so many servers that agree take the space of one. Choose hosts with `hosts` (ids or names), `groups` (group names or paths such as `prod/web`, subgroups included), `tags`, or `all`; `exclude` removes hosts. Hosts the user hasn't allowed for AI tools are listed as not run. Each host gets a new SSH session (up to 10 at a time), so put related steps in one command. If the command matches the user's dangerous-command rules, the user approves the whole batch once in Termlet (up to 60 seconds). Use `timeout_seconds` to stop hosts that hang. Output per group is clipped so the whole result stays around 32 KB."
             }
             Tool::UploadFile => {
                 "Upload one file from this computer to a server saved in Termlet over SFTP, or SCP when the server has no SFTP (same as `termlet upload`, scp semantics). `local_path` must be an absolute path. If `remote_path` is an existing directory or ends with `/`, the file keeps its name inside it; otherwise `remote_path` is the new file's path. An existing file is overwritten. Directories aren't supported; archive them first (for example with tar)."
@@ -93,6 +101,15 @@ impl Tool {
         match self {
             Tool::ListHosts => &["query"],
             Tool::RunCommand => &["host", "command", "terminal"],
+            Tool::RunCommandOnHosts => &[
+                "hosts",
+                "groups",
+                "tags",
+                "exclude",
+                "all",
+                "command",
+                "timeout_seconds",
+            ],
             Tool::UploadFile => &["host", "local_path", "remote_path"],
             Tool::DownloadFile => &["host", "remote_path", "local_path"],
         }
@@ -131,6 +148,40 @@ impl Tool {
                 "required": ["host", "command"],
                 "additionalProperties": false,
             }),
+            Tool::RunCommandOnHosts => {
+                let names = |what: &str| {
+                    json!({
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": what,
+                    })
+                };
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "hosts": names("IDs or names of hosts from list_hosts."),
+                        "groups": names("Host group names or paths (prod/web); subgroups are included. Combined with tags, a host must be in one of the groups and have one of the tags."),
+                        "tags": names("Host tags (case-insensitive)."),
+                        "exclude": names("IDs or names of hosts to leave out."),
+                        "all": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Every host the user allows AI tools to use (instead of groups and tags).",
+                        },
+                        "command": {
+                            "type": "string",
+                            "description": "Command line or multi-line script, run by each server's login shell (up to 1 MB).",
+                        },
+                        "timeout_seconds": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Optional time limit per host (connection not included); a host over it gets SIGTERM and is reported as timed out.",
+                        },
+                    },
+                    "required": ["command"],
+                    "additionalProperties": false,
+                })
+            }
             Tool::UploadFile => json!({
                 "type": "object",
                 "properties": {
@@ -170,7 +221,7 @@ impl Tool {
     fn annotations(self) -> Value {
         let (read_only, destructive, idempotent, open_world) = match self {
             Tool::ListHosts => (true, false, true, false),
-            Tool::RunCommand => (false, true, false, true),
+            Tool::RunCommand | Tool::RunCommandOnHosts => (false, true, false, true),
             // 覆盖已有的文件
             Tool::UploadFile | Tool::DownloadFile => (false, true, true, true),
         };
@@ -335,6 +386,9 @@ pub fn outcome(
         (Tool::RunCommand, Response::Exec(exec)) => {
             Outcome::ok(exec_text(&exec, terminal, lang, reach), None)
         }
+        (Tool::RunCommandOnHosts, Response::BatchDone(report)) => {
+            Outcome::ok(batch_text(&report, lang), None)
+        }
         (Tool::UploadFile, Response::Transfer(done)) => transfer_outcome(&done, true, lang),
         (Tool::DownloadFile, Response::Transfer(done)) => transfer_outcome(&done, false, lang),
         (_, other) => Outcome::error(
@@ -379,6 +433,44 @@ pub fn request(
                 host,
                 command,
                 terminal: args.flag("terminal")?,
+                caller,
+                ..Default::default()
+            })
+        }
+        Tool::RunCommandOnHosts => {
+            let command = args.required("command")?;
+            if command.len() > MAX_STDIN_COMMAND {
+                let message = match reach {
+                    Reach::Local => messages::MCP_COMMAND_TOO_LARGE,
+                    Reach::Lan => messages::MCP_COMMAND_TOO_LARGE_LAN,
+                };
+                return Err(Outcome::invalid(message.get(lang).into(), lang));
+            }
+            let selector = Selector {
+                hosts: args.string_list("hosts")?,
+                groups: args.string_list("groups")?,
+                tags: args.string_list("tags")?,
+                exclude: args.string_list("exclude")?,
+                all: args.flag("all")?,
+            };
+            if selector.is_empty() {
+                return Err(Outcome::invalid(
+                    messages::MCP_NO_HOSTS_SELECTED.get(lang).into(),
+                    lang,
+                ));
+            }
+            let timeout = args.optional_seconds("timeout_seconds")?;
+            Request::Batch(BatchRequest {
+                selector,
+                action: BatchAction::Exec {
+                    command,
+                    stdin: String::new(),
+                    stdin_script: false,
+                },
+                parallel: 0,
+                timeout_ms: timeout.map(|s| s.saturating_mul(1000)),
+                max_fail: None,
+                stream: false,
                 caller,
             })
         }
@@ -456,6 +548,39 @@ impl Args<'_> {
             return Err(self.invalid(messages::MCP_NOT_ABSOLUTE.fill(self.lang, &[&key, &path])));
         }
         Ok(path)
+    }
+
+    /// 字符串的列表（也接受单个字符串）；没有给时为空。空白的项去掉。
+    fn string_list(&self, key: &str) -> Result<Vec<String>, Outcome> {
+        let invalid = || self.invalid(messages::MCP_ARG_STRING_LIST.fill(self.lang, &[&key]));
+        match self.map.get(key) {
+            None | Some(Value::Null) => Ok(Vec::new()),
+            Some(Value::String(one)) => Ok(Some(one.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .into_iter()
+                .collect()),
+            Some(Value::Array(items)) => items
+                .iter()
+                .map(|item| match item {
+                    Value::String(text) => Ok(text.trim().to_string()),
+                    _ => Err(invalid()),
+                })
+                .filter(|item| !matches!(item, Ok(text) if text.is_empty()))
+                .collect(),
+            Some(_) => Err(invalid()),
+        }
+    }
+
+    /// 正整数的秒数；没有给时为 `None`。
+    fn optional_seconds(&self, key: &str) -> Result<Option<u64>, Outcome> {
+        match self.map.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::Number(n)) => match n.as_u64().filter(|n| *n > 0) {
+                Some(n) => Ok(Some(n)),
+                None => Err(self.invalid(messages::MCP_ARG_SECONDS.fill(self.lang, &[&key]))),
+            },
+            Some(_) => Err(self.invalid(messages::MCP_ARG_SECONDS.fill(self.lang, &[&key]))),
+        }
     }
 
     fn flag(&self, key: &str) -> Result<bool, Outcome> {
@@ -551,6 +676,99 @@ fn exec_text(exec: &ExecResponse, terminal: bool, lang: Lang, reach: Reach) -> S
     }
     for note in messages::expiring_notes(&exec.expiring_certificates, lang) {
         text.push_str(&format!("[termlet] {note}\n"));
+    }
+    text
+}
+
+/// 批量执行的结果：汇总一行，再按“退出码 + 输出”分组列出（每组的输出平分 [`OUTPUT_BUDGET`]，太长时只留开头与结尾），
+/// 最后是没有成功的主机与原因。
+fn batch_text(report: &BatchReport, lang: Lang) -> String {
+    /// 列出的组最多这么多（其余只说还有几组）。
+    const MAX_GROUPS: usize = 20;
+    let mut text = messages::batch_summary(&report.summary, lang);
+    text.push_str(match lang {
+        Lang::Zh => "（",
+        Lang::En => " (",
+    });
+    text.push_str(&messages::batch_took(
+        report.summary.duration_ms,
+        report.approval_wait_ms,
+        lang,
+    ));
+    text.push_str(match lang {
+        Lang::Zh => "）\n",
+        Lang::En => ")\n",
+    });
+    let hosts = &report.hosts;
+    let (groups, others) = termlet_proto::batch::group_outputs(hosts);
+    let shown = groups.len().min(MAX_GROUPS);
+    let budget = (OUTPUT_BUDGET / shown.max(1)).max(1024);
+    let mut clipped_any = false;
+    for group in groups.iter().take(MAX_GROUPS) {
+        let first = &hosts[group.members[0]];
+        let names: Vec<&str> = group
+            .members
+            .iter()
+            .map(|&i| hosts[i].name.as_str())
+            .collect();
+        text.push_str(&format!(
+            "\n── {}\n",
+            messages::batch_group_title(&names, first.exit_code, 8, lang)
+        ));
+        let (out_limit, err_limit) = budgets(first.stdout.len(), first.stderr.len(), budget);
+        let (stdout, out_omitted) = clip(&first.stdout, out_limit);
+        let (stderr, err_omitted) = clip(&first.stderr, err_limit);
+        clipped_any |= out_omitted + err_omitted > 0 || first.truncated;
+        if stdout.is_empty() && stderr.is_empty() {
+            text.push_str(messages::MCP_NO_OUTPUT.get(lang));
+            text.push('\n');
+        }
+        for (label, body) in [("stdout", &stdout), ("stderr", &stderr)] {
+            if body.is_empty() {
+                continue;
+            }
+            if !stderr.is_empty() {
+                text.push_str(&format!("--- {label} ---\n"));
+            }
+            text.push_str(body);
+            if !body.ends_with('\n') {
+                text.push('\n');
+            }
+        }
+    }
+    if groups.len() > MAX_GROUPS {
+        text.push_str(&format!(
+            "\n{}\n",
+            messages::MCP_MORE_GROUPS.fill(lang, &[&(groups.len() - MAX_GROUPS)])
+        ));
+    }
+    let problems: Vec<&termlet_proto::BatchHostResult> = others
+        .iter()
+        .map(|&i| &hosts[i])
+        .filter(|h| h.status != BatchStatus::Ok)
+        .collect();
+    if !problems.is_empty() {
+        text.push_str(&format!(
+            "\n── {}\n",
+            messages::BATCH_UNSUCCESSFUL.fill(lang, &[&problems.len()])
+        ));
+        for host in problems {
+            text.push_str(&messages::batch_problem(host, lang));
+            text.push('\n');
+        }
+    }
+    if clipped_any {
+        text.push_str(&format!("\n{}\n", messages::MCP_BATCH_CLIPPED.get(lang)));
+    }
+    let mut notes: Vec<String> = Vec::new();
+    for host in hosts {
+        for note in messages::expiring_notes(&host.expiring_certificates, lang) {
+            notes.push(format!("[termlet] {}: {note}", host.name));
+        }
+    }
+    for note in notes {
+        text.push_str(&note);
+        text.push('\n');
     }
     text
 }
@@ -798,7 +1016,13 @@ mod tests {
         let names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert_eq!(
             names,
-            ["list_hosts", "run_command", "upload_file", "download_file"]
+            [
+                "list_hosts",
+                "run_command",
+                "run_command_on_hosts",
+                "upload_file",
+                "download_file"
+            ]
         );
         for tool in tools {
             let name = tool["name"].as_str().unwrap();
@@ -844,7 +1068,7 @@ mod tests {
             .iter()
             .map(|t| t["name"].as_str().unwrap())
             .collect();
-        assert_eq!(names, ["list_hosts", "run_command"]);
+        assert_eq!(names, ["list_hosts", "run_command", "run_command_on_hosts"]);
         assert!(Tool::UploadFile.local_files() && Tool::DownloadFile.local_files());
         assert!(!Tool::ListHosts.local_files() && !Tool::RunCommand.local_files());
 

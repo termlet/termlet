@@ -179,7 +179,7 @@ fn legacy_handshake_negotiates_the_version() {
     );
     assert!(init.get("resultType").is_none(), "旧版本不带 resultType");
     let tools = &reply(&out, 2)["result"]["tools"];
-    assert_eq!(tools.as_array().unwrap().len(), 4);
+    assert_eq!(tools.as_array().unwrap().len(), 5);
     assert!(tools[0]["annotations"].is_object());
     assert_eq!(reply(&out, 3)["result"], json!({}));
 
@@ -455,6 +455,7 @@ fn calls_become_cli_requests() {
             command: "uptime".into(),
             terminal: true,
             caller: callers.clone(),
+            ..Default::default()
         }))
     );
     assert!(

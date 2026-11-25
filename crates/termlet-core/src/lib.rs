@@ -4,6 +4,7 @@
 pub mod applock;
 pub mod audit;
 pub mod backup;
+pub mod batch;
 pub mod charset;
 pub mod cli;
 pub mod cloudsync;

@@ -13,7 +13,7 @@ use crate::vault::VaultStatus;
 
 /// 一次请求失败的原因。
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct CliError {
+pub(crate) struct CliError {
     pub code: ErrorCode,
     pub message: String,
 }
@@ -45,7 +45,7 @@ impl CliError {
 
 /// 失败与它在审计日志中的结果（未能执行、被拦截、被拒绝）。
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct Failure {
+pub(crate) struct Failure {
     pub status: AuditStatus,
     pub error: CliError,
 }
@@ -57,12 +57,12 @@ impl From<CliError> for Failure {
 }
 
 /// 按语言取文字。
-pub(super) fn tr(lang: Lang, zh: &str, en: &str) -> String {
+pub(crate) fn tr(lang: Lang, zh: &str, en: &str) -> String {
     lang.pick(zh, en).to_string()
 }
 
 /// 保险库没有解锁时的错误。
-pub(super) fn vault_error(status: VaultStatus) -> Option<CliError> {
+pub(crate) fn vault_error(status: VaultStatus) -> Option<CliError> {
     match status {
         VaultStatus::Unlocked => None,
         VaultStatus::NeedsPassword => Some(CliError::code(ErrorCode::VaultLocked)),
@@ -78,14 +78,14 @@ pub(super) fn vault_error(status: VaultStatus) -> Option<CliError> {
 
 /// 连接时拒绝回答的询问：第一个被拒绝的问题决定错误码（命令行不能询问）。
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct Refused {
+pub(crate) struct Refused {
     pub code: ErrorCode,
     /// 哪台主机、哪个用户或哪把私钥
     pub subject: String,
 }
 
 /// 连接失败的错误码。`refused` 是连接过程中被拒绝的询问。
-pub(super) fn from_ssh(error: &SshError, refused: Option<&Refused>) -> CliError {
+pub(crate) fn from_ssh(error: &SshError, refused: Option<&Refused>) -> CliError {
     let with_refused = |fallback: ErrorCode, message: String| match refused {
         Some(r) => CliError::new(r.code, r.subject.clone()),
         None => CliError::new(fallback, message),
@@ -130,7 +130,7 @@ pub(super) fn from_ssh(error: &SshError, refused: Option<&Refused>) -> CliError 
 }
 
 /// 传输失败的错误码。
-pub(super) fn from_sftp(error: &SftpError, refused: Option<&Refused>, lang: Lang) -> CliError {
+pub(crate) fn from_sftp(error: &SftpError, refused: Option<&Refused>, lang: Lang) -> CliError {
     match error {
         SftpError::NotFound { path, .. } => CliError::new(ErrorCode::PathNotFound, path.clone()),
         SftpError::PermissionDenied { path, .. } => {

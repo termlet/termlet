@@ -64,6 +64,7 @@ sha256sum -c SHA256SUMS --ignore-missing
 ```bash
 termlet ls                                  # 列出允许命令行访问的主机
 termlet exec <主机> "uptime"                 # 执行命令，退出码透传
+termlet exec -g web "uptime"                # 在一个分组的全部主机上执行，输出相同的合并
 termlet upload <主机> ./app.tar.gz /tmp/     # 上传单个文件
 termlet skill install                       # 给 Claude Code 装 Agent Skill
 termlet mcp                                 # MCP 服务，由 AI 工具按配置启动

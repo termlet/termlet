@@ -4,25 +4,32 @@
 //! Termlet 没有运行时以 headless 模式拉起（设置中关闭了自动启动时提示先打开 Termlet）。
 //!
 //! 退出码：0 成功，1 用法错误，2 主机不存在，3 主机未允许 CLI 访问，4 命令命中危险命令规则被拦截或未获批准，
-//! 5 连接或执行失败，6 凭据已锁定，7 外部 CLI 已关闭或 Termlet 没有运行（不允许自动启动时）；`exec` 连接成功后透传远程命令的退出码。
+//! 5 连接或执行失败，6 凭据已锁定，7 外部 CLI 已关闭或 Termlet 没有运行（不允许自动启动时），8 批量执行中有主机没有成功；
+//! `exec` 连接成功后透传远程命令的退出码。
+//!
+//! 批量执行（`exec / upload / download` 加 `-g`、`-t`、`-H`、`--all`）见 `batch`。
 //! 人类可读文本跟随系统语言（见 `i18n`）；JSON 输出的字段名与错误码固定英文。
 //!
 //! `termlet mcp` 是由 AI 工具启动的 MCP 服务（stdio），工具与上面的命令一一对应，见 `mcp`。
 
 mod app;
+mod args;
+mod batch;
 mod debug;
 mod i18n;
+mod interrupt;
 mod mcp;
 mod messages;
 mod output;
+mod script;
 mod skill;
 mod transfer;
 
 use std::io::{self, IsTerminal, Read, Write};
 
 use termlet_proto::{
-    ExecRequest, ExecResponse, ExitCode, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request, Response,
-    TransferRequest, TransferResponse,
+    BatchAction, ExecRequest, ExecResponse, ExitCode, MAX_STDIN_COMMAND, OUTPUT_LIMIT, Request,
+    Response, Selector, TransferRequest, TransferResponse,
 };
 
 use crate::i18n::Lang;
@@ -77,23 +84,32 @@ fn run(out: &mut Output<'_>, args: &[String], stdin: &mut dyn Read) -> i32 {
             Ok(query) => cmd_ls(out, query),
             Err(e) => out.usage_error(&e),
         },
-        "exec" => match parse_exec(rest, stdin, lang) {
-            Ok((host, command, terminal)) => cmd_exec(out, host, command, terminal),
+        "exec" => match exec_plan(rest, stdin, lang) {
+            Ok(Plan::Single(request)) => cmd_exec(out, request),
+            Ok(plan) => run_batch(out, plan),
             Err(e) => out.usage_error(&e),
         },
-        "upload" => match transfer::parse_upload(rest, lang) {
-            Ok(request) => {
-                if let Some(code) = transfer::check_upload_source(out, &request.local) {
-                    return code;
+        "upload" | "download" => {
+            let upload = command == "upload";
+            match transfer_plan(rest, upload, lang) {
+                Ok(Plan::Transfer(request)) => {
+                    if upload && let Some(code) = transfer::check_upload_source(out, &request.local)
+                    {
+                        return code;
+                    }
+                    cmd_transfer(out, request, upload)
                 }
-                cmd_transfer(out, request, true)
+                Ok(plan) => {
+                    if let Plan::Batch(_, BatchAction::Upload { local, .. }, _) = &plan
+                        && let Some(code) = transfer::check_upload_source(out, local)
+                    {
+                        return code;
+                    }
+                    run_batch(out, plan)
+                }
+                Err(e) => out.usage_error(&e),
             }
-            Err(e) => out.usage_error(&e),
-        },
-        "download" => match transfer::parse_download(rest, lang) {
-            Ok(request) => cmd_transfer(out, request, false),
-            Err(e) => out.usage_error(&e),
-        },
+        }
         "skill" => skill::run(out, rest),
         other => out.usage_error(&messages::UNKNOWN_COMMAND.fill(lang, &[&other])),
     }
@@ -107,46 +123,215 @@ fn parse_ls(args: &[String], lang: Lang) -> Result<String, String> {
     }
 }
 
-/// 解析 `exec [--terminal] <主机> <命令|--stdin>`（`--terminal` 也可以放在主机之后；命令本身是 `--terminal` 时原样保留）。
+/// 解析出的一次调用：单台的执行、传输，或批量执行、只列出主机。
+#[derive(Debug)]
+enum Plan {
+    Single(ExecRequest),
+    Transfer(TransferRequest),
+    Batch(Selector, BatchAction, batch::Options),
+    List(Selector),
+}
+
+/// 解析 `exec`：单台是 `exec [--terminal] <主机> <命令|--stdin>`（`--terminal` 也可以放在主机之后；命令本身是
+/// `--terminal` 时原样保留），另可 `--script <文件> [-- 参数…]`、`--input <文件> <命令>`；批量时 `<主机>` 换成
+/// `-g`、`-t`、`-H`、`--all` 等选项（见 `args`）。
+fn exec_plan(args: &[String], stdin: &mut dyn Read, lang: Lang) -> Result<Plan, String> {
+    let parsed = args::parse(args, lang)?;
+    parsed.check(true, lang)?;
+    let usage = || messages::USAGE_EXEC.get(lang).to_string();
+    let positional = parsed.positional.clone();
+    if parsed.is_batch() {
+        if parsed.list {
+            if !positional.is_empty() {
+                return Err(usage());
+            }
+            return Ok(Plan::List(parsed.selector));
+        }
+        let command = match positional.as_slice() {
+            [] => None,
+            [command] => Some(command.clone()),
+            _ => return Err(usage()),
+        };
+        let (command, input, script) = exec_input(&parsed, command, stdin, lang)?;
+        let action = BatchAction::Exec {
+            command,
+            stdin: input,
+            stdin_script: script,
+        };
+        return Ok(Plan::Batch(
+            parsed.selector.clone(),
+            action,
+            batch_options(&parsed),
+        ));
+    }
+    let (host, command) = match positional.as_slice() {
+        [host] => (host.clone(), None),
+        [host, command] => (host.clone(), Some(command.clone())),
+        _ => return Err(usage()),
+    };
+    // 以前的写法：命令写成 --stdin
+    let (parsed, command) = if command.as_deref() == Some("--stdin") {
+        let mut parsed = parsed;
+        parsed.stdin = true;
+        parsed.check(true, lang)?;
+        (parsed, None)
+    } else {
+        (parsed, command)
+    };
+    let (command, input, script) = exec_input(&parsed, command, stdin, lang)?;
+    Ok(Plan::Single(ExecRequest {
+        host,
+        command,
+        terminal: parsed.terminal,
+        stdin: input,
+        stdin_script: script,
+        caller: Vec::new(),
+    }))
+}
+
+/// 命令与远程的标准输入：`--stdin` 时命令从标准输入读，`--script` 时命令是 `sh -s -- 参数…`、脚本是标准输入，
+/// `--input` 时文件是标准输入。返回（命令，标准输入，标准输入是否是脚本）。
+fn exec_input(
+    parsed: &args::Parsed,
+    command: Option<String>,
+    stdin: &mut dyn Read,
+    lang: Lang,
+) -> Result<(String, String, bool), String> {
+    let usage = || messages::USAGE_EXEC.get(lang).to_string();
+    let (command, input, script) = if parsed.stdin {
+        if command.is_some() {
+            return Err(usage());
+        }
+        (read_stdin(stdin, lang)?, String::new(), false)
+    } else if let Some(path) = &parsed.script {
+        if command.is_some() {
+            return Err(usage());
+        }
+        let text = script::read_text(path, lang)?;
+        let command = script::command_for(&text, &parsed.rest, lang)?;
+        (command, text, true)
+    } else if let Some(path) = &parsed.input {
+        let command = command.ok_or_else(usage)?;
+        (command, script::read_text(path, lang)?, false)
+    } else {
+        (command.ok_or_else(usage)?, String::new(), false)
+    };
+    if command.trim().is_empty() {
+        return Err(messages::EMPTY_COMMAND.get(lang).into());
+    }
+    Ok((command, input, script))
+}
+
+/// 从标准输入读命令（最多 1MB，UTF-8；多读 1 字节判断是否超出：截断后的脚本可能只执行了一半，不能照常执行）。
+fn read_stdin(stdin: &mut dyn Read, lang: Lang) -> Result<String, String> {
+    let mut data = Vec::new();
+    stdin
+        .take(MAX_STDIN_COMMAND as u64 + 1)
+        .read_to_end(&mut data)
+        .map_err(|e| messages::READ_STDIN.fill(lang, &[&e]))?;
+    if data.len() > MAX_STDIN_COMMAND {
+        return Err(messages::STDIN_TOO_LARGE.get(lang).into());
+    }
+    let text =
+        String::from_utf8(data).map_err(|_| messages::STDIN_NOT_UTF8.get(lang).to_string())?;
+    // PowerShell 等可能在开头加上 BOM
+    Ok(text
+        .strip_prefix('\u{feff}')
+        .map(str::to_string)
+        .unwrap_or(text))
+}
+
+/// 解析 `upload` / `download`：单台照旧（见 `transfer`）；批量时位置参数是（本地文件，远程路径）或（远程文件，本地目录）。
+fn transfer_plan(args: &[String], upload: bool, lang: Lang) -> Result<Plan, String> {
+    let parsed = args::parse(args, lang)?;
+    parsed.check(false, lang)?;
+    let usage = || {
+        if upload {
+            messages::USAGE_UPLOAD
+        } else {
+            messages::USAGE_DOWNLOAD
+        }
+        .get(lang)
+        .to_string()
+    };
+    if !parsed.is_batch() {
+        let request = if upload {
+            transfer::parse_upload(&parsed.positional, lang)?
+        } else {
+            transfer::parse_download(&parsed.positional, lang)?
+        };
+        return Ok(Plan::Transfer(request));
+    }
+    if parsed.list {
+        return if parsed.positional.is_empty() {
+            Ok(Plan::List(parsed.selector))
+        } else {
+            Err(usage())
+        };
+    }
+    let [first, second] =
+        <[String; 2]>::try_from(parsed.positional.clone()).map_err(|_| usage())?;
+    let absolute = |local: &str| {
+        if local.is_empty() {
+            return Err(messages::EMPTY_PATH.get(lang).to_string());
+        }
+        std::path::absolute(local)
+            .map(|p| p.display().to_string())
+            .map_err(|e| messages::BAD_LOCAL_PATH.fill(lang, &[&local, &e]))
+    };
+    if first.is_empty() || second.is_empty() {
+        return Err(messages::EMPTY_PATH.get(lang).into());
+    }
+    let action = if upload {
+        BatchAction::Upload {
+            local: absolute(&first)?,
+            remote: second,
+        }
+    } else {
+        BatchAction::Download {
+            remote: first,
+            local: absolute(&second)?,
+        }
+    };
+    Ok(Plan::Batch(
+        parsed.selector.clone(),
+        action,
+        batch_options(&parsed),
+    ))
+}
+
+fn batch_options(parsed: &args::Parsed) -> batch::Options {
+    batch::Options {
+        parallel: parsed.parallel,
+        timeout: parsed.timeout,
+        max_fail: parsed.max_fail,
+        no_group: parsed.no_group,
+        output_dir: parsed.output_dir.clone(),
+        json_lines: parsed.json_lines,
+    }
+}
+
+fn run_batch(out: &mut Output<'_>, plan: Plan) -> i32 {
+    match plan {
+        Plan::List(selector) => batch::list(out, selector),
+        Plan::Batch(selector, action, options) => batch::run(out, selector, action, options),
+        // 单台的在调用处处理
+        Plan::Single(request) => cmd_exec(out, request),
+        Plan::Transfer(_) => ExitCode::Usage.into(),
+    }
+}
+
+/// 单台的 `exec`（测试用的简写）：主机、命令、`--terminal`。
+#[cfg(test)]
 fn parse_exec(
     args: &[String],
     stdin: &mut dyn Read,
     lang: Lang,
 ) -> Result<(String, String, bool), String> {
-    let mut terminal = false;
-    let mut rest = Vec::with_capacity(args.len());
-    for (i, arg) in args.iter().enumerate() {
-        if arg == "--terminal" && i < 2 && !terminal {
-            terminal = true;
-            continue;
-        }
-        rest.push(arg.clone());
+    match exec_plan(args, stdin, lang)? {
+        Plan::Single(request) => Ok((request.host, request.command, request.terminal)),
+        other => Err(format!("{other:?}")),
     }
-    let [host, command] =
-        <[String; 2]>::try_from(rest).map_err(|_| messages::USAGE_EXEC.get(lang).to_string())?;
-    let command = if command == "--stdin" {
-        // 多读 1 字节判断是否超出：截断后的脚本可能只执行了一半，不能照常执行
-        let mut data = Vec::new();
-        stdin
-            .take(MAX_STDIN_COMMAND as u64 + 1)
-            .read_to_end(&mut data)
-            .map_err(|e| messages::READ_STDIN.fill(lang, &[&e]))?;
-        if data.len() > MAX_STDIN_COMMAND {
-            return Err(messages::STDIN_TOO_LARGE.get(lang).into());
-        }
-        let text =
-            String::from_utf8(data).map_err(|_| messages::STDIN_NOT_UTF8.get(lang).to_string())?;
-        // PowerShell 等可能在开头加上 BOM
-        text.strip_prefix('\u{feff}')
-            .map(str::to_string)
-            .unwrap_or(text)
-    } else {
-        command
-    };
-    if command.trim().is_empty() {
-        return Err(messages::EMPTY_COMMAND.get(lang).into());
-    }
-    Ok((host, command, terminal))
 }
 
 /// 连接 Termlet 并发送一个请求；失败时输出错误，返回退出码。
@@ -189,6 +374,8 @@ fn request_kind(request: &Request) -> String {
         Request::Exec(r) => format!("exec（主机 {}）", r.host),
         Request::Upload(r) => format!("upload（主机 {}）", r.host),
         Request::Download(r) => format!("download（主机 {}）", r.host),
+        Request::Batch(_) => "batch".into(),
+        Request::ResolveHosts(_) => "resolve".into(),
         Request::Activate { .. } => "activate".into(),
         Request::Quit => "quit".into(),
     }
@@ -233,13 +420,9 @@ fn cmd_ls(out: &mut Output<'_>, query: String) -> i32 {
     ExitCode::Success.into()
 }
 
-fn cmd_exec(out: &mut Output<'_>, host: String, command: String, terminal: bool) -> i32 {
-    let request = Request::Exec(ExecRequest {
-        host,
-        command,
-        terminal,
-        caller: termlet_proto::caller::chain(),
-    });
+fn cmd_exec(out: &mut Output<'_>, mut request: ExecRequest) -> i32 {
+    request.caller = termlet_proto::caller::chain();
+    let request = Request::Exec(request);
     let response = match call(out, request) {
         Ok(Response::Exec(response)) => response,
         Ok(other) => return unexpected(out, other),

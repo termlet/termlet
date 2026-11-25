@@ -34,6 +34,8 @@ pub enum CliEvent {
 pub struct ApprovalRequest {
     pub host_id: HostId,
     pub host_name: String,
+    /// 批量执行：这一批全部主机的名称（`host_id`、`host_name` 是第一台）；单台执行时为空
+    pub hosts: Vec<String>,
     /// 要执行的命令（可能是多行脚本）
     pub command: String,
     /// 调用方祖先进程名，由近到远，以 ` < ` 连接（`bash < node < Code.exe`）
@@ -74,6 +76,7 @@ impl std::fmt::Debug for ApprovalRequest {
         f.debug_struct("ApprovalRequest")
             .field("host_id", &self.host_id)
             .field("host_name", &self.host_name)
+            .field("hosts", &self.hosts.len())
             .field("rule", &self.rule.id())
             .finish_non_exhaustive()
     }

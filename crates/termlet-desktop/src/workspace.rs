@@ -6,7 +6,8 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use gpui_kit::assets::IconName;
-use gpui_kit::component::button::Button;
+use gpui_kit::component::button::{Button, ButtonVariant};
+use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::dock::{
     DockArea, DockLayout, DockPlacement, DockSkin, InsertTarget, PaneNode, PaneRef, PanelId,
     PanelStyle, panel_handle,
@@ -1101,13 +1102,86 @@ impl Workspace {
             return;
         };
         let input = snippets::command_input(&snippet.doc.content, run);
-        match panel.update(cx, |panel, cx| panel.write_command(input, cx)) {
+        match self.deliver_command(&panel, input, window, cx) {
             Ok(()) => {
                 termlet_core::usage::mark(termlet_core::usage::Feature::QuickCommands);
                 self.show_terminal(&panel, window, cx)
             }
             Err(message) => crate::notify::warning(message, window, cx),
         }
+    }
+
+    /// 快捷命令、命令历史写进终端：
+    /// - 同步输入开着、这个终端在同步中时，与键入、粘贴一样交给同步输入，发给同步中的全部终端（回车前、粘贴时查危险命令，
+    ///   与同步输入相同）；
+    /// - 否则写进这个终端；要执行的（各行以回车结束）先查危险命令规则，命中时先确认（取消则不写）。
+    ///
+    /// 写不进去（多行只写入而终端不支持括号粘贴等）时返回说明；要确认时返回 `Ok`，确认后才写。
+    pub(crate) fn deliver_command(
+        &mut self,
+        panel: &Entity<TerminalPanel>,
+        input: snippets::CommandInput,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Result<(), SharedString> {
+        if self.is_sync_member(panel.entity_id()) && self.synced_terminals().unwrap_or(0) > 1 {
+            match input {
+                snippets::CommandInput::Type(data) => {
+                    self.on_sync_typed(panel, data.into_bytes(), window, cx)
+                }
+                snippets::CommandInput::Paste(text) => self.on_sync_paste(panel, text, window, cx),
+            }
+            return Ok(());
+        }
+        // 只写入、不执行的（不以回车结束）不查
+        let danger = match &input {
+            snippets::CommandInput::Type(data) if data.ends_with('\r') => {
+                let guard = termlet_core::guard::Guard::from_settings(
+                    &AppState::store(cx).settings().guard,
+                )
+                .0;
+                termlet_core::guard::find_danger(&guard, &data.replace('\r', "\n"))
+            }
+            _ => None,
+        };
+        let Some(danger) = danger else {
+            return panel.update(cx, |p, cx| p.write_command(input, cx));
+        };
+        tracing::info!(rule = %danger.rule.pattern(), "快捷命令命中危险命令规则，先确认");
+        let rule = crate::i18n::rule_description(&danger.rule);
+        let rule = if rule.is_empty() {
+            danger.rule.pattern().to_string()
+        } else {
+            rule.to_string()
+        };
+        let target = panel.downgrade();
+        let input = Rc::new(std::cell::RefCell::new(Some(input)));
+        crate::ui_scale::open_alert(window, cx, move |alert: AlertDialog, _, _| {
+            let (target, input) = (target.clone(), input.clone());
+            alert
+                .confirm()
+                .title(t!("snippets.danger_title"))
+                .description(prose(t!(
+                    "compose.danger_hint",
+                    command = danger.line.clone(),
+                    rule = rule.clone()
+                )))
+                .ok_text(t!("multi_exec.run_anyway"))
+                .ok_variant(ButtonVariant::Danger)
+                .cancel_text(t!("common.cancel"))
+                .on_ok(move |_, window, cx| {
+                    let (Some(panel), Some(input)) = (target.upgrade(), input.borrow_mut().take())
+                    else {
+                        return true;
+                    };
+                    if let Err(message) = panel.update(cx, |p, cx| p.write_command(input, cx)) {
+                        crate::notify::warning(message, window, cx);
+                    }
+                    panel.read(cx).focus_handle(cx).focus(window, cx);
+                    true
+                })
+        });
+        Ok(())
     }
 
     /// 打开侧边栏的“快捷命令”页（侧边栏隐藏着时先显示出来）。
@@ -1670,10 +1744,17 @@ impl Workspace {
             .collect();
         match mode {
             ComposeMode::All => live,
+            // 同步输入的网格中是同步中的终端（标着“已排除”的不发，与键入相同）
             ComposeMode::View => {
                 let grid = self.multi_exec.as_ref().is_some_and(|s| !s.away);
                 live.into_iter()
-                    .filter(|p| grid || p.read(cx).visible_bounds().is_some())
+                    .filter(|p| {
+                        if grid {
+                            self.is_sync_member(p.entity_id())
+                        } else {
+                            p.read(cx).visible_bounds().is_some()
+                        }
+                    })
                     .collect()
             }
             ComposeMode::Host => {

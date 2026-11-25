@@ -18,6 +18,8 @@ pub const USAGE: Msg = Msg {
   termlet ls [-q <关键词>]                        列出允许 CLI 访问的主机（不含凭据）
   termlet exec <主机> \"<命令>\"                    执行一条远程命令（每次新建连接，无状态）
   termlet exec <主机> --stdin                     从标准输入读取命令（规避 shell 转义问题）
+  termlet exec <主机> --script <文件> [-- 参数…]   本机脚本经标准输入交给远程的 sh（按首行 #! 选 bash 等），可传参数
+  termlet exec <主机> --input <文件> \"<命令>\"     本机文件作为远程命令的标准输入
   termlet exec --terminal <主机> \"<命令>\"         在 Termlet 中已打开的这台主机的终端里执行（用户看得见；
                                                   堡垒机后面的服务器不能新建连接时使用；需要 bash / sh）
   termlet upload <主机> <本地文件> <远程路径>       上传单个文件（scp 语义）
@@ -32,6 +34,21 @@ pub const USAGE: Msg = Msg {
   termlet version                                 打印版本号
   termlet help                                    打印本帮助
 
+批量执行（exec、upload、download 把 <主机> 换成下面的选项；每台新建连接，同时最多 10 台）:
+  -g <分组>          分组（含子分组，可写路径 生产/web），可写多次
+  -t <标签>          标签，可写多次；与 -g 同用时取交集
+  -H <主机,…>        主机的 ID 或名称，逗号分隔；-H @文件 从文件读（每行一个）
+  --all              全部允许的主机
+  -x <主机,…>        排除
+  --list             只列出会选中、会跳过的主机，不执行
+  -j <数量>          同时执行的主机数（默认 10，最多 64）
+  --timeout <秒>     每台命令的时限（不含连接），超时发送 SIGTERM
+  --max-fail <数量>  失败达到这么多台后不再开始新的主机
+  --no-group         按主机逐台输出（默认把输出相同的主机合并成一组）
+  --output-dir <目录>  每台写 <主机名>.out / .err，另写 summary.json 与 retry.txt（-H @retry.txt 只重跑没成功的）
+  --json-lines       每台结束时输出一行 JSON，最后一行是汇总
+  批量下载时 <本地路径> 是目录，每台放进以主机名命名的子目录。执行中按 Ctrl+C 列出还没有结束的主机，再按一次取消全部。
+
 <主机> 可以是 termlet ls 中的 ID 或名称。
 
 输出: 标准输出是终端时为可读文本，被管道或程序捕获时为 JSON（字段名与错误码固定为英文）。
@@ -45,6 +62,7 @@ pub const USAGE: Msg = Msg {
   5  连接或执行失败
   6  凭据已锁定
   7  AI 工具与脚本的访问已关闭（在 Termlet 设置中的「AI 与自动化」中开启）
+  8  批量执行：有主机没有成功（失败、连不上、超时、取消），详情看输出
   其他  exec 连接成功后透传远程命令的退出码
 
 语言: 跟随 LC_ALL / LC_MESSAGES / LANG 或系统界面语言，可用 TERMLET_LANG=en|zh 指定。
@@ -55,6 +73,9 @@ Usage:
   termlet ls [-q <keyword>]                       List hosts that allow CLI access (no credentials)
   termlet exec <host> \"<command>\"                 Run a remote command (new connection each time, stateless)
   termlet exec <host> --stdin                     Read the command from stdin (avoids shell escaping)
+  termlet exec <host> --script <file> [-- args]   Feed a local script to the remote sh over stdin (the #! line picks
+                                                  bash and the like), with arguments
+  termlet exec <host> --input <file> \"<command>\"  Use a local file as the remote command's stdin
   termlet exec --terminal <host> \"<command>\"      Run it in the terminal of this host already open in Termlet (visible
                                                   to the user; for servers behind bastions that refuse new connections;
                                                   needs bash / sh)
@@ -71,6 +92,22 @@ Usage:
   termlet version                                 Print the version
   termlet help                                    Print this help
 
+Batch runs (exec, upload and download take these options instead of <host>; a new connection per host, 10 at a time):
+  -g <group>         Host group (subgroups included; paths such as prod/web work); repeatable
+  -t <tag>           Tag; repeatable; combined with -g, a host must match both
+  -H <host,...>      Host IDs or names, comma-separated; -H @file reads them from a file (one per line)
+  --all              Every allowed host
+  -x <host,...>      Exclude hosts
+  --list             Only list the hosts that would run or be skipped
+  -j <count>         Hosts at a time (default 10, at most 64)
+  --timeout <sec>    Time limit per host (connection not included); SIGTERM when exceeded
+  --max-fail <count> Stop starting new hosts after this many failures
+  --no-group         Print each host separately (by default hosts with the same output are grouped)
+  --output-dir <dir> Write <host>.out / .err per host, plus summary.json and retry.txt (-H @retry.txt reruns the rest)
+  --json-lines       Print one JSON line per host as it finishes, then a summary line
+  For a batch download <local> is a directory with one subdirectory per host. While running, Ctrl+C lists the hosts
+  still running; press it again to cancel them all.
+
 <host> can be an ID or a name from termlet ls.
 
 Output: human-readable text when stdout is a terminal, JSON when piped or captured
@@ -85,6 +122,7 @@ Exit codes:
   5  connection or execution failed
   6  credentials are locked
   7  access from AI tools and scripts is turned off (turn it on in Termlet under Settings → AI & automation)
+  8  batch run: some hosts didn't succeed (failed, unreachable, timed out or canceled); see the output
   other  exec passes through the remote command's exit code once connected
 
 Language: follows LC_ALL / LC_MESSAGES / LANG or the system UI language; override with TERMLET_LANG=en|zh.
@@ -104,18 +142,67 @@ msg!(
 );
 msg!(
     USAGE_EXEC,
-    "用法: termlet exec [--terminal] <主机> \"<命令>\" 或 termlet exec [--terminal] <主机> --stdin",
-    "usage: termlet exec [--terminal] <host> \"<command>\" or termlet exec [--terminal] <host> --stdin"
+    "用法: termlet exec [--terminal] <主机> \"<命令>\" 或 termlet exec [--terminal] <主机> --stdin；批量：termlet exec -g <分组>|-t <标签>|-H <主机,…>|--all \"<命令>\"（termlet help 查看全部选项）",
+    "usage: termlet exec [--terminal] <host> \"<command>\" or termlet exec [--terminal] <host> --stdin; batch: termlet exec -g <group>|-t <tag>|-H <host,...>|--all \"<command>\" (termlet help lists all options)"
 );
 msg!(
     USAGE_UPLOAD,
-    "用法: termlet upload <主机> <本地文件> <远程路径>",
-    "usage: termlet upload <host> <local-file> <remote-path>"
+    "用法: termlet upload <主机> <本地文件> <远程路径>；批量：termlet upload -g <分组>|-t <标签>|-H <主机,…>|--all <本地文件> <远程路径>",
+    "usage: termlet upload <host> <local-file> <remote-path>; batch: termlet upload -g <group>|-t <tag>|-H <host,...>|--all <local-file> <remote-path>"
 );
 msg!(
     USAGE_DOWNLOAD,
-    "用法: termlet download <主机> <远程文件> <本地路径>",
-    "usage: termlet download <host> <remote-file> <local-path>"
+    "用法: termlet download <主机> <远程文件> <本地路径>；批量：termlet download -g <分组>|-t <标签>|-H <主机,…>|--all <远程文件> <本地目录>",
+    "usage: termlet download <host> <remote-file> <local-path>; batch: termlet download -g <group>|-t <tag>|-H <host,...>|--all <remote-file> <local-dir>"
+);
+msg!(FLAG_NEEDS_VALUE, "{} 后面要跟一个值", "{} needs a value");
+msg!(
+    FLAG_NUMBER,
+    "{} 后面要跟正整数，而不是 {}",
+    "{} needs a positive integer, not {}"
+);
+msg!(
+    BATCH_ONLY_FLAG,
+    "{} 只用于批量执行（与 -g、-t、-H 或 --all 一起用）",
+    "{} is only for batch runs (use it with -g, -t, -H or --all)"
+);
+msg!(EXEC_ONLY_FLAG, "{} 只用于 exec", "{} is only for exec");
+msg!(
+    TERMINAL_WITH_INPUT,
+    "--terminal 不能与 --script、--input 一起用",
+    "--terminal can't be used with --script or --input"
+);
+msg!(
+    TERMINAL_BATCH,
+    "--terminal 不能批量执行（批量执行每台新建连接）",
+    "--terminal can't be used for batch runs (they open a new connection per host)"
+);
+msg!(
+    INPUT_CONFLICT,
+    "--stdin、--script、--input 只能用其中一个",
+    "use only one of --stdin, --script and --input"
+);
+msg!(
+    REST_WITHOUT_SCRIPT,
+    "-- 之后的参数只能给 --script 的脚本",
+    "arguments after -- are only for the --script script"
+);
+msg!(
+    HOSTS_FILE,
+    "读不了主机列表文件 {}: {}",
+    "cannot read the host list file {}: {}"
+);
+msg!(READ_FILE, "读不了文件 {}: {}", "cannot read {}: {}");
+msg!(
+    FILE_TOO_LARGE,
+    "{} 超过 1MB，未执行；较大的文件请先 termlet upload 到服务器",
+    "{} exceeds 1MB; nothing was run. Upload larger files with termlet upload first"
+);
+msg!(FILE_NOT_UTF8, "{} 不是 UTF-8 文本", "{} is not UTF-8 text");
+msg!(
+    SCRIPT_INTERPRETER,
+    "--script 只支持 sh 一类的 shell（bash、sh、zsh、dash、ksh、ash），这个脚本的解释器是 {}；其他解释器请用 --input 与自己的命令，如 --input x.py \"python3 -\"",
+    "--script only supports sh-like shells (bash, sh, zsh, dash, ksh, ash), but this script's interpreter is {}; for other interpreters use --input with your own command, such as --input x.py \"python3 -\""
 );
 msg!(
     USAGE_SKILL,
@@ -144,6 +231,39 @@ msg!(
     "无法解析本地路径 {}: {}",
     "cannot resolve local path {}: {}"
 );
+
+// 批量执行
+msg!(
+    BATCH_OLD_APP,
+    "这个版本的 Termlet（{}）还不支持批量执行，请更新 Termlet",
+    "this version of Termlet ({}) doesn't support batch runs yet; please update Termlet"
+);
+msg!(BATCH_START, "开始：{}", "Starting: {}");
+msg!(
+    BATCH_START_SKIPPED,
+    "开始：{}（跳过 {} 台）",
+    "Starting: {} ({} skipped)"
+);
+msg!(BATCH_SKIPPED_TITLE, "跳过（{} 台）", "Skipped ({})");
+msg!(
+    BATCH_UNFINISHED,
+    "还没有结束（{} 台）：{}",
+    "Still running ({}): {}"
+);
+msg!(
+    BATCH_INTERRUPT_HINT,
+    "再按一次 Ctrl+C 取消全部",
+    "Press Ctrl+C again to cancel them all"
+);
+msg!(BATCH_CANCELING, "正在取消……", "Canceling...");
+msg!(BATCH_SUMMARY, "汇总：{}（{}）", "Summary: {} ({})");
+msg!(BATCH_WROTE, "结果已写入 {}", "Results were written to {}");
+msg!(
+    BATCH_DIR,
+    "不能写入结果目录 {}: {}",
+    "cannot write to the result directory {}: {}"
+);
+msg!(BATCH_HOST_NOTE, "{}：{}", "{}: {}");
 
 // 运行结果
 msg!(
@@ -265,6 +385,10 @@ mod tests {
                 "termlet help",
                 "4 ",
                 "7 ",
+                "8 ",
+                "--max-fail",
+                "--output-dir",
+                "--script",
             ] {
                 assert!(text.contains(want), "用法缺少 {want}");
             }

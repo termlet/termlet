@@ -51,13 +51,13 @@
 //!
 //! 所有 I/O 在核心的 tokio 运行时上，界面线程不阻塞；事件中的回答用 `tokio::sync` 的通道，在任何执行器上都能用。
 
-mod connect;
-mod error;
+pub(crate) mod connect;
+pub(crate) mod error;
 mod events;
 mod handler;
 pub mod http;
 mod listen;
-mod service;
+pub(crate) mod service;
 #[cfg(test)]
 mod tests;
 

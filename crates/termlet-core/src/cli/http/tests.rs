@@ -427,7 +427,7 @@ fn legacy_protocol_with_sessions() {
     let (status, body) = env.json(&list, &[("mcp-session-id", &session)]);
     assert_eq!(status, 200);
     let tools = body["result"]["tools"].as_array().unwrap();
-    assert_eq!(tools.len(), 4);
+    assert_eq!(tools.len(), 5);
     assert!(tools[0]["annotations"].is_object() && tools[0].get("title").is_none());
 
     // 不认识的会话：版本取请求头
@@ -1057,12 +1057,12 @@ fn lan_clients_are_separated_by_peer_address() {
     };
     assert_eq!(
         tool_names(&send_lan(&list).1),
-        ["list_hosts", "run_command"]
+        ["list_hosts", "run_command", "run_command_on_hosts"]
     );
     assert_eq!(
         tool_names(&send_local(&local_token, &list).1).len(),
-        4,
-        "本机照旧四个"
+        5,
+        "本机照旧全部五个"
     );
 
     // 直接调用传文件的工具：工具执行错误，不交给 Termlet（没有审计记录）

@@ -4,6 +4,28 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
+## 0.3.4 (unreleased)
+
+### Added
+
+- Batch runs in the command-line tool: give `termlet exec`, `upload` or `download` options that pick hosts instead of `<host>`, and the same command runs (or the same file is transferred) on a set of hosts at once, each over a new connection, with no terminals to open first. Pick hosts by group (`-g`, subgroups included; groups with the same name can be written as paths such as `prod/web`), tag (`-t`, which must also match the group), a list (`-H a,b`, or `-H @file` to read it from a file) or all of them (`--all`); `-x` excludes hosts, and `--list` only lists the hosts that would run or be skipped. Only SSH hosts allowed for AI tools and scripts are used, and the rest are listed as "not run" with the reason. Up to 10 run at a time (`-j` changes it, up to 64), `--timeout` limits each host's command (SIGTERM when exceeded), and `--max-fail` stops starting new hosts after that many failures. A progress line appears as each host finishes; at the end, hosts with the same exit code and output are grouped together (`--no-group` prints them one by one), the hosts that didn't succeed are listed with the reason, and a summary line counts failed commands and unreachable hosts separately. When piped, the output is JSON (`--json-lines` gives a line per host), and `--output-dir` writes an output file per host plus `summary.json` and `retry.txt` (`-H @retry.txt` reruns just the hosts that didn't succeed). While it runs, Ctrl+C lists the hosts that haven't finished, and pressing it again cancels them all. A dangerous command asks for approval once for the whole batch, and the dialog shows how many hosts and which; the audit log gets one entry per host, all with the same batch ID, and "Same batch" in the details filters to it. The new exit code 8 means some hosts didn't succeed. A batch download puts each host's file in a subdirectory named after the host. The protocol between the command-line tool and Termlet is now version 2: an older Termlet doesn't support batch runs, and the command-line tool asks you to update it.
+- `termlet exec` gets `--script <file> [-- args…]`, which feeds a local script to the remote shell over stdin (the `#!` line picks bash, sh and so on), with arguments and without leaving the script on the server; it's checked against the dangerous command rules too. `--input <file>` sends a local file to the remote command's stdin (for example `--input nginx.conf "sudo tee /etc/nginx/nginx.conf"`). Both work for one host or a batch.
+- New MCP tool `run_command_on_hosts`: an AI tool can run the same command on a set of hosts at once (picked by host, group or tag, with an optional time limit per host), and hosts with the same output come back merged, so dozens of hosts that agree take the space of one. Checks, approval and auditing work as for `run_command`, and computers on the local network can use it too.
+
+### Changed
+
+- Calls in the audit log that couldn't run (unreachable, host not allowed and so on) now show the result Error instead of Failed, so they aren't confused with batch-run failures, which mean a non-zero exit code. The Source filter has a new "Batch run" (for batch runs started in the app, coming later).
+- While sync input is on, snippets (from the snippet bar, the picker or the sidebar) go to every synced terminal, matching the banner that says keystrokes go to all of them, and are checked for dangerous commands like typing and pasting. Before, they went only to the current terminal.
+- A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent. Snippets that are only typed, not run, aren't checked. Before, snippets skipped the dangerous command rules (the compose bar and sync input both checked them).
+
+### Fixed
+
+- In the sync input grid, the compose bar's "Current tab" also sent to terminals marked "Excluded"; it now sends only to the synced terminals.
+
+### Usage statistics
+
+- The feature list (`features`) has one more item, `batch_exec`: ran a batch (`exec -g` and the like on the command line, `run_command_on_hosts` over MCP), 51 items in all.
+
 ## 0.3.3 (2026-11-22)
 
 ### Added

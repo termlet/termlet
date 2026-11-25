@@ -187,7 +187,7 @@ impl ReceiverRules {
 }
 
 /// 接收端 `src/stats/features.ts` 的清单（名称与顺序），照搬过来：两边各写一份才核对得出来。
-const RECEIVER_FEATURES: [&str; 50] = [
+const RECEIVER_FEATURES: [&str; 51] = [
     "ssh",
     "telnet",
     "serial",
@@ -238,6 +238,7 @@ const RECEIVER_FEATURES: [&str; 50] = [
     "import_nyaterm",
     "import_nyaterm_snippets",
     "import_termlet_file",
+    "batch_exec",
 ];
 
 #[test]

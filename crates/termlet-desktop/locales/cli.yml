@@ -29,6 +29,48 @@ cli.approval.title_mcp_lan_unnamed:
   zh-TW: AI 工具（MCP，來自 %{address}）要在「%{host}」上執行危險指令
   ja: AI ツール（MCP、%{address} から）が「%{host}」で危険なコマンドを実行しようとしています
   ko: AI 도구(MCP, %{address}에서)가 '%{host}'에서 위험한 명령을 실행하려고 합니다
+cli.approval.title_batch:
+  zh-CN: 命令行工具要在 %{count} 台主机上执行危险命令
+  en: The command-line tool wants to run a dangerous command on %{count} hosts
+  zh-TW: 命令列工具要在 %{count} 台主機上執行危險指令
+  ja: コマンドラインツールが %{count} 台のホストで危険なコマンドを実行しようとしています
+  ko: 명령줄 도구가 호스트 %{count}대에서 위험한 명령을 실행하려고 합니다
+cli.approval.title_mcp_batch:
+  zh-CN: "%{client}（MCP）要在 %{count} 台主机上执行危险命令"
+  en: "%{client} (MCP) wants to run a dangerous command on %{count} hosts"
+  zh-TW: "%{client}（MCP）要在 %{count} 台主機上執行危險指令"
+  ja: "%{client}（MCP）が %{count} 台のホストで危険なコマンドを実行しようとしています"
+  ko: "%{client}(MCP)이(가) 호스트 %{count}대에서 위험한 명령을 실행하려고 합니다"
+cli.approval.title_mcp_unnamed_batch:
+  zh-CN: AI 工具（MCP）要在 %{count} 台主机上执行危险命令
+  en: An AI tool (MCP) wants to run a dangerous command on %{count} hosts
+  zh-TW: AI 工具（MCP）要在 %{count} 台主機上執行危險指令
+  ja: AI ツール（MCP）が %{count} 台のホストで危険なコマンドを実行しようとしています
+  ko: AI 도구(MCP)가 호스트 %{count}대에서 위험한 명령을 실행하려고 합니다
+cli.approval.title_mcp_lan_batch:
+  zh-CN: "%{client}（MCP，来自 %{address}）要在 %{count} 台主机上执行危险命令"
+  en: "%{client} (MCP, from %{address}) wants to run a dangerous command on %{count} hosts"
+  zh-TW: "%{client}（MCP，來自 %{address}）要在 %{count} 台主機上執行危險指令"
+  ja: "%{client}（MCP、%{address} から）が %{count} 台のホストで危険なコマンドを実行しようとしています"
+  ko: "%{client}(MCP, %{address}에서)이(가) 호스트 %{count}대에서 위험한 명령을 실행하려고 합니다"
+cli.approval.title_mcp_lan_unnamed_batch:
+  zh-CN: AI 工具（MCP，来自 %{address}）要在 %{count} 台主机上执行危险命令
+  en: An AI tool (MCP, from %{address}) wants to run a dangerous command on %{count} hosts
+  zh-TW: AI 工具（MCP，來自 %{address}）要在 %{count} 台主機上執行危險指令
+  ja: AI ツール（MCP、%{address} から）が %{count} 台のホストで危険なコマンドを実行しようとしています
+  ko: AI 도구(MCP, %{address}에서)가 호스트 %{count}대에서 위험한 명령을 실행하려고 합니다
+cli.approval.hosts:
+  zh-CN: "%{count} 台主机：%{names}"
+  en: "%{count} hosts: %{names}"
+  zh-TW: "%{count} 台主機：%{names}"
+  ja: "%{count} 台のホスト：%{names}"
+  ko: "호스트 %{count}대: %{names}"
+cli.approval.hosts_separator:
+  zh-CN: 、
+  en: ", "
+  zh-TW: 、
+  ja: 、
+  ko: ", "
 cli.approval.description:
   zh-CN: 调用方：%{caller}。命令“%{command}”命中了危险命令规则：%{rule}。
   en: "Caller: %{caller}. The command “%{command}” matches a dangerous-command rule: %{rule}."

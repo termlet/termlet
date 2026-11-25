@@ -667,7 +667,13 @@ fn mcp_handshake_and_tools() {
         .collect();
     assert_eq!(
         names,
-        ["list_hosts", "run_command", "upload_file", "download_file"]
+        [
+            "list_hosts",
+            "run_command",
+            "run_command_on_hosts",
+            "upload_file",
+            "download_file"
+        ]
     );
     let unknown = mcp.request("tools/call", json!({ "name": "nope", "arguments": {} }));
     assert_eq!(unknown["error"]["code"], -32602);
@@ -929,4 +935,354 @@ fn mcp_real_server() {
         json!({ "host": "e2e", "command": format!("rm -r {remote}") }),
     );
     assert!(!error);
+}
+
+// ---------------------------------------------------------------- 批量执行
+
+impl Env {
+    /// 建一个分组，返回它的 ID。
+    fn add_group(&self, name: &str, parent: Option<&str>) -> String {
+        self.store
+            .create(
+                termlet_core::model::Group {
+                    name: name.into(),
+                    ..Default::default()
+                },
+                parent.map(str::to_string),
+                Position::Last,
+            )
+            .unwrap()
+            .to_string()
+    }
+
+    /// 在分组中加一台主机（带标签）。
+    fn add_host_in(
+        &self,
+        name: &str,
+        address: &str,
+        port: u16,
+        allowed: bool,
+        group: &str,
+        tags: &[&str],
+    ) {
+        let id = self
+            .store
+            .create(
+                Host {
+                    name: name.into(),
+                    address: address.into(),
+                    port,
+                    username: "termlet".into(),
+                    tags: tags.iter().map(|t| t.to_string()).collect(),
+                    cli: CliAccess {
+                        allowed,
+                        credential: None,
+                    },
+                    ..Default::default()
+                },
+                Some(group.to_string()),
+                Position::Last,
+            )
+            .unwrap();
+        self.store
+            .set_secret(
+                &Owner::host(&id),
+                SecretField::Password,
+                Some(&SecretString::new("termlet-e2e")),
+            )
+            .unwrap();
+    }
+}
+
+fn names_of(value: &Value) -> Vec<String> {
+    value
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|h| h["name"].as_str().unwrap().to_string())
+        .collect()
+}
+
+// 选主机（分组含子分组、标签取交集、列表、排除）、--list、选不出主机与整批拦截的退出码、连不上的计数与退出码 8、
+// 审计每台一条带同一批的 ID
+#[test]
+fn batch_selection_and_errors() {
+    let env = Env::new();
+    env.enable();
+    let port = dead_port();
+    let prod = env.add_group("生产", None);
+    let web = env.add_group("web", Some(&prod));
+    env.add_host_in("web-1", "127.0.0.1", port, true, &web, &["nginx"]);
+    env.add_host_in("web-2", "127.0.0.1", port, true, &web, &["nginx"]);
+    env.add_host_in("db-1", "127.0.0.1", port, true, &prod, &["mysql"]);
+    env.add_host_in("db-2", "127.0.0.1", port, false, &prod, &["mysql"]);
+
+    let (code, value) = env.json(&["exec", "-g", "生产", "--list"]);
+    assert_eq!(code, 0);
+    assert_eq!(
+        names_of(&value["hosts"]),
+        ["db-1", "web-1", "web-2"],
+        "含子分组"
+    );
+    assert_eq!(names_of(&value["skipped"]), ["db-2"]);
+    assert_eq!(value["skipped"][0]["error"]["code"], "host_not_allowed");
+    let (_, value) = env.json(&["exec", "-g", "生产", "-t", "NGINX", "--list"]);
+    assert_eq!(
+        names_of(&value["hosts"]),
+        ["web-1", "web-2"],
+        "分组与标签取交集"
+    );
+    let (_, value) = env.json(&[
+        "exec",
+        "-g",
+        "生产/web",
+        "-H",
+        "db-1",
+        "-x",
+        "web-2",
+        "--list",
+    ]);
+    assert_eq!(
+        names_of(&value["hosts"]),
+        ["db-1", "web-1"],
+        "路径、列表与排除"
+    );
+    let (_, value) = env.json(&["exec", "--all", "--list"]);
+    assert_eq!(names_of(&value["hosts"]).len(), 3);
+
+    // 选不出主机：找不到的分组为 2，选中的都不允许为 3；单台不能用批量的选项为 1
+    let (code, value) = env.json(&["exec", "-g", "测试", "uptime"]);
+    assert_eq!((code, value["error"].as_str()), (2, Some("host_not_found")));
+    let (code, value) = env.json(&["exec", "-H", "db-2", "uptime"]);
+    assert_eq!(
+        (code, value["error"].as_str()),
+        (3, Some("host_not_allowed"))
+    );
+    assert_eq!(
+        env.json(&["exec", "web-1", "--timeout", "5", "uptime"]).0,
+        1
+    );
+
+    // 整批被拦截（没有窗口可以询问）：退出码 4，审计每台一条
+    let (code, value) = env.json(&["exec", "-t", "nginx", "sudo reboot"]);
+    assert_eq!(
+        (code, value["error"].as_str()),
+        (4, Some("command_blocked"))
+    );
+
+    // 全部连不上：退出码 8，连不上与未允许分开计数
+    let (code, value) = env.json(&["exec", "-g", "生产", "-j", "2", "uptime"]);
+    assert_eq!(code, 8, "{value}");
+    assert_eq!(value["summary"]["total"], 4);
+    assert_eq!(value["summary"]["unreachable"], 3);
+    assert_eq!(value["summary"]["skipped"], 1);
+    let statuses: Vec<&str> = value["hosts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|h| h["status"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        statuses,
+        ["unreachable", "skipped", "unreachable", "unreachable"]
+    );
+    assert_eq!(value["hosts"][0]["error"]["code"], "connect_failed");
+    let batch = value["batch"].as_str().unwrap().to_string();
+    assert!(batch.starts_with("b_"));
+
+    // --json-lines：每台一行，最后一行是汇总
+    let (code, stdout, _) = env.run(&["exec", "-g", "生产/web", "--json-lines", "uptime"], None);
+    assert_eq!(code, 8);
+    let lines: Vec<Value> = stdout
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[2]["summary"]["unreachable"], 2);
+
+    let entries = env
+        .audit
+        .list(&AuditQuery {
+            batch: batch.clone(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(entries.len(), 3, "开始了的每台一条（未允许的没有）");
+    assert!(
+        entries
+            .iter()
+            .all(|e| e.status == AuditStatus::Failed && e.error_code == "connect_failed")
+    );
+    let blocked = env
+        .audit
+        .list(&AuditQuery {
+            status: Some(AuditStatus::Blocked),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(blocked.len(), 2, "拦截时每台一条");
+    assert!(
+        blocked
+            .iter()
+            .all(|e| !e.batch.is_empty() && e.detail == "sudo reboot")
+    );
+}
+
+// 连真实 sshd：两台连同一个容器、一台连不上；合并相同的输出、退出码 8、--script 带参数、--input、超时、出错即停、
+// 结果目录与只重跑没成功的、批量上传与下载
+#[test]
+fn batch_real_server() {
+    let Some((address, port)) = test_ssh() else {
+        eprintln!("没有设置 TERMLET_TEST_SSH，跳过");
+        return;
+    };
+    let env = Env::new();
+    env.enable();
+    let group = env.add_group("e2e", None);
+    env.add_host_in("e2e-a", &address, port, true, &group, &["web"]);
+    accept_host_key(&env);
+    env.add_host_in("e2e-b", &address, port, true, &group, &["web"]);
+    env.add_host_in("e2e-dead", "127.0.0.1", dead_port(), true, &group, &[]);
+
+    let (code, value) = env.json(&["exec", "-t", "web", "echo same; exit 3"]);
+    assert_eq!(code, 8, "退出码不是 0 算没成功：{value}");
+    assert_eq!(value["summary"]["failed"], 2);
+    assert_eq!(value["hosts"][0]["exitCode"], 3);
+    assert_eq!(value["hosts"][1]["stdout"], "same\n");
+
+    // --script：按 #! 选 shell，参数照传；--input：文件是标准输入
+    let work = tempfile::tempdir().unwrap();
+    let script = work.path().join("s.sh");
+    std::fs::write(&script, "#!/bin/sh\necho \"arg=$1 $2\"\n").unwrap();
+    let script = script.display().to_string();
+    let (code, value) = env.json(&[
+        "exec", "-t", "web", "--script", &script, "--", "a b", "it's",
+    ]);
+    assert_eq!(code, 0, "{value}");
+    assert_eq!(value["hosts"][0]["stdout"], "arg=a b it's\n");
+    let input = work.path().join("in.txt");
+    std::fs::write(&input, "line1\nline2\n").unwrap();
+    let input = input.display().to_string();
+    let (code, value) = env.json(&["exec", "e2e-a", "--input", &input, "wc -l"]);
+    assert_eq!(
+        (code, value["stdout"].as_str().map(str::trim)),
+        (0, Some("2"))
+    );
+
+    // 超时：SIGTERM，状态 timeout；出错即停：第一台失败后不再开始
+    let (code, value) = env.json(&["exec", "-t", "web", "--timeout", "1", "sleep 30"]);
+    assert_eq!(code, 8);
+    assert_eq!(value["summary"]["timeout"], 2, "{value}");
+    let (code, value) = env.json(&["exec", "-t", "web", "-j", "1", "--max-fail", "1", "exit 1"]);
+    assert_eq!(code, 8);
+    assert_eq!(value["summary"]["failed"], 1, "{value}");
+    assert_eq!(value["summary"]["skipped"], 1, "{value}");
+
+    // 结果目录：每台的输出、summary.json、retry.txt；-H @retry.txt 只重跑没成功的
+    let out = work.path().join("out");
+    let (code, _, _) = env.run(
+        &[
+            "exec",
+            "-g",
+            "e2e",
+            "--output-dir",
+            &out.display().to_string(),
+            "echo ok",
+        ],
+        None,
+    );
+    assert_eq!(code, 8);
+    assert_eq!(
+        std::fs::read_to_string(out.join("e2e-a.out")).unwrap(),
+        "ok\n"
+    );
+    assert!(out.join("summary.json").exists());
+    let retry = std::fs::read_to_string(out.join("retry.txt")).unwrap();
+    assert!(
+        retry.contains("# e2e-dead") && !retry.contains("# e2e-a"),
+        "{retry}"
+    );
+    let (_, value) = env.json(&[
+        "exec",
+        "-H",
+        &format!("@{}", out.join("retry.txt").display()),
+        "--list",
+    ]);
+    assert_eq!(names_of(&value["hosts"]), ["e2e-dead"]);
+
+    // 批量上传、下载：每台放进以主机名命名的子目录
+    let remote = format!("/tmp/termlet-batch-{}", std::process::id());
+    std::fs::write(work.path().join("up.txt"), "payload").unwrap();
+    assert_eq!(
+        env.json(&["exec", "e2e-a", &format!("mkdir -p {remote}")])
+            .0,
+        0
+    );
+    let (code, stdout, _) = env.run_in(
+        &["upload", "-t", "web", "up.txt", &format!("{remote}/")],
+        None,
+        "zh",
+        Some(work.path()),
+    );
+    assert_eq!(code, 0, "{stdout}");
+    let up: Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(up["hosts"][0]["remote"], format!("{remote}/up.txt"));
+    let (code, stdout, _) = env.run_in(
+        &["download", "-t", "web", &format!("{remote}/up.txt"), "got"],
+        None,
+        "zh",
+        Some(work.path()),
+    );
+    assert_eq!(code, 0, "{stdout}");
+    for host in ["e2e-a", "e2e-b"] {
+        assert_eq!(
+            std::fs::read_to_string(work.path().join("got").join(host).join("up.txt")).unwrap(),
+            "payload"
+        );
+    }
+    assert_eq!(
+        env.json(&["exec", "e2e-a", &format!("rm -r {remote}")]).0,
+        0
+    );
+}
+
+// MCP 的 run_command_on_hosts：经同一套检查，结果按输出合并
+#[test]
+fn mcp_run_command_on_hosts() {
+    let env = Env::new();
+    env.enable();
+    let group = env.add_group("生产", None);
+    let port = dead_port();
+    env.add_host_in("web-1", "127.0.0.1", port, true, &group, &[]);
+    env.add_host_in("web-2", "127.0.0.1", port, false, &group, &[]);
+    let mut mcp = env.mcp("zh");
+    mcp.initialize();
+    let (error, text, structured) =
+        mcp.call("run_command_on_hosts", json!({ "command": "uptime" }));
+    assert!(error);
+    assert_eq!(structured["error"], "bad_request");
+    assert!(text.contains("没有选择主机"), "{text}");
+    let (error, text, _) = mcp.call(
+        "run_command_on_hosts",
+        json!({ "groups": ["生产"], "command": "uptime", "timeout_seconds": 5 }),
+    );
+    assert!(!error, "整批执行了就不是工具错误：{text}");
+    assert!(
+        text.starts_with("2 台主机：成功 0，连不上 1，未执行 1"),
+        "{text}"
+    );
+    assert!(text.contains("web-1：连不上（"), "{text}");
+    let (error, _, structured) = mcp.call(
+        "run_command_on_hosts",
+        json!({ "hosts": ["web-1"], "command": "sudo reboot" }),
+    );
+    assert!(error);
+    assert_eq!(structured["error"], "command_blocked");
+    let entries = env.audit.list(&AuditQuery::default()).unwrap();
+    assert!(!entries.is_empty());
+    assert!(
+        entries
+            .iter()
+            .all(|e| e.caller.starts_with("mcp:e2e-test < ") && !e.batch.is_empty())
+    );
 }

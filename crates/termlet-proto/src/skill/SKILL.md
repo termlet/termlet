@@ -19,6 +19,8 @@ termlet exec <主机> --stdin                  # 从标准输入读取命令
 termlet exec --terminal <主机> "<命令>"      # 在用户已在 Termlet 中打开的这台主机的终端里执行
 termlet upload <主机> <本地文件> <远程路径>    # 上传单个文件
 termlet download <主机> <远程文件> <本地路径>  # 下载单个文件
+termlet exec -g <分组> "<命令>"               # 在一批主机上执行同一条命令（见下文“批量执行”）
+termlet exec <主机> --script <本地脚本>         # 把本机脚本交给远程的 shell 执行，不落在服务器上
 termlet help                                # 完整用法
 ```
 
@@ -76,6 +78,7 @@ termlet download web-1 /var/log/nginx/access.log .
 | 5 | 连接或执行失败（网络、认证、指纹、SFTP 等） |
 | 6 | Termlet 已锁定（应用锁 `app_locked`，或凭据保险库 `vault_locked`），需要用户在 Termlet 中解锁 |
 | 7 | 外部 CLI 已关闭（`cli_disabled`），或 Termlet 没有运行且用户不允许自动启动（`app_not_running`），需要用户在 Termlet 中开启或先打开 Termlet |
+| 8 | 批量执行中有主机没有成功（失败、连不上、超时、取消），各台的结果在输出中 |
 | 其他 | `exec` 连接成功后，透传远程命令自身的退出码 |
 
 注意：`exec` 的远程命令自身也可能返回 1~7，此时以 JSON 中是否有 `exitCode` 字段（成功执行）还是 `error` 字段（termlet 自身出错）来区分。
@@ -145,6 +148,36 @@ EOF
 ```
 
 注意 heredoc 定界符要加引号（`<<'EOF'`），否则 `$HOME` 会在本地被展开。标准输入最多 1MB，超出时报错（退出码 1）且不会执行；更大的脚本先用 `termlet upload` 传到服务器再执行。
+
+### 批量执行
+
+同一条命令要在多台主机上执行时，不要逐台调用 `termlet exec`，把 `<主机>` 换成选主机的选项，一次执行完：
+
+```bash
+termlet exec -g web --list                     # 先看会选中哪些主机（以及哪些会跳过、为什么）
+termlet exec -g web "systemctl is-active nginx" # 分组（含子分组，同名分组写路径 生产/web）
+termlet exec -t prod -g web "df -h /"          # 标签与分组取交集
+termlet exec -H web-1,web-2 --timeout 30 "uptime"
+termlet exec --all -x db-1 "uname -r"          # 全部允许的主机，排除 db-1
+termlet upload -g web ./app.conf /etc/app/     # 批量上传；批量下载时本地路径是目录，每台一个子目录
+```
+
+- 同时最多 10 台（`-j` 可改，最多 64）；`--timeout <秒>` 给每台命令限时（不含连接），`--max-fail <数量>` 失败达到台数后不再开始新的主机。
+- JSON 输出：`{"batch": "...", "hosts": [...], "summary": {...}}`。`hosts` 中每台有 `id`、`name`、`status`，执行的还有 `exitCode`、`stdout`、`stderr`，没成功的有 `error`（错误码与单台相同）。`status` 是 `ok`、`failed`（执行了但退出码不是 0，或连上后出错）、`unreachable`（没连上、没登录）、`timeout`、`canceled`、`skipped`（没执行：主机未允许、不是 SSH 主机、达到 `--max-fail` 等）之一。
+- 有主机没成功时退出码是 **8**；全部成功是 0。远程命令自身的退出码在各台的 `exitCode` 中。
+- 命中危险命令规则时整批只请用户批准一次；只选允许 AI 工具与脚本使用的 SSH 主机。
+
+### 本机脚本（`--script`）与输入文件（`--input`）
+
+多行的脚本放在本机时，用 `--script` 交给远程的 shell（按首行的 `#!` 选 bash、sh 等，没有时用 sh），`--` 之后是脚本的参数；脚本经标准输入传过去，不留在服务器上：
+
+```bash
+termlet exec web-1 --script ./check.sh -- --verbose
+termlet exec -g web --script ./check.sh         # 批量也能用
+termlet exec web-1 --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf > /dev/null"
+```
+
+`--input <文件>` 把本机文件原样作为远程命令的标准输入（其他解释器也用它：`--input x.py "python3 -"`）。两者都只收 UTF-8 文本，与 `--stdin` 一样最多 1MB；`--script` 的脚本同样按危险命令规则检查，`--input` 的文件是数据、不检查。
 
 ### 文件传输
 

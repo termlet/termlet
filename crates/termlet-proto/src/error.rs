@@ -1,6 +1,6 @@
 //! 错误码与退出码。
 //!
-//! 错误码是稳定的英文字符串（JSON 输出中的 `error`，AI 与脚本据此判断），发布后不能改；退出码 0–7 同样固定。
+//! 错误码是稳定的英文字符串（JSON 输出中的 `error`，AI 与脚本据此判断），发布后不能改；退出码 0–8 同样固定。
 //! 线路上的错误码是字符串（[`crate::ErrorBody::code`]）：新版本的 Termlet 返回本版本不认识的错误码时，
 //! 命令行工具原样输出，退出码按"连接或执行失败"。
 
@@ -153,6 +153,8 @@ pub enum ExitCode {
     Locked = 6,
     /// 外部命令行用不了：已关闭，或 Termlet 没有运行
     CliDisabled = 7,
+    /// 批量执行：有主机没有成功（失败、连不上、超时、取消，或者因为失败的上限、取消而没有开始），详情看输出
+    BatchFailed = 8,
 }
 
 impl ExitCode {
@@ -216,6 +218,7 @@ mod tests {
             "命令被拦截的退出码必须是 4"
         );
         assert_eq!(i32::from(ExitCode::CliDisabled), 7);
+        assert_eq!(i32::from(ExitCode::BatchFailed), 8);
     }
 
     #[test]

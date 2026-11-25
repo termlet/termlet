@@ -159,13 +159,28 @@ impl Client {
 
     /// 发送一个请求并等待回答。`exec` 会一直等到远程命令结束；进程被结束时连接随之关闭，服务端中止这次请求。
     pub fn call(&mut self, request: &Request) -> Result<Response, CallError> {
+        self.send(request)?;
+        self.receive()
+    }
+
+    /// 对方是否支持批量执行（协商后的协议版本不低于 [`crate::BATCH_PROTOCOL_VERSION`]）。
+    pub fn supports_batch(&self) -> bool {
+        self.welcome.protocol >= crate::BATCH_PROTOCOL_VERSION
+    }
+
+    /// 只发送一个请求（流式返回多个响应的请求：之后用 [`Client::receive`] 逐个读）。
+    pub fn send(&mut self, request: &Request) -> Result<(), CallError> {
         frame::write(&mut self.stream, request).map_err(|e| {
             if frame::is_closed(&e) {
                 CallError::Closed
             } else {
                 CallError::Io(e)
             }
-        })?;
+        })
+    }
+
+    /// 读下一个响应。
+    pub fn receive(&mut self) -> Result<Response, CallError> {
         Ok(frame::read(&mut self.stream, MAX_RESPONSE)?)
     }
 
@@ -178,7 +193,7 @@ impl Client {
     /// 直接读一帧（测试用）。
     #[doc(hidden)]
     pub fn read_response(&mut self) -> Result<Response, CallError> {
-        Ok(frame::read(&mut self.stream, MAX_RESPONSE)?)
+        self.receive()
     }
 }
 

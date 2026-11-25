@@ -280,14 +280,14 @@ impl Drop for InFlight<'_> {
 
 /// 请求的取消：客户端断开或服务停止。
 #[derive(Clone)]
-pub(super) struct Cancel {
+pub(crate) struct Cancel {
     gone: watch::Receiver<bool>,
     shutdown: watch::Receiver<bool>,
 }
 
 impl Cancel {
     /// `gone`：请求的发起方已离开（连接断开、客户端取消）；`shutdown`：服务正在停止。
-    pub(super) fn new(gone: watch::Receiver<bool>, shutdown: watch::Receiver<bool>) -> Self {
+    pub(crate) fn new(gone: watch::Receiver<bool>, shutdown: watch::Receiver<bool>) -> Self {
         Self { gone, shutdown }
     }
 
@@ -425,7 +425,37 @@ async fn serve(shared: Arc<Shared>, conn: Box<dyn Conn>) {
                     let _busy = InFlight::enter(&shared);
                     // 处理命令行工具的请求算作今天用过 Termlet（使用统计；命令行工具本身不发）
                     crate::usage::mark_active();
-                    handler::handle(&shared, lang, request, cancel.clone()).await
+                    // 批量执行流式回答：中间的响应边产生边写出，最后一个照常写
+                    let (items_tx, mut items) = mpsc::channel::<Response>(16);
+                    let handling = handler::handle_streaming(
+                        &shared,
+                        lang,
+                        request,
+                        cancel.clone(),
+                        Some(&items_tx),
+                    );
+                    tokio::pin!(handling);
+                    let mut broken = false;
+                    let response = loop {
+                        tokio::select! {
+                            biased;
+                            Some(item) = items.recv() => {
+                                if !broken && write_frame(&mut writer, &item).await.is_err() {
+                                    broken = true;
+                                }
+                            }
+                            response = &mut handling => break response,
+                        }
+                    };
+                    while let Ok(item) = items.try_recv() {
+                        if !broken && write_frame(&mut writer, &item).await.is_err() {
+                            broken = true;
+                        }
+                    }
+                    if broken {
+                        break;
+                    }
+                    response
                 }
                 Err(e) => error_response(
                     ErrorCode::BadRequest,

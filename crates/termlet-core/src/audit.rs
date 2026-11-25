@@ -8,6 +8,8 @@
 //! - 保留最近 [`MAX_ENTRIES`] 条、内容合计不超过 [`MAX_BYTES`]，每写入 100 条清理一次更早的。
 //! - 用时（`duration_ms`）不含等待用户批准危险命令的时间，等待的时长另记在 `approval_wait_ms`（0.3.2 起；
 //!   更早的记录没有这一项，它们的用时含等待的时间）。
+//! - 批量执行（[`crate::batch`]，0.3.4 起）每台一条，同一批的记录带同一个 `batch`（ID），可以按批筛选；
+//!   界面上用户自己发起的批量执行，调用方是 [`CALLER_BATCH`]，来源为“批量执行”。
 //!
 //! 方法都是同步的（SQLite），在界面中从后台执行器调用；写入很快（毫秒级）。
 
@@ -62,7 +64,12 @@ const ENSURE_TABLE: &str = "CREATE TABLE IF NOT EXISTS audit_log (
 const ADDED_COLUMNS: &[(&str, &str)] = &[
     // 0.3.2：等待用户批准危险命令的时长（毫秒）；没有询问过用户的为空
     ("approval_wait_ms", "INTEGER"),
+    // 0.3.4：批量执行的批 ID；不是批量执行的为空
+    ("batch", "TEXT"),
 ];
+
+/// 界面上用户自己发起的批量执行写在调用方中的标记（来源为 [`AuditSource::Batch`]）。
+pub const CALLER_BATCH: &str = "batch";
 
 /// 内容超过 [`MAX_DETAIL`] 时追加在保存的开头部分之后的标记，数字为原文的字节数。导出的文件中原样保留；
 /// [`AuditLog::get`] 时去掉标记，改为设置 `truncated` 与 `detail_size`。
@@ -183,6 +190,8 @@ pub enum AuditSource {
     Mcp,
     /// 主机工具面板
     Panel,
+    /// 用户在界面上发起的批量执行：调用方是 [`CALLER_BATCH`]
+    Batch,
 }
 
 impl AuditSource {
@@ -191,6 +200,8 @@ impl AuditSource {
             AuditSource::Panel
         } else if mcp_client(caller).is_some() {
             AuditSource::Mcp
+        } else if caller == CALLER_BATCH {
+            AuditSource::Batch
         } else {
             AuditSource::Cli
         }
@@ -201,6 +212,7 @@ impl AuditSource {
             AuditSource::Cli => "cli",
             AuditSource::Mcp => "mcp",
             AuditSource::Panel => "panel",
+            AuditSource::Batch => "batch",
         }
     }
 }
@@ -277,8 +289,11 @@ pub struct AuditEntry {
     /// 传输的字节数
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<i64>,
-    /// 调用方祖先进程名，由近到远，以 ` < ` 连接（来自面板的记录为空）
+    /// 调用方祖先进程名，由近到远，以 ` < ` 连接（来自面板的记录为空；界面上的批量执行为 [`CALLER_BATCH`]）
     pub caller: String,
+    /// 批量执行的批 ID（同一批的记录相同）；不是批量执行的为空
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub batch: String,
     pub source: AuditSource,
     /// `detail` 只是开头的 [`SUMMARY_LENGTH`] 个字符（[`AuditLog::list`] 的结果）
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -327,6 +342,7 @@ impl AuditEntry {
             host_name: self.host_name.clone(),
             error_code: self.error_code.clone(),
             caller: self.caller.clone(),
+            batch: self.batch.clone(),
             ..*self
         }
     }
@@ -366,6 +382,8 @@ pub struct AuditQuery {
     pub q: String,
     pub status: Option<AuditStatus>,
     pub source: Option<AuditSource>,
+    /// 只看这一批（批量执行的批 ID）
+    pub batch: String,
 }
 
 impl AuditQuery {
@@ -390,6 +408,7 @@ impl AuditQuery {
             m.len() + 1,
             m.len() + 3
         );
+        let batch = format!("caller = '{CALLER_BATCH}'");
         match self.source {
             Some(AuditSource::Panel) => {
                 conds.push("action IN (?, ?)".into());
@@ -399,11 +418,21 @@ impl AuditQuery {
                 conds.push(format!("action NOT IN (?, ?) AND {mcp}"));
                 args.extend(panel);
             }
+            Some(AuditSource::Batch) => {
+                conds.push(format!("action NOT IN (?, ?) AND {batch}"));
+                args.extend(panel);
+            }
             Some(AuditSource::Cli) => {
-                conds.push(format!("action NOT IN (?, ?) AND NOT {mcp}"));
+                conds.push(format!(
+                    "action NOT IN (?, ?) AND NOT {mcp} AND NOT {batch}"
+                ));
                 args.extend(panel);
             }
             None => {}
+        }
+        if !self.batch.is_empty() {
+            conds.push("batch = ?".into());
+            args.push(Value::Text(self.batch.clone()));
         }
         if !self.q.is_empty() {
             let like = format!(
@@ -440,13 +469,14 @@ pub enum ExportFormat {
 /// 完整的记录（get、export）与列表中的摘要：内容只取开头 [`SUMMARY_LENGTH`] 个字符，最后一列表示还有更多
 /// （SQLite 的 substr、length 对文本按字符计）。
 const COLUMNS: &str = "id, at, host_id, host_name, action, detail, status, exit_code, \
-                       COALESCE(error_code, ''), duration_ms, bytes, caller, 0, approval_wait_ms";
+                       COALESCE(error_code, ''), duration_ms, bytes, caller, 0, approval_wait_ms, \
+                       COALESCE(batch, '')";
 
 fn summary_columns() -> String {
     format!(
         "id, at, host_id, host_name, action, substr(detail, 1, {SUMMARY_LENGTH}), status, exit_code, \
          COALESCE(error_code, ''), duration_ms, bytes, caller, length(detail) > {SUMMARY_LENGTH}, \
-         approval_wait_ms"
+         approval_wait_ms, COALESCE(batch, '')"
     )
 }
 
@@ -468,6 +498,7 @@ fn entry_from_row(row: &Row<'_>) -> rusqlite::Result<AuditEntry> {
         bytes: row.get(10)?,
         source: AuditSource::of(action, &caller),
         caller,
+        batch: row.get(14)?,
         partial: row.get(12)?,
         truncated: false,
         detail_size: 0,
@@ -539,8 +570,8 @@ impl AuditLog {
         let caller = cut(&entry.caller, MAX_FIELD).to_string();
         let id = self.store.database().write(|tx| {
             tx.execute(
-                "INSERT INTO audit_log (at, host_id, host_name, action, detail, status, exit_code, error_code, duration_ms, bytes, caller, approval_wait_ms)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULLIF(?8, ''), ?9, ?10, ?11, ?12)",
+                "INSERT INTO audit_log (at, host_id, host_name, action, detail, status, exit_code, error_code, duration_ms, bytes, caller, approval_wait_ms, batch)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULLIF(?8, ''), ?9, ?10, ?11, ?12, NULLIF(?13, ''))",
                 params![
                     entry.at,
                     entry.host_id,
@@ -554,6 +585,7 @@ impl AuditLog {
                     entry.bytes,
                     caller,
                     entry.approval_wait_ms,
+                    cut(&entry.batch, MAX_FIELD),
                 ],
             )?;
             Ok(tx.last_insert_rowid())
@@ -678,8 +710,9 @@ impl AuditLog {
                         "caller",
                         "detail",
                         "source",
-                        // 0.3.2 加的列放在最后，按位置读的脚本不受影响
+                        // 后来加的列放在最后，按位置读的脚本不受影响
                         "approval_wait_ms",
+                        "batch",
                     ],
                 )?;
                 for e in &list {
@@ -706,6 +739,7 @@ impl AuditLog {
                             &not_formula(&e.detail),
                             e.source.as_str(),
                             &waited,
+                            &e.batch,
                         ],
                     )?;
                 }

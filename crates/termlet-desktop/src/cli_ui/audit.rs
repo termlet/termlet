@@ -54,7 +54,12 @@ const STATUSES: [AuditStatus; 5] = [
     AuditStatus::Blocked,
     AuditStatus::Denied,
 ];
-const SOURCES: [AuditSource; 3] = [AuditSource::Cli, AuditSource::Mcp, AuditSource::Panel];
+const SOURCES: [AuditSource; 4] = [
+    AuditSource::Cli,
+    AuditSource::Mcp,
+    AuditSource::Batch,
+    AuditSource::Panel,
+];
 
 /// 各列的宽度（rem）；内容列占余下的宽度。
 const TIME_WIDTH: f32 = 9.;
@@ -136,6 +141,8 @@ pub(super) struct Filter {
     pub(super) q: String,
     pub(super) status: Option<AuditStatus>,
     pub(super) source: Option<AuditSource>,
+    /// 只看这一批（批量执行的批 ID；详情中的“同一批”）
+    pub(super) batch: String,
 }
 
 impl Filter {
@@ -147,12 +154,16 @@ impl Filter {
             q: self.q.trim().to_string(),
             status: self.status,
             source: self.source,
+            batch: self.batch.clone(),
         }
     }
 
     /// 是否有筛选条件（没有记录时据此说“没有符合条件的”还是“还没有”）。
     pub(super) fn is_active(&self) -> bool {
-        !self.q.trim().is_empty() || self.status.is_some() || self.source.is_some()
+        !self.q.trim().is_empty()
+            || self.status.is_some()
+            || self.source.is_some()
+            || !self.batch.is_empty()
     }
 }
 
@@ -189,7 +200,7 @@ pub(super) fn status_label(status: AuditStatus) -> SharedString {
     }
 }
 
-/// 一条记录的结果：被取消的（AI 工具中途停止、命令行工具或客户端退出）写“已取消”，不写“失败”。
+/// 一条记录的结果：被取消的（AI 工具中途停止、命令行工具或客户端退出）写“已取消”，不写“出错”。
 pub(super) fn entry_status(entry: &AuditEntry) -> SharedString {
     if canceled(entry) {
         t!("cli_ui.audit.status_canceled")
@@ -207,6 +218,7 @@ pub(super) fn source_label(source: AuditSource) -> SharedString {
         AuditSource::Cli => t!("cli_ui.audit.source_cli"),
         AuditSource::Mcp => t!("cli_ui.audit.source_mcp"),
         AuditSource::Panel => t!("cli_ui.audit.source_panel"),
+        AuditSource::Batch => t!("cli_ui.audit.source_batch"),
     }
 }
 
@@ -446,6 +458,14 @@ impl AuditView {
     pub(super) fn set_source(&mut self, source: Option<AuditSource>, cx: &mut Context<Self>) {
         if self.filter.source != source {
             self.filter.source = source;
+            self.reload(cx);
+        }
+    }
+
+    /// 只看同一批（批量执行）；空串为不限。
+    pub(super) fn set_batch(&mut self, batch: String, cx: &mut Context<Self>) {
+        if self.filter.batch != batch {
+            self.filter.batch = batch;
             self.reload(cx);
         }
     }
@@ -770,6 +790,17 @@ impl AuditView {
                     .flex_none()
                     .child(Select::new(&self.status).small().id("audit-status")),
             )
+            .when(!self.filter.batch.is_empty(), |this| {
+                this.child(
+                    Button::new("audit-batch-filter")
+                        .outline()
+                        .small()
+                        .icon(IconName::Close)
+                        .label(t!("cli_ui.audit.batch_filter"))
+                        .tooltip(t!("cli_ui.audit.batch_filter_clear"))
+                        .on_click(cx.listener(|this, _, _, cx| this.set_batch(String::new(), cx))),
+                )
+            })
             .child(
                 Button::new("audit-refresh")
                     .ghost()
@@ -1074,6 +1105,18 @@ impl AuditView {
                     .into_any_element(),
             );
         }
+        // 批量执行：同一批的记录（只看这一批时不再显示）
+        if !entry.batch.is_empty() && self.filter.batch != entry.batch {
+            let batch = entry.batch.clone();
+            meta.push(
+                Button::new("audit-same-batch")
+                    .link()
+                    .xsmall()
+                    .label(t!("cli_ui.audit.same_batch"))
+                    .on_click(cx.listener(move |this, _, _, cx| this.set_batch(batch.clone(), cx)))
+                    .into_any_element(),
+            );
+        }
         let copied = entry.detail.clone();
         let truncated = entry.truncated.then(|| {
             t!(
@@ -1210,6 +1253,7 @@ mod tests {
             q: "  web  ".into(),
             status: Some(AuditStatus::Blocked),
             source: Some(AuditSource::Panel),
+            batch: String::new(),
         };
         assert_eq!(
             filter.query(0),
@@ -1219,8 +1263,15 @@ mod tests {
                 q: "web".into(),
                 status: Some(AuditStatus::Blocked),
                 source: Some(AuditSource::Panel),
+                batch: String::new(),
             }
         );
+        let same_batch = Filter {
+            batch: "b_1".into(),
+            ..Default::default()
+        };
+        assert!(same_batch.is_active(), "只看同一批也是筛选");
+        assert_eq!(same_batch.query(0).batch, "b_1");
         assert_eq!(filter.query(42).before, 42, "翻页只要更早的");
         assert!(filter.is_active());
         assert!(!Filter::default().is_active());
@@ -1305,12 +1356,12 @@ mod tests {
         mcp.caller = "mcp < http < lan:192.168.1.23".into();
         assert_eq!(entry_source(&mcp), "MCP·局域网 192.168.1.23");
         mcp.caller = "mcp:Cursor < http < Cursor.exe".into();
-        // 被取消的写“已取消”；别的失败照旧
+        // 被取消的写“已取消”；别的没能完成的写“出错”（0.3.4 前叫“失败”，与批量执行中“退出码不是 0”的失败区分开）
         mcp.status = AuditStatus::Failed;
         mcp.error_code = "canceled".into();
         assert_eq!(entry_status(&mcp), "已取消");
         mcp.error_code = "connect_failed".into();
-        assert_eq!(entry_status(&mcp), "失败");
+        assert_eq!(entry_status(&mcp), "出错");
         let cli = AuditEntry {
             caller: "bash".into(),
             ..Default::default()

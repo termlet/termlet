@@ -1,5 +1,5 @@
-//! 命令行连接主机与执行命令：不能询问（指纹、密码、私钥密码、验证码、执行代理命令），第一个被拒绝的问题决定错误码；
-//! 每次新建连接，用完即断开。
+//! 命令行与批量执行连接主机、执行命令：不能询问（指纹、密码、私钥密码、验证码、执行代理命令），第一个被拒绝的问题
+//! 决定错误码；每次新建连接，用完即断开。
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -59,20 +59,32 @@ fn options(store: &Store) -> ConnectOptions {
     }
 }
 
-/// 用命令行的凭据连接主机（[`ssh::plan_for_cli`]）。失败时的错误码见 [`from_ssh`]；被拒绝的询问另行返回，
-/// 传输出错（连接断开等）时也用得上。
-pub(super) async fn connect(
+/// 用谁的凭据连接。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Credentials {
+    /// 命令行与 MCP：主机的 CLI 专用凭据（有的话），目标主机不用 TOTP（[`ssh::plan_for_cli`]）
+    Cli,
+    /// 用户在界面上发起的批量执行：与打开终端时相同（[`ssh::plan_for_host`]）
+    User,
+}
+
+/// 连接主机。失败时的错误码见 [`from_ssh`]；被拒绝的询问另行返回，传输出错（连接断开等）时也用得上。
+pub(crate) async fn connect(
     store: Arc<Store>,
     host: &HostId,
+    credentials: Credentials,
     cancel: &mut Cancel,
 ) -> Result<(Arc<Connection>, Arc<Mutex<Option<Refused>>>), CliError> {
     let plan = {
         let store = store.clone();
         let host = host.clone();
-        tokio::task::spawn_blocking(move || ssh::plan_for_cli(&store, &host))
-            .await
-            .map_err(|e| CliError::new(ErrorCode::Internal, e.to_string()))?
-            .map_err(|e| from_ssh(&e, None))?
+        tokio::task::spawn_blocking(move || match credentials {
+            Credentials::Cli => ssh::plan_for_cli(&store, &host),
+            Credentials::User => ssh::plan_for_host(&store, &host),
+        })
+        .await
+        .map_err(|e| CliError::new(ErrorCode::Internal, e.to_string()))?
+        .map_err(|e| from_ssh(&e, None))?
     };
     let (prompter, refused) = refusing_prompter();
     let options = options(&store);
@@ -89,12 +101,51 @@ pub(super) async fn connect(
     }
 }
 
+/// 连接登录用的证书（经过的跳板机的与目标主机的）中快过期的，与终端里的提醒按同一个判断
+/// （[`crate::ssh::Connection::expiring_certificates`]）。
+pub(crate) fn expiring_certificates(
+    connection: &Connection,
+) -> Vec<termlet_proto::ExpiringCertificate> {
+    let now = crate::sshcert::now_secs();
+    let expiring: Vec<termlet_proto::ExpiringCertificate> = connection
+        .expiring_certificates(now)
+        .into_iter()
+        .map(|(jump, expiry)| termlet_proto::ExpiringCertificate {
+            jump,
+            expires_at: crate::time::format_rfc3339_local(expiry.saturating_mul(1000)),
+            minutes_left: crate::sshcert::minutes_left(expiry, now) as u64,
+        })
+        .collect();
+    if !expiring.is_empty() {
+        tracing::info!(
+            count = expiring.len(),
+            jump = expiring.iter().any(|c| c.jump.is_some()),
+            "命令行连接登录用的证书快过期，结果中提醒"
+        );
+    }
+    expiring
+}
+
+/// 在后台断开（不让命令行等它）。
+pub(crate) fn disconnect_later(connection: Arc<Connection>) {
+    crate::runtime::spawn(async move { connection.disconnect().await });
+}
+
 /// `exec` 的结果。
-pub(super) struct ExecOutput {
+pub(crate) struct ExecOutput {
     pub exit_code: i32,
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
     pub truncated: bool,
+}
+
+/// 丢弃时停下的后台任务。
+struct AbortOnDrop(tokio::task::JoinHandle<()>);
+
+impl Drop for AbortOnDrop {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
 }
 
 /// 服务器没有报告退出码时的退出码。
@@ -121,20 +172,35 @@ fn signal_exit_code(signal: &Sig) -> i32 {
 }
 
 /// 执行一条命令，每一路输出最多保留 `limit` 字节（超出的不再保存，但继续读完，让命令正常结束）。
-/// 没有时限（等命令结束）；命令行工具退出时向命令发送 SIGTERM 并关闭通道。
-pub(super) async fn exec(
+/// `stdin` 不为空时作为命令的标准输入写完后发送 EOF（与读输出同时进行，命令边读边输出也不会互相等待）。
+/// 没有时限（等命令结束）；取消（命令行工具退出、批量执行超时）时向命令发送 SIGTERM 并关闭通道。
+pub(crate) async fn exec(
     connection: &Connection,
     command: &str,
+    stdin: &[u8],
     limit: usize,
     cancel: &mut Cancel,
 ) -> Result<ExecOutput, CliError> {
     let failed = |e: russh::Error| CliError::new(ErrorCode::ConnectFailed, e.to_string());
-    let mut channel = connection
+    let channel = connection
         .handle()
         .channel_open_session()
         .await
         .map_err(failed)?;
     channel.exec(true, command).await.map_err(failed)?;
+    let (mut channel, writer) = channel.split();
+    let writer = Arc::new(writer);
+    // 写标准输入：写不进去（命令已经结束、不读标准输入）时不算错，结果以命令的退出码为准；返回时（含出错、取消）
+    // 停下还没写完的
+    let _feeding = (!stdin.is_empty()).then(|| {
+        let writer = writer.clone();
+        let input = stdin.to_vec();
+        AbortOnDrop(crate::runtime::spawn(async move {
+            if writer.data(input.as_slice()).await.is_ok() {
+                let _ = writer.eof().await;
+            }
+        }))
+    });
     let mut output = ExecOutput {
         exit_code: EXIT_UNKNOWN,
         stdout: Vec::new(),
@@ -154,8 +220,8 @@ pub(super) async fn exec(
         let message = tokio::select! {
             message = channel.wait() => message,
             _ = cancel.wait() => {
-                let _ = channel.signal(Sig::TERM).await;
-                let _ = channel.close().await;
+                let _ = writer.signal(Sig::TERM).await;
+                let _ = writer.close().await;
                 return Err(CliError::code(ErrorCode::Canceled));
             }
         };

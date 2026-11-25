@@ -634,6 +634,7 @@ Default shortcuts:
   - Names use letters, digits and underscores, optionally separated by spaces, dots or hyphens.
   - Go templates for docker and kubectl such as `{{.Names}}` are sent as is.
 - Manage snippets under "Snippets" in the sidebar (ticking "run after sending" adds a trailing Enter), optionally in groups.
+- A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent (snippets that are only typed, not run, aren't checked). While sync input is on, snippets go to every synced terminal.
 - Snippets exported from NyaTerm can be imported ("Import Snippets…" on the Snippets page; see NyaTerm under [Importing hosts](#importing-hosts)).
 - **Snippet bar**: you can also show a snippet bar below the terminal (the button on the Snippets page or "Show Snippet Bar" in the command palette; off by default).
   - Click a button to send it to the current terminal.
@@ -723,6 +724,7 @@ Default shortcuts:
   - The banner on top syncs all, excludes all or inverts the choice.
   - Double-click a title (or use the maximize button) to enlarge one pane for a while.
   - When you switch to SFTP or an editor, "Back to Grid" returns.
+- Snippets (from the snippet bar, the picker or the sidebar) also go to every synced terminal, checked the same way as typing and pasting.
 - Pasting and dangerous commands:
   - Pastes go to every synced terminal too, with paste protection asking only once, and multi-line text that would run right away is checked for dangerous commands when pasted.
   - Before Enter, everything about to run since the last command (both what is worked out from your input and the line on each terminal's screen) is checked against the dangerous command rules, with a confirmation on a match. Cancel and nothing is sent anywhere (text already confirmed when pasted is not asked again).
@@ -736,7 +738,7 @@ Default shortcuts:
 ### Compose bar (broadcast input)
 
 - Write a command below the terminal and send it to:
-  - the current tab (the panes on screen, or the whole sync input grid);
+  - the current tab (the panes on screen; in the sync input grid, the synced terminals, not the ones marked "Excluded");
   - the same host;
   - all terminals;
   - or the ones you pick.
@@ -1620,6 +1622,7 @@ Default shortcuts:
   | `backup`, `backup_scheduled` | A full backup created or restored by hand; a scheduled backup made |
   | `app_lock`, `master_password` | The app lock unlocked; unlocked with the master password |
   | `import_ssh_config`, `import_xshell`, `import_finalshell`, `import_mobaxterm`, `import_tabby`, `import_termora`, `import_windterm`, `import_electerm`, `import_netcatty`, `import_shellrs`, `import_nyaterm`, `import_nyaterm_snippets`, `import_termlet_file` | Imported from that source (`import_nyaterm_snippets` is quick commands exported from NyaTerm, `import_termlet_file` is a Termlet host file) |
+  | `batch_exec` | Ran a batch (`exec -g` and the like on the command line, `run_command_on_hosts` over MCP) |
 
 ### Diagnostics
 
@@ -1667,6 +1670,7 @@ termlet exec <host> --stdin < script.sh             # read the command from stdi
 termlet exec --terminal <host> "kubectl get pods"   # run it in this host's terminal already open in Termlet
 termlet upload <host> ./app.tar.gz /tmp/            # upload one file (scp semantics)
 termlet download <host> /var/log/syslog .           # download one file (scp semantics)
+termlet exec -g <group> "uptime"                    # batch run: many hosts at once, identical output merged (see "Batch runs")
 termlet skill install [--agent claude|agents|workbuddy | --dir <folder>]  # install the Agent Skill (Claude Code by default)
 termlet skill                                      # print the skill (SKILL.md)
 termlet mcp                                        # MCP server (started by AI tools from their configuration, see below)
@@ -1709,6 +1713,7 @@ termlet version
   |---|---|
   | `list_hosts` | `ls` |
   | `run_command` | `exec` (its `terminal` argument is `--terminal`) |
+  | `run_command_on_hosts` | `exec -g / -t / -H / --all` (batch run: arguments `hosts`, `groups`, `tags`, `exclude`, `all`, `timeout_seconds`; hosts with the same output come back merged, which saves tokens) |
   | `upload_file` | `upload` |
   | `download_file` | `download` |
 
@@ -1797,8 +1802,58 @@ termlet version
 | 5 | connection or execution failed |
 | 6 | credentials or Termlet are locked |
 | 7 | access from AI tools and scripts is off, or Termlet isn't running and may not be started automatically |
+| 8 | batch run: some hosts didn't succeed (failed, unreachable, timed out, canceled, or not started because of the failure limit or a cancel); see the output |
 
 - When `exec` runs, the remote command's exit code is passed through.
+
+### Batch runs
+
+Run the same command (or transfer the same file) on a set of hosts: replace `<host>` with options that pick the hosts. Each host gets a new connection; no terminals need to be open.
+
+```bash
+termlet exec -g prod "systemctl is-active nginx"         # a group (subgroups included); paths for groups with the same name: -g prod/web
+termlet exec -g prod -t nginx "nginx -t"                 # group and tag must both match; repeating an option adds to it
+termlet exec -H web-1,web-2 "df -h /"                    # list hosts (IDs or names); -H @retry.txt reads them from a file
+termlet exec --all -x db-1 "uptime"                      # every allowed host except db-1
+termlet exec -g prod --list                              # only list the hosts that would run or be skipped
+termlet exec -g prod --script ./deploy.sh -- v1.4.2      # a local script with arguments (see the next section)
+termlet upload -g prod ./app.tar.gz /tmp/                # upload to each host
+termlet download -g prod /var/log/nginx/error.log ./logs # download from each host: ./logs/<host>/error.log
+```
+
+- Picking hosts: those listed with `-H`, plus those in any `-g` group that also have any `-t` tag, minus those in `-x`; `--all` replaces `-g` and `-t`. All hosts with a given name are picked.
+  - Only SSH hosts allowed for AI tools and scripts are used; others in the group, and Telnet and serial hosts, are listed as "not run" with the reason (none are silently left out).
+  - A misspelled host or group name is an error (exit code 2); if none of the hosts can run, the exit code is 3.
+  - Even a single matching host gets batch output: whether it's a batch depends on how you write the command.
+- Concurrency and time limits:
+  - `-j <count>` hosts at a time, 10 by default (with sshd's default `MaxStartups`, too many unauthenticated connections through one jump host get dropped), at most 64;
+  - `--timeout <seconds>` time limit for each host's command, not counting the connection (which has its own 15-second limit); the command gets SIGTERM and the host is "timed out";
+  - `--max-fail <count>` stops starting new hosts once this many failed (failed, unreachable or timed out); those already running finish. `-j 1 --max-fail 1` runs one host at a time and stops at the first failure.
+- Dangerous commands: you're asked once for the whole batch, and the dialog says "… wants to run a dangerous command on 12 hosts" and lists them; if you refuse or it's blocked, nothing runs (exit code 4).
+- Output in a terminal: a progress line on stderr as each host finishes; when all are done, on stdout:
+  - hosts with the same exit code and output (stdout and stderr) grouped together, largest groups first (`--no-group` prints each host separately);
+  - the hosts that didn't succeed and why (unreachable, timed out, canceled, not run);
+  - a summary line such as `Summary: 12 hosts: succeeded 9, failed 1, unreachable 1, not run 1 (took 3.2s)`.
+- Statuses: succeeded (exit code 0, or the transfer completed), failed (a non-zero exit code, or an error after connecting), unreachable (couldn't connect or log in, including failed authentication and unconfirmed fingerprints), timed out, canceled, not run. Failed commands and unreachable hosts are counted separately.
+- JSON (when piped): one object at the end, `{"batch", "hosts", "summary", "approvalWaitMs"}`; each host has `status` (`ok`, `failed`, `unreachable`, `timeout`, `canceled`, `skipped`), `exitCode`, `stdout`, `stderr` and `durationMs`, plus `error` (`code`, `message`) when it didn't succeed. With `--json-lines`, one line per host as it finishes, then `{"batch", "summary", "approvalWaitMs"}`.
+- `--output-dir <dir>` writes `<host>.out` and `<host>.err` for each host, plus `summary.json` (the same as the JSON output) and `retry.txt` (IDs of the hosts that didn't succeed; `-H @retry.txt` reruns just those).
+- For a batch download the local path is a directory, with one subdirectory per host named after it (with the host ID added when names clash).
+- While it runs, Ctrl+C lists the hosts that haven't finished; press it again to cancel them all (running commands get SIGTERM and are recorded as canceled).
+- Exit code: 0 if every host that ran succeeded, 8 otherwise; when the batch doesn't run at all, the code follows the error (see below).
+- Audit: one entry per host that started, all with the same batch ID; click "Same batch" in an entry's details to see only that batch.
+- Needs an equally recent Termlet: with an older Termlet, the command-line tool asks you to update it.
+
+### Scripts and standard input
+
+```bash
+termlet exec <host> --script ./deploy.sh -- v1.4.2 --force   # feed a local script to the remote sh over stdin, with arguments
+termlet exec <host> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev/null"   # a local file as the remote command's stdin
+```
+
+- `--script` picks the shell from the script's `#!` line (bash, sh, zsh, dash, ksh, ash; sh without a `#!` line) and runs `bash -s -- args…`, so the script never lands on the server's disk. The script is checked against the dangerous command rules too. For other interpreters use `--input` with your own command, such as `--input x.py "python3 -"`.
+- `--input` sends the file as is to the remote command's stdin and then ends the input (so `cat`, `tee` and the like see the end); it's data, so it isn't checked against the dangerous command rules.
+- Both take at most 1MB of UTF-8 text, work for one host or a batch, and can't be used with `--terminal`.
+
 
 ### Uploads and downloads
 
@@ -1839,6 +1894,8 @@ termlet version
 ### Audit
 
 - Every `exec`, `upload` and `download` (including failed, blocked, approved and rejected ones) goes into the local audit log (command, result, exit code, duration, time waiting for approval, calling process chain), up to 100,000 entries.
+- The Result column says Executed (the remote command may still have ended with a non-zero exit code, shown in its own column), Error (it couldn't run: unreachable, host not allowed and so on; called Failed before 0.3.4), Canceled, Blocked, Approved or Denied.
+- A batch run records one entry per host, all with the same batch ID: click "Same batch" in an entry's details to see only that batch, and "This batch only" next to the filters to go back.
 - Click "View audit log…" under Settings → AI & automation (or "View Audit Log" in the command palette) to view, search, filter, export to CSV / JSON or clear it.
 
 ### PATH

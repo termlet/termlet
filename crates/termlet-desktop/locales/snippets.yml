@@ -323,3 +323,9 @@ picker.submit_compose:
   zh-TW: 放到撰寫列
   ja: コンポーズバーに入れる
   ko: 작성 표시줄에 넣기
+snippets.danger_title:
+  zh-CN: 要执行这条危险命令吗？
+  en: Run this dangerous command?
+  zh-TW: 要執行這條危險指令嗎？
+  ja: この危険なコマンドを実行しますか？
+  ko: 이 위험한 명령을 실행하시겠습니까?

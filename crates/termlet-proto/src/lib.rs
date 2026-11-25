@@ -9,10 +9,13 @@
 //! - **消息帧**：4 字节大端长度 + JSON（UTF-8）。见 [`frame`]。
 //! - **握手**：连接后客户端先发 [`ClientHello`]（协议版本、语言），服务端回答 [`Response::Welcome`]（协商后的版本）
 //!   或 [`Response::Error`]（[`ErrorCode::ProtocolMismatch`]）。之后每发一个 [`Request`] 收一个 [`Response`]，
-//!   一条连接上可以依次发多个请求。
+//!   一条连接上可以依次发多个请求；批量执行（[`batch`]，协议版本 2 起）流式返回多个响应。
 //! - **取消**：客户端在请求进行中断开（`termlet` 被结束）时，服务端中止这次请求（远程命令收到 SIGTERM）。
 //! - **版本**：只加新的请求、响应变体或带默认值的字段时不升版本；双方都忽略不认识的字段。
+//!   版本 2（0.3.4）加了批量执行：一个请求流式返回多个响应，客户端要先确认对方支持（[`client::Client::supports_batch`]），
+//!   旧版本的应用收到这种请求只会回答“请求无效”。
 
+pub mod batch;
 pub mod caller;
 pub mod endpoint;
 mod error;
@@ -23,6 +26,10 @@ pub mod skill;
 
 pub mod client;
 
+pub use batch::{
+    BatchAction, BatchHostResult, BatchReport, BatchRequest, BatchStatus, BatchSummary, Resolution,
+    Selector,
+};
 pub use error::{ErrorCode, ExitCode};
 pub use message::{
     ClientHello, ErrorBody, ExecRequest, ExecResponse, ExpiringCertificate, HostSummary, Lang,
@@ -31,7 +38,9 @@ pub use message::{
 };
 
 /// 协议版本：客户端与服务端都支持的最高版本。
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
+/// 支持批量执行（[`batch`]）的最低版本。
+pub const BATCH_PROTOCOL_VERSION: u32 = 2;
 /// 还支持的最低版本。
 pub const MIN_PROTOCOL_VERSION: u32 = 1;
 

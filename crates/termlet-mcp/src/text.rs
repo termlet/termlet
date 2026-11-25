@@ -6,7 +6,9 @@
 
 use std::io;
 
-use termlet_proto::{ErrorCode, ExpiringCertificate, Lang};
+use termlet_proto::{
+    BatchHostResult, BatchStatus, BatchSummary, ErrorCode, ExpiringCertificate, Lang,
+};
 
 /// 一条中英文对照的文本。
 #[derive(Clone, Copy, Debug)]
@@ -164,6 +166,31 @@ msg!(
     MCP_APP_TRUNCATED,
     "[termlet] 标准输出或标准错误超过 {} 字节，超出的部分没有返回。",
     "[termlet] stdout or stderr exceeded {} bytes; the rest was not returned."
+);
+msg!(
+    MCP_ARG_STRING_LIST,
+    "参数 {} 必须是字符串的数组",
+    "argument {} must be an array of strings"
+);
+msg!(
+    MCP_ARG_SECONDS,
+    "参数 {} 必须是正整数（秒）",
+    "argument {} must be a positive integer (seconds)"
+);
+msg!(
+    MCP_NO_HOSTS_SELECTED,
+    "没有选择主机：给出 hosts、groups、tags 之一，或 all 为 true",
+    "no hosts selected: give hosts, groups or tags, or set all to true"
+);
+msg!(
+    MCP_MORE_GROUPS,
+    "……还有 {} 组不同的输出没有列出",
+    "... {} more groups with different output are not listed"
+);
+msg!(
+    MCP_BATCH_CLIPPED,
+    "[termlet] 有的输出较长，只返回了开头与结尾。需要完整的输出时，对那几台主机用 run_command，把输出写到服务器上的文件再分段读取。",
+    "[termlet] Some output was long, so only its beginning and end are shown. For the full output, use run_command on those hosts and write the output to a file on the server to read it in parts."
 );
 
 /// 错误码对应的说明（Termlet 返回的错误码；命令行工具自己的错误码由它另外补上）。
@@ -358,6 +385,130 @@ pub fn upload_source_problem(local: &str, lang: Lang) -> Option<(&'static str, S
     }
 }
 
+// ---------------------------------------------------------------- 批量执行
+
+msg!(BATCH_OK, "成功", "succeeded");
+msg!(BATCH_FAILED, "失败", "failed");
+msg!(BATCH_UNREACHABLE, "连不上", "unreachable");
+msg!(BATCH_TIMEOUT, "超时", "timed out");
+msg!(BATCH_CANCELED, "已取消", "canceled");
+msg!(BATCH_SKIPPED, "未执行", "not run");
+msg!(BATCH_OTHER, "未知", "unknown");
+msg!(BATCH_HOSTS, "{} 台主机", "{} hosts");
+
+/// 台数：`3 台主机`、`3 hosts`（英文 1 台时用单数）。
+pub fn hosts_count(n: impl Into<u64>, lang: Lang) -> String {
+    let n = n.into();
+    match (lang, n) {
+        (Lang::En, 1) => "1 host".to_string(),
+        _ => BATCH_HOSTS.fill(lang, &[&n]),
+    }
+}
+msg!(BATCH_EXIT, "退出码 {}", "exit code {}");
+msg!(
+    BATCH_UNSUCCESSFUL,
+    "没有成功（{} 台）",
+    "Didn't succeed ({})"
+);
+msg!(BATCH_SUMMARY_TOOK, "用时 {}", "took {}");
+msg!(
+    BATCH_SUMMARY_WAITED,
+    "用时 {}，另等待批准 {}",
+    "took {}, plus {} waiting for approval"
+);
+
+/// 批量执行中一台主机的状态（与界面的名词表相同）。
+pub fn batch_status(status: BatchStatus, lang: Lang) -> &'static str {
+    match status {
+        BatchStatus::Ok => BATCH_OK,
+        BatchStatus::Failed => BATCH_FAILED,
+        BatchStatus::Unreachable => BATCH_UNREACHABLE,
+        BatchStatus::Timeout => BATCH_TIMEOUT,
+        BatchStatus::Canceled => BATCH_CANCELED,
+        BatchStatus::Skipped => BATCH_SKIPPED,
+        BatchStatus::Other => BATCH_OTHER,
+    }
+    .get(lang)
+}
+
+/// 汇总一行：`12 台主机：成功 9，失败 1，连不上 1，未执行 1`（成功总是写，其余只写不为 0 的）。
+pub fn batch_summary(summary: &BatchSummary, lang: Lang) -> String {
+    let mut parts = vec![format!(
+        "{} {}",
+        batch_status(BatchStatus::Ok, lang),
+        summary.ok
+    )];
+    for (status, count) in [
+        (BatchStatus::Failed, summary.failed),
+        (BatchStatus::Unreachable, summary.unreachable),
+        (BatchStatus::Timeout, summary.timeout),
+        (BatchStatus::Canceled, summary.canceled),
+        (BatchStatus::Skipped, summary.skipped),
+    ] {
+        if count > 0 {
+            parts.push(format!("{} {count}", batch_status(status, lang)));
+        }
+    }
+    let total = hosts_count(summary.total, lang);
+    match lang {
+        Lang::Zh => format!("{total}：{}", parts.join("，")),
+        Lang::En => format!("{total}: {}", parts.join(", ")),
+    }
+}
+
+/// 用时（等了批准的另写等了多久）。
+pub fn batch_took(duration_ms: u64, approval_wait_ms: Option<u64>, lang: Lang) -> String {
+    let took = format_duration(duration_ms, lang);
+    match approval_wait_ms {
+        Some(waited) => BATCH_SUMMARY_WAITED.fill(lang, &[&took, &format_duration(waited, lang)]),
+        None => BATCH_SUMMARY_TOOK.fill(lang, &[&took]),
+    }
+}
+
+/// 输出相同的一组的标题：`web-1, web-2, web-3（3 台主机，退出码 0）`；主机多时只列前 `shown` 台。
+pub fn batch_group_title(
+    names: &[&str],
+    exit_code: Option<i32>,
+    shown: usize,
+    lang: Lang,
+) -> String {
+    let mut list = names
+        .iter()
+        .take(shown)
+        .copied()
+        .collect::<Vec<_>>()
+        .join(", ");
+    if names.len() > shown {
+        list.push_str(", …");
+    }
+    let count = hosts_count(names.len() as u64, lang);
+    let detail = match exit_code {
+        Some(code) => match lang {
+            Lang::Zh => format!("{count}，{}", BATCH_EXIT.fill(lang, &[&code])),
+            Lang::En => format!("{count}, {}", BATCH_EXIT.fill(lang, &[&code])),
+        },
+        None => count,
+    };
+    match lang {
+        Lang::Zh => format!("{list}（{detail}）"),
+        Lang::En => format!("{list} ({detail})"),
+    }
+}
+
+/// 没有成功的一台：`web-9：连不上（connect_failed：Connection refused）`。退出码不是 0 的不在这里（在输出的分组中）。
+pub fn batch_problem(result: &BatchHostResult, lang: Lang) -> String {
+    let status = batch_status(result.status, lang);
+    let reason = match &result.error {
+        Some(error) => human_text(lang, &error.code, &error.message),
+        None => String::new(),
+    };
+    match (lang, reason.is_empty()) {
+        (_, true) => format!("{}: {status}", result.name),
+        (Lang::Zh, false) => format!("{}：{status}（{reason}）", result.name),
+        (Lang::En, false) => format!("{}: {status} ({reason})", result.name),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -463,5 +614,51 @@ mod tests {
         let (code, message) = upload_source_problem(&dir, Lang::Zh).unwrap();
         assert_eq!(code, CODE_USAGE);
         assert!(message.contains("只支持上传单个文件"), "{message}");
+    }
+
+    #[test]
+    fn batch_wording() {
+        let summary = BatchSummary {
+            total: 12,
+            ok: 9,
+            failed: 1,
+            unreachable: 1,
+            skipped: 1,
+            ..Default::default()
+        };
+        assert_eq!(
+            batch_summary(&summary, Lang::Zh),
+            "12 台主机：成功 9，失败 1，连不上 1，未执行 1"
+        );
+        assert_eq!(
+            batch_summary(&summary, Lang::En),
+            "12 hosts: succeeded 9, failed 1, unreachable 1, not run 1"
+        );
+        assert_eq!(
+            batch_group_title(&["a", "b", "c"], Some(0), 2, Lang::Zh),
+            "a, b, …（3 台主机，退出码 0）"
+        );
+        assert_eq!(
+            batch_group_title(&["a"], Some(3), 8, Lang::En),
+            "a (1 host, exit code 3)"
+        );
+        let unreachable = BatchHostResult {
+            name: "web-9".into(),
+            status: BatchStatus::Unreachable,
+            error: Some(termlet_proto::ErrorBody::new(
+                ErrorCode::ConnectFailed,
+                "refused",
+            )),
+            ..Default::default()
+        };
+        let text = batch_problem(&unreachable, Lang::Zh);
+        assert!(
+            text.starts_with("web-9：连不上（") && text.contains("refused"),
+            "{text}"
+        );
+        assert_eq!(
+            batch_took(1500, Some(2000), Lang::Zh),
+            "用时 1.5 秒，另等待批准 2.0 秒"
+        );
     }
 }

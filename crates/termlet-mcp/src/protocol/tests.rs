@@ -107,7 +107,7 @@ fn legacy_requests_use_the_session() {
     let session = legacy("2025-03-26");
     let list = reply(request(&json!(1), "tools/list", None, Some(&session)));
     let tools = list["result"]["tools"].as_array().unwrap();
-    assert_eq!(tools.len(), 4);
+    assert_eq!(tools.len(), 5);
     assert!(
         tools[0]["annotations"].is_object(),
         "2025-03-26 起有 annotations"
@@ -307,7 +307,7 @@ fn progress_follows_the_token() {
 // 局域网中的客户端：说明中写明没有传文件的工具、怎样用 run_command 读写小文件；tools/list 只有两个工具；直接调用
 // 传文件的工具时交给传输层的调用带着 Lan，由 refusal 给出工具执行错误（不交给 Termlet）
 #[test]
-fn lan_clients_see_two_tools() {
+fn lan_clients_see_three_tools() {
     let init = |reach| {
         let params = json!({
             "protocolVersion": "2025-11-25",
@@ -349,7 +349,10 @@ fn lan_clients_see_two_tools() {
         Some(&session),
         Reach::Lan,
     ));
-    assert_eq!(names(&listed), ["list_hosts", "run_command"]);
+    assert_eq!(
+        names(&listed),
+        ["list_hosts", "run_command", "run_command_on_hosts"]
+    );
     let modern = reply(request_in(
         &json!(3),
         "tools/list",
@@ -357,7 +360,10 @@ fn lan_clients_see_two_tools() {
         None,
         Reach::Lan,
     ));
-    assert_eq!(names(&modern), ["list_hosts", "run_command"]);
+    assert_eq!(
+        names(&modern),
+        ["list_hosts", "run_command", "run_command_on_hosts"]
+    );
     let discover = reply(request_in(
         &json!(4),
         "server/discover",
@@ -384,11 +390,16 @@ fn lan_clients_see_two_tools() {
     assert!(call("run_command", Reach::Lan).refusal(Lang::En).is_none());
     assert!(call("list_hosts", Reach::Lan).refusal(Lang::En).is_none());
     assert!(
+        call("run_command_on_hosts", Reach::Lan)
+            .refusal(Lang::En)
+            .is_none()
+    );
+    assert!(
         call("upload_file", Reach::Local)
             .refusal(Lang::En)
             .is_none()
     );
-    // 本机的客户端照旧四个工具
+    // 本机的客户端照旧全部五个工具
     let all = reply(request(&json!(6), "tools/list", None, Some(&session)));
-    assert_eq!(names(&all).len(), 4);
+    assert_eq!(names(&all).len(), 5);
 }

@@ -423,13 +423,31 @@ impl CommandPicker {
         }
     }
 
-    /// 写入终端；成功后关闭选择器，焦点回到终端。
+    /// 写入终端；成功后关闭选择器，焦点回到终端。要执行的、同步输入中的交给工作区（查危险命令规则、发给同步中的
+    /// 全部终端，见 `Workspace::deliver_command`）：先关闭选择器，确认框不会叠在它上面。
     fn finish(&mut self, input: CommandInput, window: &mut Window, cx: &mut Context<Self>) {
         let Some(panel) = self.target.as_ref().and_then(|t| t.upgrade()) else {
             self.error = Some(t!("snippets.no_terminal"));
             cx.notify();
             return;
         };
+        let workspace = crate::cli_bridge::workspace_in(window, cx);
+        let syncing = workspace
+            .as_ref()
+            .is_some_and(|w| w.read(cx).is_sync_member(panel.entity_id()));
+        if let Some(workspace) = workspace
+            && (syncing || matches!(input, CommandInput::Type(_)))
+        {
+            tracing::info!(session = %panel.read(cx).name(), syncing, "快捷命令选择器：交给工作区写入");
+            termlet_core::usage::mark(termlet_core::usage::Feature::QuickCommands);
+            window.close_dialog(cx);
+            panel.read(cx).focus_handle(cx).focus(window, cx);
+            let result = workspace.update(cx, |w, cx| w.deliver_command(&panel, input, window, cx));
+            if let Err(message) = result {
+                crate::notify::warning(message, window, cx);
+            }
+            return;
+        }
         match panel.update(cx, |panel, cx| panel.write_command(input, cx)) {
             Ok(()) => {
                 tracing::info!(session = %panel.read(cx).name(), "快捷命令选择器：写入终端");

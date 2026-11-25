@@ -1157,6 +1157,30 @@ cli_ui.audit.source_panel:
   zh-TW: 主機工具
   ja: ホストツール
   ko: 호스트 도구
+cli_ui.audit.source_batch:
+  zh-CN: 批量执行
+  en: Batch run
+  zh-TW: 批次執行
+  ja: 一括実行
+  ko: 일괄 실행
+cli_ui.audit.same_batch:
+  zh-CN: 同一批
+  en: Same batch
+  zh-TW: 同一批次
+  ja: 同じ一括実行
+  ko: 같은 일괄 실행
+cli_ui.audit.batch_filter:
+  zh-CN: 只看同一批
+  en: This batch only
+  zh-TW: 只看同一批次
+  ja: この一括実行のみ
+  ko: 이 일괄 실행만
+cli_ui.audit.batch_filter_clear:
+  zh-CN: 显示全部记录
+  en: Show all records
+  zh-TW: 顯示全部記錄
+  ja: すべての記録を表示
+  ko: 모든 기록 표시
 cli_ui.audit.status_ok:
   zh-CN: 已执行
   en: Executed
@@ -1164,11 +1188,11 @@ cli_ui.audit.status_ok:
   ja: 実行済み
   ko: 실행됨
 cli_ui.audit.status_failed:
-  zh-CN: 失败
-  en: Failed
-  zh-TW: 失敗
-  ja: 失敗
-  ko: 실패
+  zh-CN: 出错
+  en: Error
+  zh-TW: 出錯
+  ja: エラー
+  ko: 오류
 cli_ui.audit.status_canceled:
   zh-CN: 已取消
   en: Canceled

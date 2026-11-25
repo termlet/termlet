@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize as _;
 
 use crate::ErrorCode;
+use crate::batch::{BatchHostResult, BatchReport, BatchRequest, Resolution, Selector};
 
 /// 人类可读文本用的语言：服务端按它写错误说明。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +63,10 @@ pub enum Request {
     Upload(TransferRequest),
     /// 下载单个文件（`termlet download`）
     Download(TransferRequest),
+    /// 在一批主机上执行或传输（协议版本 2 起，见 [`crate::batch`]）
+    Batch(BatchRequest),
+    /// 展开选择条件，只列出会选中、会跳过哪些主机，不执行（`--list`，协议版本 2 起）
+    ResolveHosts(Selector),
     /// 已有实例在运行时，第二个 Termlet 进程把启动参数交给它（打开窗口、`ssh://` 链接等）后退出
     Activate {
         #[serde(default)]
@@ -109,6 +114,16 @@ pub enum Response {
     Hosts(Vec<HostSummary>),
     Exec(ExecResponse),
     Transfer(TransferResponse),
+    /// 批量执行（流式）：要执行与跳过的主机，批准之后、开始之前发
+    BatchStart(Resolution),
+    /// 批量执行（流式）：开始执行这台主机（主机 ID）
+    BatchStarted(String),
+    /// 批量执行（流式）：一台主机的结果
+    BatchHost(BatchHostResult),
+    /// 批量执行结束：汇总（不流式时含全部结果）
+    BatchDone(BatchReport),
+    /// [`Request::ResolveHosts`] 的回答
+    Resolved(Resolution),
     /// 成功、没有内容
     Ok,
     Error(ErrorBody),
@@ -139,6 +154,12 @@ pub struct ExecRequest {
     /// 在 Termlet 中已打开的这台主机的终端里执行（用户看得见），否则新建连接执行
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub terminal: bool,
+    /// 远程命令的标准输入（`--script`、`--input`，0.3.4 起；不能与 `terminal` 同用）；没有时不发送
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub stdin: String,
+    /// `stdin` 是脚本（`--script`）：同样按危险命令规则检查
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub stdin_script: bool,
     /// 调用方：`termlet` 的祖先进程名，由近到远（`bash`、`node`、`Code.exe`），审计时区分是谁调用的
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caller: Vec<String>,
@@ -253,6 +274,35 @@ mod tests {
                 command: "uptime".into(),
                 terminal: true,
                 caller: vec!["bash".into(), "node".into()],
+                ..Default::default()
+            }),
+            Request::Exec(ExecRequest {
+                host: "web-1".into(),
+                command: "bash -s -- a".into(),
+                stdin: "echo $1\n".into(),
+                stdin_script: true,
+                ..Default::default()
+            }),
+            Request::Batch(crate::BatchRequest {
+                selector: Selector {
+                    groups: vec!["生产/web".into()],
+                    tags: vec!["nginx".into()],
+                    exclude: vec!["web-3".into()],
+                    ..Default::default()
+                },
+                action: crate::BatchAction::Download {
+                    remote: "/var/log/syslog".into(),
+                    local: r"D:\logs".into(),
+                },
+                parallel: 4,
+                timeout_ms: None,
+                max_fail: Some(1),
+                stream: true,
+                caller: vec!["bash".into()],
+            }),
+            Request::ResolveHosts(Selector {
+                all: true,
+                ..Default::default()
             }),
             Request::Upload(TransferRequest {
                 host: "web-1".into(),
@@ -288,6 +338,18 @@ mod tests {
             }]),
             Response::Ok,
             Response::Error(ErrorBody::new(ErrorCode::CommandBlocked, "power")),
+            Response::BatchStarted("h_1".into()),
+            Response::BatchHost(BatchHostResult {
+                id: "h_1".into(),
+                name: "web".into(),
+                exit_code: Some(0),
+                ..Default::default()
+            }),
+            Response::BatchDone(BatchReport {
+                batch: "b_1".into(),
+                ..Default::default()
+            }),
+            Response::Resolved(Resolution::default()),
         ];
         for response in responses {
             let json = serde_json::to_string(&response).unwrap();
