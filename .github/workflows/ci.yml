@@ -105,7 +105,7 @@ jobs:
           rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与 testing/linux/Dockerfile 的版本相同
-      - uses: taiki-e/install-action@3a3daafd3b7f23b8f65d9f5ba2db203fb59b79e2 # v2.90.2
+      - uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2.90.4
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
@@ -131,7 +131,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: linux-core
-      - uses: taiki-e/install-action@3a3daafd3b7f23b8f65d9f5ba2db203fb59b79e2 # v2.90.2
+      - uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2.90.4
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
@@ -152,7 +152,7 @@ jobs:
           rustup set profile minimal
           rustup toolchain install
       # 预编译的二进制（校验发布页的 SHA-256），不从源码编译；与本机用的版本相同
-      - uses: taiki-e/install-action@3a3daafd3b7f23b8f65d9f5ba2db203fb59b79e2 # v2.90.2
+      - uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2.90.4
         with:
           tool: cargo-deny@0.20.2
           fallback: none
