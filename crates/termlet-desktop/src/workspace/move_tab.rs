@@ -39,6 +39,7 @@ use crate::editor::EditorPanel;
 use crate::host_tools::LogPanel;
 use crate::prose::prose;
 use crate::replay::ReplayPanel;
+use crate::settings::panel::SettingsPanel;
 use crate::sftp::panel::SftpPanel;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
@@ -60,6 +61,7 @@ pub(crate) enum MovingTab {
     Logs(Entity<LogPanel>),
     Replay(Entity<ReplayPanel>),
     Batch(Entity<BatchPanel>),
+    Settings(Entity<SettingsPanel>),
 }
 
 /// 移走的 Tab 用着的、可能要跟着它换窗口的东西。
@@ -79,7 +81,8 @@ impl MovingTab {
             MovingTab::Sftp(_)
             | MovingTab::Logs(_)
             | MovingTab::Replay(_)
-            | MovingTab::Batch(_) => Released::None,
+            | MovingTab::Batch(_)
+            | MovingTab::Settings(_) => Released::None,
         }
     }
 
@@ -91,14 +94,16 @@ impl MovingTab {
             MovingTab::Logs(p) => p.entity_id(),
             MovingTab::Replay(p) => p.entity_id(),
             MovingTab::Batch(p) => p.entity_id(),
+            MovingTab::Settings(p) => p.entity_id(),
         }
     }
 
-    /// 现在不能移的原因（终端、文件管理正在连接）。
+    /// 现在不能移的原因（终端、文件管理正在连接，设置有未保存的修改）。
     fn blocker(&self, cx: &App) -> Option<SharedString> {
         match self {
             MovingTab::Terminal(p) => p.read(cx).move_blocker(),
             MovingTab::Sftp(p) => p.read(cx).move_blocker(),
+            MovingTab::Settings(p) => p.read(cx).move_blocker(cx),
             MovingTab::Editor(_)
             | MovingTab::Logs(_)
             | MovingTab::Replay(_)
@@ -310,6 +315,9 @@ impl Workspace {
         if let Some(p) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
             return Some(p.read(cx).title_text(cx));
         }
+        if self.live_settings().is_some_and(|p| is(p.entity_id())) {
+            return Some(t!("settings.title"));
+        }
         self.live_replays()
             .into_iter()
             .find(|p| is(p.entity_id()))
@@ -358,6 +366,9 @@ impl Workspace {
         if let Some(p) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
             return Some(MovingTab::Batch(p));
         }
+        if let Some(p) = self.live_settings().filter(|p| is(p.entity_id())) {
+            return Some(MovingTab::Settings(p));
+        }
         self.live_replays()
             .into_iter()
             .find(|p| is(p.entity_id()))
@@ -384,10 +395,17 @@ impl Workspace {
             return;
         }
         if let MoveTarget::Window(handle) = target {
+            let target = workspace_in(handle, cx);
             let ready = handle != window.window_handle()
-                && workspace_in(handle, cx).is_some_and(|w| w.read(cx).accepts_tabs());
+                && target.as_ref().is_some_and(|w| w.read(cx).accepts_tabs());
             if !ready {
                 crate::notify::warning(t!("tab_window.window_gone"), window, cx);
+                return;
+            }
+            // 一个窗口最多一个设置 Tab
+            let has_settings = target.is_some_and(|w| w.read(cx).live_settings().is_some());
+            if matches!(tab, MovingTab::Settings(_)) && has_settings {
+                crate::notify::warning(t!("tab_window.settings_exists"), window, cx);
                 return;
             }
         }
@@ -472,6 +490,13 @@ impl Workspace {
                 self.dock_area
                     .update(cx, |dock, cx| dock.remove_panel(panel, window, cx));
             }
+            MovingTab::Settings(panel) => {
+                self.settings_watch = None;
+                self.settings_tab = None;
+                let panel = panel.clone();
+                self.dock_area
+                    .update(cx, |dock, cx| dock.remove_panel(panel, window, cx));
+            }
         }
         cx.notify();
     }
@@ -549,6 +574,12 @@ impl Workspace {
                 self.watch_batch(&panel, window, cx);
                 self.add_to_dock(panel_handle(panel.clone()), window, cx);
                 self.show_batch(&panel, window, cx);
+            }
+            MovingTab::Settings(panel) => {
+                panel.update(cx, |p, cx| p.rebind_window(window, cx));
+                self.watch_settings(&panel, window, cx);
+                self.add_to_dock(panel_handle(panel.clone()), window, cx);
+                self.show_settings(&panel, window, cx);
             }
         }
         cx.notify();

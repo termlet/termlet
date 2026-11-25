@@ -116,6 +116,19 @@ impl MasterPassword {
         cx.notify();
     }
 
+    /// 修改主密码正在进行。
+    pub(crate) fn is_busy(&self) -> bool {
+        self.busy
+    }
+
+    /// 锁定时清空输入到一半的密码（正在修改时不动）。
+    pub(crate) fn clear_secrets(&mut self, cx: &mut Context<Self>) {
+        if !self.busy && self.form.take().is_some() {
+            self.message = None;
+            cx.notify();
+        }
+    }
+
     fn cancel(&mut self, cx: &mut Context<Self>) {
         if self.busy {
             return;
@@ -191,8 +204,7 @@ impl MasterPassword {
         v_flex()
             .w(rems(20.))
             .gap_2()
-            // 在设置对话框中，输入框里的 Enter 先成为对话框的 Confirm：在这里提交并拦下，不交给对话框
-            // （会保存并关闭设置，看不到结果）
+            // 设置中输入框里的 Enter 转成 Confirm（与对话框中相同）：在这里提交并拦下
             .on_action(
                 cx.listener(|this, _: &gpui_kit::base::actions::Confirm, window, cx| {
                     this.submit(window, cx)

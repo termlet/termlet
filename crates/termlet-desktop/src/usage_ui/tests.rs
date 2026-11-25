@@ -238,7 +238,7 @@ fn nothing_is_sent_while_the_app_is_locked(cx: &mut TestAppContext) {
     );
 }
 
-/// 设置“关于”页（不经设置对话框）。
+/// 设置“关于”页（不经设置 Tab）。
 struct PageHarness {
     page: Entity<AboutExtras>,
 }

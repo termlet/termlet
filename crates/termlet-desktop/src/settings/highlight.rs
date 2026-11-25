@@ -67,7 +67,7 @@ pub(super) struct HighlightPage {
     rules: Vec<RuleRow>,
     next_key: u64,
     sample: Entity<InputState>,
-    /// 预览用的终端配色：设置中（尚未保存的）当前深浅的配色，由设置对话框在切到这一页时给出
+    /// 预览用的终端配色：设置中（尚未保存的）当前深浅的配色，由设置在切到这一页时给出
     scheme: Option<ColorScheme>,
     /// 上一次渲染时检查、匹配的结果：规则与示例文字没变时不重新编译正则
     memo: Option<Memo>,

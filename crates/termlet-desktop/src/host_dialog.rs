@@ -2562,7 +2562,7 @@ impl Render for HostForm {
             Page::Cli => self.render_cli(cx),
             Page::Tags => self.render_tags(cx),
         };
-        // 高 32rem，窗口矮时缩到窗口内（与设置对话框相同）：对话框放不下时 gpui-kit 0.8 起滚轮只滚对话框本身，
+        // 高 32rem，窗口矮时缩到窗口内：对话框放不下时 gpui-kit 0.8 起滚轮只滚对话框本身，
         // 右侧分页里的内容就滚不到了
         let height = rems(32.)
             .to_pixels(window.rem_size())

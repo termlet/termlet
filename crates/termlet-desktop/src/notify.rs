@@ -3,20 +3,23 @@
 //! - 错误与警告（[`error`]、[`warning`]，以及 [`show`] 中的这两种）：显示的同时写一条日志，排查问题时能从日志中
 //!   对上用户当时看到了什么。成功的提示不写日志。提示的文字本来就是给用户看的，不含秘密。
 //! - 在对话框中做的操作，结果用 [`show`]：gpui-kit 0.8 的对话框画在延迟绘制的一层（`deferred`，优先级 10 起），
-//!   通知列表画在普通的一层，对话框开着时弹出的通知被它盖住（设置对话框盖住右上角通知的左半边，短的提示整条看不见）。
-//!   开着时会产生结果的对话框（设置、审计日志、崩溃记录、查看公钥、命令历史、把本机代理借给服务器、Docker 清理、主机与
+//!   通知列表画在普通的一层，对话框开着时弹出的通知被它盖住（大的对话框盖住右上角通知的左半边，短的提示整条看不见）。
+//!   开着时会产生结果的对话框（审计日志、崩溃记录、查看公钥、命令历史、把本机代理借给服务器、Docker 清理、主机与
 //!   凭据档案等）在自己里面放一条提示行（[`NoticeLine`]），打开后登记在窗口上（[`attach`]），开着时结果写在其中
 //!   一条里（选哪条见 `top_line`）；窗口中没有开着的对话框或没有登记的提示行时照常弹出通知。新加这样的对话框时
 //!   照此办理。
-//!   与对话框无关的提示（终端、SFTP 等在后台得到的结果）仍用通知。
+//! - 设置 Tab 的提示行也登记在窗口上（[`attach_tab`]）：没有开着的对话框、焦点在设置里时结果写在保存条上，靠近
+//!   做操作的地方；焦点在别处时照常弹出通知。
+//!   与对话框、设置无关的提示（终端、SFTP 等在后台得到的结果）仍用通知。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, WindowExt as _, h_flex};
 use gpui_kit::{
-    AnyWindowHandle, App, AppContext as _, Context, Entity, Global, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, TestSupportExt as _, WeakEntity, Window, div, prelude::FluentBuilder as _,
+    AnyWindowHandle, App, AppContext as _, Context, Entity, FocusHandle, Global,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, SharedString,
+    StatefulInteractiveElement as _, Styled as _, TestSupportExt as _, WeakEntity, Window, div,
+    prelude::FluentBuilder as _,
 };
 
 use crate::dialog_token::DialogToken;
@@ -115,18 +118,31 @@ impl Global for Lines {}
 pub fn attach(line: &Entity<NoticeLine>, window: &Window, cx: &mut App) {
     let token = DialogToken::take(window, cx);
     line.update(cx, |line, _| line.dialog = token);
+    register(line, window, cx);
+}
+
+/// 设置 Tab 里的提示行：焦点在 `focus` 里（且没有开着的对话框）时结果写在这里。Tab 移到别的窗口后重新登记。
+pub fn attach_tab(line: &Entity<NoticeLine>, focus: FocusHandle, window: &Window, cx: &mut App) {
+    line.update(cx, |line, _| line.tab = Some(focus));
+    register(line, window, cx);
+}
+
+fn register(line: &Entity<NoticeLine>, window: &Window, cx: &mut App) {
     let lines = &mut cx.default_global::<Lines>().0;
-    lines.retain(|(_, existing)| existing.upgrade().is_some());
+    lines.retain(|(_, existing)| {
+        existing
+            .upgrade()
+            .is_some_and(|existing| existing.entity_id() != line.entity_id())
+    });
     lines.push((window.window_handle(), line.downgrade()));
 }
 
-/// 结果写在哪条提示行里：窗口中没有开着的对话框时没有；焦点在哪个带提示行的对话框里就写在它的里面（上面的刚关掉、
-/// 还在退出的过程中时，焦点已经回到下面的对话框）；焦点在别的对话框里（确认框、导出等叠在上面的对话框，多半随即
-/// 关闭）时写在最后登记的那条里。
+/// 结果写在哪条提示行里：
+/// - 窗口中有开着的对话框时：焦点在哪个带提示行的对话框里就写在它的里面（上面的刚关掉、还在退出的过程中时，焦点
+///   已经回到下面的对话框）；焦点在别的对话框里（确认框、导出等叠在上面的对话框，多半随即关闭）时写在最后登记的
+///   那条里。设置 Tab 的提示行被对话框盖着，不算。
+/// - 没有开着的对话框时：焦点在设置 Tab 里就写在它的提示行里，否则没有（弹出通知）。
 fn top_line(window: &mut Window, cx: &mut App) -> Option<Entity<NoticeLine>> {
-    if !window.has_active_dialog(cx) {
-        return None;
-    }
     let handle = window.window_handle();
     let lines: Vec<Entity<NoticeLine>> = cx
         .try_global::<Lines>()?
@@ -135,6 +151,17 @@ fn top_line(window: &mut Window, cx: &mut App) -> Option<Entity<NoticeLine>> {
         .filter(|(owner, _)| *owner == handle)
         .filter_map(|(_, line)| line.upgrade())
         .collect();
+    let (tabs, lines): (Vec<_>, Vec<_>) = lines
+        .into_iter()
+        .partition(|line| line.read(cx).tab.is_some());
+    if !window.has_active_dialog(cx) {
+        return tabs.into_iter().find(|line| {
+            line.read(cx)
+                .tab
+                .as_ref()
+                .is_some_and(|focus| focus.contains_focused(window, cx))
+        });
+    }
     let focused = lines.iter().rev().find(|line| {
         line.read(cx)
             .dialog
@@ -150,6 +177,8 @@ pub struct NoticeLine {
     notice: Option<Notice>,
     /// 所在的对话框（[`attach`] 时记下）
     dialog: Option<DialogToken>,
+    /// 所在的设置 Tab 的焦点（[`attach_tab`] 时记下）
+    tab: Option<FocusHandle>,
 }
 
 impl NoticeLine {
@@ -158,6 +187,7 @@ impl NoticeLine {
         cx.new(|_| Self {
             notice: None,
             dialog: None,
+            tab: None,
         })
     }
 

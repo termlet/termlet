@@ -299,7 +299,6 @@ fn settings_pages_stay_small(cx: &mut TestAppContext) {
                     ));
                 }
             }
-            window.click("settings-cancel", cx);
             assert!(
                 total > 0,
                 "没有量到任何控件：看看设置页的元素 ID 与控件的无障碍角色有没有变"

@@ -21,7 +21,7 @@ use super::page::{BackupPage, BackupPageEvent};
 use crate::app_state::AppState;
 use crate::testkit::wait_until;
 
-/// 测试窗口的内容：空白，或放着备份页（与设置对话框中的位置无关）。
+/// 测试窗口的内容：空白，或放着备份页（与设置中的位置无关）。
 struct Harness {
     page: Option<Entity<BackupPage>>,
     events: Rc<RefCell<Vec<BackupPageEvent>>>,

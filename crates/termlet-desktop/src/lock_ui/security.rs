@@ -123,13 +123,28 @@ impl SecurityPage {
         }
     }
 
+    /// 启用、修改、停用密码或修改主密码正在进行（这时设置不重新载入这一页）。
+    pub(crate) fn is_busy(&self, cx: &App) -> bool {
+        self.busy || self.master.read(cx).is_busy()
+    }
+
+    /// 锁定时清空输入到一半的密码（进行中的操作不动）。
+    pub(crate) fn clear_secrets(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+        if !self.busy && self.form.take().is_some() {
+            self.message = None;
+        }
+        self.master
+            .update(cx, |master, cx| master.clear_secrets(cx));
+        cx.notify();
+    }
+
     /// 修改主密码的一节（测试用）。
     #[cfg(test)]
     pub(super) fn master(&self) -> &Entity<MasterPassword> {
         &self.master
     }
 
-    /// 把三项设置写进本机设置（随设置对话框的“保存”）。
+    /// 把三项设置写进本机设置（随设置的“保存”）。
     pub(crate) fn apply(&self, local: &mut LocalSettings) {
         let settings = &mut local.app_lock;
         settings.idle_minutes = self.idle_minutes;
@@ -412,8 +427,8 @@ impl SecurityPage {
         v_flex()
             .w(rems(20.))
             .gap_2()
-            // 在设置对话框中，输入框里的 Enter 先成为对话框的 Confirm：在这里提交密码并拦下，
-            // 不交给对话框（会保存并关闭设置，看不到结果）。不在对话框中时由 PressEnter 提交
+            // 设置中输入框里的 Enter 转成 Confirm（与对话框中相同）：在这里提交密码并拦下。单独测试这一页时
+            // 没有这个转换，由 PressEnter 提交
             .on_action(
                 cx.listener(|this, _: &gpui_kit::base::actions::Confirm, window, cx| {
                     this.submit(window, cx)

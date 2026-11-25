@@ -2,7 +2,7 @@
 //!
 //! 没有设置时只有“设置定时备份…”；设置表单：文件夹、每天 / 每周与星期几、时间、保留份数、备份密码（两次输入；
 //! 更改设置时留空沿用原来的）。设置之后显示计划、下一次的时间、上次的结果（时间、成功或失败的原因），可以立即备份、
-//! 更改设置、打开文件夹、停止。这些操作都立即执行，不随设置对话框的“保存”。
+//! 更改设置、打开文件夹、停止。这些操作都立即执行，不随设置的“保存”。
 
 use std::path::PathBuf;
 
@@ -139,6 +139,11 @@ pub(super) struct ScheduleView {
 }
 
 impl ScheduleView {
+    /// 清空输入到一半的定时备份密码（锁定时）。
+    pub(super) fn clear_password(&self, window: &mut Window, cx: &mut App) {
+        self.password.clear(window, cx);
+    }
+
     /// 建好表单并订阅核心的状态；返回的订阅由页面保存。
     pub(super) fn new(
         window: &mut Window,
@@ -736,7 +741,7 @@ impl BackupPage {
             .pt_4()
             .border_t_1()
             .border_color(border)
-            // 输入框中的 Enter 保存定时备份的设置，不交给设置对话框（会保存并关闭设置）
+            // 输入框中的 Enter（设置把它转成 Confirm）保存定时备份的设置，到这里为止
             .on_action(
                 cx.listener(|this, _: &gpui_kit::base::actions::Confirm, window, cx| {
                     this.schedule_confirm(window, cx)

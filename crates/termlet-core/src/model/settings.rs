@@ -492,8 +492,7 @@ impl Default for CliSettings {
 }
 
 /// MCP 的 HTTP 接入（见 `cli::http`）：默认只在 127.0.0.1 上监听，可以改为同时接受局域网的连接。令牌不在这里：
-/// 它们的摘要与经保险库加密的原文在本机的 `meta` 表中（设置对话框保存时会整组写回本机设置，放在这里会被打开对话框时
-/// 的旧值覆盖）。
+/// 它们的摘要与经保险库加密的原文在本机的 `meta` 表中（不跟着设置的草稿保存：重新生成立即生效，与“保存”无关）。
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct CliHttpSettings {

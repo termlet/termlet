@@ -1,7 +1,7 @@
 //! 设置中的「AI 与自动化」页：外部 CLI 的开关（“允许 AI 工具与脚本访问”）、审计日志入口、命令行工具、Agent Skill 与
 //! MCP 服务的接入，以及危险命令规则。
 //!
-//! 开关、MCP 的 HTTP 接入（开关与端口）与规则是草稿，随设置对话框的“保存”写入（[`CliPage::apply`]，有不能使用的
+//! 开关、MCP 的 HTTP 接入（开关与端口）与规则是草稿，随设置的“保存”写入（[`CliPage::apply`]，有不能使用的
 //! 自定义规则或端口时 [`CliPage::validate`] 返回错误）；安装、PATH、重新生成 HTTP 令牌立即执行。规则测试用草稿中的
 //! 规则，输入命令时即时显示命中哪一条。
 
@@ -131,6 +131,13 @@ impl CliPage {
         guard.disabled_rules = self.disabled_rules.clone();
         guard.custom_rules = custom_patterns(self.custom.iter().map(|r| r.pattern.as_str()));
         guard.approval = self.approval;
+    }
+
+    /// 立即执行的操作（重新生成令牌、安装 Skill、修改 PATH）正在进行（这时设置不重新载入这一页）。
+    pub(crate) fn is_busy(&self, cx: &App) -> bool {
+        self.mcp.read(cx).http.read(cx).is_busy()
+            || self.skill.read(cx).is_busy()
+            || self.tool.read(cx).is_busy()
     }
 
     /// 有不能使用的自定义规则（不合法的正则、会匹配空命令的、超出数量上限的）时不能保存。
@@ -446,7 +453,7 @@ impl CliPage {
             .child(
                 v_flex()
                     .gap_1()
-                    // 试一试的命令按 Enter 不交给设置对话框（会保存并关闭设置）
+                    // 试一试的命令按 Enter（设置把它转成 Confirm）什么也不做
                     .on_action(|_: &gpui_kit::base::actions::Confirm, _, _| {})
                     .child(
                         Input::new(&self.test)

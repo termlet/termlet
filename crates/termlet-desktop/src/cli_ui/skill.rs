@@ -1,5 +1,5 @@
 //! 「AI 与自动化」页的 Agent Skill：通用目录、Claude Code、WorkBuddy 中的安装状态，安装、更新、删除
-//! （立即执行，结果写在设置对话框底部）；以前装在 Codex 旧位置的可以移到通用目录。“复制 Skill”给其他 AI 工具用。
+//! （立即执行，结果写在设置底部的提示行里）；以前装在 Codex 旧位置的可以移到通用目录。“复制 Skill”给其他 AI 工具用。
 
 use std::path::PathBuf;
 
@@ -113,6 +113,11 @@ fn id(name: &str, agent: Agent) -> ElementId {
 }
 
 impl SkillSection {
+    /// 正在安装、移动 Agent Skill。
+    pub(super) fn is_busy(&self) -> bool {
+        self.busy.is_some()
+    }
+
     pub(super) fn new(env: CliEnv, cx: &mut Context<Self>) -> Self {
         let mut this = Self {
             env,

@@ -63,7 +63,7 @@ impl HostCasSection {
         .detach();
     }
 
-    /// 从选好的 known_hosts 文件导入。结果写在设置对话框底部（[`notify::show`]：弹出的通知会被对话框盖住）。
+    /// 从选好的 known_hosts 文件导入。结果写在设置底部的提示行里（[`notify::show`]），靠近做操作的地方。
     fn import_file(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
         let store = AppState::store(cx);
         cx.spawn_in(window, async move |this, cx| {
@@ -395,10 +395,9 @@ mod tests {
     use crate::settings::Page;
     use crate::testkit::{open_workspace, poll_until};
 
-    // 设置开着时从 known_hosts 导入：结果写在设置对话框底部，在对话框之内，不弹出通知（通知画在对话框之下，
-    // 前半句“导入了 1 个 CA”会被盖住）
+    // 设置开着时从 known_hosts 导入：结果写在设置底部的提示行里、靠近做操作的地方，不弹出通知
     #[gpui_kit::test]
-    fn import_result_shows_inside_the_settings_dialog(cx: &mut TestAppContext) {
+    fn import_result_shows_inside_settings(cx: &mut TestAppContext) {
         let handle = open_workspace(cx);
         set_language(Language::ZhCn);
         let dir = std::env::temp_dir().join(format!(
@@ -445,14 +444,14 @@ mod tests {
             window.render_frame(cx);
             assert_eq!(shown(window, cx), Some(expected));
             assert_eq!(window.notifications(cx).len(), toasts, "不弹出通知");
-            let dialog = window.find("settings-dialog").bounds();
+            let tab = window.find("settings-tab").bounds();
             let notice = window.find("dialog-notice").bounds();
             assert!(
-                notice.left() >= dialog.left()
-                    && notice.right() <= dialog.right()
-                    && notice.top() >= dialog.top()
-                    && notice.bottom() <= dialog.bottom(),
-                "提示在设置对话框之内：{notice:?} / {dialog:?}"
+                notice.left() >= tab.left()
+                    && notice.right() <= tab.right()
+                    && notice.top() >= tab.top()
+                    && notice.bottom() <= tab.bottom(),
+                "提示在设置之内：{notice:?} / {tab:?}"
             );
         })
         .unwrap();

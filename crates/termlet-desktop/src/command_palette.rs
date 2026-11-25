@@ -62,6 +62,8 @@ pub enum TabRef {
     Replay(WeakEntity<ReplayPanel>),
     /// 批量执行
     Batch(WeakEntity<BatchPanel>),
+    /// 设置
+    Settings(WeakEntity<crate::settings::panel::SettingsPanel>),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -495,6 +497,9 @@ impl CommandPalette {
                         p.upgrade()?.read(cx).title_text(cx),
                         t!("palette.tab_detail_batch"),
                     ),
+                    TabRef::Settings(p) => {
+                        (t!("settings.title"), p.upgrade()?.read(cx).page_title(cx))
+                    }
                 };
                 Some(Entry {
                     category: Category::Tab,
@@ -547,6 +552,11 @@ impl CommandPalette {
             Target::Tab(TabRef::Batch(panel)) => {
                 if let Some(panel) = panel.upgrade() {
                     workspace.update(cx, |w, cx| w.show_batch(&panel, window, cx));
+                }
+            }
+            Target::Tab(TabRef::Settings(panel)) => {
+                if let Some(panel) = panel.upgrade() {
+                    workspace.update(cx, |w, cx| w.show_settings(&panel, window, cx));
                 }
             }
             Target::Workspace(id) => {

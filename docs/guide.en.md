@@ -1537,7 +1537,14 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
   - text, buttons, panels and dialogs scale together in every window as soon as you save;
   - "Use system setting" matches Text size in Windows Settings > Accessibility, and is 100% on macOS and Linux;
   - the sidebar and host tools panel widths scale too; the terminal font size doesn't.
-- Changes apply when you click "Save".
+- Settings open as a tab in the main window (the gear in the title bar, "Settings" in the command palette, ⌘, on macOS):
+  - each window has at most one, and opening it again switches to it and shows the page you asked for;
+  - you can drag it beside a terminal or move it to another window (save or discard changes first);
+  - when the tab is narrow the categories on the left show only icons, with the name on hover.
+- Changes apply when you click "Save" (Ctrl+S, ⌘S on macOS), and Settings stay open so you can keep adjusting; "Discard changes" goes back to what was last saved.
+- With unsaved changes the tab name starts with "●" and closing the tab asks whether to save, discard or cancel; closing the window or quitting includes them in its confirmation.
+- If settings change elsewhere while the tab is open (switching light / dark from the title bar, sync, another window), the tab follows along when you have no unsaved changes; otherwise saving writes only what you changed and never puts the other change back.
+- Actions that take effect at once (the app lock password, backup and restore, sync, regenerating tokens and so on) don't wait for "Save"; their results appear at the bottom of Settings. Half-typed passwords are cleared when Termlet locks.
 
 ### Font and cursor
 

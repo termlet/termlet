@@ -1,11 +1,11 @@
 //! 设置中的“备份”：完整备份（用密码加密的文件，可在另一台电脑上恢复）与恢复、定时备份（见 [`schedule`]）、
 //! 本机快照（列表、立即保存、恢复）、自动快照的设置。
 //!
-//! - 备份、恢复、快照、定时备份的设置都立即执行，与设置对话框的“保存”无关；自动快照的开关与份数是草稿，随“保存”写入
+//! - 备份、恢复、快照、定时备份的设置都立即执行，与设置的“保存”无关；自动快照的开关与份数是草稿，随“保存”写入
 //!   （[`BackupPage::validate`]、[`BackupPage::apply`]）。
 //! - 恢复（完整备份或快照）成功后停止正在运行的端口转发（规则可能已不存在），并发出 [`BackupPageEvent::Restored`]：
-//!   存储已发出全部种类的变更事件，各视图自己重新读取；设置对话框中其余分类的草稿已过时，由主会话决定是否关闭对话框。
-//! - 完整备份区域里的输入框按 Enter 执行当前的一步（备份、读取备份），不会触发设置对话框的“保存”。
+//!   存储已发出全部种类的变更事件，各视图自己重新读取；设置中其余分类的草稿已过时，由设置从存储重新载入。
+//! - 完整备份区域里的输入框按 Enter 执行当前的一步（备份、读取备份），不会触发设置的“保存”。
 
 use std::path::PathBuf;
 
@@ -50,7 +50,7 @@ const KEEP_RANGE: (u32, u32) = (1, 30);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum BackupPageEvent {
     /// 已用完整备份或快照替换了全部数据（端口转发已停止）。`vault_reset`：主密钥丢失，恢复前重置了保险库；
-    /// `message` 是页面上显示的结果说明（关闭设置对话框时可以改用通知显示）
+    /// `message` 是页面上显示的结果说明（设置重新载入后改在提示行里显示）
     Restored {
         vault_reset: bool,
         message: SharedString,
@@ -193,6 +193,14 @@ impl BackupPage {
         };
         this.load_snapshots(cx);
         this
+    }
+
+    /// 锁定时清空输入到一半的密码（备份、恢复与定时备份的）。
+    pub(crate) fn clear_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.password.clear(window, cx);
+        self.restore_password
+            .update(cx, |s, cx| s.set_value("", window, cx));
+        self.schedule.clear_password(window, cx);
     }
 
     /// 草稿是否可以保存。
@@ -408,7 +416,7 @@ impl BackupPage {
         tracing::info!(path = %path.display(), created = %time, "从完整备份恢复");
         let job = runtime::spawn(async move {
             let result = backups.restore_backup(target, password).await;
-            // 停止端口转发放在后台任务里：页面（设置对话框）中途没了也照样执行
+            // 停止端口转发放在后台任务里：页面（设置）中途没了也照样执行
             if result.is_ok() {
                 forwards.close_all().await;
             }
@@ -531,7 +539,7 @@ impl BackupPage {
         cx.notify();
     }
 
-    /// 是否有操作正在进行：设置对话框这时不能关闭（关掉后结果没处显示，恢复后的收尾也做不了）。
+    /// 是否有操作正在进行：设置这时不能关闭、不能移到别的窗口（关掉后结果没处显示，恢复后的收尾也做不了）。
     pub(crate) fn is_busy(&self) -> bool {
         self.busy.is_some()
     }
@@ -814,7 +822,7 @@ impl BackupPage {
         v_flex()
             .id("backup-full")
             .gap_3()
-            // 输入框中的 Enter 执行这里的一步，不交给设置对话框（会保存并关闭设置）
+            // 输入框中的 Enter（设置把它转成 Confirm）执行这里的一步，到这里为止
             .on_action(
                 cx.listener(|this, _: &gpui_kit::base::actions::Confirm, window, cx| {
                     this.on_confirm(window, cx)

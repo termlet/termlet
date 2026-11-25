@@ -136,7 +136,7 @@ impl Render for KnownHostsPage {
         let empty = self.entries.is_empty();
         v_flex()
             .gap_3()
-            // 搜索框中的 Enter 不交给设置对话框（会保存并关闭设置）
+            // 搜索框中的 Enter（设置把它转成 Confirm）什么也不做
             .on_action(|_: &gpui_kit::base::actions::Confirm, _, _| {})
             .child(
                 div()

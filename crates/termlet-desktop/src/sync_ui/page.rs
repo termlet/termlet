@@ -298,7 +298,7 @@ enum Started {
     Synced(Result<SyncOutcome, SyncError>),
 }
 
-/// 设置中的“同步”页（页标题与导航由设置对话框画）。
+/// 设置中的“同步”页（页标题与导航由设置画）。
 pub(crate) struct SyncPage {
     model: Entity<SyncModel>,
     /// 已设置同步时正在更改设置
@@ -581,6 +581,13 @@ impl SyncPage {
         location && !self.password.read(cx).value().is_empty()
     }
 
+    /// 锁定时清空输入到一半的秘密（密码、访问密钥、令牌）。
+    pub(crate) fn clear_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        for state in self.secret_inputs() {
+            state.update(cx, |s, cx| s.set_value("", window, cx));
+        }
+    }
+
     /// 输入了秘密的框（完成、取消设置时清空，不留在表单里）。
     fn secret_inputs(&self) -> [&Entity<InputState>; 5] {
         [
@@ -819,7 +826,7 @@ impl SyncPage {
         cx.notify();
     }
 
-    /// 表单中的 Enter：与点“开始同步”相同（不交给设置对话框，否则会保存并关闭设置、丢掉填好的表单）。
+    /// 表单中的 Enter（设置把它转成 Confirm）：与点“开始同步”相同。
     fn on_confirm(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let configured = self.model.read(cx).status().config.is_some();
         if (!configured || self.editing) && self.busy.is_none() && self.is_filled(cx) {

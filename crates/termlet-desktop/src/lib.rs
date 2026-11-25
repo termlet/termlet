@@ -251,6 +251,7 @@ pub fn init(cx: &mut gpui_kit::App) {
     host_tools::init(cx);
     editor::init(cx);
     replay::init(cx);
+    settings::panel::init(cx);
     workspace::init(cx);
     // 在各模块的快捷键之后：macOS 菜单上显示的快捷键取自键位表
     app_menu::init(cx);

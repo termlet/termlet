@@ -868,3 +868,33 @@ impl Render for EmptyView {
         div().size_full()
     }
 }
+
+// 锁定时清空设置里输入到一半的密码：修改锁定密码的表单收起，解锁后要重新输入
+#[gpui_kit::test]
+fn locking_clears_passwords_typed_in_settings(cx: &mut TestAppContext) {
+    let _dir = setup(cx, FakePlatform::new(false));
+    enable_lock(cx, "secret-1");
+    let (handle, _form) = open(cx, |window, cx| {
+        crate::settings::SettingsForm::new(crate::settings::Page::Security, window, cx)
+    });
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("security-change", cx);
+        window.render_frame(cx);
+        window.click("security-current", cx);
+        window.input("secret-1", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("security-current").is_some());
+    })
+    .unwrap();
+    assert!(cx.update(super::lock_now));
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(
+            window.try_find("security-current").is_none(),
+            "锁定后清掉输入到一半的密码"
+        );
+    })
+    .unwrap();
+}

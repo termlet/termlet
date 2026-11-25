@@ -1,21 +1,25 @@
-//! 设置：左侧分类导航，右侧是该分类的内容；“保存”一次应用所有分类的修改，“取消”或 Esc 放弃。
+//! 设置：主窗口停靠区中的一个 Tab（[`panel::SettingsPanel`]，一个窗口最多一个），左侧分类导航，右侧是该分类的内容，
+//! 底部的保存条上“保存”一次写入所有分类的修改，“放弃修改”回到上次保存的值。保存后 Tab 不关，可以接着改。
 //!
-//! 点击对话框外部不关闭（避免丢失修改）。保存时只写入与打开时不同的设置组：打开期间别处（云同步、另一个窗口）
-//! 改了别的组不会被这里的旧值覆盖。
-//!
-//! 立即执行的操作（导入、清除、复制、安装等，与“保存”无关）的结果写在底部的提示行里，换分类时清掉：弹出的通知
-//! 会被对话框盖住（见 [`crate::notify`]）。
+//! - 草稿：打开时从存储取一份，界面上的修改都在草稿里，保存时与存储中现在的值按字段三方合并（见
+//!   [`termlet_core::model::merge_settings`]）：Tab 开着期间别处（标题栏、命令面板、云同步、另一个窗口）改的字段不会被
+//!   这里的旧值覆盖。没有未保存的修改时别处改了设置，界面跟着重新载入（[`SettingsForm::reload_from_store`]）。
+//! - 立即执行的操作（导入、清除、复制、安装等，与“保存”无关）的结果写在保存条左边的提示行里，换分类时清掉。
+//! - 锁定时清空各页中输入到一半的密码。
 
 mod fonts;
 mod highlight;
 mod host_cas;
 mod known_hosts;
 mod local;
+pub(crate) mod panel;
 mod schemes;
 mod shortcuts;
 mod startup;
 mod toolbar;
 
+use std::cell::Cell;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use gpui_kit::assets::IconName;
@@ -23,31 +27,31 @@ use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::form::{Field, field, v_form};
-use gpui_kit::component::input::{Input, InputState};
-use gpui_kit::component::notification::Notification;
+use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::radio::RadioGroup;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::Select;
 use gpui_kit::component::sidebar::{SidebarItem as _, SidebarMenuItem};
 use gpui_kit::component::{
-    ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
-    v_flex,
+    ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, InteractiveElement as _,
-    IntoElement, ParentElement as _, PathPromptOptions, Render, ScrollHandle, SharedString,
-    StatefulInteractiveElement as _, Styled as _, Subscription, Task, TestSupportExt as _, Window,
-    div, point, prelude::FluentBuilder as _, px, rems,
+    IntoElement, MouseButton, ParentElement as _, PathPromptOptions, Render, ScrollHandle,
+    SharedString, StatefulInteractiveElement as _, Styled as _, Subscription, Task,
+    TestSupportExt as _, Window, canvas, div, point, prelude::FluentBuilder as _, px, rems,
 };
 use termlet_core::history;
 use termlet_core::model::{
     CursorShape, ExternalLaunch, IconStyle, LanguageSetting, LocalSettings, MonitorBar,
-    RemoteEditorSetting, RightClick, Settings, TabPosition, ThemeSetting,
+    RemoteEditorSetting, RightClick, Settings, TabPosition, ThemeSetting, merge_local_settings,
+    merge_settings,
 };
-use termlet_core::store::Store;
+use termlet_core::store::{Store, StoreEvent};
 
 use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
-use crate::dialog_token::{DialogToken, close_own};
 use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::{store_errors, t};
@@ -183,50 +187,43 @@ PS1="$PS1"$'%{\e]133;B\a%}'"#,
     ),
 ];
 
-/// 打开设置，显示 `page` 分类。
+/// 设置这一栏窄于它（rem）时，分类导航只显示图标（悬停显示分类名）：与终端并排、窗口窄、界面放大时给内容留地方。
+const COMPACT_NAV_WIDTH: f32 = 40.;
+
+/// 右侧内容的最大宽度（rem）：窗口再宽也不把说明拉成很长的一行。
+const CONTENT_MAX_WIDTH: f32 = 46.;
+
+/// 打开设置，显示 `page` 分类：在这个窗口中打开设置 Tab，已经开着时切过去。不在工作区自己的更新中调用（工作区里
+/// 用 [`crate::workspace::Workspace::open_settings`]）。
 pub fn open(page: Page, window: &mut Window, cx: &mut App) {
-    tracing::debug!(page = ?page, "打开设置");
-    let form = cx.new(|cx| SettingsForm::new(page, window, cx));
-    let width = rems(48.).to_pixels(window.rem_size());
-    let owner = form.clone();
-    window.open_dialog(cx, move |dialog, _, cx| {
-        // 备份、恢复进行中不能关闭（Esc、右上角的关闭按钮也不行）
-        let blocked = form.read(cx).closing_blocked(cx);
-        // 在输入框中按 Enter 由对话框转给 on_ok：与点“保存”相同（有错误时不关闭）
-        let save = {
-            let form = form.clone();
-            move |_: &gpui_kit::ClickEvent, window: &mut Window, cx: &mut App| {
-                form.update(cx, |form, cx| form.save(window, cx))
-            }
-        };
-        dialog
-            .title(t!("settings.title"))
-            .w(width)
-            .overlay_closable(false)
-            .close_button(!blocked)
-            .keyboard(!blocked)
-            .child(form.clone())
-            .on_ok(save)
-    });
-    let token = DialogToken::take(window, cx);
-    let notice = owner.update(cx, |form, _| {
-        form.dialog = token;
-        form.notice.clone()
-    });
-    notify::attach(&notice, window, cx);
+    match crate::workspace::Workspace::in_window(window, cx) {
+        Some(workspace) => workspace.update(cx, |workspace, cx| {
+            workspace.open_settings(page, window, cx)
+        }),
+        None => tracing::warn!(page = ?page, "这个窗口不是主窗口，打不开设置"),
+    }
 }
 
 pub(crate) struct SettingsForm {
     page: Page,
+    /// 整个设置的焦点：焦点在里面时操作的结果写进这里的提示行，Ctrl+S 保存
+    focus: gpui_kit::FocusHandle,
     /// 左侧分页导航的焦点（见 [`crate::page_nav`]）
     nav_focus: gpui_kit::FocusHandle,
     store: Arc<Store>,
-    /// 打开时的设置：保存时只写入与它不同的组
+    /// 载入时（打开、保存、放弃、重新载入）存储中的设置：保存时以它为基准与存储中现在的值三方合并
     initial: Settings,
     initial_local: LocalSettings,
     /// 正在编辑的设置（复选框直接改这里，输入框与下拉框在保存时读出）
     draft: Settings,
     local: LocalSettings,
+    /// 载入时界面上的值（[`Self::collect`]）：现在的与它不同才算有未保存的修改。不直接与 `initial` 比：有的值读进
+    /// 界面再读出来会规范化（多余的空格、旧版本的写法），没动过也不该算修改
+    baseline: Option<(Settings, LocalSettings)>,
+    /// 有未保存的修改（界面上的值可能变了时由 [`Self::refresh_dirty`] 重新计算；Tab 名前的“●”、保存条据此显示）
+    dirty: bool,
+    /// 上一帧设置这一栏的位置与大小：窄时分类导航只显示图标
+    bounds: Rc<Cell<gpui_kit::Bounds<gpui_kit::Pixels>>>,
     language: Entity<ChoiceState<LanguageSetting>>,
     theme: Entity<ChoiceState<ThemeSetting>>,
     icons: Entity<ChoiceState<IconStyle>>,
@@ -274,14 +271,12 @@ pub(crate) struct SettingsForm {
     notice: Entity<NoticeLine>,
     /// 右边分类内容的滚动位置：换分类时回到顶上（否则沿用上一页滚到的位置）
     page_scroll: ScrollHandle,
-    /// 设置所在的对话框（恢复备份完成后只关它）
-    dialog: Option<DialogToken>,
     _tasks: Vec<Task<()>>,
     _subscriptions: Vec<Subscription>,
 }
 
 impl SettingsForm {
-    fn new(page: Page, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub(crate) fn new(page: Page, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let store = AppState::store(cx);
         let settings = store.settings();
         let local_settings = store.local_settings();
@@ -446,35 +441,107 @@ impl SettingsForm {
             cx.new(|cx| crate::cli_ui::CliPage::new(&settings, &local_settings, window, cx));
         let backup_page =
             cx.new(|cx| crate::backup_ui::BackupPage::new(&local_settings, window, cx));
-        // 恢复替换了全部数据（包括设置）：对话框里的草稿已经过时，关闭对话框并说明结果
+        // 恢复替换了全部数据（包括设置）：草稿已经过时，从存储重新载入，结果写在提示行里
         let backup_restored = cx.subscribe_in(
             &backup_page,
             window,
             |this, _, event: &crate::backup_ui::BackupPageEvent, window, cx| match event {
                 crate::backup_ui::BackupPageEvent::Restored { message, .. } => {
-                    close_own(this.dialog.as_ref(), window, cx);
-                    window.push_notification(Notification::success(message.clone()), cx);
+                    this.reload_from_store(true, window, cx);
+                    notify::show(Notice::success(message.clone()), window, cx);
                 }
             },
         );
         let sync_page = cx.new(|cx| crate::sync_ui::SyncPage::new(window, cx));
         let schemes = cx.new(|cx| SchemesPage::new(&settings, window, cx));
-        let subscriptions = vec![
+        let mut subscriptions = vec![
             // 字号改了：预览跟着变
             cx.observe(&font_size, |_, _, cx| cx.notify()),
             cx.observe(&font_family, |_, _, cx| cx.notify()),
             // “终端”分页显示当前的配色
             cx.observe(&schemes, |_, _, cx| cx.notify()),
             backup_restored,
+            // 别处改了设置：没有未保存的修改时跟着重新载入
+            cx.subscribe_in(
+                &AppState::global(cx).store.clone(),
+                window,
+                |this, _, event: &StoreEvent, window, cx| {
+                    if matches!(
+                        event,
+                        StoreEvent::SettingsChanged | StoreEvent::LocalSettingsChanged
+                    ) {
+                        this.on_external_change(window, cx);
+                    }
+                },
+            ),
         ];
+        // 锁定时清空各页中输入到一半的密码（锁屏盖住了设置，草稿照留）
+        if let Some(model) = crate::lock_ui::lock_model(cx) {
+            subscriptions.push(cx.observe_in(&model, window, |this, model, window, cx| {
+                if model.read(cx).is_locked() {
+                    this.clear_secrets(window, cx);
+                }
+            }));
+        }
+        // 界面上的值可能变了：重新算有没有未保存的修改。输入框看内容变化（光标闪烁也会通知，不用 observe），下拉框与
+        // 各分页看通知；各分页里的输入框在这里够不着，焦点在设置里时按键后也算一次
+        for input in [
+            &font_size,
+            &scrollback,
+            &log_dir,
+            &record_dir,
+            &keepalive,
+            &agent_path,
+            &x11_display,
+            &local_proxy,
+            &local_proxy_port,
+        ] {
+            subscriptions.push(cx.subscribe(input, |this, _, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change) {
+                    this.refresh_dirty(cx);
+                }
+            }));
+        }
+        subscriptions.extend([
+            cx.observe(&language, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&theme, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&icons, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&ui_scale, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&remote_editor, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&font_family, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&right_click, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&startup, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&toolbar, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&highlight, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&local_page, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&shortcuts, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&security_page, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&about_extras, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&cli_page, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&backup_page, |this, _, cx| this.refresh_dirty(cx)),
+            cx.observe(&schemes, |this, _, cx| this.refresh_dirty(cx)),
+        ]);
+        let focus = cx.focus_handle();
+        subscriptions.push(cx.observe_keystrokes({
+            let focus = focus.clone();
+            move |this, _, window, cx| {
+                if focus.contains_focused(window, cx) {
+                    this.refresh_dirty(cx);
+                }
+            }
+        }));
         let mut this = Self {
             page,
+            focus,
             nav_focus: cx.focus_handle().tab_stop(true),
             store,
             initial: settings.clone(),
             initial_local: local_settings.clone(),
             draft: settings,
             local: local_settings,
+            baseline: None,
+            dirty: false,
+            bounds: Rc::default(),
             language,
             theme,
             icons,
@@ -510,13 +577,256 @@ impl SettingsForm {
             error: None,
             notice: NoticeLine::new(cx),
             page_scroll: ScrollHandle::new(),
-            dialog: None,
             _tasks: Vec::new(),
             _subscriptions: subscriptions,
         };
         this.load_fonts(window, cx);
         this.set_page(page, cx);
+        this.baseline = this.collect(cx).ok();
         this
+    }
+
+    /// 现在显示的分类。
+    pub(crate) fn page(&self) -> Page {
+        self.page
+    }
+
+    /// 换到 `page` 分类（已经开着设置时从别处打开某一页）。
+    pub(crate) fn show_page(&mut self, page: Page, cx: &mut Context<Self>) {
+        self.set_page(page, cx);
+    }
+
+    /// 底部的提示行（设置 Tab 登记在窗口上，见 [`crate::notify::attach_tab`]）。
+    pub(crate) fn notice(&self) -> Entity<NoticeLine> {
+        self.notice.clone()
+    }
+
+    /// 有未保存的修改（上一次算出的，界面上的值变了时重新算）。
+    pub(crate) fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    /// 现在算一次有没有未保存的修改（关闭、移到别的窗口之前：不用等界面上的值变了才算的那次）。
+    pub(crate) fn has_changes(&self, cx: &App) -> bool {
+        let shown = self.collect(cx).ok();
+        shown.is_none() || shown != self.baseline || self.schemes.read(cx).has_changes()
+    }
+
+    /// 界面上的值可能变了：重新算有没有未保存的修改，变了时重画（Tab 名前的“●”、保存条）。
+    fn refresh_dirty(&mut self, cx: &mut Context<Self>) {
+        let dirty = self.has_changes(cx);
+        if dirty != self.dirty {
+            self.dirty = dirty;
+            cx.notify();
+        }
+    }
+
+    /// 结束快捷键的录入（离开设置 Tab 时）。
+    pub(crate) fn stop_recording(&self, cx: &mut App) {
+        self.shortcuts.update(cx, |p, cx| p.stop_recording(cx));
+    }
+
+    /// 别处改了设置：没有未保存的修改、也没有在备份或恢复时，跟着存储重新载入；有修改时保留，保存时合并。
+    fn on_external_change(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.closing_blocked(cx) || self.has_changes(cx) {
+            return;
+        }
+        self.reload_from_store(false, window, cx);
+    }
+
+    /// 放弃修改：回到存储中现在的值。
+    pub(crate) fn discard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        tracing::info!("放弃设置的修改");
+        self.notice.update(cx, |line, cx| line.clear(cx));
+        self.reload_from_store(true, window, cx);
+    }
+
+    /// 从存储重新载入：草稿换成存储中现在的值，界面上与它不同的控件、分页跟着换（`force` 时全部换，放弃修改用；否则
+    /// 只换不同的，免得正在看、正在点的分页无故重建，焦点也不丢）。分页里进行中的操作（备份、令牌、密码）不受影响：
+    /// 正忙的分页不重建，保存时照样按字段合并。
+    pub(crate) fn reload_from_store(
+        &mut self,
+        force: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let shown = if force { None } else { self.collect(cx).ok() };
+        let settings = self.store.settings();
+        let local = self.store.local_settings();
+        // 这一部分界面上显示的与存储中的不同（或者全部重新载入）
+        let differs = |same: &dyn Fn(&Settings, &LocalSettings) -> bool| {
+            shown
+                .as_ref()
+                .is_none_or(|(shown, shown_local)| !same(shown, shown_local))
+        };
+        let terminal = &settings.terminal;
+        set_input(&self.font_size, terminal.font_size.to_string(), window, cx);
+        set_input(
+            &self.scrollback,
+            terminal.scrollback.to_string(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.log_dir,
+            local.logs.session_log_dir.clone(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.record_dir,
+            local.logs.recording_dir.clone(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.keepalive,
+            settings.connection.keepalive_seconds.to_string(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.agent_path,
+            settings.connection.agent_path.clone(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.x11_display,
+            local.connection.x11_display.clone(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.local_proxy,
+            local.connection.local_proxy.clone(),
+            window,
+            cx,
+        );
+        set_input(
+            &self.local_proxy_port,
+            match local.connection.local_proxy_port {
+                0 => String::new(),
+                port => port.to_string(),
+            },
+            window,
+            cx,
+        );
+        set_choice(&self.language, &settings.appearance.language, window, cx);
+        set_choice(&self.theme, &settings.appearance.theme, window, cx);
+        set_choice(&self.icons, &settings.appearance.icons, window, cx);
+        set_choice(&self.remote_editor, &local.window.remote_editor, window, cx);
+        set_choice(&self.right_click, &terminal.right_click, window, cx);
+        let (scale_choices, scale) = crate::ui_scale::choices(
+            cx.platform_info().os,
+            crate::ui_scale::system_percent(cx),
+            local.window.ui_scale,
+        );
+        self.ui_scale.update(cx, |state, cx| {
+            state.set_items(SearchableVec::new(scale_choices), window, cx);
+            state.set_selected_value(&scale, window, cx);
+        });
+        let fonts = self.installed_fonts.clone();
+        let family = terminal.font_family.clone();
+        self.font_family.update(cx, |state, cx| {
+            state.set_items(
+                SearchableVec::new(font_choices(
+                    fonts.as_deref().map(|f| f.as_slice()),
+                    &family,
+                )),
+                window,
+                cx,
+            );
+            state.set_selected_value(&family, window, cx);
+        });
+
+        if differs(&|_, l| l.window.startup == local.window.startup) {
+            self.startup
+                .update(cx, |p, cx| *p = StartupSection::new(&local, window, cx));
+        }
+        if differs(&|_, l| l.window.toolbar == local.window.toolbar) {
+            self.toolbar
+                .update(cx, |p, _| *p = ToolbarPage::new(&local.window.toolbar));
+        }
+        if differs(&|s, _| s.highlight == settings.highlight) {
+            self.highlight.update(cx, |p, cx| {
+                *p = HighlightPage::new(&settings.highlight, window, cx)
+            });
+        }
+        if differs(&|_, l| l.shells == local.shells) {
+            self.local_page
+                .update(cx, |p, cx| *p = LocalPage::new(&local.shells, window, cx));
+        }
+        if differs(&|s, _| s.keybindings == settings.keybindings) {
+            let right_click = terminal.right_click;
+            self.shortcuts.update(cx, |p, cx| {
+                p.stop_recording(cx);
+                *p = ShortcutsPage::new(&settings.keybindings, right_click);
+            });
+        }
+        let schemes_differ = differs(&|s, _| {
+            s.terminal.scheme_light == terminal.scheme_light
+                && s.terminal.scheme_dark == terminal.scheme_dark
+                && s.terminal.min_contrast == terminal.min_contrast
+        });
+        if schemes_differ || force || self.schemes.read(cx).has_changes() {
+            self.schemes
+                .update(cx, |p, cx| *p = SchemesPage::new(&settings, window, cx));
+        }
+        if differs(&|_, l| l.app_lock == local.app_lock) && !self.security_page.read(cx).is_busy(cx)
+        {
+            self.security_page.update(cx, |p, cx| {
+                *p = crate::lock_ui::SecurityPage::new(&local, window, cx)
+            });
+        }
+        let about_differs = differs(&|s, l| {
+            s.general.auto_check_update == settings.general.auto_check_update
+                && l.logs.level == local.logs.level
+                && l.usage.enabled == local.usage.enabled
+                && l.logs.crash_report == local.logs.crash_report
+        });
+        if about_differs && !self.about_extras.read(cx).is_busy() {
+            self.about_extras.update(cx, |p, cx| {
+                *p = crate::lock_ui::AboutExtras::new(&settings, &local, window, cx)
+            });
+        }
+        if differs(&|s, l| l.cli == local.cli && s.guard == settings.guard)
+            && !self.cli_page.read(cx).is_busy(cx)
+        {
+            self.cli_page.update(cx, |p, cx| {
+                *p = crate::cli_ui::CliPage::new(&settings, &local, window, cx)
+            });
+        }
+        let backup_differs = differs(&|_, l| {
+            l.backup.auto == local.backup.auto && l.backup.keep == local.backup.keep
+        });
+        if backup_differs && !self.closing_blocked(cx) {
+            self.backup_page.update(cx, |p, cx| {
+                *p = crate::backup_ui::BackupPage::new(&local, window, cx)
+            });
+        }
+
+        self.allowed_proxy_commands = termlet_core::ssh::proxy_command::allowed_count(&self.store);
+        self.initial = settings.clone();
+        self.initial_local = local.clone();
+        self.draft = settings;
+        self.local = local;
+        self.error = None;
+        self.baseline = self.collect(cx).ok();
+        self.dirty = false;
+        // 依赖别的分类的预览（高亮用的配色、快捷键页中右键的说明）按现在的值
+        self.set_page(self.page, cx);
+        cx.notify();
+    }
+
+    /// 锁定时清空各页中输入到一半的密码（应用锁、主密码、备份、同步）。
+    pub(crate) fn clear_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.security_page
+            .update(cx, |p, cx| p.clear_secrets(window, cx));
+        self.backup_page
+            .update(cx, |p, cx| p.clear_secrets(window, cx));
+        self.sync_page
+            .update(cx, |p, cx| p.clear_secrets(window, cx));
     }
 
     /// 读取本机的等宽字体，读完后更新字体的下拉框。
@@ -572,14 +882,14 @@ impl SettingsForm {
         cx.notify();
     }
 
-    /// 备份页的操作（备份、恢复）进行中：不能保存、不能关闭。恢复会替换全部数据（含设置），
-    /// 这时保存会用过时的草稿覆盖恢复出的设置；关掉对话框则看不到结果。
-    fn closing_blocked(&self, cx: &App) -> bool {
+    /// 备份页的操作（备份、恢复）进行中：不能保存、不能关闭、不能移到别的窗口。恢复会替换全部数据（含设置），
+    /// 这时保存会用过时的草稿覆盖恢复出的设置；关掉设置则看不到结果。
+    pub(crate) fn closing_blocked(&self, cx: &App) -> bool {
         self.backup_page.read(cx).is_busy()
     }
 
-    /// 校验并保存；有错误时停在出错的分类并显示原因，返回 false。
-    fn save(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
+    /// 校验并保存；有错误时停在出错的分类并显示原因，返回 false。保存后设置照常开着。
+    pub(crate) fn save(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
         if self.closing_blocked(cx) {
             return false;
         }
@@ -623,51 +933,22 @@ impl SettingsForm {
                 note!(draft, initial; general, appearance, terminal, highlight, connection, guard, keybindings);
                 note!(local, initial_local; cli, app_lock, backup, shells, logs, usage, window, connection);
                 tracing::info!(?groups, "保存设置");
-                let synced = self.store.update_settings(|s| {
-                    macro_rules! changed {
-                        ($($section:ident),*) => {$(
-                            if draft.$section != initial.$section {
-                                s.$section = draft.$section.clone();
-                            }
-                        )*};
+                // 与存储中现在的值按字段合并：打开后别处改了的字段（确认过的代理命令、标题栏切换的深浅色……）不被
+                // 这里的旧值覆盖
+                let result = self
+                    .store
+                    .update_settings(|s| *s = merge_settings(initial, &draft, s))
+                    .and_then(|()| {
+                        self.store.update_local_settings(|s| {
+                            *s = merge_local_settings(initial_local, &local, s)
+                        })
+                    });
+                match result {
+                    Ok(()) => {
+                        // 界面上与合并结果不同的（别处改了、这里没动的）跟着换，之后以现在的值为准
+                        self.reload_from_store(false, window, cx);
+                        true
                     }
-                    changed!(
-                        general,
-                        appearance,
-                        terminal,
-                        highlight,
-                        connection,
-                        guard,
-                        keybindings
-                    );
-                });
-                let local_result = synced.and_then(|()| {
-                    self.store.update_local_settings(|s| {
-                        macro_rules! changed {
-                            ($($section:ident),*) => {$(
-                                if local.$section != initial_local.$section {
-                                    s.$section = local.$section.clone();
-                                }
-                            )*};
-                        }
-                        changed!(cli, app_lock, backup, shells, logs, usage, window);
-                        // 本机的连接设置中只有 X 显示与借给服务器的本机代理两项在这里改：确认过的代理命令可能在设置打开期间增加，
-                        // 不用旧值覆盖
-                        if local.connection.x11_display != initial_local.connection.x11_display {
-                            s.connection.x11_display = local.connection.x11_display.clone();
-                        }
-                        if local.connection.local_proxy != initial_local.connection.local_proxy {
-                            s.connection.local_proxy = local.connection.local_proxy.clone();
-                        }
-                        if local.connection.local_proxy_port
-                            != initial_local.connection.local_proxy_port
-                        {
-                            s.connection.local_proxy_port = local.connection.local_proxy_port;
-                        }
-                    })
-                });
-                match local_result {
-                    Ok(()) => true,
                     Err(e) => {
                         tracing::error!("保存设置失败：{e}");
                         self.error = Some(t!(
@@ -891,13 +1172,20 @@ impl SettingsForm {
 
     // ------------------------------------------------------------ 渲染
 
-    fn render_nav(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    /// 左侧的分类导航；`compact` 时只显示图标（悬停显示分类名）。
+    fn render_nav(
+        &self,
+        compact: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
         // 逐项渲染（不经 SidebarMenu）：导航项的 ID 见 Page::nav_id
         let items = Page::ALL.map(|page| {
             let this = cx.entity().downgrade();
             SidebarMenuItem::new(page.title())
                 .icon(page.icon())
                 .active(self.page == page)
+                .collapsed(compact)
                 .on_click(move |_, _, cx| {
                     let _ = this.update(cx, |this, cx| this.set_page(page, cx));
                 })
@@ -905,7 +1193,16 @@ impl SettingsForm {
                 .into_any_element()
         });
         let current = Page::ALL.iter().position(|p| *p == self.page).unwrap_or(0);
-        crate::page_nav::column(cx).child(
+        let column = if compact {
+            div()
+                .flex_none()
+                .pr_2()
+                .border_r_1()
+                .border_color(cx.theme().border)
+        } else {
+            crate::page_nav::column(cx)
+        };
+        column.child(
             crate::page_nav::frame("settings-nav", &self.nav_focus, window, cx)
                 .on_key_down(
                     cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
@@ -939,6 +1236,7 @@ impl SettingsForm {
                         .on_change(cx.listener(move |this, checked: &bool, _, cx| {
                             *slot(this) = *checked;
                             cx.notify();
+                            this.refresh_dirty(cx);
                         })),
                 )
                 .when_some(hint, |this, hint| {
@@ -1727,12 +2025,31 @@ impl SettingsForm {
             .into_any_element()
     }
 
-    fn render_footer(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    /// 底部的保存条：左边是校验错误、提示行与“有未保存的修改”，右边是“放弃修改”“保存”。“保存”一直可点（没有修改时
+    /// 什么也不写），“放弃修改”有修改时才可点；备份、恢复进行中两个都不可点。
+    fn render_save_bar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let blocked = self.closing_blocked(cx);
         let theme = cx.theme();
+        let status = (self.dirty && self.error.is_none()).then(|| {
+            h_flex()
+                .id("settings-unsaved")
+                .test_support()
+                .gap_1p5()
+                .items_center()
+                .child(
+                    div()
+                        .flex_none()
+                        .size_1p5()
+                        .rounded_full()
+                        .bg(theme.foreground),
+                )
+                .child(t!("settings.unsaved"))
+        });
         h_flex()
+            .flex_none()
             .gap_2()
-            .pt_3()
+            .px_4()
+            .py_2()
             .border_t_1()
             .border_color(theme.border)
             .child(
@@ -1744,13 +2061,14 @@ impl SettingsForm {
                     .when_some(self.error.clone(), |this, error| {
                         this.child(div().text_color(theme.danger).child(prose(error)))
                     })
-                    .child(self.notice.clone()),
+                    .child(self.notice.clone())
+                    .children(status),
             )
             .child(
-                Button::new("settings-cancel")
-                    .label(t!("common.cancel"))
-                    .disabled(blocked)
-                    .on_click(|_, window, cx| window.close_dialog(cx)),
+                Button::new("settings-discard")
+                    .label(t!("settings.discard"))
+                    .disabled(blocked || !self.dirty)
+                    .on_click(cx.listener(|this, _, window, cx| this.discard(window, cx))),
             )
             .child(
                 Button::new("settings-save")
@@ -1758,9 +2076,7 @@ impl SettingsForm {
                     .label(t!("common.save"))
                     .disabled(blocked)
                     .on_click(cx.listener(|this, _, window, cx| {
-                        if this.save(window, cx) {
-                            window.close_dialog(cx);
-                        }
+                        this.save(window, cx);
                     })),
             )
     }
@@ -1784,40 +2100,102 @@ impl Render for SettingsForm {
             Page::Shortcuts => self.shortcuts.clone().into_any_element(),
             Page::About => self.render_about(cx),
         };
-        // 高 42rem，窗口矮时缩到窗口内（对话框上下各留一些边距）
-        let height = rems(42.)
-            .to_pixels(window.rem_size())
-            .min(window.viewport_size().height - rems(8.).to_pixels(window.rem_size()));
+        // 按上一帧的宽度：窄时分类导航只显示图标
+        let width = self.bounds.get().size.width;
+        let compact =
+            width > px(0.) && width < rems(COMPACT_NAV_WIDTH).to_pixels(window.rem_size());
+        let bounds = self.bounds.clone();
         v_flex()
-            .id("settings-dialog")
+            .id("settings-tab")
             .test_support()
-            .h(height)
+            .track_focus(&self.focus)
+            .relative()
+            .size_full()
+            .bg(cx.theme().background)
+            // 点在设置里（按钮不拿焦点）：焦点移进来，操作的结果写进这里的提示行、Ctrl+S 能用
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _, window, cx| {
+                    if !this.focus.contains_focused(window, cx) {
+                        this.focus.focus(window, cx);
+                    }
+                }),
+            )
+            // 点过以后界面上的值可能变了（复选框、单选、下拉框、拖动排序……）
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|this, _, _, cx| this.refresh_dirty(cx)),
+            )
+            .child(
+                canvas(move |area, _, _| bounds.set(area), |_, _, _, _| {})
+                    .absolute()
+                    .size_full(),
+            )
             .child(
                 h_flex()
                     .flex_1()
                     .min_h_0()
                     .items_stretch()
-                    .gap_4()
-                    .child(self.render_nav(window, cx))
                     .child(
                         div()
-                            .id("settings-page")
-                            .test_support()
+                            .flex()
+                            .flex_none()
+                            .pl_3()
+                            .py_3()
+                            .child(self.render_nav(compact, window, cx)),
+                    )
+                    .child(
+                        div()
+                            .relative()
                             .flex_1()
                             .min_w_0()
-                            .overflow_y_scroll()
-                            .track_scroll(&self.page_scroll)
-                            .pr_1()
                             .child(
-                                v_flex()
-                                    .gap_3()
-                                    .pb_3()
-                                    .child(div().text_base().font_medium().child(self.page.title()))
-                                    .child(body),
-                            ),
+                                div()
+                                    .id("settings-page")
+                                    .test_support()
+                                    .size_full()
+                                    .overflow_y_scroll()
+                                    .track_scroll(&self.page_scroll)
+                                    .px_5()
+                                    .py_3()
+                                    .child(
+                                        v_flex()
+                                            .w_full()
+                                            .max_w(rems(CONTENT_MAX_WIDTH))
+                                            .gap_3()
+                                            .pb_3()
+                                            .child(
+                                                div()
+                                                    .text_base()
+                                                    .font_medium()
+                                                    .child(self.page.title()),
+                                            )
+                                            .child(body),
+                                    ),
+                            )
+                            .vertical_scrollbar(&self.page_scroll),
                     ),
             )
-            .child(self.render_footer(cx))
+            .child(self.render_save_bar(cx))
+    }
+}
+
+/// 输入框中的文字与 `value` 不同时换成它（相同时不动：正在输入的光标位置不变）。
+fn set_input(state: &Entity<InputState>, value: String, window: &mut Window, cx: &mut App) {
+    if state.read(cx).value() != value.as_str() {
+        state.update(cx, |state, cx| state.set_value(value, window, cx));
+    }
+}
+
+/// 下拉框选中的值与 `value` 不同时换成它。
+fn set_choice<V: Clone + PartialEq + 'static>(
+    state: &Entity<ChoiceState<V>>,
+    value: &V,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    if chosen(state, cx).as_ref() != Some(value) {
+        state.update(cx, |state, cx| state.set_selected_value(value, window, cx));
     }
 }
 
@@ -1871,7 +2249,6 @@ mod tests {
                 window.render_frame(cx);
                 let items = Page::ALL.map(|page| (page.nav_id(), page.title()));
                 assert_nav_labels_fit(window, items, &format!("设置（{language:?}）"));
-                window.click("settings-cancel", cx);
             })
             .unwrap();
             cx.run_until_parked();
@@ -1974,10 +2351,10 @@ mod tests {
         assert!(copied.starts_with(&format!("Termlet {}\n", termlet_core::VERSION)));
     }
 
-    // 立即执行的操作（复制版本信息）的结果写在对话框底部的提示行里、在对话框之内，不弹出会被对话框盖住的通知；
+    // 立即执行的操作（复制版本信息）的结果写在设置底部保存条左边的提示行里、靠近做操作的地方，不弹出通知；
     // 换到别的分类后清掉
     #[gpui_kit::test]
-    fn results_show_at_the_bottom_of_the_dialog(cx: &mut TestAppContext) {
+    fn results_show_in_the_save_bar(cx: &mut TestAppContext) {
         use crate::notify::{Notice, shown};
         use gpui_kit::component::WindowExt as _;
         let handle = open_workspace(cx);
@@ -1997,15 +2374,16 @@ mod tests {
                 Some(Notice::success(crate::t!("settings.about.version_copied")))
             );
             assert_eq!(window.notifications(cx).len(), toasts, "不弹出通知");
-            let dialog = window.find("settings-dialog").bounds();
+            let tab = window.find("settings-tab").bounds();
+            let page = window.find("settings-page").bounds();
             let notice = window.find("dialog-notice").bounds();
-            let cancel = window.find("settings-cancel").bounds();
+            let discard = window.find("settings-discard").bounds();
             assert!(
-                notice.left() >= dialog.left()
-                    && notice.right() <= cancel.left()
-                    && notice.top() >= dialog.top()
-                    && notice.bottom() <= dialog.bottom(),
-                "在对话框底部、按钮的左边：{notice:?} / {dialog:?}"
+                notice.left() >= tab.left()
+                    && notice.right() <= discard.left()
+                    && notice.top() >= page.bottom()
+                    && notice.bottom() <= tab.bottom(),
+                "在设置底部、按钮的左边：{notice:?} / {tab:?}"
             );
 
             window.click(Page::General.nav_id(), cx);
@@ -2252,7 +2630,10 @@ mod tests {
     // 界面放大到 150% 时，设置的导航放得下分页名，“通用”页的下拉框都在页面之内（不横向溢出）
     #[gpui_kit::test]
     fn general_page_fits_at_150_percent(cx: &mut TestAppContext) {
-        let handle = open_workspace(cx);
+        let handle = crate::testkit::open_workspace_sized(
+            cx,
+            gpui_kit::size(gpui_kit::px(1600.), gpui_kit::px(900.)),
+        );
         set_language(Language::En);
         cx.update(|cx| {
             crate::app_state::AppState::store(cx)

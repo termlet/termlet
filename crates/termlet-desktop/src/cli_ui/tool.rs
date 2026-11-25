@@ -61,6 +61,11 @@ pub(super) struct ToolSection {
 }
 
 impl ToolSection {
+    /// 正在修改 PATH。
+    pub(super) fn is_busy(&self) -> bool {
+        self.busy
+    }
+
     pub(super) fn new(env: &CliEnv, cx: &mut Context<Self>) -> Self {
         let paths = env
             .exe

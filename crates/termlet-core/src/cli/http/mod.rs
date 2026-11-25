@@ -83,7 +83,7 @@ pub const MAX_CONNECTIONS: usize = 64;
 /// `tools/call` 的 SSE 回答多久发一次保活。
 pub const KEEPALIVE: Duration = Duration::from_secs(15);
 
-/// HTTP 服务实际的状态（不是设置对话框中的草稿）。
+/// HTTP 服务实际的状态（不是设置中的草稿）。
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HttpStatus {
     /// 没有监听：设置中关着（或“允许 AI 工具与脚本访问”关着），或服务已停止

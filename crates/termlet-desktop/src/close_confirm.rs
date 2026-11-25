@@ -30,7 +30,7 @@ pub enum CloseScope {
 }
 
 /// 关闭窗口（或几个 Tab、退出）前要说明的：未完成的传输、未保存的文件、连接着的终端或文件管理（按设置）、打开着的本地终端、
-/// 还在执行的批量执行。
+/// 还在执行的批量执行、设置中未保存的修改。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CloseSummary {
     pub pending: usize,
@@ -39,12 +39,19 @@ pub struct CloseSummary {
     pub local: bool,
     /// 还在执行的批量执行（关闭即停止）
     pub running: usize,
+    /// 设置有未保存的修改（关闭即放弃）
+    pub settings: bool,
 }
 
 impl CloseSummary {
     /// 有要说明的，关闭前先确认。
     pub fn needs_confirm(&self) -> bool {
-        self.pending > 0 || self.unsaved > 0 || self.connected || self.local || self.running > 0
+        self.pending > 0
+            || self.unsaved > 0
+            || self.connected
+            || self.local
+            || self.running > 0
+            || self.settings
     }
 
     /// 两个窗口合在一起（退出时汇总所有窗口）。
@@ -55,6 +62,7 @@ impl CloseSummary {
             connected: self.connected || other.connected,
             local: self.local || other.local,
             running: self.running + other.running,
+            settings: self.settings || other.settings,
         }
     }
 
@@ -92,6 +100,9 @@ impl CloseSummary {
         }
         if self.running > 0 {
             parts.push(t!("close.batch_running", count = self.running));
+        }
+        if self.settings {
+            parts.push(t!("close.settings_unsaved"));
         }
         parts.join(&t!("close.sentence_separator")).into()
     }
@@ -278,6 +289,7 @@ mod tests {
             connected: true,
             local: true,
             running: 1,
+            settings: true,
         };
         let text = summary.description(CloseScope::Tabs);
         for part in [
@@ -286,6 +298,7 @@ mod tests {
             t!("sftp.close_transfers", count = 2),
             t!("editor.close_window_unsaved", count = 1),
             t!("close.batch_running", count = 1),
+            t!("close.settings_unsaved"),
         ] {
             assert!(text.contains(part.as_ref()), "{text}");
         }

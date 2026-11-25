@@ -41,6 +41,18 @@ tab_window.blocked_connecting:
   zh-TW: 正在連線，連上後再移到別的視窗。
   ja: 接続中です。接続してから別のウィンドウに移動してください。
   ko: 연결 중입니다. 연결된 후에 다른 창으로 옮기세요.
+tab_window.settings_unsaved:
+  zh-CN: 设置中有未保存的修改，先保存或放弃修改，再移到别的窗口。
+  en: Settings have unsaved changes. Save or discard them before moving the tab.
+  zh-TW: 設定中有未儲存的變更，請先儲存或捨棄變更，再移到別的視窗。
+  ja: 設定に未保存の変更があります。保存するか破棄してから別のウィンドウに移動してください。
+  ko: 설정에 저장하지 않은 변경 사항이 있습니다. 저장하거나 버린 후에 다른 창으로 옮기세요.
+tab_window.settings_exists:
+  zh-CN: 那个窗口已经打开了设置。
+  en: That window already has Settings open.
+  zh-TW: 那個視窗已經開啟了設定。
+  ja: そのウィンドウではすでに設定が開いています。
+  ko: 그 창에는 이미 설정이 열려 있습니다.
 tab_window.drop_new:
   zh-CN: 松开以移到新窗口
   en: Release to move to a new window

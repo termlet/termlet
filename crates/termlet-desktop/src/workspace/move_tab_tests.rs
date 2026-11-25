@@ -1135,3 +1135,73 @@ fn shared_forward_follows_moved_terminal(cx: &mut TestAppContext) {
     );
     let _ = termlet_core::runtime::runtime().block_on(manager.stop(&forward));
 }
+
+// 设置 Tab 可以移到别的窗口（在那里重新建）；有未保存的修改时不移，那个窗口已经开着设置时也不移
+#[gpui_kit::test]
+fn settings_tab_moves_only_without_unsaved_changes(cx: &mut TestAppContext) {
+    use crate::settings::Page;
+    setup(cx);
+    let (a, ws_a) = open_at(cx, (0., 0.), (1024., 640.));
+    let (b, ws_b) = open_at(cx, (1100., 0.), (1024., 640.));
+    let open_settings = |cx: &mut TestAppContext| {
+        cx.update_window(a, |_, window, cx| {
+            ws_a.update(cx, |w, cx| w.open_settings(Page::General, window, cx));
+            window.render_frame(cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        let settings = cx.update(|cx| ws_a.read(cx).live_settings().unwrap());
+        PanelId::from(settings.entity_id())
+    };
+    let move_to_b = |cx: &mut TestAppContext, id: PanelId| {
+        cx.update_window(a, |_, window, cx| {
+            ws_a.update(cx, |w, cx| {
+                w.move_tab(id, MoveTarget::Window(b), window, cx)
+            })
+        })
+        .unwrap();
+        cx.run_until_parked();
+    };
+    let has = |cx: &mut TestAppContext, ws: &Entity<Workspace>| {
+        cx.update(|cx| ws.read(cx).live_settings().is_some())
+    };
+
+    let id = open_settings(cx);
+    cx.update_window(a, |_, window, cx| {
+        window.click("settings-show-host-address", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    move_to_b(cx, id);
+    assert!(has(cx, &ws_a) && !has(cx, &ws_b), "有未保存的修改时不移");
+
+    cx.update_window(a, |_, window, cx| {
+        window.click("settings-discard", cx);
+        window.render_frame(cx);
+    })
+    .unwrap();
+    move_to_b(cx, id);
+    assert!(!has(cx, &ws_a) && has(cx, &ws_b), "放弃修改后移过去");
+    cx.update_window(b, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(
+            window.try_find("settings-show-host-address").is_some(),
+            "在新窗口中重新建，照常显示"
+        );
+        window.click("settings-show-host-address", cx);
+        window.render_frame(cx);
+        window.click("settings-save", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert!(
+        !cx.update(|cx| AppState::store(cx).settings())
+            .general
+            .show_host_address,
+        "移过去后照常保存"
+    );
+
+    let id = open_settings(cx);
+    move_to_b(cx, id);
+    assert!(has(cx, &ws_a), "那个窗口已经开着设置：不移");
+}

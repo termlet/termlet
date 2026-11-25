@@ -97,7 +97,7 @@ impl Workspace {
             }
             ToolbarItem::Snippets => self.open_command_picker(window, cx),
             ToolbarItem::Compose => self.toggle_compose(window, cx),
-            ToolbarItem::Highlight => settings::open(settings::Page::Highlight, window, cx),
+            ToolbarItem::Highlight => self.open_settings(settings::Page::Highlight, window, cx),
             ToolbarItem::Theme => self.toggle_theme(window, cx),
             ToolbarItem::Lock => {
                 crate::lock_ui::lock_now(cx);

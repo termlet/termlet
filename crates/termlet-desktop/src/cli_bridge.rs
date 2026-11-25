@@ -1143,7 +1143,7 @@ mod tests {
         cx.update_window(windows[0].0, |_, window, cx| {
             window.render_frame(cx);
             assert!(
-                window.try_find("settings-cancel").is_some(),
+                window.try_find("settings-save").is_some(),
                 "设置打开在新窗口中"
             );
         })

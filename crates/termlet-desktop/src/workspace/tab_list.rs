@@ -514,6 +514,9 @@ impl Workspace {
         for p in self.live_batches() {
             faces.insert(PanelId::from(p.entity_id()), p.read(cx).tab_face(cx));
         }
+        if let Some(p) = self.live_settings() {
+            faces.insert(PanelId::from(p.entity_id()), p.read(cx).tab_face(cx));
+        }
         faces
     }
 
@@ -769,6 +772,8 @@ impl Workspace {
             self.show_replay(&p, window, cx);
         } else if let Some(p) = self.live_batches().into_iter().find(|p| is(p.entity_id())) {
             self.show_batch(&p, window, cx);
+        } else if let Some(p) = self.live_settings().filter(|p| is(p.entity_id())) {
+            self.show_settings(&p, window, cx);
         } else {
             self.select_tab_panel(panel, window, cx);
         }

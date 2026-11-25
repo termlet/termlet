@@ -227,6 +227,7 @@ pub(crate) fn fixed_bindings(os: OperatingSystem) -> Vec<KeyBinding> {
     bindings.extend(termlet_terminal::view::key_bindings(os));
     bindings.extend(crate::app_menu::key_bindings(os));
     bindings.extend(crate::replay::key_bindings(os));
+    bindings.extend(crate::settings::panel::key_bindings(os));
     bindings
 }
 

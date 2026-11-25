@@ -162,6 +162,17 @@ impl SchemesPage {
         }
     }
 
+    /// 自定义配色有没有还没写进存储的增、改、删。
+    pub(super) fn has_changes(&self) -> bool {
+        self.custom.len() != self.stored.len()
+            || self.custom.iter().any(|custom| {
+                !self
+                    .stored
+                    .iter()
+                    .any(|(id, scheme)| id.as_str() == custom.id && *scheme == custom.scheme)
+            })
+    }
+
     /// 写进终端设置：两个槽与“保证文字可读”。槽可能是新建配色的临时 ID，[`Self::commit`] 之后再写一次。
     pub(super) fn apply(&self, terminal: &mut TerminalSettings) {
         terminal.scheme_light = self.light.clone();
@@ -749,7 +760,7 @@ impl Render for SchemesPage {
                     .child(
                         div()
                             .w(rems(12.))
-                            // 搜索框在设置对话框中：Enter 不能触发对话框的“确定”（会关掉设置、丢掉修改）
+                            // 搜索框中的 Enter（设置把它转成 Confirm）什么也不做
                             .on_action(|_: &gpui_kit::base::actions::Confirm, _, _| {})
                             .child(
                                 Input::new(&self.query)

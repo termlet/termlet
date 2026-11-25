@@ -325,8 +325,6 @@ fn tray_setting_on(cx: &mut TestAppContext, handle: AnyWindowHandle, os: Operati
                 window.click("settings-close-to-tray", cx);
                 window.render_frame(cx);
                 window.click("settings-save", cx);
-            } else {
-                window.click("settings-cancel", cx);
             }
             shown
         })

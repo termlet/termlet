@@ -129,6 +129,9 @@ mod multi_exec;
 #[cfg(test)]
 mod popout_tests;
 mod replay_tabs;
+#[cfg(test)]
+mod settings_tab_tests;
+mod settings_tabs;
 mod startup;
 mod tab_list;
 #[cfg(test)]
@@ -293,6 +296,9 @@ pub struct Workspace {
     /// 批量执行的 Tab
     batches: Vec<WeakEntity<BatchPanel>>,
     batch_watch: HashMap<EntityId, [Subscription; 2]>,
+    /// 设置的 Tab（一个窗口最多一个）
+    settings_tab: Option<WeakEntity<crate::settings::panel::SettingsPanel>>,
+    settings_watch: Option<[Subscription; 2]>,
     /// 这个窗口在 SFTP 管理器中的标识（会话与传输按窗口区分）
     owner: String,
     sftp: termlet_core::sftp::SftpManager,
@@ -395,8 +401,8 @@ impl Workspace {
             cx.subscribe_in(
                 &sync_indicator,
                 window,
-                |_, _, _: &crate::sync_ui::OpenSyncSettings, window, cx| {
-                    settings::open(settings::Page::Sync, window, cx)
+                |this, _, _: &crate::sync_ui::OpenSyncSettings, window, cx| {
+                    this.open_settings(settings::Page::Sync, window, cx)
                 },
             ),
             cx.observe_in(&lock_model, window, |this, _, window, cx| {
@@ -532,6 +538,8 @@ impl Workspace {
             replay_watch: HashMap::new(),
             batches: Vec::new(),
             batch_watch: HashMap::new(),
+            settings_tab: None,
+            settings_watch: None,
             owner: window_owner(window),
             sftp: AppState::sftp(cx),
             forwards: AppState::global(cx).forwards.read(cx).manager().clone(),
@@ -678,12 +686,16 @@ impl Workspace {
             .iter()
             .filter(|b| has(b.entity_id()) && b.read(cx).is_running())
             .count();
+        let settings = self
+            .live_settings()
+            .is_some_and(|p| has(p.entity_id()) && p.read(cx).has_changes(cx));
         crate::close_confirm::CloseSummary {
             pending,
             unsaved,
             connected,
             local,
             running,
+            settings,
         }
     }
 
@@ -1038,6 +1050,7 @@ impl Workspace {
             .chain(self.logs.iter().cloned().map(TabRef::Logs))
             .chain(self.replays.iter().cloned().map(TabRef::Replay))
             .chain(self.batches.iter().cloned().map(TabRef::Batch))
+            .chain(self.settings_tab.iter().cloned().map(TabRef::Settings))
             .collect();
         let syncing = self.is_syncing();
         crate::command_palette::open(cx.entity().downgrade(), current, tabs, syncing, window, cx);
@@ -2664,15 +2677,11 @@ impl Render for Workspace {
                 cx.listener(|this, _: &ToggleSidebar, window, cx| this.toggle_sidebar(window, cx)),
             )
             .on_action(cx.listener(|_, _: &ToggleFullscreen, window, _| window.toggle_fullscreen()))
-            .on_action(cx.listener(|_, _: &OpenSettings, window, cx| {
-                if !crate::lock_ui::is_locked(cx) {
-                    settings::open(settings::Page::General, window, cx)
-                }
+            .on_action(cx.listener(|this, _: &OpenSettings, window, cx| {
+                this.open_settings(settings::Page::General, window, cx)
             }))
-            .on_action(cx.listener(|_, _: &OpenAbout, window, cx| {
-                if !crate::lock_ui::is_locked(cx) {
-                    settings::open(settings::Page::About, window, cx)
-                }
+            .on_action(cx.listener(|this, _: &OpenAbout, window, cx| {
+                this.open_settings(settings::Page::About, window, cx)
             }))
             .on_action(cx.listener(|this, _: &OpenCommandPalette, window, cx| {
                 this.open_command_palette(window, cx)

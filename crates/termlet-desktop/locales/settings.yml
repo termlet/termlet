@@ -17,6 +17,36 @@ settings.save_failed:
   zh-TW: 儲存設定失敗：%{error}
   ja: 設定を保存できませんでした：%{error}
   ko: "설정을 저장하지 못했습니다: %{error}"
+settings.unsaved:
+  zh-CN: 有未保存的修改
+  en: Unsaved changes
+  zh-TW: 有未儲存的變更
+  ja: 未保存の変更があります
+  ko: 저장하지 않은 변경 사항이 있습니다
+settings.discard:
+  zh-CN: 放弃修改
+  en: Discard changes
+  zh-TW: 捨棄變更
+  ja: 変更を破棄
+  ko: 변경 사항 버리기
+settings.close_title:
+  zh-CN: 保存对设置的修改？
+  en: Save changes to settings?
+  zh-TW: 要儲存對設定的變更嗎？
+  ja: 設定の変更を保存しますか？
+  ko: 설정 변경 사항을 저장하시겠습니까?
+settings.close_description:
+  zh-CN: 不保存的话，这些修改会丢失。
+  en: If you don't save, your changes will be lost.
+  zh-TW: 不儲存的話，這些變更會遺失。
+  ja: 保存しない場合、変更は失われます。
+  ko: 저장하지 않으면 변경 사항이 사라집니다.
+settings.busy:
+  zh-CN: 正在备份或恢复，完成后才能关闭设置或把它移到别的窗口。
+  en: A backup or restore is in progress. Wait for it to finish before closing or moving Settings.
+  zh-TW: 正在備份或還原，完成後才能關閉設定或把它移到別的視窗。
+  ja: バックアップまたは復元の実行中です。完了してから設定を閉じるか、別のウィンドウに移動してください。
+  ko: 백업 또는 복원이 진행 중입니다. 완료된 후에 설정을 닫거나 다른 창으로 옮기세요.
 settings.nav.general:
   zh-CN: 通用
   en: General

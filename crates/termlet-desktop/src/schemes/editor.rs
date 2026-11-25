@@ -39,7 +39,7 @@ pub struct EditorOptions {
     pub on_save: Rc<dyn Fn(ColorScheme, &mut Window, &mut App)>,
 }
 
-/// 打开配色编辑器（在设置对话框之上再开一层对话框）。
+/// 打开配色编辑器（从设置的“终端配色”页打开的对话框）。
 pub fn open(options: EditorOptions, window: &mut Window, cx: &mut App) {
     let is_new = options.is_new;
     let editor = cx.new(|cx| SchemeEditor::new(options, window, cx));

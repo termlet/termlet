@@ -110,7 +110,7 @@ fn settings_nav_works_with_keyboard(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn settings_dialog_validates_and_saves(cx: &mut TestAppContext) {
+fn settings_tab_validates_saves_and_discards(cx: &mut TestAppContext) {
     let handle = open_workspace(cx);
     i18n::set_language(Language::ZhCn);
     let before = cx.update(|cx| AppState::store(cx).settings());
@@ -131,7 +131,7 @@ fn settings_dialog_validates_and_saves(cx: &mut TestAppContext) {
         window.render_frame(cx);
         assert!(
             window.try_find("settings-font-size").is_some(),
-            "出错时对话框不关闭"
+            "出错时停在出错的分类"
         );
     })
     .unwrap();
@@ -147,23 +147,48 @@ fn settings_dialog_validates_and_saves(cx: &mut TestAppContext) {
         window.input("16", cx);
         window.click("settings-save", cx);
         window.render_frame(cx);
-        assert!(window.try_find("settings-save").is_none(), "保存后关闭");
+        assert!(
+            window.try_find("settings-save").is_some(),
+            "保存后设置照常开着"
+        );
     })
     .unwrap();
+    cx.run_until_parked();
     let after = cx.update(|cx| AppState::store(cx).settings());
     assert_eq!(after.terminal.font_size, 16);
     assert!(!after.general.show_host_address);
     assert_eq!(after.connection, before.connection, "没改的组不变");
-
-    // 取消不保存
     cx.update_window(handle, |_, window, cx| {
-        window.click("open-settings", cx);
         window.render_frame(cx);
-        window.click("settings-confirm-close", cx);
-        window.click("settings-cancel", cx);
-        window.render_frame(cx);
+        assert!(
+            window.try_find("settings-unsaved").is_none(),
+            "保存后没有未保存的修改"
+        );
     })
     .unwrap();
+
+    // 放弃修改：回到上次保存的值，不写进设置
+    cx.update_window(handle, |_, window, cx| {
+        window.click("settings-nav-general", cx);
+        window.render_frame(cx);
+        window.click("settings-confirm-close", cx);
+        window.render_frame(cx);
+        assert_eq!(window.find("settings-confirm-close").checked(), Some(false));
+        assert!(
+            window.try_find("settings-unsaved").is_some(),
+            "有未保存的修改"
+        );
+        window.click("settings-discard", cx);
+        window.render_frame(cx);
+        assert_eq!(
+            window.find("settings-confirm-close").checked(),
+            Some(true),
+            "放弃后回到原来的值"
+        );
+        assert!(window.try_find("settings-unsaved").is_none());
+    })
+    .unwrap();
+    cx.run_until_parked();
     assert!(
         cx.update(|cx| AppState::store(cx).settings())
             .general
@@ -264,6 +289,18 @@ fn xshell_key_preset_is_saved_and_works(cx: &mut TestAppContext) {
     assert_eq!(combos("tab1"), ["alt-1", "ctrl-alt-1"]);
     assert_eq!(combos("compose"), ["alt-i", "ctrl-shift-m"]);
     assert_eq!(combos("sftpBeside"), ["ctrl-alt-f"]);
+    // 关掉设置 Tab（保存后没有修改，直接关），回到终端
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        let close = if cfg!(target_os = "macos") {
+            "cmd-w"
+        } else {
+            "ctrl-shift-w"
+        };
+        window.press(close, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
     // Xshell 的 Alt+I 打开撰写栏
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
@@ -440,7 +477,7 @@ fn tab_goes_to_the_terminal_and_still_moves_focus_in_dialogs(cx: &mut TestAppCon
         window.click("settings-nav-general", cx);
         let nav = window.focused(cx);
         window.press("tab", cx);
-        assert_ne!(window.focused(cx), nav, "对话框中 Tab 切换焦点");
+        assert_ne!(window.focused(cx), nav, "设置中 Tab 切换焦点");
         window.press("shift-tab", cx);
         assert_eq!(window.focused(cx), nav, "Shift+Tab 切回去");
     })
@@ -908,7 +945,6 @@ fn scheme_card_click_sets_the_slot_on_save(cx: &mut TestAppContext) {
     cx.update_window(handle, |_, window, cx| {
         window.click("settings-save", cx);
         window.render_frame(cx);
-        assert!(window.try_find("settings-save").is_none(), "保存后关闭");
     })
     .unwrap();
     let after = cx.update(|cx| AppState::store(cx).settings().terminal);
@@ -1077,7 +1113,9 @@ fn custom_scheme_is_saved_with_settings_and_deleted_with_its_references(cx: &mut
             window.render_frame(cx);
             window.click("settings-nav-schemes", cx);
             window.render_frame(cx);
+            // 设置一直开着：搜索框里可能还有上一次的文字
             window.click("scheme-search", cx);
+            window.press("secondary-a", cx);
             window.input(query, cx);
             window.render_frame(cx);
         })
@@ -1181,7 +1219,7 @@ fn custom_scheme_is_saved_with_settings_and_deleted_with_its_references(cx: &mut
 }
 
 #[gpui_kit::test]
-fn enter_in_settings_saves_and_known_hosts_page_lists_nothing(cx: &mut TestAppContext) {
+fn ctrl_s_in_settings_saves_and_known_hosts_page_lists_nothing(cx: &mut TestAppContext) {
     let handle = open_workspace(cx);
     i18n::set_language(Language::ZhCn);
     cx.update_window(handle, |_, window, cx| {
@@ -1199,10 +1237,25 @@ fn enter_in_settings_saves_and_known_hosts_page_lists_nothing(cx: &mut TestAppCo
         window.click("settings-scrollback", cx);
         window.press("secondary-a", cx);
         window.input("8000", cx);
-        // 在输入框中按 Enter 与点“保存”相同
+        // 输入框中按 Enter 不保存整页
         window.press("enter", cx);
         window.render_frame(cx);
-        assert!(window.try_find("settings-save").is_none(), "保存后关闭");
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert_eq!(
+        cx.update(|cx| AppState::store(cx).settings())
+            .terminal
+            .scrollback,
+        termlet_core::model::TerminalSettings::default().scrollback,
+        "Enter 不保存"
+    );
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        // Ctrl+S（macOS ⌘S）保存，设置照常开着
+        window.press("secondary-s", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("settings-save").is_some());
     })
     .unwrap();
     assert_eq!(
@@ -2275,7 +2328,7 @@ fn forwards_listening_on_all_interfaces_are_marked(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn deleting_a_settings_row_keeps_focus_in_the_dialog(cx: &mut TestAppContext) {
+fn deleting_a_settings_row_keeps_focus_in_settings(cx: &mut TestAppContext) {
     let handle = open_workspace(cx);
     i18n::set_language(Language::ZhCn);
     cx.update_window(handle, |_, window, cx| {
@@ -2292,17 +2345,20 @@ fn deleting_a_settings_row_keeps_focus_in_the_dialog(cx: &mut TestAppContext) {
     })
     .unwrap();
     cx.run_until_parked();
+    let rules = cx.update(|cx| AppState::store(cx).settings().highlight.rules.len());
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
-        // 焦点没有被收到对话框下面的工作区：Esc 仍然关闭设置
-        window.press("escape", cx);
+        // 焦点没有被收到工作区：Ctrl+S 仍然保存设置
+        window.press("secondary-s", cx);
         window.render_frame(cx);
-        assert!(
-            window.try_find("settings-save").is_none(),
-            "删除一行后 Esc 仍能关闭设置"
-        );
     })
     .unwrap();
+    cx.run_until_parked();
+    assert_eq!(
+        cx.update(|cx| AppState::store(cx).settings().highlight.rules.len()),
+        rules - 1,
+        "删除一行后 Ctrl+S 仍能保存"
+    );
 }
 
 /// 打开设置的“关键词高亮”页。
