@@ -929,12 +929,6 @@ sftp.open_for_tab:
   zh-TW: 為目前的主機開啟 SFTP 檔案管理
   ja: 現在のホストの SFTP ファイル管理を開く
   ko: 현재 호스트의 SFTP 파일 관리 열기
-sftp.open_beside:
-  zh-CN: 在右侧打开 SFTP
-  en: Open SFTP on the Right
-  zh-TW: 在右側開啟 SFTP
-  ja: 右側に SFTP を開く
-  ko: 오른쪽에 SFTP 열기
 sftp.open_folder:
   zh-CN: 打开文件夹
   en: Open Folder

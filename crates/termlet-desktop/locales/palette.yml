@@ -203,12 +203,6 @@ palette.op.save_workspace:
   zh-TW: 儲存為工作區…
   ja: ワークスペースとして保存…
   ko: 작업 영역으로 저장…
-palette.op.sftp_beside:
-  zh-CN: 在右侧打开 SFTP
-  en: Open SFTP on the Right
-  zh-TW: 在右側開啟 SFTP
-  ja: 右側に SFTP を開く
-  ko: 오른쪽에 SFTP 열기
 palette.op.reveal_host:
   zh-CN: 在侧边栏中显示当前主机
   en: Reveal Current Host in Sidebar

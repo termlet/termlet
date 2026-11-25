@@ -492,7 +492,7 @@ Notes:
 - The search box at the top filters by action name (in any of the five interface languages) or by key, such as "split", "粘贴" or "ctrl+shift+c"; when a fixed shortcut matches, that section expands.
 - Windows and Linux use Ctrl:
   - Custom shortcuts need Ctrl or Alt, except F1–F24 and Shift with Insert, Delete, Home, End, Page Up or Page Down.
-  - You can switch to the keys of Xshell or MobaXterm in one click, e.g. Xshell's Alt+1–9 to switch tabs, Alt+I for the compose bar, Alt+Enter for full screen and Ctrl+Alt+F to open SFTP on the right, or MobaXterm's Ctrl+Alt+←/→, Ctrl+Alt+F1–F9 and Ctrl+Alt+T.
+  - You can switch to the keys of Xshell or MobaXterm in one click, e.g. Xshell's Alt+1–9 to switch tabs, Alt+I for the compose bar, and Alt+Enter for full screen, or MobaXterm's Ctrl+Alt+←/→, Ctrl+Alt+F1–F9 and Ctrl+Alt+T.
 - macOS follows Terminal.app and iTerm2 and uses ⌘ (the menu bar lists the common commands with their shortcuts):
   - Every Control combination goes to the terminal (⌃C, ⌃R, ⌃W and so on reach the shell).
   - Option types special characters as the system does, unless "Use Option as Meta key" is turned on under Settings → Terminal (then it sends the ESC prefix; both Option keys work the same way).
@@ -517,7 +517,6 @@ Default shortcuts:
 | Reconnect | Ctrl+Shift+R | ⇧⌘R |
 | Next / previous tab (within the group, wrapping) | Ctrl+Tab / Ctrl+Shift+Tab | ⇧⌘] / ⇧⌘[ (or ⌃⇥ / ⌃⇧⇥) |
 | Go to tab 1–9 | Ctrl+Alt+1–9 | ⌘1–9 |
-| Open SFTP on the right | None by default (Ctrl+Alt+F with the Xshell keys) | None by default |
 | Zoom the interface in / out, reset the interface size (all windows; the terminal font size is unchanged) | None by default (Ctrl+= and the like belong to the terminal font size) | None by default (all three are in the View menu) |
 | Move the current tab to a new window | None by default | None by default |
 | Split right / down | Alt+Shift+= / Alt+Shift+- | ⌘D / ⇧⌘D |
@@ -540,7 +539,7 @@ Default shortcuts:
 ### Command palette
 
 - Ctrl+Shift+P searches hosts, open tabs (terminals, SFTP, editors, log viewers), workspaces and actions.
-- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP on the right, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), import / export hosts, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
+- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP for the current host, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), import / export hosts, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
 - Start with `>` to search only actions, `@` only open tabs, `#` only hosts.
 - When you type an address, the first item is a quick connect.
 
@@ -683,7 +682,7 @@ Default shortcuts:
   - Terminals and SFTP can't move while they are connecting (you'll be told why).
   - A password you typed in the old window but didn't save is asked again the next time the moved tab reconnects.
   - A window whose last tab moves away stays open and shows the start page.
-- **Split panes**: the tab menu splits a tab right or down (the new pane shares the terminal's connection, no new login) or opens SFTP on the right; drag the divider to resize.
+- **Split panes**: the tab menu splits a tab right or down (the new pane shares the terminal's connection, no new login); to put SFTP next to a terminal, drag the SFTP tab onto one side of the terminal's content; drag the divider to resize.
 - **Workspaces**: "Save as Workspace…" remembers the layout and each pane's host; double-click it under "Workspaces" at the top of the sidebar to open all its sessions at once.
 - **Duplicate session**: opens another tab for the current host over the same connection, with no password or verification code.
 
@@ -848,7 +847,6 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - WSL tabs are titled "distribution (WSL)".
 - File management in WSL looks just like SFTP. Open it with:
   - the "SFTP" button in the title bar;
-  - "Open SFTP on the Right" in the tab menu;
   - the hover button and context menu of a WSL row in the sidebar ("Open File Manager", or "Open File Manager as root").
 - It needs OpenSSH's sftp-server in the distribution (`sudo apt install openssh-sftp-server` on Ubuntu and Debian); without it you are told so, with the install command for that distribution.
 
@@ -858,8 +856,8 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 - Ways to open SFTP:
   - the SFTP button when hovering over a host, or "Open SFTP" in its context menu;
-  - the "SFTP" button in the title bar (for the current terminal's host);
-  - "Open SFTP on the Right" in a terminal's tab menu or the command palette.
+  - the "SFTP" button in the title bar, or "Open SFTP File Manager for This Host" in the command palette (for the current terminal's host).
+- To put it next to the terminal, drag the SFTP tab onto one side of the terminal's content to split the pane.
 - Opened from a terminal, it shares the terminal's connection (no new login) and follows its folder; opened from the host list, it uses a new connection.
 - It closes with the window, and after a disconnect "Reconnect" returns to the same folder.
 
@@ -1381,7 +1379,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
   - the host key is confirmed as usual;
   - legacy algorithms used by old bastion hosts are accepted (secure ones still come first);
   - without a password, keys in ssh-agent are tried first.
-- It uses a single channel (many bastion hosts close the session when a second channel opens on the same connection), so there is no resource monitor, host tools, duplicate session, split pane, SFTP on the right or command history.
+- It uses a single channel (many bastion hosts close the session when a second channel opens on the same connection), so there is no resource monitor, host tools, duplicate session, split pane, SFTP opened from the terminal or command history.
 - "Save to Host List…" in the tab menu keeps it as a host (with the address, port, user and password filled in).
 - For a bastion host saved in the host list, check "Use a single channel (bastion host)" on the host's Connection page for the same protection (duplicating a session opens a new connection instead).
 - When a server refuses extra channels, Termlet also remembers it and stops trying (except when the connection merely reached the server's session limit, MaxSessions; then it retries later).

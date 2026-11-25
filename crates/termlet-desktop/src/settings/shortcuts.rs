@@ -815,9 +815,7 @@ impl Render for ShortcutsPage {
         // 现在的快捷键正好是哪一套键位方案（macOS 上不提供键位方案）
         let presets_available = KeyPreset::available(os) && presets_match(terms);
         let none = filtering && groups.is_empty() && fixed.is_empty() && !presets_available;
-        let active = KeyPreset::ALL
-            .into_iter()
-            .find(|p| keymap::apply_preset(&self.settings, *p).bindings == self.settings.bindings);
+        let active = keymap::active_preset(&self.settings);
         let presets = h_flex()
             .gap_2()
             .items_center()
@@ -967,7 +965,6 @@ fn action_key(action: KeyAction) -> &'static str {
         KeyAction::ZoomOut => "settings.keys.action.zoom_out",
         KeyAction::ZoomReset => "settings.keys.action.zoom_reset",
         KeyAction::Duplicate => "settings.keys.action.duplicate",
-        KeyAction::SftpBeside => "settings.keys.action.sftp_beside",
         KeyAction::NextTab => "settings.keys.action.next_tab",
         KeyAction::PrevTab => "settings.keys.action.prev_tab",
         KeyAction::Tab1

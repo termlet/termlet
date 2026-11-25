@@ -3360,7 +3360,7 @@ impl Panel for TerminalPanel {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> gpui_kit::component::menu::PopupMenu {
-        use crate::workspace::{OpenSftpBeside, SaveAsWorkspace, SplitDown, SplitRight};
+        use crate::workspace::{SaveAsWorkspace, SplitDown, SplitRight};
         let menu = menu.action_context(self.focus_handle(cx));
         let menu = if self.is_ssh() && self.can_duplicate() {
             menu.menu(t!("panel.menu.duplicate"), Box::new(DuplicateSession))
@@ -3370,11 +3370,6 @@ impl Panel for TerminalPanel {
         let menu = if self.can_duplicate() {
             menu.menu(t!("panel.menu.split_right"), Box::new(SplitRight))
                 .menu(t!("panel.menu.split_down"), Box::new(SplitDown))
-        } else {
-            menu
-        };
-        let menu = if self.sftp_target().is_some() {
-            menu.menu(t!("sftp.open_beside"), Box::new(OpenSftpBeside))
         } else {
             menu
         };

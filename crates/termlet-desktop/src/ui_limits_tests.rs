@@ -189,10 +189,10 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
     cx.run_until_parked();
     let panel = cx.update(|cx| PanelId::from(workspace.read(cx).live_terminals()[0].entity_id()));
 
-    // 终端 Tab 菜单：现在 21 项（目标 12，硬上限 16）、5 组
+    // 终端 Tab 菜单：现在 20 项（目标 12，硬上限 16）、5 组
     let tab: ElementId = ("tab-title", panel.as_u64() as usize).into();
     let (items, groups) = right_click_menu(cx, handle, tab);
-    const TAB_MENU_ITEMS: usize = 21;
+    const TAB_MENU_ITEMS: usize = 20;
     assert!(
         items <= TAB_MENU_ITEMS,
         "终端 Tab 菜单 {items} 项，上限 {TAB_MENU_ITEMS}（目标 {MENU_ITEMS_TARGET}）"

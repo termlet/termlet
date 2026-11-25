@@ -32,8 +32,8 @@ use crate::terminal_panel::{DuplicateSession, Reconnect, TerminalPanel, ToggleRe
 use crate::ui_scale::{self, ResetUiZoom, ZoomInUi, ZoomOutUi};
 use crate::workspace::{
     FocusTabList, MoveTabToNewWindow, NewLocalTerminal, NewWindow, OpenCommandPicker, OpenCompose,
-    OpenHostToolsOverview, OpenSftpBeside, PopOutHostOverview, RevealHostInSidebar,
-    SaveAsWorkspace, ToggleFullscreen, ToggleHostTools, ToggleMultiExec, ToggleSidebar, Workspace,
+    OpenHostToolsOverview, PopOutHostOverview, RevealHostInSidebar, SaveAsWorkspace,
+    ToggleFullscreen, ToggleHostTools, ToggleMultiExec, ToggleSidebar, Workspace,
 };
 use crate::{group_dialog, host_dialog, schemes, settings, t};
 
@@ -86,7 +86,8 @@ enum Op {
     ChangeScheme,
     CommandPicker,
     SaveWorkspace,
-    SftpBeside,
+    /// 为当前终端的主机打开 SFTP（新 Tab，共用终端的连接、跟随它的目录），与标题栏的“SFTP”按钮相同
+    OpenSftp,
     RevealHost,
     MultiExec,
     Compose,
@@ -128,7 +129,6 @@ impl Op {
             Op::ToggleFullscreen => Some(Box::new(ToggleFullscreen)),
             Op::CommandPicker => Some(Box::new(OpenCommandPicker)),
             Op::SaveWorkspace => Some(Box::new(SaveAsWorkspace)),
-            Op::SftpBeside => Some(Box::new(OpenSftpBeside)),
             Op::RevealHost => Some(Box::new(RevealHostInSidebar)),
             Op::MultiExec => Some(Box::new(ToggleMultiExec)),
             Op::Compose => Some(Box::new(OpenCompose)),
@@ -145,6 +145,7 @@ impl Op {
             | Op::NewGroup
             | Op::OpenRecording
             | Op::BatchRun
+            | Op::OpenSftp
             | Op::SnippetBar
             | Op::ToggleTheme
             | Op::ToggleTabPosition
@@ -277,7 +278,8 @@ impl CommandPalette {
             let has_host = current
                 .as_ref()
                 .is_some_and(|p| p.read(cx).host().is_some());
-            let has_ssh = current
+            // 能开 SFTP 的终端（SSH、WSL），与标题栏的“SFTP”按钮出现的条件相同
+            let has_sftp = current
                 .as_ref()
                 .is_some_and(|p| p.read(cx).sftp_target().is_some());
             // 有主机工具的终端（SSH、WSL，不是只用一个通道的）才能弹出概览
@@ -357,7 +359,7 @@ impl CommandPalette {
                     t!("palette.op.save_workspace"),
                     has_terminal,
                 ),
-                (Op::SftpBeside, t!("palette.op.sftp_beside"), has_ssh),
+                (Op::OpenSftp, t!("sftp.open_for_tab"), has_sftp),
                 (Op::RevealHost, t!("palette.op.reveal_host"), has_host),
                 (
                     Op::MultiExec,
@@ -567,6 +569,13 @@ impl CommandPalette {
                 Op::NewGroup => group_dialog::open_new(None, window, cx),
                 Op::OpenRecording => workspace.update(cx, |w, cx| w.pick_recording(window, cx)),
                 Op::BatchRun => workspace.update(cx, |w, cx| w.open_batch(window, cx)),
+                Op::OpenSftp => {
+                    if let Some(panel) = self.current.as_ref().and_then(|p| p.upgrade()) {
+                        workspace.update(cx, |w, cx| {
+                            w.open_sftp_for_terminal(panel, window, cx);
+                        });
+                    }
+                }
                 Op::ToggleTheme => workspace.update(cx, |w, cx| w.toggle_theme(window, cx)),
                 Op::ToggleTabPosition => {
                     workspace.update(cx, |w, cx| w.toggle_tab_position(window, cx))
@@ -782,5 +791,81 @@ mod tests {
         // 每个词都要出现
         assert_eq!(rank(&entries, &["web".into(), "10.0.0.1".into()]), [1]);
         assert_eq!(rank(&entries, &[]), [0, 1, 2, 3]);
+    }
+
+    /// 打开命令面板，搜 `query`，按 Enter 执行第一项。
+    fn run_in_palette(
+        cx: &mut gpui_kit::TestAppContext,
+        handle: gpui_kit::AnyWindowHandle,
+        query: &str,
+    ) {
+        use gpui_kit::test::TestWindowExt as _;
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.dispatch_action(Box::new(crate::workspace::OpenCommandPalette), cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.input(query, cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.press("enter", cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+    }
+
+    // “为当前主机打开 SFTP 文件管理”：焦点在能开 SFTP 的终端上时才有，执行后新开一个 SFTP 的 Tab（与标题栏的按钮
+    // 相同，终端还在）；没有终端时没有这一项
+    #[gpui_kit::test]
+    fn open_sftp_for_the_current_terminal(cx: &mut gpui_kit::TestAppContext) {
+        use termlet_core::store::Position;
+        let handle = crate::testkit::open_workspace(cx);
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        let workspace = cx
+            .update_window(handle, |_, window, cx| {
+                crate::workspace::Workspace::in_window(window, cx).unwrap()
+            })
+            .unwrap();
+        let query = format!("> {}", t!("sftp.open_for_tab"));
+        let tabs = |cx: &mut gpui_kit::TestAppContext| {
+            cx.update(|cx| {
+                let w = workspace.read(cx);
+                (w.tab_count(cx), w.terminal_count())
+            })
+        };
+
+        run_in_palette(cx, handle, &query);
+        assert_eq!(tabs(cx), (0, 0), "没有终端时没有这一项");
+
+        // 连不上的主机：打开很快失败，终端的 Tab 照样在，能开 SFTP（共用它的连接）
+        let host = cx.update(|cx| {
+            AppState::store(cx)
+                .create(
+                    Host {
+                        name: "web".into(),
+                        address: "127.0.0.1".into(),
+                        port: 1,
+                        username: "alice".into(),
+                        ..Default::default()
+                    },
+                    None,
+                    Position::Last,
+                )
+                .unwrap()
+        });
+        cx.update_window(handle, |_, window, cx| {
+            workspace.update(cx, |w, cx| w.open_host(&host, window, cx))
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert_eq!(tabs(cx), (1, 1));
+        run_in_palette(cx, handle, &query);
+        assert_eq!(tabs(cx), (2, 1), "新开一个 SFTP 的 Tab，终端还在");
     }
 }

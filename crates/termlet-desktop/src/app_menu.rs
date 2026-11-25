@@ -31,8 +31,8 @@ use crate::terminal_search::OpenSearch;
 use crate::ui_scale::{ResetUiZoom, ZoomInUi, ZoomOutUi};
 use crate::workspace::{
     NewLocalTerminal, NewWindow, NextTab, OpenAbout, OpenCommandPalette, OpenCommandPicker,
-    OpenHostToolsOverview, OpenSettings, OpenSftpBeside, PrevTab, SplitDown, SplitRight,
-    ToggleCompose, ToggleFullscreen, ToggleHostTools, ToggleMultiExec, ToggleSidebar, Workspace,
+    OpenHostToolsOverview, OpenSettings, PrevTab, SplitDown, SplitRight, ToggleCompose,
+    ToggleFullscreen, ToggleHostTools, ToggleMultiExec, ToggleSidebar, Workspace,
 };
 
 actions!(
@@ -162,7 +162,6 @@ pub fn app_menus() -> Vec<Menu> {
             MenuItem::separator(),
             MenuItem::action(t!("app_menu.split_right"), SplitRight),
             MenuItem::action(t!("app_menu.split_down"), SplitDown),
-            MenuItem::action(t!("app_menu.sftp_beside"), OpenSftpBeside),
             MenuItem::separator(),
             MenuItem::action(t!("app_menu.reconnect"), Reconnect),
             MenuItem::separator(),
@@ -375,7 +374,6 @@ mod tests {
             (DuplicateSession.name(), Some("cmd-shift-t")),
             (SplitRight.name(), Some("cmd-d")),
             (SplitDown.name(), Some("cmd-shift-d")),
-            (OpenSftpBeside.name(), None),
             (Reconnect.name(), Some("cmd-shift-r")),
             (CloseTab.name(), Some("cmd-w")),
             (CloseWindow.name(), Some("cmd-shift-w")),
@@ -513,7 +511,6 @@ mod tests {
             Box::new(DuplicateSession),
             Box::new(SplitRight),
             Box::new(SplitDown),
-            Box::new(OpenSftpBeside),
             Box::new(ToggleSidebar),
             Box::new(ToggleHostTools),
             Box::new(OpenHostToolsOverview),

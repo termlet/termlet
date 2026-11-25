@@ -142,8 +142,6 @@ pub enum KeyAction {
     ZoomReset,
     /// 复制会话（共用连接）
     Duplicate,
-    /// 在当前终端旁边打开 SFTP（默认没有快捷键；Xshell 的键位方案是 Ctrl+Alt+F）
-    SftpBeside,
     /// 撰写栏：把命令发送到多个终端
     Compose,
     /// 同步输入：在一个终端中输入，同时发送到多个终端（网格平铺）
@@ -212,7 +210,7 @@ struct Meta {
 
 impl KeyAction {
     /// 按设置页中的顺序（与声明的顺序相同）。
-    pub const ALL: [KeyAction; 38] = [
+    pub const ALL: [KeyAction; 37] = [
         KeyAction::Copy,
         KeyAction::Paste,
         KeyAction::Search,
@@ -220,7 +218,6 @@ impl KeyAction {
         KeyAction::ZoomOut,
         KeyAction::ZoomReset,
         KeyAction::Duplicate,
-        KeyAction::SftpBeside,
         KeyAction::Compose,
         KeyAction::MultiExec,
         KeyAction::CommandPicker,
@@ -311,7 +308,6 @@ impl KeyAction {
                 &["ctrl-shift-d"],
                 &["cmd-shift-t"],
             ),
-            Self::SftpBeside => ("sftpBeside", G::Terminal, S::Workspace, &[], &[]),
             Self::Compose => (
                 "compose",
                 G::Terminal,
@@ -899,7 +895,7 @@ pub fn reset_all(settings: &KeybindingSettings, os: KeyOs) -> KeybindingSettings
 ///
 /// 只改有对应功能的动作，其余用 Termlet 的默认值；照搬的按键放在第一个（菜单与提示中显示它），
 /// Termlet 原来的按键能保留的也留着。按键来源：Xshell 见 NetSarang 的帮助“已定义的快捷键”与多篇中文教程
-/// （Alt+数字切换 Tab、Ctrl+Tab、Alt+I 撰写栏、Alt+Enter 全屏、Ctrl+Alt+F 打开文件传输）；MobaXterm 见官方文档
+/// （Alt+数字切换 Tab、Ctrl+Tab、Alt+I 撰写栏、Alt+Enter 全屏）；MobaXterm 见官方文档
 /// 的键盘快捷键一节（Ctrl+Tab、Ctrl+Alt+←/→、Ctrl+Alt+F1～F9、Ctrl+Alt+T 新 Tab、Ctrl+Shift+U 复制 Tab）。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum KeyPreset {
@@ -927,7 +923,6 @@ impl KeyPreset {
         use KeyAction as A;
         match self {
             KeyPreset::Xshell => &[
-                (A::SftpBeside, &["ctrl-alt-f"]),
                 (A::Compose, &["alt-i", "ctrl-shift-m"]),
                 (A::Tab1, &["alt-1", "ctrl-alt-1"]),
                 (A::Tab2, &["alt-2", "ctrl-alt-2"]),
@@ -968,6 +963,15 @@ pub fn apply_preset(settings: &KeybindingSettings, preset: KeyPreset) -> Keybind
         next = store(&next, *action, &list, KeyOs::Windows);
     }
     next
+}
+
+/// 现在的快捷键（Windows、Linux 共用的那份）正好是哪一套键位方案。按实际生效的快捷键比较：不认识的动作（例如以前的
+/// 版本在方案中写下、后来去掉了的动作）不影响结果。
+pub fn active_preset(settings: &KeybindingSettings) -> Option<KeyPreset> {
+    let current = effective(settings, KeyOs::Windows);
+    KeyPreset::ALL
+        .into_iter()
+        .find(|preset| effective(&apply_preset(settings, *preset), KeyOs::Windows) == current)
 }
 
 fn check(
@@ -1040,13 +1044,11 @@ mod tests {
         combos.iter().map(KeyCombo::to_string).collect()
     }
 
-    /// 默认没有快捷键的动作：在旁边打开 SFTP（留给键位方案）、把 Tab 移到新窗口、界面大小的三个
-    /// （见 [`KeyAction::UiZoomIn`]）。
+    /// 默认没有快捷键的动作：把 Tab 移到新窗口、界面大小的三个（见 [`KeyAction::UiZoomIn`]）。
     fn without_default(action: KeyAction) -> bool {
         matches!(
             action,
-            KeyAction::SftpBeside
-                | KeyAction::MoveToNewWindow
+            KeyAction::MoveToNewWindow
                 | KeyAction::UiZoomIn
                 | KeyAction::UiZoomOut
                 | KeyAction::UiZoomReset
@@ -1276,7 +1278,6 @@ mod tests {
                 "zoomOut",
                 "zoomReset",
                 "duplicate",
-                "sftpBeside",
                 "compose",
                 "multiExec",
                 "commandPicker",
@@ -1629,7 +1630,6 @@ mod tests {
             texts(xshell.combos(KeyAction::Tab1)),
             ["alt-1", "ctrl-alt-1"]
         );
-        assert_eq!(texts(xshell.combos(KeyAction::SftpBeside)), ["ctrl-alt-f"]);
         let moba = effective(&apply_preset(&base, KeyPreset::MobaXterm), KeyOs::Windows);
         assert_eq!(
             texts(moba.combos(KeyAction::NextTab)),
@@ -1905,5 +1905,47 @@ mod tests {
         assert!(back.mac_bindings.is_empty());
         assert!(KeyPreset::ALL.iter().all(|_| !KeyPreset::available(os)));
         assert!(KeyPreset::available(KeyOs::Windows));
+    }
+
+    // 去掉的动作（0.3.4 去掉了“在右侧打开 SFTP”，ID 是 sftpBeside）：以前的版本保存的、同步来的快捷键读进来不报错，
+    // 被忽略，它占着的组合可以给别的动作；别的改动照常生效；改别的快捷键时这一项原样留着，同步回以前的版本不丢
+    #[test]
+    fn removed_action_is_ignored_and_kept() {
+        let saved: KeybindingSettings = serde_json::from_value(serde_json::json!({
+            "bindings": { "sftpBeside": ["ctrl-alt-f"], "copy": ["ctrl-alt-c"] },
+            "macBindings": { "sftpBeside": ["cmd-alt-f"] },
+        }))
+        .unwrap();
+        let windows = effective(&saved, KeyOs::Windows);
+        assert_eq!(texts(windows.combos(KeyAction::Copy)), ["ctrl-alt-c"]);
+        assert!(
+            windows
+                .iter()
+                .all(|(_, combos)| !combos.contains(&combo("ctrl-alt-f"))),
+            "去掉的动作不占组合"
+        );
+        assert_eq!(effective(&saved, KeyOs::Mac), Keymap::defaults(KeyOs::Mac));
+        let next = add_binding(
+            &saved,
+            KeyAction::Search,
+            combo("ctrl-alt-f"),
+            KeyOs::Windows,
+        )
+        .expect("组合空出来了");
+        assert_eq!(
+            texts(effective(&next, KeyOs::Windows).combos(KeyAction::Search)),
+            ["ctrl-shift-f", "ctrl-alt-f"]
+        );
+        assert_eq!(next.bindings["sftpBeside"], ["ctrl-alt-f"], "原样留着");
+        assert_eq!(next.mac_bindings, saved.mac_bindings);
+
+        // 以前的版本换上 Xshell 方案时写下了 sftpBeside：照样认得出是 Xshell 方案
+        let mut old_xshell = apply_preset(&KeybindingSettings::default(), KeyPreset::Xshell);
+        old_xshell
+            .bindings
+            .insert("sftpBeside".into(), vec!["ctrl-alt-f".into()]);
+        assert_eq!(active_preset(&old_xshell), Some(KeyPreset::Xshell));
+        assert_eq!(active_preset(&KeybindingSettings::default()), None);
+        assert_eq!(active_preset(&saved), None, "改过复制，不是哪一套方案");
     }
 }

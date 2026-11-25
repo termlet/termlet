@@ -26,9 +26,9 @@ use crate::ui_scale;
 use crate::workspace::{
     self, ActivateTab1, ActivateTab2, ActivateTab3, ActivateTab4, ActivateTab5, ActivateTab6,
     ActivateTab7, ActivateTab8, ActivateTab9, FocusTabList, MoveTabToNewWindow, NewLocalTerminal,
-    NewWindow, NextTab, OpenCommandPalette, OpenCommandPicker, OpenHostToolsOverview,
-    OpenSftpBeside, PrevTab, SplitDown, SplitRight, ToggleCompose, ToggleFullscreen,
-    ToggleHostTools, ToggleMultiExec, ToggleSidebar,
+    NewWindow, NextTab, OpenCommandPalette, OpenCommandPicker, OpenHostToolsOverview, PrevTab,
+    SplitDown, SplitRight, ToggleCompose, ToggleFullscreen, ToggleHostTools, ToggleMultiExec,
+    ToggleSidebar,
 };
 use termlet_terminal::view::{Copy, Paste, ZoomIn, ZoomOut, ZoomReset};
 
@@ -122,7 +122,6 @@ fn targets(action: KeyAction) -> Vec<(Box<dyn Action>, &'static str)> {
         }
         KeyAction::Lock => vec![(Box::new(crate::lock_ui::LockNow), workspace::KEY_CONTEXT)],
         KeyAction::NewWindow => vec![(Box::new(NewWindow), workspace::KEY_CONTEXT)],
-        KeyAction::SftpBeside => vec![(Box::new(OpenSftpBeside), workspace::KEY_CONTEXT)],
         KeyAction::NextTab => vec![(Box::new(NextTab), workspace::KEY_CONTEXT)],
         KeyAction::PrevTab => vec![(Box::new(PrevTab), workspace::KEY_CONTEXT)],
         KeyAction::Tab1 => vec![(Box::new(ActivateTab1), workspace::KEY_CONTEXT)],

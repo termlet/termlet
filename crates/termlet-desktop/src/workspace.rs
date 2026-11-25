@@ -76,8 +76,6 @@ actions!(
         SaveAsWorkspace,
         /// 快捷命令选择器：搜索并发送快捷命令与命令历史
         OpenCommandPicker,
-        /// 在当前终端右侧打开 SFTP：共用它的连接，跟随它的目录
-        OpenSftpBeside,
         /// 开启 / 退出同步输入
         ToggleMultiExec,
         /// 打开 / 关闭撰写栏
@@ -1890,36 +1888,6 @@ impl Workspace {
         self.open_sftp(name, target, Some(terminal), window, cx)
     }
 
-    /// 在当前终端右侧打开 SFTP（焦点不在终端上时用最近用过的终端）。
-    pub(crate) fn open_sftp_beside(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(terminal) = self.command_target(window, cx) else {
-            return;
-        };
-        let Some(target) = terminal.read(cx).sftp_target() else {
-            return;
-        };
-        let Some(node) = self
-            .dock_area
-            .read(cx)
-            .layout(DockPlacement::Center)
-            .and_then(|tree| tree.find_panel_node(PanelId::from(terminal.entity_id())))
-        else {
-            return;
-        };
-        let name = terminal.read(cx).name().clone();
-        let Some(panel) = self.open_sftp(name, target, Some(terminal), window, cx) else {
-            return;
-        };
-        let target = InsertTarget::Split {
-            node,
-            placement: Placement::Right,
-            size: None,
-        };
-        self.dock_area.update(cx, |dock, cx| {
-            dock.move_panel(PanelId::from(panel.entity_id()), target, window, cx)
-        });
-    }
-
     /// 打开一个 SFTP Tab。
     fn open_sftp(
         &mut self,
@@ -2692,11 +2660,6 @@ impl Render for Workspace {
             .on_action(cx.listener(|this, _: &OpenCommandPicker, window, cx| {
                 this.open_command_picker(window, cx)
             }))
-            .on_action(
-                cx.listener(|this, _: &OpenSftpBeside, window, cx| {
-                    this.open_sftp_beside(window, cx)
-                }),
-            )
             .on_action(cx.listener(|this, _: &RevealHostInSidebar, window, cx| {
                 let host = this
                     .command_target(window, cx)

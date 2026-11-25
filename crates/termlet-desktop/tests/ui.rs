@@ -291,7 +291,10 @@ fn xshell_key_preset_is_saved_and_works(cx: &mut TestAppContext) {
     let combos = |id: &str| saved.get(id).cloned().unwrap_or_default();
     assert_eq!(combos("tab1"), ["alt-1", "ctrl-alt-1"]);
     assert_eq!(combos("compose"), ["alt-i", "ctrl-shift-m"]);
-    assert_eq!(combos("sftpBeside"), ["ctrl-alt-f"]);
+    assert!(
+        !saved.contains_key("sftpBeside"),
+        "去掉了的动作不再写进方案"
+    );
     // 关掉设置 Tab（保存后没有修改，直接关），回到终端
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);

@@ -1703,12 +1703,6 @@ settings.keys.action.duplicate:
   zh-TW: 複製工作階段（共用連線）
   ja: セッションを複製（接続を共有）
   ko: 세션 복제(연결 공유)
-settings.keys.action.sftp_beside:
-  zh-CN: 在右侧打开 SFTP
-  en: Open SFTP on the right
-  zh-TW: 在右側開啟 SFTP
-  ja: 右側に SFTP を開く
-  ko: 오른쪽에 SFTP 열기
 settings.keys.action.next_tab:
   zh-CN: 下一个 Tab
   en: Next tab

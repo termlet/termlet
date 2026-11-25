@@ -22,6 +22,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 - The compose bar's "Run and Compare" now shows its results in a Batch run tab (no more dialog, so the window stays usable while it waits) and is recorded in the audit log; running again in the same window reuses that tab unless it's still running.
 - While sync input is on, snippets (from the snippet bar, the picker or the sidebar) go to every synced terminal, matching the banner that says keystrokes go to all of them, and are checked for dangerous commands like typing and pasting. Before, they went only to the current terminal.
 - A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent. Snippets that are only typed, not run, aren't checked. Before, snippets skipped the dangerous command rules (the compose bar and sync input both checked them).
+- Removed "Open SFTP on the Right" (from the terminal tab menu, the command palette, the macOS menu bar and the shortcuts): to put SFTP next to a terminal, open it and drag its tab onto one side of the terminal's content to split the pane. The command palette gains "Open SFTP File Manager for This Host", which works like the "SFTP" button in the title bar (a new tab sharing the terminal's connection and following its folder), even when that button is hidden. A shortcut you assigned to it no longer does anything and the key is free for other actions; your other shortcuts are unaffected.
 
 ### Fixed
 
