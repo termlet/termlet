@@ -447,7 +447,7 @@ pub(crate) mod tests {
             "TerminalPanel" | "SftpPanel" | "EditorPanel" | "HostTree" | "HostTools"
             | "TabList" => Some(workspace::KEY_CONTEXT),
             "Terminal" | "TerminalSearch" => Some(terminal_panel::KEY_CONTEXT),
-            "SftpFileList" | "SftpPath" => Some("SftpPanel"),
+            "SftpFileList" | "SftpPath" | "SftpFilter" => Some("SftpPanel"),
             "HostToolsList" | "HostToolsSearch" => Some("HostTools"),
             _ => None,
         }

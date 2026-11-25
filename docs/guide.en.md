@@ -921,13 +921,14 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
   | F7 | create a folder |
   | Delete | delete |
   | Ctrl+A | select all |
+  | Ctrl+F or / | filter the current folder by name (see "Filtering" below) |
   | Shift+F10 or the Menu key | open the context menu next to the current row (so upload, download, permissions and the rest work from the keyboard) |
   | Ctrl+L or Alt+D | edit the path (Esc in the path box discards the edit and returns to the list) |
   | Tab | switch between the local and remote panes |
 
-- On macOS the keys follow Finder: ⌘A / ⌘C / ⌘V, ⇧⌘. shows hidden files, ⌘↑ goes up, ⌘↓ opens, ⌘⌫ deletes, ⇧⌘N creates a folder, ⌘R refreshes and ⌘L edits the path, while ⌥↑ ⌥↓ move the current row and ⌥Space selects or deselects it (the F keys, Enter and Backspace above work too).
+- On macOS the keys follow Finder: ⌘A / ⌘C / ⌘V, ⇧⌘. shows hidden files, ⌘↑ goes up, ⌘↓ opens, ⌘⌫ deletes, ⇧⌘N creates a folder, ⌘R refreshes, ⌘L edits the path and ⌘F filters, while ⌥↑ ⌥↓ move the current row and ⌥Space selects or deselects it (the F keys, Enter and Backspace above work too).
 - The current row has a focus ring while the list has focus.
-- Going up selects the folder you came from, and after deleting, the next item in the same place is selected.
+- Going up selects the folder you came from, after deleting, the next item in the same place is selected, and a new or renamed folder or file is selected once it's created or renamed.
 
 ### Browsing
 
@@ -936,6 +937,17 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - Set "Icons" under Settings → General to Monochrome for monochrome icons (which also applies to system and brand logos).
 - Hidden files (names starting with a dot on the server, files with the hidden attribute on this computer) are shown, a little dimmed.
 - The eye button on each pane or Ctrl+Alt+H switches them on or off, remembered separately for the remote and local panes.
+
+### Filtering
+
+- With the list focused, press Ctrl+F (⌘F on macOS) or /, or click the magnifier at the right end of the Name column, to open a filter box under the header; each pane has its own.
+- Only items whose names contain the text are shown, ignoring case; with `*` or `?` the text is a wildcard pattern for the whole name (such as `*.log` or `access?.log`).
+- The right end of the box shows how many items are shown out of how many; when nothing matches, the list says so.
+- The first match becomes the current row: Enter or ↓ returns to the list (the filter stays), and Enter again opens it. Typing the start of a name still jumps to it.
+- Select all, Shift selection, dragging, downloading and deleting only act on the items shown.
+- Esc (in the filter box or the list) clears and closes it, and so does clicking the magnifier again. Changing folders clears it; refreshing and uploading keep it (new items that don't match stay hidden).
+- After creating or renaming a folder or file, the new item is selected; if the filter would hide it, the filter is cleared first.
+- When the remote pane follows a terminal, "Find in terminal" appears in the filter box once you've typed something: it puts a `find` command that searches the current folder and every folder under it by name (such as `find . -iname '*log*'`) into that terminal and switches to it, without running it; press Enter to run it. If the terminal's command line already has something typed, the command goes after it. The button isn't there when the terminal is disconnected, is running a full-screen program (vim and the like) or the server runs Windows.
 
 ### Columns
 

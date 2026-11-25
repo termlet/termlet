@@ -1,5 +1,6 @@
 //! 以 root 身份打开 SFTP 的 UI 集成测试：主机菜单与 SFTP 面板菜单中的入口、Tab 标题与工具栏上的 root 标记、
-//! sudo 密码的对话框。菜单项按本线程语言的文案核对；主机的地址连不上（打开很快失败，不影响这些界面）。
+//! sudo 密码的对话框；另有两栏的键盘操作与本机栏的筛选。菜单项按本线程语言的文案核对；主机的地址连不上（打开很快
+//! 失败，不影响这些界面）。
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -276,6 +277,83 @@ fn keyboard_switches_panes_and_edits_path(cx: &mut TestAppContext) {
     .unwrap();
 }
 
+// 本机栏的筛选：Ctrl+F 只显示名称匹配的项，Enter 回到列表保留筛选；F7 新建的文件夹不匹配时清空筛选再选中它
+#[gpui_kit::test]
+fn local_pane_filters_and_selects_the_new_folder(cx: &mut TestAppContext) {
+    setup(cx);
+    let dir = std::env::temp_dir().join(format!(
+        "termlet-sftp-filter-{}",
+        termlet_core::id::random_token(8)
+    ));
+    std::fs::create_dir_all(dir.join("logs")).unwrap();
+    for name in ["access.log", "app.py", "notes.txt"] {
+        std::fs::write(dir.join(name), "x").unwrap();
+    }
+    let start = dir.clone();
+    cx.update(|cx| {
+        AppState::ui(cx).update(cx, |ui, cx| {
+            ui.update(|s| s.sftp_local_dir = Some(start), cx)
+        })
+    });
+    let web = add_host(cx, "web", false);
+    let (handle, panel, _) = open_panel(cx, SftpTarget::Host(web));
+    wait_until(cx, handle, "本机栏列出临时目录", |window, _| {
+        window.try_find("local-list-row-access.log").is_some()
+    });
+    let (_, local) = cx.read(|cx| panel.read(cx).list_focus(cx));
+    cx.update_window(handle, |_, window, cx| {
+        local.focus(window, cx);
+        window.press("ctrl-f", cx);
+        assert!(!local.is_focused(window), "焦点到了筛选框");
+        window.input("LOG", cx);
+    })
+    .unwrap();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("local-list-row-access.log").is_some());
+        assert!(
+            window.try_find("local-list-row-logs").is_some(),
+            "不分大小写"
+        );
+        assert!(window.try_find("local-list-row-app.py").is_none());
+        assert!(
+            window.try_find("local-list-find").is_none(),
+            "本机栏没有“在终端中查找”"
+        );
+        window.press("enter", cx);
+        assert!(local.is_focused(window), "Enter 回到列表");
+        assert!(window.try_find("local-list-filter").is_some(), "筛选保留");
+        window.press("f7", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.input("build", cx);
+        window.press("enter", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "新建的文件夹显示出来", |window, _| {
+        window.try_find("local-list-row-build").is_some()
+    });
+    let list = cx.read(|cx| panel.read(cx).local_list(cx));
+    let selected: Vec<String> = cx.read(|cx| {
+        list.read(cx)
+            .selected()
+            .into_iter()
+            .map(|row| row.name)
+            .collect()
+    });
+    assert_eq!(selected, ["build"], "选中新建的文件夹");
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("local-list-filter").is_none(), "清空了筛选");
+        assert!(window.try_find("local-list-row-app.py").is_some());
+    })
+    .unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 // 新加的文案都在 locales 中（缺了的键会原样显示键名）
 #[test]
 fn root_and_encoding_texts_exist() {
@@ -328,6 +406,7 @@ fn keyboard_texts_exist() {
         ),
         ("settings.keys.sftp_menu", t!("settings.keys.sftp_menu")),
         ("sftp.new_folder_menu", t!("sftp.new_folder_menu")),
+        ("settings.keys.sftp_filter", t!("settings.keys.sftp_filter")),
         ("settings.keys.sftp_path", t!("settings.keys.sftp_path")),
         (
             "settings.keys.sftp_switch_pane",

@@ -892,6 +892,38 @@ impl Workspace {
         self.sync_tools_target(window, cx);
     }
 
+    /// 切到 SFTP 跟随的终端（“在终端中查找”写进命令之后）：在这个窗口中就切过去；在别的窗口中（SFTP 的 Tab 移了
+    /// 窗口）切到那个窗口的这个终端，把窗口带到前台；哪个窗口都没有（已经关了）时提示。
+    fn reveal_terminal(
+        &mut self,
+        terminal: Entity<TerminalPanel>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.live_terminals().contains(&terminal) {
+            self.show_terminal(&terminal, window, cx);
+            return;
+        }
+        let this = cx.entity_id();
+        let found = move_tab::open_workspaces(cx)
+            .into_iter()
+            .filter(|(_, workspace)| workspace.entity_id() != this)
+            .find(|(_, workspace)| workspace.read(cx).live_terminals().contains(&terminal));
+        let Some((handle, workspace)) = found else {
+            crate::notify::warning(t!("sftp.filter.terminal_missing"), window, cx);
+            return;
+        };
+        // 这个窗口的更新结束后再去动另一个窗口
+        cx.defer(move |cx| {
+            let _ = handle.update(cx, |_, window, cx| {
+                workspace.update(cx, |workspace, cx| {
+                    workspace.show_terminal(&terminal, window, cx)
+                });
+                window.activate_window();
+            });
+        });
+    }
+
     /// 在当前终端旁边分屏：新窗格共用它的连接（复制会话），放在 `placement` 一侧。
     pub(crate) fn split(
         &mut self,
@@ -1953,6 +1985,9 @@ impl Workspace {
                         this.open_editor(panel, lease.clone(), file.clone(), window, cx)
                     }
                     SftpPanelEvent::OpenAsRoot => this.open_sftp_as_root(panel, window, cx),
+                    SftpPanelEvent::ShowTerminal(terminal) => {
+                        this.reveal_terminal(terminal.clone(), window, cx)
+                    }
                 },
             ),
             cx.observe_release(panel, move |this, _, _| {

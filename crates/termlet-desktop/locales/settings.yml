@@ -1559,6 +1559,12 @@ settings.keys.sftp_menu:
   zh-TW: 開啟右鍵選單（也可以按選單鍵）
   ja: コンテキストメニューを開く（メニューキーでも可）
   ko: 컨텍스트 메뉴 열기(메뉴 키로도 가능)
+settings.keys.sftp_filter:
+  zh-CN: 按名称筛选当前目录（按 Esc 清空并收起）
+  en: Filter the current folder by name (Esc clears and closes it)
+  zh-TW: 依名稱篩選目前目錄（按 Esc 清除並收起）
+  ja: 現在のディレクトリを名前でフィルター（Esc でクリアして閉じる）
+  ko: 현재 디렉터리를 이름으로 필터(Esc를 누르면 지우고 닫음)
 settings.keys.sftp_path:
   zh-CN: 编辑路径（按 Esc 回到列表）
   en: Edit the path (Esc returns to the list)

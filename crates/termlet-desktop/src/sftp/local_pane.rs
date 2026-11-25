@@ -163,6 +163,12 @@ impl LocalPane {
         self._subscriptions = Self::subscribe(&self.list, &self.path, window, cx);
     }
 
+    /// 列表（测试中核对选择）。
+    #[cfg(test)]
+    pub(crate) fn list(&self) -> Entity<FileList> {
+        self.list.clone()
+    }
+
     /// 当前目录（还没打开时为 `None`）。
     pub fn dir(&self) -> Option<&Path> {
         self.dir.as_deref()
@@ -280,6 +286,13 @@ impl LocalPane {
         if let Some(dir) = self.dir.clone() {
             self.load(dir, window, cx);
         }
+    }
+
+    /// 新建、改名后刷新，选中名为 `name` 的新项（被筛选筛掉时先清空筛选）。
+    fn refresh_to(&mut self, name: String, window: &mut Window, cx: &mut Context<Self>) {
+        self.list
+            .update(cx, |list, _| list.reveal_after_refresh(name));
+        self.refresh(window, cx);
     }
 
     fn apply(&mut self, listing: sftp::LocalListing, window: &mut Window, cx: &mut Context<Self>) {
@@ -418,6 +431,7 @@ impl LocalPane {
                 let dir = dir.clone();
                 let pane = pane.clone();
                 tracing::info!(dir = %dir.display(), name = %name, "本机新建文件夹");
+                let created = name.clone();
                 let job =
                     termlet_core::runtime::spawn(
                         async move { sftp::make_local_dir(&dir, &name).await },
@@ -425,7 +439,8 @@ impl LocalPane {
                 window.spawn(cx, async move |cx| {
                     let result = job.await.map_err(|e| SharedString::from(e.to_string()))?;
                     result.map_err(|e| errors::describe(&e))?;
-                    let _ = pane.update_in(cx, |this, window, cx| this.refresh(window, cx));
+                    let _ =
+                        pane.update_in(cx, |this, window, cx| this.refresh_to(created, window, cx));
                     Ok(())
                 })
             }),
@@ -450,6 +465,7 @@ impl LocalPane {
                 if !unchanged {
                     tracing::info!(dir = %dir.display(), from = %from, to = %name, "本机重命名");
                 }
+                let renamed = name.clone();
                 let job = termlet_core::runtime::spawn(async move {
                     if unchanged {
                         return Ok(());
@@ -459,7 +475,8 @@ impl LocalPane {
                 window.spawn(cx, async move |cx| {
                     let result = job.await.map_err(|e| SharedString::from(e.to_string()))?;
                     result.map_err(|e| errors::describe(&e))?;
-                    let _ = pane.update_in(cx, |this, window, cx| this.refresh(window, cx));
+                    let _ =
+                        pane.update_in(cx, |this, window, cx| this.refresh_to(renamed, window, cx));
                     Ok(())
                 })
             }),
@@ -543,7 +560,9 @@ impl LocalPane {
             FileListEvent::Refresh => self.refresh(window, cx),
             FileListEvent::Delete => self.confirm_trash(window, cx),
             FileListEvent::CopyPaths => self.copy_paths(window, cx),
-            FileListEvent::PasteFiles | FileListEvent::DropExternal { .. } => {}
+            FileListEvent::PasteFiles
+            | FileListEvent::DropExternal { .. }
+            | FileListEvent::FindInTerminal(_) => {}
             FileListEvent::Drop { files, into } => {
                 let Some(dir) = self.dir.clone() else {
                     return;

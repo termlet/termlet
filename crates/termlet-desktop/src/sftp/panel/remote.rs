@@ -264,7 +264,8 @@ impl SftpPanel {
                 window.spawn(cx, async move |cx| {
                     let result = job.await.map_err(|e| SharedString::from(e.to_string()))?;
                     result.map_err(|e| errors::describe(&e))?;
-                    let _ = this.update_in(cx, |this, window, cx| this.refresh(window, cx));
+                    let _ =
+                        this.update_in(cx, |this, window, cx| this.refresh_to(name, window, cx));
                     Ok(())
                 })
             }),
@@ -303,7 +304,8 @@ impl SftpPanel {
                 window.spawn(cx, async move |cx| {
                     let result = job.await.map_err(|e| SharedString::from(e.to_string()))?;
                     result.map_err(|e| errors::describe(&e))?;
-                    let _ = this.update_in(cx, |this, window, cx| this.refresh(window, cx));
+                    let _ =
+                        this.update_in(cx, |this, window, cx| this.refresh_to(name, window, cx));
                     Ok(())
                 })
             }),

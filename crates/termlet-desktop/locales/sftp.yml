@@ -731,6 +731,42 @@ sftp.only_hidden:
   zh-TW: 這裡只有隱藏的檔案（%{count} 項），按 %{key} 或按一下上方的眼睛按鈕即可顯示
   ja: ここには隠しファイルしかありません（%{count} 項目）。%{key} を押すか、上の目のボタンをクリックすると表示されます
   ko: 여기에는 숨김 파일만 있습니다(%{count}개 항목). %{key} 키를 누르거나 위의 눈 모양 버튼을 클릭하면 표시됩니다
+sftp.filter.open:
+  zh-CN: 按名称筛选（%{key} 或 /）
+  en: Filter by name (%{key} or /)
+  zh-TW: 依名稱篩選（%{key} 或 /）
+  ja: 名前でフィルター（%{key} または /）
+  ko: 이름으로 필터(%{key} 또는 /)
+sftp.filter.placeholder:
+  zh-CN: 筛选名称，如 log 或 *.log
+  en: Filter names, e.g. log or *.log
+  zh-TW: 篩選名稱，如 log 或 *.log
+  ja: 名前でフィルター（例：log、*.log）
+  ko: "이름 필터(예: log, *.log)"
+sftp.filter.no_match:
+  zh-CN: 没有名称与“%{query}”匹配的项
+  en: No names match “%{query}”
+  zh-TW: 沒有名稱與「%{query}」相符的項目
+  ja: 「%{query}」に一致する名前はありません
+  ko: "'%{query}'와(과) 일치하는 이름이 없습니다"
+sftp.filter.find_in_terminal:
+  zh-CN: 在终端中查找
+  en: Find in terminal
+  zh-TW: 在終端機中尋找
+  ja: ターミナルで検索
+  ko: 터미널에서 찾기
+sftp.filter.find_hint:
+  zh-CN: 把在子目录中查找的 find 命令写进终端，按 Enter 执行
+  en: Puts a find command that also searches subfolders into the terminal. Press Enter to run it.
+  zh-TW: 把在子目錄中尋找的 find 指令寫入終端機，按 Enter 執行
+  ja: サブディレクトリも検索する find コマンドをターミナルに入力します。Enter で実行します
+  ko: 하위 디렉터리까지 찾는 find 명령을 터미널에 입력합니다. Enter를 누르면 실행됩니다
+sftp.filter.terminal_missing:
+  zh-CN: 找不到跟随的终端，它可能已经关闭
+  en: Couldn't find the terminal this SFTP follows. It may have been closed.
+  zh-TW: 找不到跟隨的終端機，它可能已經關閉
+  ja: 追従しているターミナルが見つかりません。閉じられた可能性があります
+  ko: 따라가는 터미널을 찾을 수 없습니다. 닫혔을 수 있습니다
 sftp.reconnect:
   zh-CN: 重新连接
   en: Reconnect

@@ -580,6 +580,7 @@ fn fixed_windows() -> (FixedKeys, FixedKeys) {
         (key("Ctrl+V"), "settings.keys.sftp_paste_upload"),
         (key("Ctrl+Alt+H"), "settings.keys.sftp_toggle_hidden"),
         (key("Shift+F10"), "settings.keys.sftp_menu"),
+        (key("Ctrl+F  /"), "settings.keys.sftp_filter"),
         (key("Ctrl+L  Alt+D"), "settings.keys.sftp_path"),
         (key("Tab"), "settings.keys.sftp_switch_pane"),
     ];
@@ -631,6 +632,7 @@ fn fixed_mac() -> (FixedKeys, FixedKeys) {
         (keys(&["cmd-v"]), "settings.keys.sftp_paste_upload"),
         (keys(&["cmd->"]), "settings.keys.sftp_toggle_hidden"),
         (keys(&["shift-f10"]), "settings.keys.sftp_menu"),
+        (key("⌘F  /"), "settings.keys.sftp_filter"),
         (keys(&["cmd-l"]), "settings.keys.sftp_path"),
         (keys(&["tab"]), "settings.keys.sftp_switch_pane"),
     ];

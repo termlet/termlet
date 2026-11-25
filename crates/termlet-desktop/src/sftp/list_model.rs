@@ -4,6 +4,7 @@
 //! - 选择：单击只选这一项并作为锚点；Ctrl 单击增减这一项；Shift 单击从锚点到这里连续选择。
 //! - 键盘：当前行（可以停在“..”上，它不能选中）随方向键移动，规则见 [`Selection::move_to`]；按名字跳转见
 //!   [`type_ahead`]。
+//! - 筛选当前目录见 [`NameFilter`]；筛不到时“在终端中查找”的命令见 [`find_command`]。
 //! - 名称中看不见的控制字符与双向控制字符写成 `<U+XXXX>`（防止 RLO 伪装扩展名），只用于显示。
 
 use std::cmp::Ordering;
@@ -235,6 +236,109 @@ pub fn type_ahead(names: &[&str], from: Option<usize>, typed: &str) -> Option<us
         .find(|&i| names[i].to_lowercase().starts_with(&prefix))
 }
 
+/// 当前目录的筛选：名称包含输入的文字即算匹配，不分大小写；文字中有 `*` 或 `?` 时按通配符匹配整个名称
+/// （`*` 任意多个字符，`?` 一个字符，如 `*.log`、`access?.log`）。输入为空时都算匹配。
+pub struct NameFilter {
+    /// 小写的输入
+    query: String,
+    /// 按通配符匹配时的模式（小写，按字符拆开）
+    glob: Option<Vec<char>>,
+}
+
+impl NameFilter {
+    pub fn new(query: &str) -> Self {
+        let query = query.to_lowercase();
+        let glob = has_wildcard(&query).then(|| query.chars().collect());
+        Self { query, glob }
+    }
+
+    pub fn matches(&self, name: &str) -> bool {
+        if self.query.is_empty() {
+            return true;
+        }
+        let name = name.to_lowercase();
+        match &self.glob {
+            Some(pattern) => wildcard(&name.chars().collect::<Vec<_>>(), pattern),
+            None => name.contains(&self.query),
+        }
+    }
+}
+
+fn has_wildcard(query: &str) -> bool {
+    query.contains(['*', '?'])
+}
+
+/// 通配符匹配整个名称：遇到不匹配时退回上一个 `*` 多吞一个字符，最坏为名称长度乘模式长度。
+fn wildcard(name: &[char], pattern: &[char]) -> bool {
+    let (mut n, mut p) = (0, 0);
+    // 上一个 `*` 之后的模式位置与它已经吞到的名称位置
+    let mut star: Option<(usize, usize)> = None;
+    while n < name.len() {
+        match pattern.get(p) {
+            Some('*') => {
+                star = Some((p + 1, n));
+                p += 1;
+            }
+            Some(&c) if c == '?' || c == name[n] => {
+                n += 1;
+                p += 1;
+            }
+            _ => match star {
+                Some((after, from)) => {
+                    star = Some((after, from + 1));
+                    p = after;
+                    n = from + 1;
+                }
+                None => return false,
+            },
+        }
+    }
+    pattern[p..].iter().all(|&c| c == '*')
+}
+
+/// “在终端中查找”写进终端的命令：在 `dir` 及其下各级目录中按名称查找（不分大小写），`query` 的含义与
+/// [`NameFilter`] 相同（包含这段文字时前后加 `*`，其中的 `*?[\` 转义；有通配符时照用，`[`、`\` 转义）。
+/// 两个参数按 POSIX shell 的单引号写（`dir` 只有常见字符时不加引号）。`query` 为空，或有控制字符、远程文件名中解码
+/// 不了的字节（写进终端会变成按键或别的字符）时为 `None`。
+pub fn find_command(dir: &str, query: &str) -> Option<String> {
+    let unfit = |c: char| c.is_control() || termlet_core::sftp::raw_byte(c).is_some();
+    if dir.is_empty() || query.is_empty() || dir.chars().chain(query.chars()).any(unfit) {
+        return None;
+    }
+    let escape = |text: &str, special: &[char]| {
+        let mut out = String::with_capacity(text.len());
+        for c in text.chars() {
+            if special.contains(&c) {
+                out.push('\\');
+            }
+            out.push(c);
+        }
+        out
+    };
+    let pattern = if has_wildcard(query) {
+        escape(query, &['[', '\\'])
+    } else {
+        format!("*{}*", escape(query, &['*', '?', '[', '\\']))
+    };
+    let plain = |text: &str| {
+        !text.starts_with('-')
+            && text
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "/._-+,:@".contains(c))
+    };
+    let dir = if plain(dir) {
+        dir.to_string()
+    } else {
+        shell_quote(dir)
+    };
+    Some(format!("find {dir} -iname {}", shell_quote(&pattern)))
+}
+
+/// POSIX shell 的单引号：其中的 `'` 写成 `'\''`。
+fn shell_quote(text: &str) -> String {
+    format!("'{}'", text.replace('\'', r"'\''"))
+}
+
 /// 从目录 `from` 回到它的上级目录 `to` 时，`from` 在 `to` 中的那一项的名称（回到上一级后选中它）。
 /// `separators` 为路径的分隔符（远程只有 `/`，本机还有 `\`）；`from` 不在 `to` 之下时为 `None`。
 pub fn child_toward(to: &str, from: &str, separators: &[char]) -> Option<String> {
@@ -383,6 +487,66 @@ mod tests {
         assert_eq!(type_ahead(&names, Some(0), "DOC"), Some(3));
         assert_eq!(type_ahead(&names, Some(0), "x"), None);
         assert_eq!(type_ahead(&[], None, "a"), None);
+    }
+
+    #[test]
+    fn filter_contains_or_wildcard() {
+        let matches = |query: &str, name: &str| NameFilter::new(query).matches(name);
+        // 包含，不分大小写；空的都匹配
+        assert!(matches("log", "Access.LOG"));
+        assert!(matches("", "anything"));
+        assert!(!matches("log", "app.txt"));
+        assert!(matches("日志", "运行日志.txt"));
+        // 有 * 或 ? 时匹配整个名称
+        assert!(matches("*.log", "error.log"));
+        assert!(!matches("*.log", "error.log.1"), "整个名称");
+        assert!(!matches("*.log", "catalog"));
+        assert!(matches("access?.log", "access1.LOG"));
+        assert!(!matches("access?.log", "access.log"));
+        assert!(matches("a*b*c", "aXXbYYbc"), "退回重试");
+        assert!(matches("*", ""));
+        assert!(matches("**a**", "bab"));
+        assert!(!matches("a*", "ba"));
+        // [ 等不是通配符
+        assert!(matches("[1]", "log[1].txt"));
+        assert!(!matches("[1]", "log1.txt"));
+    }
+
+    #[test]
+    fn find_command_quotes_for_the_shell() {
+        assert_eq!(
+            find_command(".", "log").as_deref(),
+            Some("find . -iname '*log*'")
+        );
+        assert_eq!(
+            find_command("/var/log", "*.gz").as_deref(),
+            Some("find /var/log -iname '*.gz'")
+        );
+        // 包含的文字中的方括号、反斜杠当作普通字符
+        assert_eq!(
+            find_command(".", r"x[1]\y").as_deref(),
+            Some(r"find . -iname '*x\[1]\\y*'")
+        );
+        // 有通配符时 * ? 照用，[ 与 \ 转义
+        assert_eq!(
+            find_command(".", "[x]*.log").as_deref(),
+            Some(r"find . -iname '\[x]*.log'")
+        );
+        // 单引号、空格、中文与 $ 等：目录也加引号，其中的 ' 写成 '\''
+        assert_eq!(
+            find_command("/home/me/it's mine", "王's $x").as_deref(),
+            Some(r"find '/home/me/it'\''s mine' -iname '*王'\''s $x*'")
+        );
+        assert_eq!(
+            find_command("/srv/$(rm -rf ~)", "a").as_deref(),
+            Some("find '/srv/$(rm -rf ~)' -iname '*a*'")
+        );
+        // 写进终端会变成按键的字符、解码不了的字节、空的：不给命令
+        assert_eq!(find_command(".", "a\rb"), None);
+        assert_eq!(find_command("/x\u{1b}[2J", "a"), None);
+        assert_eq!(find_command("/\u{10FED6}", "a"), None);
+        assert_eq!(find_command(".", ""), None);
+        assert_eq!(find_command("", "a"), None);
     }
 
     #[test]

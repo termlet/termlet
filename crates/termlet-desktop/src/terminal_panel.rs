@@ -682,14 +682,26 @@ impl TerminalPanel {
         match &self.session {
             Session::Local { profile } => local_shell::profile_brand(profile),
             Session::Wsl { distro, .. } => brand_icons::for_wsl(distro),
+            Session::Host { .. } | Session::Quick { .. } | Session::Launch { .. } => {
+                self.remote_os().and_then(brand_icons::for_os)
+            }
+        }
+    }
+
+    /// SSH 服务器识别出的系统（保存的主机按存储中的，别的设备识别出、同步过来的也算）；还没识别、不是 SSH 的
+    /// 为 `None`。
+    pub fn remote_os(&self) -> Option<RemoteOs> {
+        match &self.session {
             Session::Host { host } if self.protocol == Protocol::Ssh => self
                 .store
                 .get::<Host>(host)
                 .and_then(|h| h.doc.remote_os())
-                .or(self.detected_os)
-                .and_then(brand_icons::for_os),
-            Session::Quick { .. } => self.detected_os.and_then(brand_icons::for_os),
-            Session::Host { .. } | Session::Launch { .. } => None,
+                .or(self.detected_os),
+            Session::Quick { .. } => self.detected_os,
+            Session::Host { .. }
+            | Session::Local { .. }
+            | Session::Wsl { .. }
+            | Session::Launch { .. } => None,
         }
     }
 

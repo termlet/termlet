@@ -19,21 +19,29 @@
 //!     Shift+F10 或菜单键在当前行旁边打开右键菜单、Ctrl+L 或 Alt+D 编辑路径（路径框中 Esc 回到列表）、
 //!     Tab 在本机栏与远程栏之间切换（由 SFTP 面板处理）。
 //!   - 回到上一级目录后选中刚才所在的目录；当前行被删掉（或不再显示）时留在原来的位置。
+//!   - 新建文件夹、重命名后选中新的项（[`FileList::reveal_after_refresh`]）。
+//! - 筛选（Ctrl+F，macOS ⌘F，或 `/`，或表头的放大镜）：表头下面展开一行筛选框，按 [`list_model::NameFilter`]
+//!   只显示名称匹配的项（“..”照常显示），右端写“显示数 / 总数”。框中 Enter 或 ↓ 回到列表、保留筛选；Esc 清空并收起
+//!   （列表中按 Esc 也是）。全选、连续选择、拖动、下载、删除都只作用于显示着的项。换目录时清空，刷新、上传后保留；
+//!   新建、改名的项被筛掉时清空筛选再选中它。远程栏跟随着终端时框中有“在终端中查找”
+//!   （见 [`FileListEvent::FindInTerminal`]）。
 //! - 拖放：拖出所选的项；放在目录行上为放进这个目录，放在“..”上为放进上一级，放在别处为放进当前目录。
 
 use std::cell::Cell;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::input as text_input;
+use gpui_kit::component::input::{self as text_input, Input, InputEvent, InputState};
 use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenu, PopupMenuItem};
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{
-    ActiveTheme as _, Icon, Sizable as _, VirtualListScrollHandle, h_flex, v_flex, v_virtual_list,
+    ActiveTheme as _, Icon, Selectable as _, Sizable as _, VirtualListScrollHandle, h_flex, v_flex,
+    v_virtual_list,
 };
 use gpui_kit::{
     AnyElement, App, AppContext as _, ClickEvent, Context, DismissEvent, Entity, EntityId,
@@ -48,8 +56,9 @@ use termlet_core::time::DateStyle;
 use termlet_core::ui_state::SftpColumns;
 
 use super::file_icons::{self, IconKind};
-use super::list_model::{self, ClickMods, KeyMove, Selection};
+use super::list_model::{self, ClickMods, KeyMove, NameFilter, Selection};
 use crate::app_state::AppState;
+use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
 use crate::t;
 
@@ -95,14 +104,20 @@ actions!(
         FocusPath,
         /// 在本机栏与远程栏之间切换（由 SFTP 面板处理；只有一栏时交给默认的焦点切换）
         SwitchPane,
-        /// 从路径框回到列表，放弃没有提交的输入（Esc）
+        /// 从路径框回到列表，放弃没有提交的输入（Esc）；从筛选框回到列表，保留筛选（Enter）
         FocusList,
+        /// 打开筛选框（Ctrl+F、/）
+        OpenFilter,
+        /// 清空并收起筛选（Esc；列表中没有筛选时交给外层）
+        CloseFilter,
     ]
 );
 
 const KEY_CONTEXT: &str = "SftpFileList";
 /// 路径框外面的容器的上下文（其中按 Esc 回到列表）。
 pub const PATH_CONTEXT: &str = "SftpPath";
+/// 筛选框所在的一行的上下文（在列表的上下文之外：列表的按键、按名字跳转不影响输入）。
+const FILTER_CONTEXT: &str = "SftpFilter";
 
 /// “..”一行的名称；拖到它上面时 [`FileListEvent::Drop`] 的 `into` 就是它（放进上一级）。
 pub const PARENT: &str = "..";
@@ -134,11 +149,23 @@ fn toggle_hidden_label(cx: &App) -> String {
     termlet_core::keymap::label_of(toggle_hidden_combo(os), crate::keymap::key_os(os))
 }
 
+/// 提示中打开筛选的快捷键（`Ctrl+F`、`⌘F`）。
+fn filter_label(cx: &App) -> String {
+    let os = cx.platform_info().os;
+    let combo = if os == gpui_kit::OperatingSystem::Mac {
+        "cmd-f"
+    } else {
+        "ctrl-f"
+    };
+    termlet_core::keymap::label_of(combo, crate::keymap::key_os(os))
+}
+
 /// 列表的快捷键：`os` 为按哪个系统的习惯（`KeyBinding::new` 不认 `secondary-`，会 panic，分开写）。
 ///
-/// - Windows、Linux：照资源管理器、WinSCP（Ctrl+A / C / V、Ctrl+Alt+H、Ctrl+↑ ↓ 移动焦点、Ctrl+L / Alt+D 地址栏）。
-/// - macOS：照 Finder（⌘A / C / V、⇧⌘. 隐藏文件、⌘↑ 上一级、⌘↓ 打开、⌘⌫ 删除、⇧⌘N 新建文件夹、⌘R 刷新、⌘L 地址栏），
-///   Ctrl+↑ ↓ 是系统的调度中心，移动焦点改用 ⌥↑ ⌥↓、⌥Space。
+/// - Windows、Linux：照资源管理器、WinSCP（Ctrl+A / C / V、Ctrl+Alt+H、Ctrl+↑ ↓ 移动焦点、Ctrl+L / Alt+D 地址栏、
+///   Ctrl+F 筛选）。
+/// - macOS：照 Finder（⌘A / C / V、⇧⌘. 隐藏文件、⌘↑ 上一级、⌘↓ 打开、⌘⌫ 删除、⇧⌘N 新建文件夹、⌘R 刷新、⌘L 地址栏、
+///   ⌘F 筛选），Ctrl+↑ ↓ 是系统的调度中心，移动焦点改用 ⌥↑ ⌥↓、⌥Space。
 pub fn key_bindings(os: gpui_kit::OperatingSystem) -> Vec<KeyBinding> {
     let ctx = Some(KEY_CONTEXT);
     let mut bindings = vec![
@@ -167,11 +194,17 @@ pub fn key_bindings(os: gpui_kit::OperatingSystem) -> Vec<KeyBinding> {
         // WinSCP、FileZilla 的切换左右两栏
         KeyBinding::new("tab", SwitchPane, ctx),
         KeyBinding::new("shift-tab", SwitchPane, ctx),
+        // 文件名中不会有 /，不影响按名字跳转（与主机工具的搜索相同）
+        KeyBinding::new("/", OpenFilter, ctx),
+        KeyBinding::new("escape", CloseFilter, ctx),
         // 输入框自己用不到 Esc 时才交给这里
         KeyBinding::new("escape", FocusList, Some(PATH_CONTEXT)),
+        KeyBinding::new("enter", FocusList, Some(FILTER_CONTEXT)),
+        KeyBinding::new("escape", CloseFilter, Some(FILTER_CONTEXT)),
     ];
     if os == gpui_kit::OperatingSystem::Mac {
         bindings.extend([
+            KeyBinding::new("cmd-f", OpenFilter, ctx),
             KeyBinding::new("cmd-a", SelectAll, ctx),
             KeyBinding::new("cmd-c", CopyPaths, ctx),
             KeyBinding::new("cmd-v", PasteFiles, ctx),
@@ -187,6 +220,7 @@ pub fn key_bindings(os: gpui_kit::OperatingSystem) -> Vec<KeyBinding> {
         ]);
     } else {
         bindings.extend([
+            KeyBinding::new("ctrl-f", OpenFilter, ctx),
             KeyBinding::new("ctrl-a", SelectAll, ctx),
             KeyBinding::new("ctrl-c", CopyPaths, ctx),
             KeyBinding::new("ctrl-v", PasteFiles, ctx),
@@ -210,6 +244,16 @@ enum Step {
     PageDown,
     First,
     Last,
+}
+
+/// 当前行不再显示时换到哪一行（见 [`FileList::filter_rows`]）。
+#[derive(Clone, Copy)]
+enum Lost {
+    /// 原来的位置上的项（删除、刷新、隐藏文件的开关）
+    InPlace,
+    /// 第一个匹配的项（输入筛选的文字；当前行在“..”上或还没有当前行时也是），筛选框中按 Enter 回到列表再按 Enter
+    /// 就打开它
+    FirstMatch,
 }
 
 /// 这一栏是否不显示隐藏的文件。
@@ -320,9 +364,13 @@ pub enum FileListEvent {
     NewFolder,
     /// 编辑这一栏的路径（Ctrl+L、Alt+D）
     FocusPath,
+    /// 筛选框中的“在终端中查找”：把按这段文字在子目录中查找的命令写进跟随着的终端（远程栏）
+    FindInTerminal(String),
 }
 
 type MenuBuilder = dyn Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu;
+/// 能不能“在终端中查找”这段文字（见 [`FileList::set_find_in_terminal`]）。
+type FindCheck = dyn Fn(&str, &App) -> bool;
 
 /// 列宽与间距（rem）：行左右各 0.75（`px_3`），列之间 0.5（`gap_2`）；名称列（含图标）至少留 [`NAME_MIN`]。
 pub(crate) const NAME_MIN: f32 = 10.;
@@ -461,10 +509,22 @@ pub struct FileList {
     id: &'static str,
     /// 目录中的全部项（含隐藏的），已排序
     all_rows: Vec<FileRow>,
-    /// 显示的项：`all_rows` 去掉不显示的隐藏文件（不含“..”）
-    rows: Vec<FileRow>,
+    /// 显示的项在 `all_rows` 中的位置：去掉不显示的隐藏文件与筛掉的项（不含“..”）
+    shown: Vec<usize>,
+    /// 不算筛选时显示的项数（筛选框中的“显示数 / 总数”）
+    unfiltered: usize,
     /// 不显示隐藏的文件（跟随界面状态中这一栏的开关）
     hide_hidden: bool,
+    /// 筛选框（第一次打开时建好，之后沿用）与它的事件
+    filter_input: Option<(Entity<InputState>, Subscription)>,
+    /// 筛选框开着
+    filter_open: bool,
+    /// 筛选的文字（收起时为空）
+    query: String,
+    /// 能不能“在终端中查找”（远程栏跟随着终端时由 SFTP 面板给出）
+    find_in_terminal: Option<Rc<FindCheck>>,
+    /// 新建、改名后要选中的项：同一目录下一次刷新后选中它
+    reveal: Option<String>,
     /// 最上面有“..”一行（不在根目录时）
     parent: bool,
     /// 这一帧的图标风格（渲染开始时从设置读一次）
@@ -527,8 +587,14 @@ impl FileList {
         Self {
             id,
             all_rows: Vec::new(),
-            rows: Vec::new(),
+            shown: Vec::new(),
+            unfiltered: 0,
             hide_hidden: hides_hidden(&source, cx),
+            filter_input: None,
+            filter_open: false,
+            query: String::new(),
+            find_in_terminal: None,
+            reveal: None,
             parent: false,
             icon_style: IconStyle::default(),
             has_mode: false,
@@ -560,7 +626,7 @@ impl FileList {
         self.menu = Some(Rc::new(menu));
     }
 
-    /// 换成另一个目录的内容：排序，清空选择，回到顶部。`parent` 为不在根目录（最上面显示“..”）。
+    /// 换成另一个目录的内容：排序，清空选择与筛选，回到顶部。`parent` 为不在根目录（最上面显示“..”）。
     /// 回到上一级（或更上面）时选中刚才所在的那个目录，滚动到它。
     pub fn set_entries(
         &mut self,
@@ -572,9 +638,15 @@ impl FileList {
         list_model::sort_entries(&mut rows, |r| (r.is_dir, r.name.as_str()));
         let changed = dir != self.dir;
         let came_from = list_model::child_toward(&dir, &self.dir, self.separators());
-        self.all_rows = rows;
+        if changed {
+            // 进了新目录还按原来的文字筛，会被筛成空的、以为目录是空的
+            self.filter_open = false;
+            self.query.clear();
+            self.reveal = None;
+        }
+        let old_cursor = self.replace_rows(rows);
         self.parent = parent;
-        self.apply_filter();
+        self.filter_rows(old_cursor, Lost::InPlace);
         self.dir = dir;
         self.selection.clear();
         self.type_ahead = None;
@@ -597,12 +669,36 @@ impl FileList {
         }
     }
 
-    /// 同一目录刷新后的内容：保留仍然存在的选择。
+    /// 同一目录刷新后的内容：保留仍然存在的选择与筛选（新出现的项不匹配时照样不显示）。有要选中的新项时选中它
+    /// （见 [`Self::reveal_after_refresh`]）。
     pub fn refresh_entries(&mut self, mut rows: Vec<FileRow>, cx: &mut Context<Self>) {
         list_model::sort_entries(&mut rows, |r| (r.is_dir, r.name.as_str()));
-        self.all_rows = rows;
-        self.apply_filter();
+        let old_cursor = self.replace_rows(rows);
+        let reveal = self.reveal.take().and_then(|name| {
+            let row = self.all_rows.iter().find(|r| r.name == name)?;
+            // 不显示的隐藏文件：清空筛选也看不见它，不选
+            (!(self.hide_hidden && row.hidden)).then_some(name)
+        });
+        if let Some(name) = &reveal
+            && !NameFilter::new(&self.query).matches(name)
+        {
+            self.filter_open = false;
+            self.query.clear();
+        }
+        self.filter_rows(old_cursor, Lost::InPlace);
+        if let Some((name, ix)) =
+            reveal.and_then(|name| self.display_index(&name).map(|ix| (name, ix)))
+        {
+            self.selection.only(&name);
+            self.scroll.scroll_to_item(ix, ScrollStrategy::Nearest);
+        }
         cx.notify();
+    }
+
+    /// 新建文件夹、重命名完成后：同一目录下一次刷新（[`Self::refresh_entries`]）后只选中名为 `name` 的项，滚动到它。
+    /// 它被筛选筛掉时先清空筛选；它是不显示的隐藏文件时不选。
+    pub fn reveal_after_refresh(&mut self, name: String) {
+        self.reveal = Some(name);
     }
 
     /// 界面状态中这一栏的开关变了：重新筛选，不再显示的项从选择中去掉。
@@ -610,40 +706,76 @@ impl FileList {
         let hide = hides_hidden(&self.source, cx);
         if hide != self.hide_hidden {
             self.hide_hidden = hide;
-            self.apply_filter();
+            self.apply_filter(Lost::InPlace);
             cx.notify();
         }
     }
 
-    /// 按开关从全部项中取出显示的项；选择只保留仍然显示的。当前行不在了（删掉、改名、不再显示）时留在原来的
-    /// 位置；选择因此空了时选中它（连续按 Delete 一项项删，资源管理器的做法）。
-    fn apply_filter(&mut self) {
+    /// 换上新的全部项，返回换之前当前行的位置（`shown` 是旧内容的下标，换了以后清空，等 [`Self::filter_rows`]）。
+    fn replace_rows(&mut self, rows: Vec<FileRow>) -> Option<usize> {
         let old_cursor = self.cursor_index();
+        self.all_rows = rows;
+        self.shown.clear();
+        old_cursor
+    }
+
+    /// 全部项没变，重新筛选（隐藏文件的开关、筛选的文字变了）。
+    fn apply_filter(&mut self, lost: Lost) {
+        self.filter_rows(self.cursor_index(), lost);
+    }
+
+    /// 按隐藏文件的开关与筛选从全部项中取出显示的项；选择只保留仍然显示的。当前行不在了（删掉、改名、不再显示）时
+    /// 按 `lost` 换到别的行（`old_cursor` 为它原来的位置），选择因此空了时选中它（连续按 Delete 一项项删，资源管理器
+    /// 的做法）。
+    fn filter_rows(&mut self, old_cursor: Option<usize>, lost: Lost) {
         let hide = self.hide_hidden;
-        let rows: Vec<FileRow> = self
-            .all_rows
+        let filter = NameFilter::new(&self.query);
+        let mut shown = Vec::new();
+        let (mut unfiltered, mut has_mode) = (0, false);
+        for (ix, row) in self.all_rows.iter().enumerate() {
+            if hide && row.hidden {
+                continue;
+            }
+            unfiltered += 1;
+            has_mode |= row.mode.is_some();
+            if filter.matches(&row.name) {
+                shown.push(ix);
+            }
+        }
+        let visible: HashSet<&str> = shown
             .iter()
-            .filter(|r| !(hide && r.hidden))
-            .cloned()
+            .map(|&ix| self.all_rows[ix].name.as_str())
             .collect();
         self.selection
             .selected
-            .retain(|name| rows.iter().any(|r| &r.name == name));
-        self.has_mode = rows.iter().any(|r| r.mode.is_some());
-        self.rows = rows;
-        if self.selection.cursor.is_some() && self.cursor_index().is_none() {
-            let len = self.display_len();
-            let cursor = old_cursor
-                .filter(|_| len > 0)
-                .and_then(|ix| self.display_name(ix.min(len - 1)))
-                .map(str::to_string);
+            .retain(|name| visible.contains(name.as_str()));
+        self.shown = shown;
+        self.unfiltered = unfiltered;
+        // 按筛选前的项算：输入筛选的文字时列不跟着变
+        self.has_mode = has_mode;
+        let gone = self.selection.cursor.is_some() && self.cursor_index().is_none();
+        let len = self.display_len();
+        let place = match lost {
+            Lost::InPlace => old_cursor
+                .filter(|_| gone && len > 0)
+                .map(|ix| ix.min(len - 1)),
+            Lost::FirstMatch => {
+                let off_rows = gone || self.selection.cursor.as_deref().is_none_or(|c| c == PARENT);
+                (off_rows && !self.query.is_empty() && !self.shown.is_empty())
+                    .then_some(usize::from(self.parent))
+            }
+        };
+        if gone {
             self.selection.cursor = None;
-            if let Some(name) = cursor {
-                if self.selection.selected.is_empty() && name != PARENT {
-                    self.selection.only(&name);
-                } else {
-                    self.selection.cursor = Some(name);
-                }
+        }
+        if let Some(name) = place
+            .and_then(|ix| self.display_name(ix))
+            .map(str::to_string)
+        {
+            if self.selection.selected.is_empty() && name != PARENT {
+                self.selection.only(&name);
+            } else {
+                self.selection.cursor = Some(name);
             }
         }
         if self
@@ -655,9 +787,19 @@ impl FileList {
         }
     }
 
+    /// 显示中的第 `ix` 项（不算“..”）。
+    fn row(&self, ix: usize) -> Option<&FileRow> {
+        self.shown.get(ix).map(|&i| &self.all_rows[i])
+    }
+
+    /// 显示中的项（不含“..”），按显示的顺序。
+    fn rows(&self) -> impl Iterator<Item = &FileRow> {
+        self.shown.iter().map(|&i| &self.all_rows[i])
+    }
+
     /// 列表中显示的行数（含“..”）。
     fn display_len(&self) -> usize {
-        self.rows.len() + usize::from(self.parent)
+        self.shown.len() + usize::from(self.parent)
     }
 
     /// 名为 `name` 的项在显示中的位置（“..”在最前面；没有文件能叫“..”）。
@@ -666,8 +808,7 @@ impl FileList {
             return Some(0);
         }
         let offset = usize::from(self.parent);
-        self.rows
-            .iter()
+        self.rows()
             .position(|r| r.name == name)
             .map(|ix| ix + offset)
     }
@@ -675,7 +816,7 @@ impl FileList {
     /// 显示中第 `ix` 行的名称。
     fn display_name(&self, ix: usize) -> Option<&str> {
         match ix.checked_sub(usize::from(self.parent)) {
-            Some(ix) => self.rows.get(ix).map(|r| r.name.as_str()),
+            Some(ix) => self.row(ix).map(|r| r.name.as_str()),
             None => Some(PARENT),
         }
     }
@@ -691,7 +832,7 @@ impl FileList {
     /// 没有显示出来的隐藏文件数。
     #[cfg(test)]
     fn hidden_count(&self) -> usize {
-        self.all_rows.len() - self.rows.len()
+        self.all_rows.len() - self.unfiltered
     }
 
     /// 每行的大小（行高随界面字号变化）。
@@ -718,17 +859,186 @@ impl FileList {
         }
     }
 
+    /// 筛选框中的“在终端中查找”（远程栏跟随着终端时）：`available(文字)` 为现在能不能用，每次渲染时问。
+    pub fn set_find_in_terminal(&mut self, available: impl Fn(&str, &App) -> bool + 'static) {
+        self.find_in_terminal = Some(Rc::new(available));
+    }
+
     /// 所选的项，按列表中的顺序。
     pub fn selected(&self) -> Vec<FileRow> {
-        self.rows
-            .iter()
+        self.rows()
             .filter(|r| self.selection.contains(&r.name))
             .cloned()
             .collect()
     }
 
     fn names(&self) -> Vec<&str> {
-        self.rows.iter().map(|r| r.name.as_str()).collect()
+        self.rows().map(|r| r.name.as_str()).collect()
+    }
+
+    // ------------------------------------------------------------ 筛选
+
+    /// 筛选框：第一次用到时建好。
+    fn filter_input(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Entity<InputState> {
+        if let Some((input, _)) = &self.filter_input {
+            return input.clone();
+        }
+        let input = cx.new(|cx| {
+            InputState::new(window, cx).localized_placeholder(
+                || t!("sftp.filter.placeholder"),
+                window,
+                cx,
+            )
+        });
+        let events = cx.subscribe_in(&input, window, Self::on_filter_event);
+        self.filter_input = Some((input.clone(), events));
+        input
+    }
+
+    /// 打开筛选框（Ctrl+F、/、表头的放大镜）：焦点移进去，选中其中的文字。
+    fn open_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let input = self.filter_input(window, cx);
+        self.filter_open = true;
+        let query = self.query.clone();
+        input.update(cx, |input, cx| {
+            // 收起时只清空了筛选的文字（那时不一定有窗口），框里的在这里跟上
+            if input.value().as_ref() != query {
+                input.set_value(query, window, cx);
+            }
+            input.focus(window, cx);
+            input.select_all(window, cx);
+        });
+        cx.notify();
+    }
+
+    /// 清空并收起筛选，滚动到当前行。
+    fn close_filter(&mut self, cx: &mut Context<Self>) {
+        self.filter_open = false;
+        if !self.query.is_empty() {
+            self.query.clear();
+            self.apply_filter(Lost::InPlace);
+            self.scroll_to_cursor();
+        }
+        cx.notify();
+    }
+
+    /// 列表中按 Esc：开着筛选时清空并收起，没有时交给外层。
+    fn on_close_filter(&mut self, _: &CloseFilter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.filter_open {
+            self.close_filter(cx);
+        } else {
+            cx.propagate();
+        }
+    }
+
+    /// 表头的放大镜：打开筛选，开着时清空并收起。
+    fn toggle_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.filter_open {
+            self.close_filter(cx);
+            self.focus.focus(window, cx);
+        } else {
+            self.open_filter(window, cx);
+        }
+    }
+
+    fn on_filter_event(
+        &mut self,
+        input: &Entity<InputState>,
+        event: &InputEvent,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if !matches!(event, InputEvent::Change) || !self.filter_open {
+            return;
+        }
+        let query = input.read(cx).value().to_string();
+        if query == self.query {
+            return;
+        }
+        self.query = query;
+        self.type_ahead = None;
+        self.apply_filter(Lost::FirstMatch);
+        self.scroll_to_cursor();
+        cx.notify();
+    }
+
+    /// 滚动到当前行；没有当前行时回到顶部。
+    fn scroll_to_cursor(&mut self) {
+        match self.cursor_index() {
+            Some(ix) => self.scroll.scroll_to_item(ix, ScrollStrategy::Nearest),
+            None => self.scroll.scroll_to_item(0, ScrollStrategy::Top),
+        }
+    }
+
+    /// 筛选框一行：输入框、“显示数 / 总数”；远程栏跟随着终端、输入了文字时有“在终端中查找”。
+    fn render_filter(&self, cx: &Context<Self>) -> Option<AnyElement> {
+        let (input, _) = self.filter_input.as_ref().filter(|_| self.filter_open)?;
+        let find = !self.query.is_empty()
+            && self
+                .find_in_terminal
+                .as_ref()
+                .is_some_and(|available| available(&self.query, cx));
+        let theme = cx.theme();
+        let muted = theme.muted_foreground;
+        Some(
+            h_flex()
+                .id(SharedString::from(format!("{}-filter", self.id)))
+                .test_support()
+                .key_context(FILTER_CONTEXT)
+                .flex_none()
+                .px_2()
+                .py_1()
+                .gap_2()
+                .border_b_1()
+                .border_color(theme.border)
+                .on_action(
+                    cx.listener(|this, _: &FocusList, window, cx| this.focus.focus(window, cx)),
+                )
+                .on_action(cx.listener(|this, _: &CloseFilter, window, cx| {
+                    this.close_filter(cx);
+                    this.focus.focus(window, cx);
+                }))
+                // 单行的输入框收下 ↓ 却什么也不做：在它之前拦下，回到列表
+                .capture_action(cx.listener(|this, _: &text_input::MoveDown, window, cx| {
+                    this.focus.focus(window, cx);
+                    cx.stop_propagation();
+                }))
+                .child(
+                    div().flex_1().min_w_0().child(
+                        Input::new(input)
+                            .id(SharedString::from(format!("{}-filter-input", self.id)))
+                            .small()
+                            .cleanable(true)
+                            .prefix(Icon::new(IconName::Search).xsmall().text_color(muted)),
+                    ),
+                )
+                .child(
+                    div()
+                        .id(SharedString::from(format!("{}-filter-count", self.id)))
+                        .test_support()
+                        .flex_none()
+                        // 数字位数变了时输入框不跟着伸缩
+                        .min_w(rems(3.5))
+                        .text_right()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(format!("{} / {}", self.shown.len(), self.unfiltered)),
+                )
+                .when(find, |this| {
+                    this.child(
+                        Button::new(SharedString::from(format!("{}-find", self.id)))
+                            .ghost()
+                            .xsmall()
+                            .icon(IconName::SquareTerminal)
+                            .label(t!("sftp.filter.find_in_terminal"))
+                            .tooltip(t!("sftp.filter.find_hint"))
+                            .on_click(cx.listener(|this, _, _, cx| {
+                                cx.emit(FileListEvent::FindInTerminal(this.query.clone()))
+                            })),
+                    )
+                })
+                .into_any_element(),
+        )
     }
 
     fn on_row_click(
@@ -738,7 +1048,7 @@ impl FileList {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(row) = self.rows.get(ix).cloned() else {
+        let Some(row) = self.row(ix).cloned() else {
             return;
         };
         self.focus.focus(window, cx);
@@ -763,7 +1073,7 @@ impl FileList {
     /// 右键没有选中的行：先只选它（菜单在下一帧建好，读到的是新的选择）；右键选中的行只把当前行移过去。
     fn on_row_right_down(&mut self, ix: usize, window: &mut Window, cx: &mut Context<Self>) {
         self.focus.focus(window, cx);
-        if let Some(row) = self.rows.get(ix) {
+        if let Some(row) = self.row(ix) {
             let name = row.name.clone();
             if self.selection.contains(&name) {
                 self.selection.cursor = Some(name);
@@ -783,7 +1093,7 @@ impl FileList {
             [] => match self.selection.cursor.as_deref() {
                 Some(PARENT) if self.parent => cx.emit(FileListEvent::Up),
                 Some(name) => {
-                    if let Some(row) = self.rows.iter().find(|r| r.name == name) {
+                    if let Some(row) = self.rows().find(|r| r.name == name) {
                         cx.emit(FileListEvent::Open(row.clone()));
                     }
                 }
@@ -831,8 +1141,8 @@ impl FileList {
     /// PageUp / PageDown 一次移动的行数：看得见的行数减一（至少一行）。
     fn page_rows(&self, window: &Window) -> usize {
         let row = rems(ROW_HEIGHT).to_pixels(window.rem_size());
-        // 减去表头
-        let visible = ((self.height.get() - row) / row).floor();
+        // 量的是表头、筛选框下面列表的高度
+        let visible = (self.height.get() / row).floor();
         (visible as usize).saturating_sub(1).max(1)
     }
 
@@ -1010,6 +1320,15 @@ impl FileList {
             .icon(IconName::Ellipsis)
             .when(!popup_open, |this| this.tooltip(tooltip))
             .dropdown_menu(move |menu, _, _| column_menu(menu, chosen, &menu_squeezed));
+        let filter = Button::new(SharedString::from(format!("{}-filter-toggle", self.id)))
+            .ghost()
+            .xsmall()
+            .icon(IconName::Search)
+            .selected(self.filter_open)
+            .when(!popup_open, |this| {
+                this.tooltip(t!("sftp.filter.open", key = filter_label(cx)))
+            })
+            .on_click(cx.listener(|this, _, window, cx| this.toggle_filter(window, cx)));
         let header = h_flex()
             .id(SharedString::from(format!("{}-header", self.id)))
             .test_support()
@@ -1028,7 +1347,7 @@ impl FileList {
                     .min_w_0()
                     .justify_between()
                     .child(div().min_w_0().truncate().child(t!("sftp.column.name")))
-                    .child(button),
+                    .child(h_flex().flex_none().child(filter).child(button)),
             )
             .when(layout.size, |this| {
                 this.child(
@@ -1066,7 +1385,9 @@ impl FileList {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let row = self.rows[ix].clone();
+        let Some(row) = self.row(ix).cloned() else {
+            return div().into_any_element();
+        };
         let selected = self.selection.contains(&row.name);
         let is_cursor = self.selection.cursor.as_deref() == Some(row.name.as_str());
         let ring = is_cursor && self.shows_focus(window);
@@ -1363,16 +1684,18 @@ impl Render for FileList {
         self.icon_style = AppState::store(cx).settings().appearance.icons;
         let row_height = rems(ROW_HEIGHT).to_pixels(rem);
         let sizes = self.row_sizes(row_height);
-        let body = if self.rows.is_empty() {
-            // 空目录（或只有不显示的隐藏文件）：“..”照常在最上面，下面是说明
+        let rows = if self.shown.is_empty() {
+            // 空目录、只有不显示的隐藏文件或筛不出项：“..”照常在最上面，下面是说明
             let text = if self.all_rows.is_empty() {
                 self.empty_text.clone()
-            } else {
+            } else if self.unfiltered == 0 {
                 t!(
                     "sftp.only_hidden",
                     count = self.all_rows.len(),
                     key = toggle_hidden_label(cx)
                 )
+            } else {
+                t!("sftp.filter.no_match", query = self.query.clone())
             };
             let parent = self.parent.then(|| {
                 div()
@@ -1426,13 +1749,14 @@ impl Render for FileList {
         let entity = cx.entity().downgrade();
         let rem_px = f32::from(rem);
         let accept = cx.entity().downgrade();
-        let list = v_flex()
-            .id(SharedString::from(self.id))
-            .test_support()
+        // 列表本身（焦点、按键、右键菜单）：表头与筛选框不在其中，筛选框中的输入不会触发列表的按键与按名字跳转
+        let body = div()
+            .id(SharedString::from(format!("{}-body", self.id)))
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus)
             .relative()
-            .size_full()
+            .flex_1()
+            .min_h_0()
             .on_action(cx.listener(Self::on_open))
             .on_action(cx.listener(|_, _: &GoUp, _, cx| cx.emit(FileListEvent::Up)))
             .on_action(cx.listener(Self::on_rename))
@@ -1498,7 +1822,55 @@ impl Render for FileList {
             .on_action(cx.listener(Self::open_key_menu))
             .on_action(cx.listener(|_, _: &NewFolder, _, cx| cx.emit(FileListEvent::NewFolder)))
             .on_action(cx.listener(|_, _: &FocusPath, _, cx| cx.emit(FileListEvent::FocusPath)))
+            .on_action(cx.listener(|this, _: &OpenFilter, window, cx| this.open_filter(window, cx)))
+            .on_action(cx.listener(Self::on_close_filter))
             .on_key_down(cx.listener(Self::on_key_down))
+            .child(
+                canvas(
+                    move |bounds, _, cx| {
+                        measured_height.set(bounds.size.height);
+                        let old = measured.replace(bounds.size.width);
+                        let layout = |width: Pixels| {
+                            layout_columns(f32::from(width) / rem_px, chosen, has_mode)
+                        };
+                        if layout(old) != layout(bounds.size.width) {
+                            let _ = entity.update(cx, |_, cx| cx.notify());
+                        }
+                    },
+                    |_, _, _, _| {},
+                )
+                .absolute()
+                .size_full(),
+            )
+            .child(rows)
+            .vertical_scrollbar(&self.scroll)
+            .children(top_menu)
+            // 菜单开着时滚轮不滚动列表（菜单跟着当前行，滚出去就看不见了）
+            .when(menu_open, |this| {
+                this.child(
+                    div()
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .size_full()
+                        .on_scroll(|_, _, cx| cx.stop_propagation()),
+                )
+            });
+        let body = match (&self.menu, self.disabled) {
+            (Some(menu), false) => {
+                let menu = menu.clone();
+                body.context_menu(move |m, window, cx| menu(m, window, cx))
+                    .into_any_element()
+            }
+            _ => body.into_any_element(),
+        };
+        let header = self.render_header(columns, crate::menu_tooltip::menu_open(window, cx), cx);
+        let filter = self.render_filter(cx);
+        v_flex()
+            .id(SharedString::from(self.id))
+            .test_support()
+            .relative()
+            .size_full()
             .can_drop(move |dragged, _, cx| {
                 accept
                     .upgrade()
@@ -1522,52 +1894,9 @@ impl Render for FileList {
                     into: None,
                 })
             }))
-            .child(
-                canvas(
-                    move |bounds, _, cx| {
-                        measured_height.set(bounds.size.height);
-                        let old = measured.replace(bounds.size.width);
-                        let layout = |width: Pixels| {
-                            layout_columns(f32::from(width) / rem_px, chosen, has_mode)
-                        };
-                        if layout(old) != layout(bounds.size.width) {
-                            let _ = entity.update(cx, |_, cx| cx.notify());
-                        }
-                    },
-                    |_, _, _, _| {},
-                )
-                .absolute()
-                .size_full(),
-            )
-            .child(self.render_header(columns, crate::menu_tooltip::menu_open(window, cx), cx))
-            .child(
-                div()
-                    .relative()
-                    .flex_1()
-                    .min_h_0()
-                    .child(body)
-                    .vertical_scrollbar(&self.scroll)
-                    .children(top_menu)
-                    // 菜单开着时滚轮不滚动列表（菜单跟着当前行，滚出去就看不见了）
-                    .when(menu_open, |this| {
-                        this.child(
-                            div()
-                                .absolute()
-                                .top_0()
-                                .left_0()
-                                .size_full()
-                                .on_scroll(|_, _, cx| cx.stop_propagation()),
-                        )
-                    }),
-            );
-        match (&self.menu, self.disabled) {
-            (Some(menu), false) => {
-                let menu = menu.clone();
-                list.context_menu(move |m, window, cx| menu(m, window, cx))
-                    .into_any_element()
-            }
-            _ => list.into_any_element(),
-        }
+            .child(header)
+            .children(filter)
+            .child(body)
     }
 }
 
@@ -1655,6 +1984,7 @@ mod tests {
                                 FileListEvent::Open(_) => "open",
                                 FileListEvent::NewFolder => "new_folder",
                                 FileListEvent::FocusPath => "focus_path",
+                                FileListEvent::FindInTerminal(_) => "find",
                                 _ => "other",
                             })
                         });
@@ -1903,6 +2233,196 @@ mod tests {
             })
         });
         assert_eq!(selected(&list, cx), names(&["a"]));
+    }
+
+    /// 按一个键（焦点在哪里就给哪里，不先移到列表上）。
+    fn key(cx: &mut TestAppContext, handle: AnyWindowHandle, key: &str) {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.press(key, cx);
+        })
+        .unwrap();
+    }
+
+    /// 在有焦点的输入框中输入。
+    fn typed(cx: &mut TestAppContext, handle: AnyWindowHandle, text: &str) {
+        cx.update_window(handle, |_, window, cx| window.input(text, cx))
+            .unwrap();
+    }
+
+    /// 显示着的项（不含“..”）。
+    fn visible(list: &Entity<FileList>, cx: &mut TestAppContext) -> Vec<String> {
+        cx.read(|cx| {
+            list.read(cx)
+                .names()
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        })
+    }
+
+    fn list_focused(
+        list: &Entity<FileList>,
+        cx: &mut TestAppContext,
+        handle: AnyWindowHandle,
+    ) -> bool {
+        let focus = cx.read(|cx| list.read(cx).focus_handle(cx));
+        cx.update_window(handle, |_, window, _| focus.is_focused(window))
+            .unwrap()
+    }
+
+    // 筛选：Ctrl+F 打开，只显示名称匹配的项（“..”照常），第一个匹配的成为当前行；Enter、↓ 回到列表保留筛选，
+    // 全选只选显示着的；列表中、筛选框中按 Esc 都清空并收起；没有匹配时说明；换目录时清空
+    #[gpui_kit::test]
+    fn filter_narrows_the_list(cx: &mut TestAppContext) {
+        let (handle, list, events) = open(cx);
+        let rows = || {
+            vec![
+                row("logs", true, false),
+                row("src", true, false),
+                row("access.log", false, false),
+                row("app.py", false, false),
+                row("error.LOG", false, false),
+            ]
+        };
+        cx.update(|cx| list.update(cx, |l, cx| l.set_entries("/w".into(), rows(), true, cx)));
+        press(cx, handle, &list, &["ctrl-f"]);
+        assert!(shown(cx, handle, "test-list-filter"));
+        assert!(!list_focused(&list, cx, handle), "焦点到了筛选框");
+        typed(cx, handle, "log");
+        assert_eq!(visible(&list, cx), ["logs", "access.log", "error.LOG"]);
+        assert!(shown(cx, handle, "test-list-parent"), "“..”照常显示");
+        assert!(!shown(cx, handle, "test-list-row-src"));
+        assert_eq!(
+            cx.read(|cx| (list.read(cx).shown.len(), list.read(cx).unfiltered)),
+            (3, 5)
+        );
+        assert_eq!(selected(&list, cx), names(&["logs"]), "第一个匹配的项");
+        // Enter 回到列表，再按 Enter 打开它；筛选保留
+        key(cx, handle, "enter");
+        assert!(list_focused(&list, cx, handle));
+        key(cx, handle, "enter");
+        assert_eq!(events.borrow().as_slice(), ["open"]);
+        assert!(shown(cx, handle, "test-list-filter"));
+        // 全选只选显示着的
+        key(cx, handle, "ctrl-a");
+        assert_eq!(
+            selected(&list, cx),
+            names(&["logs", "access.log", "error.LOG"])
+        );
+        // / 再打开（选中已有的文字，输入的替换它）：通配符匹配整个名称，选择只留下显示着的
+        key(cx, handle, "/");
+        typed(cx, handle, "*.log");
+        assert_eq!(visible(&list, cx), ["access.log", "error.LOG"]);
+        assert_eq!(selected(&list, cx), names(&["access.log", "error.LOG"]));
+        // ↓ 回到列表
+        key(cx, handle, "down");
+        assert!(list_focused(&list, cx, handle));
+        // 列表中 Esc：清空并收起
+        key(cx, handle, "escape");
+        assert!(!shown(cx, handle, "test-list-filter"));
+        assert_eq!(visible(&list, cx).len(), 5);
+
+        // 再打开时框是空的；没有匹配时说明；筛选框中 Esc 清空并收起，回到列表
+        key(cx, handle, "ctrl-f");
+        let input = cx.read(|cx| list.read(cx).filter_input.as_ref().unwrap().0.clone());
+        assert_eq!(cx.read(|cx| input.read(cx).value().to_string()), "");
+        typed(cx, handle, "zzz");
+        assert!(shown(cx, handle, "test-list-empty"), "没有匹配时说明");
+        assert!(shown(cx, handle, "test-list-parent"));
+        key(cx, handle, "escape");
+        assert!(!shown(cx, handle, "test-list-filter"));
+        assert!(list_focused(&list, cx, handle));
+        assert_eq!(visible(&list, cx).len(), 5);
+
+        // 换目录时清空
+        key(cx, handle, "ctrl-f");
+        typed(cx, handle, "src");
+        assert_eq!(visible(&list, cx), ["src"]);
+        cx.update(|cx| list.update(cx, |l, cx| l.set_entries("/x".into(), rows(), true, cx)));
+        assert!(!shown(cx, handle, "test-list-filter"));
+        assert_eq!(visible(&list, cx).len(), 5);
+        assert!(cx.read(|cx| list.read(cx).query.is_empty()));
+    }
+
+    // 新建、改名后选中新的项：被筛掉时清空筛选，匹配的保留筛选；上传等新出现的不匹配的项照样不显示；不显示的隐藏
+    // 文件不选；换了目录不选
+    #[gpui_kit::test]
+    fn new_items_are_selected_after_refresh(cx: &mut TestAppContext) {
+        let (handle, list, _) = open(cx);
+        let mut rows = vec![row("a.txt", false, false), row("b.txt", false, false)];
+        cx.update(|cx| {
+            list.update(cx, |l, cx| {
+                l.set_entries("/w".into(), rows.clone(), true, cx)
+            })
+        });
+        press(cx, handle, &list, &["ctrl-f"]);
+        typed(cx, handle, "a");
+        assert_eq!(visible(&list, cx), ["a.txt"]);
+        // 上传了 c.txt：不匹配，不显示，总数跟着变
+        rows.push(row("c.txt", false, false));
+        cx.update(|cx| list.update(cx, |l, cx| l.refresh_entries(rows.clone(), cx)));
+        assert_eq!(visible(&list, cx), ["a.txt"]);
+        assert_eq!(cx.read(|cx| list.read(cx).unfiltered), 3);
+        // 新建了 new-dir：不匹配，清空筛选再选中它
+        rows.push(row("new-dir", true, false));
+        let refresh = |list: &Entity<FileList>, name: &str, rows: Vec<FileRow>, cx: &mut App| {
+            list.update(cx, |l, cx| {
+                l.reveal_after_refresh(name.into());
+                l.refresh_entries(rows, cx)
+            })
+        };
+        cx.update(|cx| refresh(&list, "new-dir", rows.clone(), cx));
+        assert!(!shown(cx, handle, "test-list-filter"));
+        assert_eq!(selected(&list, cx), names(&["new-dir"]));
+        assert_eq!(cursor(&list, cx).as_deref(), Some("new-dir"));
+        // 筛选 b 时改名为 b2.txt：匹配，保留筛选并选中它
+        press(cx, handle, &list, &["ctrl-f"]);
+        typed(cx, handle, "b");
+        rows.retain(|r| r.name != "b.txt");
+        rows.push(row("b2.txt", false, false));
+        cx.update(|cx| refresh(&list, "b2.txt", rows.clone(), cx));
+        assert!(shown(cx, handle, "test-list-filter"));
+        assert_eq!(visible(&list, cx), ["b2.txt"]);
+        assert_eq!(selected(&list, cx), names(&["b2.txt"]));
+        // 不显示隐藏的文件时新建了 .cache：不选，筛选也不动
+        cx.update(|cx| toggle_hidden(&DragSource::Local, cx));
+        cx.run_until_parked();
+        rows.push(row(".cache", true, true));
+        cx.update(|cx| refresh(&list, ".cache", rows.clone(), cx));
+        assert!(shown(cx, handle, "test-list-filter"));
+        assert_eq!(selected(&list, cx), names(&["b2.txt"]));
+        // 要选的项不在这一次的目录中（期间换了目录）：不选
+        cx.update(|cx| {
+            list.update(cx, |l, cx| {
+                l.reveal_after_refresh("x".into());
+                l.set_entries("/other".into(), vec![row("x", false, false)], true, cx)
+            })
+        });
+        assert!(selected(&list, cx).is_empty());
+    }
+
+    // “在终端中查找”：所在的栏说能用、输入了文字时才有这个按钮，点了交给所在的栏
+    #[gpui_kit::test]
+    fn find_in_terminal_follows_the_pane(cx: &mut TestAppContext) {
+        let (handle, list, events) = open(cx);
+        cx.update(|cx| {
+            list.update(cx, |l, cx| {
+                l.set_entries("/w".into(), vec![row("a", false, false)], true, cx)
+            })
+        });
+        press(cx, handle, &list, &["ctrl-f"]);
+        typed(cx, handle, "zz");
+        assert!(!shown(cx, handle, "test-list-find"), "所在的栏没有给出");
+        cx.update(|cx| list.update(cx, |l, _| l.set_find_in_terminal(|query, _| query != "no")));
+        assert!(shown(cx, handle, "test-list-find"));
+        cx.update_window(handle, |_, window, cx| window.click("test-list-find", cx))
+            .unwrap();
+        assert_eq!(events.borrow().as_slice(), ["find"]);
+        // 所在的栏说不能用（如终端在运行全屏程序）时没有
+        press(cx, handle, &list, &["ctrl-f"]);
+        typed(cx, handle, "no");
+        assert!(!shown(cx, handle, "test-list-find"));
     }
 
     #[gpui_kit::test]

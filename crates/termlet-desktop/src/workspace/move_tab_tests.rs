@@ -1,6 +1,6 @@
 //! Tab 移到别的窗口（[`super::move_tab`]）的测试：Tab 菜单的“移到新窗口”“移到窗口 ›”，拖到窗口外放下（空处新开窗口、
 //! 另一个窗口上移过去），窗口里唯一的 Tab，连接中不能移；移过去的终端会话不断、回滚还在、输入照常、原来的窗口关掉后
-//! 照样运行，回放接着播放，日志查看器照常显示；连真实 sshd 的（`TERMLET_TEST_SSH`）：SSH 终端的持续输出不断，文件管理的
+//! 照样运行，回放接着播放，日志查看器照常显示，SFTP 移走后“在终端中查找”切到终端所在的窗口；连真实 sshd 的（`TERMLET_TEST_SSH`）：SSH 终端的持续输出不断，文件管理的
 //! 传输在原来的窗口关掉后照样完成，编辑器的未保存修改保留、移过去后照样能编辑，共用终端连接的端口转发、编辑器的
 //! 会话跟着 Tab 走（原来的窗口还在用时留下，关掉时交出去）。
 
@@ -1204,4 +1204,66 @@ fn settings_tab_moves_only_without_unsaved_changes(cx: &mut TestAppContext) {
     let id = open_settings(cx);
     move_to_b(cx, id);
     assert!(has(cx, &ws_a), "那个窗口已经开着设置：不移");
+}
+
+// SFTP 的 Tab 移到了别的窗口：“在终端中查找”写进命令后切到终端所在的窗口与 Tab；终端所在的窗口关了时提示
+#[gpui_kit::test]
+fn find_in_terminal_switches_to_the_terminal_window(cx: &mut TestAppContext) {
+    use crate::sftp::panel::{SftpPanelEvent, SftpTarget};
+    setup(cx);
+    let (first, ws_a) = open_at(cx, (0., 0.), (900., 600.));
+    let (second, ws_b) = open_at(cx, (950., 0.), (900., 600.));
+    let terminal = open_local(cx, first, &ws_a);
+    // 后开的终端在前面，跟随的那个不是当前的 Tab
+    let _front = open_local(cx, first, &ws_a);
+    let host = cx.update(|cx| {
+        AppState::store(cx)
+            .create(
+                termlet_core::model::Host {
+                    name: "web".into(),
+                    address: "127.0.0.1".into(),
+                    port: 1,
+                    username: "alice".into(),
+                    ..Default::default()
+                },
+                None,
+                termlet_core::store::Position::Last,
+            )
+            .unwrap()
+    });
+    let sftp = cx
+        .update_window(second, |_, window, cx| {
+            ws_b.update(cx, |w, cx| {
+                w.open_sftp("web".into(), SftpTarget::Host(host), None, window, cx)
+            })
+        })
+        .unwrap()
+        .unwrap();
+    cx.run_until_parked();
+    let shown = |cx: &mut TestAppContext| {
+        cx.update_window(first, |_, window, cx| {
+            terminal
+                .read(cx)
+                .focus_handle(cx)
+                .contains_focused(window, cx)
+        })
+        .unwrap()
+    };
+    assert!(!shown(cx));
+    let reveal = SftpPanelEvent::ShowTerminal(terminal.clone());
+    cx.update(|cx| sftp.update(cx, |_, cx| cx.emit(reveal)));
+    cx.run_until_parked();
+    assert!(shown(cx), "切到了另一个窗口中的这个终端");
+
+    // 终端所在的窗口关了：在 SFTP 所在的窗口提示
+    cx.update_window(first, |_, window, _| window.remove_window())
+        .unwrap();
+    cx.run_until_parked();
+    let reveal = SftpPanelEvent::ShowTerminal(terminal.clone());
+    cx.update(|cx| sftp.update(cx, |_, cx| cx.emit(reveal)));
+    cx.run_until_parked();
+    let notices = cx
+        .update_window(second, |_, window, cx| window.notifications(cx).len())
+        .unwrap();
+    assert_eq!(notices, 1);
 }

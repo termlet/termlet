@@ -29,7 +29,7 @@ use gpui_kit::{
 };
 use termlet_core::id::HostId;
 use termlet_core::launch::LaunchTarget;
-use termlet_core::model::Encoding;
+use termlet_core::model::{Encoding, RemoteOs};
 use termlet_core::quick::QuickTarget;
 use termlet_core::sftp::{
     Entry, Protocol, SessionState, SftpError, SftpManager, SftpSession, SshTarget, TextFile,
@@ -39,6 +39,7 @@ use termlet_core::store::Store;
 
 use super::errors;
 use super::file_list::{self, DragSource, FileList, FileListEvent};
+use super::list_model;
 use super::local_pane::{LocalPane, LocalPaneEvent};
 use super::transfers::{TransferList, TransferListEvent};
 use crate::app_state::AppState;
@@ -264,6 +265,8 @@ pub enum SftpPanelEvent {
     },
     /// 以 root 身份打开同一台主机的 SFTP（新 Tab；跟随着终端时同样跟随它）
     OpenAsRoot,
+    /// 切到这个终端（“在终端中查找”写进命令之后）
+    ShowTerminal(Entity<TerminalPanel>),
 }
 
 /// 连接的状态。
@@ -394,11 +397,16 @@ impl SftpPanel {
             let local = cx.new(|cx| LocalPane::new(panel_id, window, cx));
             let transfers = cx.new(|cx| TransferList::new(owner.clone(), target.key(), window, cx));
             let weak: WeakEntity<Self> = cx.entity().downgrade();
+            let find = weak.clone();
             list.update(cx, |list, _| {
                 list.set_menu(move |menu, window, cx| match weak.upgrade() {
                     Some(panel) => panel.read(cx).build_menu(menu, &panel, window, cx),
                     None => menu,
-                })
+                });
+                list.set_find_in_terminal(move |query, cx| {
+                    find.upgrade()
+                        .is_some_and(|panel| panel.read(cx).find_command(query, cx).is_some())
+                });
             });
             let subscriptions =
                 Self::subscribe_children(&list, &local, &transfers, &path, window, cx);
@@ -845,6 +853,13 @@ impl SftpPanel {
         }
     }
 
+    /// 新建、改名后刷新，选中名为 `name` 的新项（被筛选筛掉时先清空筛选）。
+    fn refresh_to(&mut self, name: String, window: &mut Window, cx: &mut Context<Self>) {
+        self.list
+            .update(cx, |list, _| list.reveal_after_refresh(name));
+        self.refresh(window, cx);
+    }
+
     fn apply_listing(
         &mut self,
         listing: termlet_core::sftp::Listing,
@@ -1180,6 +1195,42 @@ impl SftpPanel {
             }
             FileListEvent::NewFolder => self.new_folder(window, cx),
             FileListEvent::FocusPath => self.focus_path(window, cx),
+            FileListEvent::FindInTerminal(query) => self.find_in_terminal(query, window, cx),
+        }
+    }
+
+    /// “在终端中查找”写进跟随着的终端的命令（见 [`list_model::find_command`]），与写给哪个终端。终端不能用
+    /// （没有跟随的、断开了、在运行全屏程序、服务器是 Windows，没有 find）或名称中有写不进终端的字符时为 `None`，
+    /// 筛选框中不显示这个按钮。
+    fn find_command(&self, query: &str, cx: &App) -> Option<(Entity<TerminalPanel>, String)> {
+        let link = self.link.as_ref()?;
+        let terminal = link.terminal.upgrade()?;
+        let usable = {
+            let terminal = terminal.read(cx);
+            terminal.is_live(cx)
+                && !terminal.is_alt_screen(cx)
+                && terminal.remote_os() != Some(RemoteOs::Windows)
+        };
+        // 终端就在显示的目录中时从 . 找起，命令短一些
+        let dir = if link.cwd.as_deref() == Some(self.dir.as_str()) {
+            "."
+        } else {
+            self.dir.as_str()
+        };
+        let command = list_model::find_command(dir, query).filter(|_| usable)?;
+        Some((terminal, command))
+    }
+
+    /// 把 find 命令写进跟随着的终端（不执行，写在终端里已有的输入之后），切到终端，由用户按 Enter。
+    fn find_in_terminal(&mut self, query: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let Some((terminal, command)) = self.find_command(query, cx) else {
+            return;
+        };
+        tracing::debug!(sftp = %self.name, "在终端中查找");
+        let input = crate::snippets::command_input(&command, Some(false));
+        match terminal.update(cx, |terminal, cx| terminal.write_command(input, cx)) {
+            Ok(()) => cx.emit(SftpPanelEvent::ShowTerminal(terminal)),
+            Err(message) => crate::notify::error(message, window, cx),
         }
     }
 
@@ -1187,6 +1238,12 @@ impl SftpPanel {
     #[cfg(test)]
     pub(crate) fn list_focus(&self, cx: &App) -> (FocusHandle, FocusHandle) {
         (self.list.focus_handle(cx), self.local.focus_handle(cx))
+    }
+
+    /// 本机栏的列表（测试中核对选择）。
+    #[cfg(test)]
+    pub(crate) fn local_list(&self, cx: &App) -> Entity<FileList> {
+        self.local.read(cx).list()
     }
 
     /// 编辑路径（Ctrl+L、Alt+D）：路径框取得焦点，选中其中的全部文字。
