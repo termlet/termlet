@@ -8138,7 +8138,7 @@ dependencies = [
 
 [[package]]
 name = "termlet-cli"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "libc",
  "serde",
@@ -8154,7 +8154,7 @@ dependencies = [
 
 [[package]]
 name = "termlet-core"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "aes 0.9.3",
  "aes-gcm",
@@ -8220,7 +8220,7 @@ dependencies = [
 
 [[package]]
 name = "termlet-desktop"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "async-channel",
  "embed-resource",
@@ -8244,14 +8244,14 @@ dependencies = [
 
 [[package]]
 name = "termlet-io"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "async-channel",
 ]
 
 [[package]]
 name = "termlet-mcp"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "serde_json",
  "tempfile",
@@ -8260,7 +8260,7 @@ dependencies = [
 
 [[package]]
 name = "termlet-proto"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "dirs 6.0.0",
  "serde",
@@ -8273,7 +8273,7 @@ dependencies = [
 
 [[package]]
 name = "termlet-terminal"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "alacritty_terminal",
  "async-channel",
