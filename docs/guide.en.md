@@ -505,7 +505,7 @@ Default shortcuts:
 
 | Action | Windows, Linux | macOS |
 |---|---|---|
-| Copy / paste | Ctrl+Shift+C / Ctrl+Shift+V (or Ctrl+Insert / Shift+Insert) | ⌘C / ⌘V (⌘C does nothing when nothing is selected) |
+| Copy / paste | Ctrl+Shift+C / Ctrl+Shift+V (or Ctrl+Insert / Shift+Insert); Ctrl+C also copies when text is selected and interrupts as usual otherwise | ⌘C / ⌘V (⌘C does nothing when nothing is selected; Ctrl+C always goes to the program) |
 | Select all / clear (fixed) | Ctrl+Shift+A / none | ⌘A / ⌘K |
 | Command palette (search hosts, tabs and actions; quick connect) | Ctrl+Shift+P | ⇧⌘P |
 | Find | Ctrl+Shift+F | ⌘F |
@@ -561,7 +561,12 @@ Default shortcuts:
   - download-and-run commands like `curl … | sh`;
   - invisible characters (zero-width, bidirectional controls) or look-alike letters mixed into a word (such as Cyrillic а posing as Latin a).
 - It can be turned off with "Check before pasting" under Settings → Terminal.
-- Programs in the terminal cannot change the system clipboard through OSC 52, so sequences hidden in remote output cannot quietly replace what you copied.
+- Programs in the terminal can write text to this computer's clipboard through OSC 52 (pi, tmux and Neovim on a server use it when you copy):
+  - only while the Termlet window is in front and that terminal has focus; nothing gets written while you are in another app, and programs in background tabs or other panes cannot write;
+  - each write shows a notice in the top right, such as "web-1 copied N characters to the clipboard", with "View" to see what was written;
+  - write only: requests to read your clipboard get no answer;
+  - at most 1 MB at a time; anything larger is not written and you are told why; session replays never write;
+  - turn it off with "Let programs write to the clipboard" under Settings → Terminal → Behavior.
 
 ### sudo password filling
 
@@ -586,7 +591,7 @@ Default shortcuts:
   - A recording keeps the screen changes with their timing (colors, full-screen programs like vim and terminal resizes included) in the asciicast v2 format (`.cast`, playable with asciinema).
   - It starts with a copy of the current screen, and recording tabs show a red dot and the elapsed time.
   - Input is not recorded by default (it may contain passwords); turn on "Also record input in session recordings" under Settings → Terminal to include it.
-  - Everything shown in the terminal is recorded, so check a recording before sharing it.
+  - Everything shown in the terminal is recorded, so check a recording before sharing it. Recordings keep the raw output, which includes text programs wrote to the clipboard (OSC 52); playback never writes the clipboard.
   - The file is completed when you stop, close the tab, or the session ends or disconnects, and the notification lets you play it right away.
   - Recordings are saved to `{data folder}/recordings/` (the folder can be changed), named after the host and the start time, up to 256MB each.
 - **Playback** opens in a new tab:

@@ -11,6 +11,7 @@
 //!   会话日志、会话录制（见 `terminal_panel/record.rs`）、命令补全提示（见 `terminal_panel/suggest.rs`）、编码切换、
 //!   网络延迟（底部状态栏）。
 
+mod clipboard;
 mod rebind;
 mod record;
 mod run_done;
@@ -1838,6 +1839,14 @@ impl TerminalPanel {
                 TerminalViewEvent::TitleChanged => cx.notify(),
                 TerminalViewEvent::SuggestionAccepted => {
                     termlet_core::usage::mark(termlet_core::usage::Feature::CommandSuggest)
+                }
+                TerminalViewEvent::ClipboardWritten(text) => {
+                    let key = cx.entity_id().as_u64() as usize;
+                    clipboard::written(this.name.clone(), text, key, window, cx)
+                }
+                TerminalViewEvent::ClipboardTooLarge(bytes) => {
+                    let key = cx.entity_id().as_u64() as usize;
+                    clipboard::too_large(this.name.clone(), *bytes, key, window, cx)
                 }
                 _ => {}
             },

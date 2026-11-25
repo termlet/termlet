@@ -1,5 +1,10 @@
 //! 终端视图：焦点、键盘、鼠标、选区、复制粘贴、滚动与输入法。
 //!
+//! 复制：Windows、Linux 上 Ctrl+Shift+C / Ctrl+Insert（[`key_bindings`]），有选中内容时 Ctrl+C 也复制（与 Windows
+//! Terminal 相同，没有选中时照常发 ^C，见 [`TerminalView::copy_on_ctrl_c`]）；macOS 上 ⌘C，Ctrl+C 一律发给程序。
+//! 程序经 OSC 52 写剪贴板（[`crate::clipboard`]）：设置允许（[`TerminalStyle::clipboard_write`]）、窗口在前台且焦点在
+//! 这个终端上、不在回放中才写，写了发出 [`TerminalViewEvent::ClipboardWritten`] 让上层提示用户。
+//!
 //! 回放模式（[`TerminalView::set_replay`]，回放录制的会话）：只读，按键与输入法不处理（交给外层的回放控制），
 //! 鼠标不上报给程序（照常选择文字）；网格是录制时的大小（引擎决定），不随布局变化，放不下时缩小字号。
 
@@ -22,6 +27,7 @@ use std::time::Duration;
 
 use regex::Regex;
 
+use crate::clipboard::{ClipboardRequest, ClipboardText};
 use crate::colors::{Palette, Rgb};
 use crate::element::{LayoutMetrics, TerminalElement};
 use crate::engine::{EngineEvent, OutputObserver, TerminalEngine};
@@ -192,6 +198,8 @@ pub struct TerminalStyle {
     /// 高亮的颜色在当前配色中实际显示的样子（对背景对比度不够时界面调整过的）；没有的颜色（或没有这张表时）用
     /// [`crate::HighlightColor::fallback`]
     pub highlight_colors: Option<Arc<HashMap<crate::HighlightColor, Rgb>>>,
+    /// 允许程序写剪贴板（OSC 52，只写不读）
+    pub clipboard_write: bool,
 }
 
 impl Default for TerminalStyle {
@@ -212,6 +220,7 @@ impl Default for TerminalStyle {
             contrast: None,
             highlighter: None,
             highlight_colors: None,
+            clipboard_write: false,
         }
     }
 }
@@ -236,6 +245,10 @@ pub enum TerminalViewEvent {
     Typed(Vec<u8>),
     /// 用户接受了命令补全提示（整条或一个词）；接受的内容已经发出，事件中不带
     SuggestionAccepted,
+    /// 程序经 OSC 52 写了剪贴板（已经写入），上层提示用户
+    ClipboardWritten(ClipboardText),
+    /// 程序要写进剪贴板的内容太大（解码后的字节数），没有写入
+    ClipboardTooLarge(usize),
 }
 
 /// 鼠标正在做什么。
@@ -1019,6 +1032,7 @@ impl TerminalView {
                 }
                 cx.emit(TerminalViewEvent::Shell(event));
             }
+            EngineEvent::Clipboard(request) => self.on_clipboard(request, window, cx),
             // 已经换上了新传输（重连）：旧传输的结束不算
             EngineEvent::Closed { transport, .. }
                 if !self.engine.is_current_transport(transport) => {}
@@ -1027,6 +1041,36 @@ impl TerminalView {
                 self.update_blink(cx);
                 cx.emit(TerminalViewEvent::Closed(reason));
                 cx.notify();
+            }
+        }
+    }
+
+    /// 程序要写剪贴板（OSC 52）：设置允许、窗口在前台且焦点在这个终端上（用户在别的程序里、在别的 Tab 或窗格中时，
+    /// 程序不能悄悄改剪贴板，与 Windows Terminal、foot 相同）、不在回放中（录制的输出中的 OSC 52 不再写一次）才写。
+    /// 写了、太大没写都告诉上层，由它提示用户。
+    fn on_clipboard(&mut self, request: ClipboardRequest, window: &Window, cx: &mut Context<Self>) {
+        if self.replay || !self.style.clipboard_write {
+            tracing::debug!(?request, replay = self.replay, "不处理程序写剪贴板的请求");
+            return;
+        }
+        if !window.is_window_active() || !self.focus.is_focused(window) {
+            tracing::info!(?request, "窗口或终端没有焦点，不处理程序写剪贴板的请求");
+            return;
+        }
+        match request {
+            ClipboardRequest::Write { text, primary } => {
+                tracing::info!(?text, primary, "程序写剪贴板（OSC 52）");
+                let item = ClipboardItem::new_string(text.0.clone());
+                if primary {
+                    write_to_primary(item, cx);
+                } else {
+                    cx.write_to_clipboard(item);
+                }
+                cx.emit(TerminalViewEvent::ClipboardWritten(text));
+            }
+            ClipboardRequest::TooLarge { bytes } => {
+                tracing::info!(bytes, "程序要写进剪贴板的内容太大，没有写入");
+                cx.emit(TerminalViewEvent::ClipboardTooLarge(bytes));
             }
         }
     }
@@ -1109,6 +1153,10 @@ impl TerminalView {
     }
 
     fn key_down(&mut self, event: &KeyDownEvent, _: &mut Window, cx: &mut Context<Self>) {
+        if self.copy_on_ctrl_c(&event.keystroke, cx) {
+            cx.stop_propagation();
+            return;
+        }
         // 回放：按键交给外层（播放、暂停、跳转）
         if self.replay {
             return;
@@ -1180,6 +1228,33 @@ impl TerminalView {
         } else {
             self.engine.keyboard_flags()
         }
+    }
+
+    /// Windows、Linux 上有选中内容时按 Ctrl+C：复制并取消选区（与 Windows Terminal 相同），这一下不发给程序；没有选中
+    /// 内容时返回 `false`，照常作为 ^C 发出。macOS 上复制是 ⌘C，Ctrl+C 一律发给程序。
+    ///
+    /// 发给程序的输入（打字、回车、方向键、输入法、粘贴）都经 [`Self::write_input`] 先取消选区（与 Windows Terminal
+    /// 相同），所以选中后接着输入、执行命令，过一会儿再按 Ctrl+C 是中断，不会复制早先的选区；只按修饰键、
+    /// Ctrl+Shift+C 等快捷键不算输入，不取消选区。
+    fn copy_on_ctrl_c(&mut self, keystroke: &gpui_kit::Keystroke, cx: &mut Context<Self>) -> bool {
+        let m = &keystroke.modifiers;
+        if cx.platform_info().os == OperatingSystem::Mac
+            || keystroke.key != "c"
+            || !m.control
+            || m.shift
+            || m.alt
+            || m.platform
+            || m.function
+        {
+            return false;
+        }
+        let Some(text) = self.selection_text() else {
+            return false;
+        };
+        cx.write_to_clipboard(ClipboardItem::new_string(text));
+        self.engine.clear_selection();
+        cx.notify();
+        true
     }
 
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
@@ -1547,6 +1622,14 @@ impl TerminalView {
         }
         Some(metrics.cell_bounds(row as usize, point.column, 1))
     }
+}
+
+/// 写 PRIMARY 选区：只有 Linux（与 FreeBSD）上有；其他系统写剪贴板（与 Windows Terminal、WezTerm、iTerm2 相同）。
+fn write_to_primary(item: ClipboardItem, cx: &App) {
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    cx.write_to_primary(item);
+    #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+    cx.write_to_clipboard(item);
 }
 
 /// 去掉网址末尾多半不属于它的标点（右括号只在网址中没有左括号时去掉）。

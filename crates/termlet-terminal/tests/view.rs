@@ -1153,3 +1153,262 @@ fn replay_view_keeps_the_recorded_grid(cx: &mut TestAppContext) {
     let grid = view.read_with(cx, |view, _| view.engine().size());
     assert_eq!((grid.columns, grid.rows), (200, 60));
 }
+
+/// 等到网格中出现这段文字。
+fn wait_for_text(cx: &mut TestAppContext, fixture: &Fixture, text: &str) {
+    eventually(cx, |cx| {
+        fixture
+            .view
+            .read_with(cx, |view, _| view.screen_text().contains(text))
+    });
+}
+
+fn clipboard_text(cx: &mut TestAppContext) -> Option<String> {
+    cx.update(|cx| cx.read_from_clipboard().and_then(|item| item.text()))
+}
+
+// Windows、Linux 上有选中内容时 Ctrl+C 复制并取消选区，这一下不发给程序；没有选中时照常是 ^C。
+// 程序开着 kitty 键盘协议时也一样（复制的那一下不报告按下与松开）
+#[gpui_kit::test]
+fn ctrl_c_copies_the_selection_and_otherwise_interrupts(cx: &mut TestAppContext) {
+    cx.set_platform_info(gpui_kit::PlatformInfo {
+        os: gpui_kit::OperatingSystem::Windows,
+        target: gpui_kit::PlatformTarget::Native,
+    });
+    let fixture = open(cx);
+    cx.update_window(fixture.window, |_, window, cx| window.render_frame(cx))
+        .unwrap();
+    fixture
+        .output
+        .send_blocking(IoEvent::Output(b"\x1b[>7uhello world".to_vec()))
+        .unwrap();
+    wait_for_text(cx, &fixture, "hello world");
+    cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("之前的内容".into())));
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("terminal", cx);
+        fixture.recorder.take();
+        window.press("ctrl-shift-a", cx);
+        window.press("ctrl-c", cx);
+    })
+    .unwrap();
+    let copied = clipboard_text(cx).unwrap();
+    assert!(copied.starts_with("hello world"), "复制到：{copied:?}");
+    assert_eq!(fixture.recorder.take(), b"", "复制的那一下不发给程序");
+    assert!(
+        cx.update(|cx| fixture.view.read(cx).selection_text())
+            .is_none(),
+        "复制后取消选区"
+    );
+    // 选区没了：再按是 ^C（kitty 键盘协议的编码）
+    cx.update_window(fixture.window, |_, window, cx| window.press("ctrl-c", cx))
+        .unwrap();
+    assert_eq!(fixture.recorder.take(), b"\x1b[99;5u\x1b[99;5:3u");
+
+    // 选中后接着打字、回车、按方向键（发给程序的输入）：选区随即取消，之后的 Ctrl+C 是中断，不会复制旧的选区
+    cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("之前的内容".into())));
+    for typed in ["a", "enter", "up"] {
+        cx.update_window(fixture.window, |_, window, cx| {
+            window.press("ctrl-shift-a", cx);
+            if typed == "a" {
+                window.input(typed, cx);
+            } else {
+                window.press(typed, cx);
+            }
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert!(
+            cx.update(|cx| fixture.view.read(cx).selection_text())
+                .is_none(),
+            "输入 {typed} 后取消选区"
+        );
+        fixture.recorder.take();
+        cx.update_window(fixture.window, |_, window, cx| window.press("ctrl-c", cx))
+            .unwrap();
+        assert_eq!(
+            fixture.recorder.take(),
+            b"\x1b[99;5u\x1b[99;5:3u",
+            "输入 {typed} 后 Ctrl+C 发出中断"
+        );
+        assert_eq!(clipboard_text(cx).as_deref(), Some("之前的内容"));
+    }
+    // 只按修饰键不取消选区（Ctrl+Shift+C 等快捷键照常复制）
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.press("ctrl-shift-a", cx);
+        window.press("ctrl-shift-c", cx);
+    })
+    .unwrap();
+    assert!(clipboard_text(cx).unwrap().starts_with("hello world"));
+    assert!(
+        cx.update(|cx| fixture.view.read(cx).selection_text())
+            .is_some(),
+        "快捷键复制不取消选区"
+    );
+
+    // macOS 上复制是 ⌘C：有选中内容时 Ctrl+C 照样发给程序
+    cx.set_platform_info(gpui_kit::PlatformInfo {
+        os: gpui_kit::OperatingSystem::Mac,
+        target: gpui_kit::PlatformTarget::Native,
+    });
+    cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("之前的内容".into())));
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.dispatch_action(Box::new(termlet_terminal::view::SelectAll), cx);
+        fixture.recorder.take();
+        window.press("ctrl-c", cx);
+    })
+    .unwrap();
+    assert_eq!(fixture.recorder.take(), b"\x1b[99;5u\x1b[99;5:3u");
+    assert_eq!(clipboard_text(cx).as_deref(), Some("之前的内容"));
+}
+
+// 程序经 OSC 52 写剪贴板：设置允许、终端有焦点时写入并发出事件；读剪贴板的查询不回答；太大的不写；
+// 失焦、设置关掉时不写
+#[gpui_kit::test]
+fn programs_can_write_the_clipboard_but_not_read_it(cx: &mut TestAppContext) {
+    let fixture = open_with(
+        cx,
+        TerminalStyle {
+            clipboard_write: true,
+            ..TerminalStyle::default()
+        },
+    );
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let _subscription = cx.update(|cx| {
+        let events = events.clone();
+        cx.subscribe(&fixture.view, move |_, event: &TerminalViewEvent, _| {
+            if matches!(
+                event,
+                TerminalViewEvent::ClipboardWritten(_) | TerminalViewEvent::ClipboardTooLarge(_)
+            ) {
+                events.lock().unwrap().push(event.clone());
+            }
+        })
+    });
+    let send = |bytes: Vec<u8>| {
+        fixture
+            .output
+            .send_blocking(IoEvent::Output(bytes))
+            .unwrap()
+    };
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.render_frame(cx);
+        window.activate_window();
+        window.click("terminal", cx);
+    })
+    .unwrap();
+    cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("之前的内容".into())));
+
+    // 写入（BEL 与 ST 结尾都行）：“hi”
+    send(b"\x1b]52;c;aGk=\x07".to_vec());
+    eventually(cx, |cx| clipboard_text(cx).as_deref() == Some("hi"));
+    {
+        let events = events.lock().unwrap();
+        let [TerminalViewEvent::ClipboardWritten(text)] = events.as_slice() else {
+            panic!("事件：{events:?}");
+        };
+        assert_eq!(text.as_str(), "hi");
+    }
+
+    // 查询不回答：后面跟一个状态查询（DSR 5），等到它的回答，前面没有 OSC 52 的回答
+    fixture.recorder.take();
+    send(b"\x1b]52;c;?\x1b\\\x1b[5n".to_vec());
+    eventually(cx, |_| {
+        fixture
+            .recorder
+            .written
+            .lock()
+            .unwrap()
+            .ends_with(b"\x1b[0n")
+    });
+    assert_eq!(fixture.recorder.take(), b"\x1b[0n", "OSC 52 的查询不回答");
+
+    // 太大（解码后超过 1 MiB）：不写，只报告大小
+    // “aaa” 的 base64 是 “YWFh”：解码后是 3 的倍数、刚过上限
+    let groups = termlet_terminal::MAX_CLIPBOARD_WRITE / 3 + 1;
+    let big = "YWFh".repeat(groups);
+    send(format!("\x1b]52;c;{big}\x07").into_bytes());
+    eventually(cx, |_| events.lock().unwrap().len() == 2);
+    assert_eq!(
+        events.lock().unwrap()[1],
+        TerminalViewEvent::ClipboardTooLarge(groups * 3)
+    );
+    assert_eq!(clipboard_text(cx).as_deref(), Some("hi"));
+
+    // 窗口不在前台（用户在别的程序里）：焦点还在终端上也不写（“bye”）
+    let written_and_answered = |cx: &mut TestAppContext| {
+        fixture.recorder.take();
+        send(b"\x1b]52;c;Ynll\x07\x1b[5n".to_vec());
+        eventually(cx, |_| {
+            fixture
+                .recorder
+                .written
+                .lock()
+                .unwrap()
+                .ends_with(b"\x1b[0n")
+        });
+        cx.run_until_parked();
+        clipboard_text(cx).as_deref() == Some("bye")
+    };
+    VisualTestContext::from_window(fixture.window, cx).deactivate_window();
+    assert!(!written_and_answered(cx), "窗口不在前台时不写");
+
+    // 窗口在前台、焦点不在终端上（别的 Tab、窗格或输入框）：不写
+    cx.update_window(fixture.window, |_, window, cx| {
+        window.activate_window();
+        window.blur(cx);
+    })
+    .unwrap();
+    assert!(!written_and_answered(cx), "终端没有焦点时不写");
+
+    // 设置关掉：有焦点也不写
+    cx.update(|cx| {
+        fixture.view.update(cx, |view, cx| {
+            let style = TerminalStyle {
+                clipboard_write: false,
+                ..view.style().clone()
+            };
+            view.set_style(style, cx);
+        })
+    });
+    cx.update_window(fixture.window, |_, window, cx| window.click("terminal", cx))
+        .unwrap();
+    fixture.recorder.take();
+    send(b"\x1b]52;c;Ynll\x07\x1b[5n".to_vec());
+    eventually(cx, |_| {
+        fixture
+            .recorder
+            .written
+            .lock()
+            .unwrap()
+            .ends_with(b"\x1b[0n")
+    });
+    cx.run_until_parked();
+    assert_eq!(clipboard_text(cx).as_deref(), Some("hi"));
+    assert_eq!(events.lock().unwrap().len(), 2);
+
+    // 回放中（录制的输出里的 OSC 52）：设置允许、有焦点也不写
+    cx.update(|cx| {
+        fixture.view.update(cx, |view, cx| {
+            let style = TerminalStyle {
+                clipboard_write: true,
+                ..view.style().clone()
+            };
+            view.set_style(style, cx);
+            view.set_replay(true, cx);
+        })
+    });
+    fixture.recorder.take();
+    send(b"\x1b]52;c;Ynll\x07\x1b[5n".to_vec());
+    eventually(cx, |_| {
+        fixture
+            .recorder
+            .written
+            .lock()
+            .unwrap()
+            .ends_with(b"\x1b[0n")
+    });
+    cx.run_until_parked();
+    assert_eq!(clipboard_text(cx).as_deref(), Some("hi"));
+    assert_eq!(events.lock().unwrap().len(), 2);
+}

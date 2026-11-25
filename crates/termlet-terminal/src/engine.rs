@@ -89,6 +89,8 @@ pub enum EngineEvent {
     CursorBlinkingChange,
     /// shell 集成的事件（提示符、命令开始与结束、通知、当前目录、要记进历史的命令）
     Shell(ShellEvent),
+    /// 程序要写剪贴板（OSC 52），见 [`crate::clipboard`]
+    Clipboard(crate::ClipboardRequest),
     /// 会话结束。`transport` 是结束的那个传输的序号：界面收到时已经换上新传输（重连）的，忽略它，
     /// 见 [`TerminalEngine::is_current_transport`]
     Closed { reason: CloseReason, transport: u64 },
@@ -103,6 +105,8 @@ impl std::fmt::Debug for EngineEvent {
             EngineEvent::CursorBlinkingChange => write!(f, "CursorBlinkingChange"),
             // 命令文本的 Debug 只有长度（可能含密码等秘密）
             EngineEvent::Shell(e) => write!(f, "Shell({e:?})"),
+            // 剪贴板的文字同样只有长度
+            EngineEvent::Clipboard(request) => write!(f, "Clipboard({request:?})"),
             EngineEvent::Closed { reason, transport } => {
                 write!(f, "Closed({reason:?}, transport {transport})")
             }

@@ -261,6 +261,11 @@ pub(super) static ITEMS: &[Item] = &[
     ),
     item(
         Page::Terminal,
+        "settings-clipboard-write",
+        &["settings.clipboard_write", "settings.clipboard_write_hint"],
+    ),
+    item(
+        Page::Terminal,
         "settings-option-as-meta",
         &["settings.option_as_meta", "settings.option_as_meta_hint"],
     )

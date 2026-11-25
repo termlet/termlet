@@ -1007,6 +1007,36 @@ terminal.record.reason_ended:
   zh-TW: "工作階段已結束"
   ja: "セッションが終了しました"
   ko: "세션이 종료되었습니다"
+terminal.clipboard.written:
+  zh-CN: "%{name} 写入了剪贴板（%{count} 字）"
+  en: "%{name} copied %{count} characters to the clipboard"
+  zh-TW: "%{name} 寫入了剪貼簿（%{count} 字）"
+  ja: "%{name} がクリップボードに書き込みました（%{count} 文字）"
+  ko: "%{name}에서 클립보드에 썼습니다(%{count}자)"
+terminal.clipboard.view:
+  zh-CN: 查看
+  en: View
+  zh-TW: 檢視
+  ja: 表示
+  ko: 보기
+terminal.clipboard.view_title:
+  zh-CN: "%{name} 写入剪贴板的内容"
+  en: "What %{name} copied to the clipboard"
+  zh-TW: "%{name} 寫入剪貼簿的內容"
+  ja: "%{name} がクリップボードに書き込んだ内容"
+  ko: "%{name}에서 클립보드에 쓴 내용"
+terminal.clipboard.truncated:
+  zh-CN: 内容较长，这里只显示前 %{shown} 字（共 %{total} 字），剪贴板中是全文。
+  en: "The text is long: only the first %{shown} of %{total} characters are shown here. The clipboard has all of it."
+  zh-TW: 內容較長，這裡只顯示前 %{shown} 字（共 %{total} 字），剪貼簿中是全文。
+  ja: 内容が長いため、ここでは %{total} 文字のうち最初の %{shown} 文字だけを表示しています。クリップボードには全文が入っています。
+  ko: "내용이 길어 여기서는 %{total}자 중 앞의 %{shown}자만 표시합니다. 클립보드에는 전체가 들어 있습니다."
+terminal.clipboard.too_large:
+  zh-CN: "%{name} 要写入剪贴板的内容太大（%{size}，上限 %{limit}），没有写入"
+  en: "%{name} tried to copy %{size} to the clipboard, over the %{limit} limit. Nothing was copied."
+  zh-TW: "%{name} 要寫入剪貼簿的內容太大（%{size}，上限 %{limit}），沒有寫入"
+  ja: "%{name} がクリップボードに書き込もうとした内容が大きすぎるため（%{size}、上限 %{limit}）、書き込みませんでした"
+  ko: "%{name}에서 클립보드에 쓰려는 내용이 너무 커서(%{size}, 최대 %{limit}) 쓰지 않았습니다"
 terminal.record.saved:
   zh-CN: "录制已保存"
   en: "Recording saved"

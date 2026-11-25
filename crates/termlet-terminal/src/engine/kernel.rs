@@ -5,8 +5,8 @@
 //!
 //! - 内核：VT 解析；网格、回滚、光标、终端模式；程序改过的颜色（OSC 4 / 10 / 11 / 12）；标题与响铃；终端的应答
 //!   （设备属性、光标位置、窗口大小、颜色查询）；同步更新（DEC 2026）的缓冲与超时；选区与选中的文字；超链接（OSC 8）；
-//!   跟着滚动的格子标记；kitty 键盘协议的标志栈；深浅色切换通知（DEC 2031）的开关与查询；不允许程序读写剪贴板
-//!   （OSC 52）。其中 alacritty 没有或做得不对的由 alacritty 后端自己补：格子标记的滚动计数、kitty 键盘协议的标志栈
+//!   跟着滚动的格子标记；kitty 键盘协议的标志栈；深浅色切换通知（DEC 2031）的开关与查询；程序写剪贴板（OSC 52，
+//!   只写不读，见 [`crate::clipboard`]）。其中 alacritty 没有或做得不对的由 alacritty 后端自己补：格子标记的滚动计数、kitty 键盘协议的标志栈
 //!   （[`crate::kitty_keyboard`]）、2031（[`crate::theme_mode`]）。
 //! - 内核之外（引擎与视图，换内核时不变）：shell 集成（OSC 133 / 633 / 7 / 9 / 777 / 1337）的扫描与命令历史、
 //!   查找、关键词高亮、网址识别、文本提取的逻辑行、按键与鼠标的编码、配色的解析与对比度、绘制、
@@ -180,7 +180,7 @@ pub(crate) struct Notices {
     pub(crate) cursor: AtomicBool,
 }
 
-/// 内核发给引擎的通知（标题、响铃、光标闪烁），以及内核回答窗口大小的查询要用的大小。
+/// 内核发给引擎的通知（标题、响铃、光标闪烁、写剪贴板），以及内核回答窗口大小的查询要用的大小。
 #[derive(Clone)]
 pub(crate) struct KernelEvents {
     events: async_channel::Sender<EngineEvent>,
@@ -219,6 +219,13 @@ impl KernelEvents {
     pub(crate) fn bell(&self) {
         if !self.notices.bell.swap(true, Ordering::AcqRel) {
             let _ = self.events.try_send(EngineEvent::Bell);
+        }
+    }
+
+    /// 程序要写剪贴板（OSC 52，`text` 已解码）：逐次发给界面，空内容不发，太大的只发大小。
+    pub(crate) fn clipboard(&self, text: String, primary: bool) {
+        if let Some(request) = crate::ClipboardRequest::from_store(text, primary) {
+            let _ = self.events.try_send(EngineEvent::Clipboard(request));
         }
     }
 

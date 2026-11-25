@@ -1976,6 +1976,13 @@ impl SettingsForm {
                     cx,
                 ),
             )
+            .child(self.checkbox(
+                "settings-clipboard-write",
+                t!("settings.clipboard_write"),
+                Some(t!("settings.clipboard_write_hint")),
+                |this| &mut this.draft.terminal.clipboard_write,
+                cx,
+            ))
             // 只在 macOS 上有：其他系统上 Alt 本来就作为 Meta
             .when(
                 cx.platform_info().os == gpui_kit::OperatingSystem::Mac,

@@ -196,6 +196,8 @@ pub struct TerminalSettings {
     pub notify_command_done: bool,
     /// 出现 sudo 密码提示时可填入已保存的密码
     pub password_fill: bool,
+    /// 允许终端中的程序写剪贴板（OSC 52，只写不读；写入时提示）。之前的设置没有这一项时也是开
+    pub clipboard_write: bool,
     /// 自动记录会话日志
     pub session_log: bool,
     /// 会话录制同时记录输入（可能含密码，默认关；只对这台电脑生效，不随云同步）
@@ -241,6 +243,7 @@ impl Default for TerminalSettings {
             tab_activity: true,
             notify_command_done: true,
             password_fill: true,
+            clipboard_write: true,
             session_log: false,
             record_input: false,
             file_transfer: true,
@@ -960,6 +963,17 @@ mod tests {
         assert_eq!(terminal.font_size, 16);
         assert_eq!(terminal.scrollback, 5000);
         assert!(terminal.paste_warning);
+    }
+
+    // 程序写剪贴板（OSC 52）默认允许；之前保存的终端设置没有这一项时也允许，关掉的照样读回
+    #[test]
+    fn clipboard_write_defaults_on() {
+        assert!(TerminalSettings::default().clipboard_write);
+        let old: TerminalSettings = serde_json::from_str(r#"{"fontSize":14}"#).unwrap();
+        assert!(old.clipboard_write);
+        let off: TerminalSettings = serde_json::from_str(r#"{"clipboardWrite":false}"#).unwrap();
+        assert!(!off.clipboard_write);
+        assert_eq!(serde_json::to_value(&off).unwrap()["clipboardWrite"], false);
     }
 
     // 识别远程系统默认开；之前保存的连接设置没有这一项时也是开

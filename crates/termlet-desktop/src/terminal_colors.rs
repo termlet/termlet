@@ -82,6 +82,7 @@ pub fn terminal_style(
         },
         cursor_blink: terminal.cursor_blink,
         option_as_meta: terminal.option_as_meta,
+        clipboard_write: terminal.clipboard_write,
         ..TerminalStyle::default()
     };
     if !terminal.font_family.trim().is_empty() {
@@ -369,7 +370,7 @@ mod tests {
         );
     }
 
-    // 光标的默认样式按设置：方块（默认，不闪烁）、竖线、下划线，闪烁与否
+    // 光标的默认样式按设置：方块（默认，不闪烁）、竖线、下划线，闪烁与否；程序写剪贴板同样按设置
     #[test]
     fn cursor_follows_the_settings() {
         use termlet_core::db::Database;
@@ -384,6 +385,10 @@ mod tests {
             (style.cursor_shape, style.cursor_blink),
             (CursorShape::Block, false)
         );
+        // 程序写剪贴板（OSC 52）跟着设置，默认允许
+        assert!(style.clipboard_write);
+        settings.terminal.clipboard_write = false;
+        assert!(!terminal_style(&store, &settings, true, &levels).clipboard_write);
         for (setting, shape) in [
             (CursorShapeSetting::Bar, CursorShape::Bar),
             (CursorShapeSetting::Underline, CursorShape::Underline),

@@ -9,7 +9,8 @@
 //! - alacritty 没有或做得不对、由这里补的：格子标记的滚动计数（[`marks`]）；kitty 键盘协议的标志栈
 //!   （[`crate::kitty_keyboard`]，alacritty 自带的查询回答不对、栈满时 panic，没有开启它）；深浅色切换通知
 //!   （[`crate::theme_mode`]，alacritty 对 2031 的 DECRQM 回答“不支持”，这条回答丢掉）。
-//! - 程序读写剪贴板（OSC 52）在配置中关闭：远端输出可以被注入，不应静默改掉本机的剪贴板。
+//! - 剪贴板（OSC 52）：配置为只写（`OnlyCopy`），读剪贴板的查询不回答，服务器读不走本机的剪贴板；写入经
+//!   [`KernelEvents::clipboard`] 交给界面，写不写由视图决定（设置、焦点、回放，见 [`crate::clipboard`]）。
 //! - 快照：逐行读 alacritty 的格子转换成 [`Cell`]。属性的位与 alacritty 的位置相同（编译时检查），转换只是屏蔽掉
 //!   不要的位；组合字符、超链接只在少数格子上有。
 
@@ -25,7 +26,7 @@ use alacritty_terminal::index::{Column, Line, Point, Side as AlacrittySide};
 use alacritty_terminal::selection::{Selection, SelectionType};
 use alacritty_terminal::term::cell::{Cell as AlacrittyCell, Flags};
 use alacritty_terminal::term::color::Colors;
-use alacritty_terminal::term::{Config, Osc52, Term, TermMode};
+use alacritty_terminal::term::{ClipboardType, Config, Osc52, Term, TermMode};
 use alacritty_terminal::vte::ansi::{
     CharsetIndex, ClearMode, Color as AnsiColor, CursorShape as AnsiCursorShape, CursorStyle,
     Handler, NamedColor, Processor, Rgb as AnsiRgb, StandardCharset, StdSyncHandler,
@@ -90,10 +91,13 @@ impl EventListener for EventProxy {
             Event::ResetTitle => self.events.title(None),
             Event::Bell => self.events.bell(),
             Event::CursorBlinkingChange => self.events.cursor_blinking_changed(),
-            // 重绘由引擎线程统一通知；剪贴板（OSC 52）已在配置中关闭；进程退出由传输通知
+            // 程序写剪贴板（OSC 52）：选择器 p、s 是 PRIMARY 选区
+            Event::ClipboardStore(kind, text) => self
+                .events
+                .clipboard(text, kind == ClipboardType::Selection),
+            // 重绘由引擎线程统一通知；读剪贴板（OSC 52 查询）已在配置中关闭；进程退出由传输通知
             Event::Wakeup
             | Event::MouseCursorDirty
-            | Event::ClipboardStore(..)
             | Event::ClipboardLoad(..)
             | Event::Exit
             | Event::ChildExit(_) => {}
@@ -129,12 +133,12 @@ impl Dimensions for TermDimensions {
     }
 }
 
-/// 终端的配置：回滚行数、光标的默认样式；不允许程序读写剪贴板（OSC 52）。
+/// 终端的配置：回滚行数、光标的默认样式；程序只能写剪贴板（OSC 52），读剪贴板的查询不回答。
 fn term_config(scrollback: usize, cursor: CursorStyle) -> Config {
     Config {
         scrolling_history: scrollback,
         default_cursor_style: cursor,
-        osc52: Osc52::Disabled,
+        osc52: Osc52::OnlyCopy,
         ..Config::default()
     }
 }

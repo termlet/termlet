@@ -4,6 +4,7 @@
 //! 内核（现在是 alacritty_terminal）只在引擎内部使用（见 [`engine`]）；视图、查找、关键词高亮、shell 集成、
 //! 按键与鼠标编码只认 [`grid`] 与 [`colors`] 中引擎自己的类型。
 
+pub mod clipboard;
 pub mod colors;
 pub mod dump;
 mod element;
@@ -21,6 +22,7 @@ pub mod text;
 pub mod theme_mode;
 pub mod view;
 
+pub use clipboard::{ClipboardRequest, ClipboardText, MAX_CLIPBOARD_WRITE};
 pub use colors::{Palette, Rgb};
 pub use dump::ScreenDump;
 pub use engine::{EngineEvent, EngineOptions, OutputObserver, ReplayFeed, TerminalEngine};

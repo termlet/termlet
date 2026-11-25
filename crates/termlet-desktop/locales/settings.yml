@@ -509,6 +509,18 @@ settings.copy_on_select:
   zh-TW: 選取即複製
   ja: 選択したらコピー
   ko: 선택하면 복사
+settings.clipboard_write:
+  zh-CN: 允许程序写入剪贴板
+  en: Let programs write to the clipboard
+  zh-TW: 允許程式寫入剪貼簿
+  ja: プログラムによるクリップボードへの書き込みを許可
+  ko: 프로그램이 클립보드에 쓰도록 허용
+settings.clipboard_write_hint:
+  zh-CN: 服务器上的程序（如 tmux、Neovim）可复制到本机并提示；不能读剪贴板。
+  en: Programs on the server (such as tmux and Neovim) can copy to this computer, with a notice each time. They can't read the clipboard.
+  zh-TW: 伺服器上的程式（如 tmux、Neovim）可複製到本機並提示；不能讀剪貼簿。
+  ja: サーバー上のプログラム（tmux、Neovim など）がこのコンピューターにコピーでき、そのたびに通知します。クリップボードは読み取れません。
+  ko: 서버의 프로그램(tmux, Neovim 등)이 이 컴퓨터로 복사할 수 있으며 그때마다 알립니다. 클립보드는 읽을 수 없습니다.
 settings.right_click.label:
   zh-CN: 终端中右键
   en: Right-click in the terminal
