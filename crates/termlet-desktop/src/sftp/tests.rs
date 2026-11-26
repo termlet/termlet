@@ -380,7 +380,18 @@ fn local_places_list_wsl_distributions(cx: &mut TestAppContext) {
         cx.run_until_parked();
         menu_labels(cx, handle)
     };
-    let labels = open_menu(cx);
+    // 常用位置与盘符在核心的运行时上读取，run_until_parked 不等它：菜单中出现主目录之前关掉重开
+    let home_label = t!("local.place_home").to_string();
+    let mut labels = Vec::new();
+    crate::testkit::poll_until(cx, "常用位置读好", |cx| {
+        labels = open_menu(cx);
+        let ready = labels.contains(&home_label);
+        if !ready {
+            cx.update_window(handle, |_, window, cx| window.press("escape", cx))
+                .unwrap();
+        }
+        ready
+    });
     let ubuntu = crate::wsl_name("Ubuntu", "").to_string();
     let at = |name: &str| labels.iter().position(|l| l == name);
     let (Some(home), Some(first), Some(second)) = (
