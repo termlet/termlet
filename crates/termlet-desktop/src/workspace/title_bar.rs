@@ -51,7 +51,7 @@ impl BarState {
             ToolbarItem::Compose => self.has_terminals || self.compose_open,
             ToolbarItem::Forwards => self.forwards > 0,
             ToolbarItem::Sftp => self.sftp_for.is_some(),
-            ToolbarItem::Highlight | ToolbarItem::Theme => true,
+            ToolbarItem::BatchRun | ToolbarItem::Highlight | ToolbarItem::Theme => true,
             ToolbarItem::Lock => self.lock_enabled,
         }
     }
@@ -97,6 +97,8 @@ impl Workspace {
             }
             ToolbarItem::Snippets => self.open_command_picker(window, cx),
             ToolbarItem::Compose => self.toggle_compose(window, cx),
+            // 与命令面板的“批量执行…”相同：新开一个，先选主机
+            ToolbarItem::BatchRun => self.open_batch(window, cx),
             ToolbarItem::Highlight => self.open_settings(settings::Target::Highlight, window, cx),
             ToolbarItem::Theme => self.toggle_theme(window, cx),
             ToolbarItem::Lock => {
@@ -349,6 +351,9 @@ impl Workspace {
                         Some(KEY_CONTEXT),
                     )
                 }),
+            ToolbarItem::BatchRun => Button::new("title-batch-run")
+                .icon(ToolbarItem::BatchRun.icon())
+                .when(tips, |b| b.tooltip(t!("toolbar.item.batch_run"))),
             ToolbarItem::Highlight => Button::new("title-highlight")
                 .icon(IconName::Highlighter)
                 .when(tips, |b| b.tooltip(t!("title_bar.highlight"))),
@@ -643,12 +648,13 @@ mod tests {
             assert_eq!(window.rem_size(), px(24.));
         })
         .unwrap();
-        // 有终端、没有转发与应用锁、不是 SSH 终端时出现的
+        // 有终端、没有转发与应用锁、不是 SSH 终端时出现的（批量执行总在）
         let ids = vec![
             "toggle-host-tools",
             "toggle-multi-exec",
             "title-command-picker",
             "title-compose",
+            "title-batch-run",
             "title-highlight",
             "title-toggle-theme",
         ];

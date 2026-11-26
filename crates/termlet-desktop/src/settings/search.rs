@@ -202,6 +202,7 @@ pub(super) static ITEMS: &[Item] = &[
             "toolbar.item.sftp",
             "toolbar.item.snippets",
             "toolbar.item.compose",
+            "toolbar.item.batch_run",
             "toolbar.item.highlight",
             "toolbar.item.theme",
             "toolbar.item.lock",

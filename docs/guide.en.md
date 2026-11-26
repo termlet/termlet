@@ -541,7 +541,7 @@ Default shortcuts:
 ### Command palette
 
 - Ctrl+Shift+P searches hosts, open tabs (terminals, SFTP, editors, log viewers), workspaces and actions.
-- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP for the current host, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), import / export hosts, import / export snippets, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
+- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP for the current host, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), batch run, import / export hosts, import / export snippets, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
 - Start with `>` to search only actions, `@` only open tabs, `#` only hosts.
 - When you type an address, the first item is a quick connect.
 
@@ -761,7 +761,7 @@ Default shortcuts:
 
 The compose bar, sync input and snippets only *send* text, and you read the results in each terminal; to run something on several targets and see the results merged, use a batch run.
 
-- Open it with "Batch Run…" in a group's context menu (targets the hosts in the group, subgroups included) or in the command palette (choose hosts first); the compose bar's "Run and Compare" opens it too.
+- Open it with "Batch Run…" in the command palette (searching for "multi", "compare", "batch" and the like finds it too) or with the Batch run button in the toolbar (hidden by default, see [Toolbar](#toolbar)); choose the hosts first, and ticking a group picks the hosts in it, subgroups included. The compose bar's "Run and Compare" opens it too.
 - Targets:
   - **Hosts**: runs over new connections without opening terminals, with the same credentials as a terminal (hosts don't need "Allow AI tools and scripts to use this host"). The target button opens "Choose Hosts", where you pick them by group (subgroups included), tag or search; Telnet and serial hosts can't be picked, and those in a group are listed as "Not run". It can't ask anything: hosts whose fingerprint isn't confirmed yet, or that need a password or verification code typed in, are listed as "Unreachable"; use "Open in Terminal" in the results to connect once, then try again.
   - **Open terminals**: runs in the terminals (needs bash or sh, with the terminal at a prompt), with their current directory and environment, which is the way to reach hosts behind a bastion; local Windows terminals, Telnet and serial ports are not supported. Switching to this target picks all connected terminals in the window by default.
@@ -1613,7 +1613,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - The toolbar can be customized (for this computer, not synced):
   - in the Toolbar section of Settings → General, pick which buttons to show, move them up or down, or restore the defaults;
   - or right-click a title bar button for "Hide this button" and "Customize Toolbar…".
-- A Compose bar button is available but hidden by default.
+- Compose bar and Batch run buttons are available but hidden by default.
 - Hidden buttons stay available from the command palette and their shortcuts.
 - When the window is narrow or the interface is enlarged, buttons that don't fit move into the More (⋯) menu.
 

@@ -5,12 +5,6 @@ batch.title:
   zh-TW: 批次執行
   ja: 一括実行
   ko: 일괄 실행
-batch.tab_group:
-  zh-CN: "批量执行 · %{name}"
-  en: "Batch run · %{name}"
-  zh-TW: "批次執行 · %{name}"
-  ja: 一括実行 · %{name}
-  ko: 일괄 실행 · %{name}
 batch.tab_hosts:
   zh-CN: "批量执行 · %{count} 台主机"
   en: "Batch run · %{count} hosts"
@@ -71,12 +65,6 @@ batch.terminals:
   zh-TW: "%{count} 個終端機"
   ja: ターミナル %{count} 個
   ko: 터미널 %{count}개
-batch.group_hosts:
-  zh-CN: "%{name} · %{count} 台主机"
-  en: "%{name} · %{count} hosts"
-  zh-TW: "%{name} · %{count} 台主機"
-  ja: "%{name} · ホスト %{count} 台"
-  ko: "%{name} · 호스트 %{count}대"
 batch.pick_terminals:
   zh-CN: 选择终端
   en: Choose Terminals

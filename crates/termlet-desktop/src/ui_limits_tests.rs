@@ -215,7 +215,7 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
         "侧边栏主机的菜单 {groups} 组，上限 {MENU_GROUPS_TARGET}"
     );
 
-    // 侧边栏的分组：现在 6 项、3 组
+    // 侧边栏的分组：现在 5 项、3 组（“批量执行…”移到了工具栏与命令面板）
     let row: ElementId = SharedString::from(format!("row-group-{}", group.as_str())).into();
     let (items, groups) = right_click_menu(cx, handle, row);
     assert!(

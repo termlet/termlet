@@ -1,8 +1,10 @@
 //! 命令面板（Ctrl+Shift+P）：搜索主机、已打开的 Tab 与各种操作；输入地址时第一项为快速连接。
 //!
 //! - 以 `>` 开头只搜操作，`@` 只搜已打开的 Tab，`#` 只搜主机（有前缀时不提供快速连接）。
-//! - 按空白拆成多个词，每个词都要出现在名称或说明里（不区分大小写）。每个词计分：名称以它开头 3 分，
-//!   名称中含有 2 分，只在说明中出现 1 分；按总分从高到低，同分保持原来的顺序；最多列出 50 项。
+//! - 按空白拆成多个词，每个词都要出现在名称、说明或同义词里（不区分大小写）。每个词计分：名称以它开头 3 分，
+//!   名称中含有 2 分，只在说明或同义词中出现 1 分；按总分从高到低，同分保持原来的顺序；最多列出 50 项。
+//! - 同义词（[`Op::keywords`]）不显示，五种语言的都认（界面语言与输入的文字不一定一致），如“批量执行…”也能用
+//!   “多台”“群发”“batch”搜到。
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -164,6 +166,20 @@ impl Op {
             | Op::Toolbar => None,
         }
     }
+
+    /// 搜索时另外认的词（不显示）：各语言的同义词合在一起。没有的为空。
+    fn keywords(self) -> SharedString {
+        let key = match self {
+            Op::BatchRun => "palette.op.batch_run_keywords",
+            _ => return SharedString::default(),
+        };
+        crate::i18n::Language::ALL
+            .iter()
+            .map(|language| rust_i18n::t!(key, locale = language.code()).into_owned())
+            .collect::<Vec<_>>()
+            .join(" ")
+            .into()
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -180,6 +196,8 @@ struct Entry {
     category: Category,
     name: SharedString,
     detail: SharedString,
+    /// 搜索时另外认的词，不显示（见 [`Op::keywords`]）
+    keywords: SharedString,
     target: Target,
 }
 
@@ -255,6 +273,7 @@ impl CommandPalette {
                 category: Category::Quick,
                 name: t!("palette.quick_connect", target = target.display()),
                 detail: SharedString::default(),
+                keywords: SharedString::default(),
                 target: Target::Quick(target),
             });
         }
@@ -439,6 +458,7 @@ impl CommandPalette {
                             Op::ToggleTabPosition => tab_position.clone(),
                             _ => SharedString::default(),
                         },
+                        keywords: op.keywords(),
                         target: Target::Op(op),
                     }),
             );
@@ -454,6 +474,7 @@ impl CommandPalette {
                     category: Category::Host,
                     name: h.doc.name.into(),
                     detail: detail.into(),
+                    keywords: SharedString::default(),
                     target: Target::Host(h.id),
                 }
             }));
@@ -467,6 +488,7 @@ impl CommandPalette {
                         category: Category::Workspace,
                         name: w.doc.name.clone().into(),
                         detail: t!("workspace.panes", count = w.doc.hosts().len()),
+                        keywords: SharedString::default(),
                         target: Target::Workspace(w.id),
                     }),
             );
@@ -510,6 +532,7 @@ impl CommandPalette {
                     category: Category::Tab,
                     name,
                     detail,
+                    keywords: SharedString::default(),
                     target: Target::Tab(tab.clone()),
                 })
             }));
@@ -729,7 +752,7 @@ fn parse_query(query: &str) -> (Option<Category>, Vec<String>) {
     (scope, words)
 }
 
-/// 按搜索词给条目排序，返回下标；没有搜索词时保持原来的顺序。
+/// 按搜索词给条目排序，返回下标；没有搜索词时保持原来的顺序。同义词与说明一样计 1 分。
 fn rank(entries: &[Entry], words: &[String]) -> Vec<usize> {
     if words.is_empty() {
         return (0..entries.len()).collect();
@@ -740,13 +763,14 @@ fn rank(entries: &[Entry], words: &[String]) -> Vec<usize> {
         .filter_map(|(ix, entry)| {
             let name = entry.name.to_lowercase();
             let detail = entry.detail.to_lowercase();
+            let keywords = entry.keywords.to_lowercase();
             let mut score = 0;
             for word in words {
                 score += if name.starts_with(word.as_str()) {
                     3
                 } else if name.contains(word.as_str()) {
                     2
-                } else if detail.contains(word.as_str()) {
+                } else if detail.contains(word.as_str()) || keywords.contains(word.as_str()) {
                     1
                 } else {
                     return None;
@@ -769,6 +793,7 @@ mod tests {
             category: Category::Host,
             name: name.to_string().into(),
             detail: detail.to_string().into(),
+            keywords: SharedString::default(),
             target: Target::Op(Op::NewHost),
         }
     }
@@ -795,6 +820,32 @@ mod tests {
         // 每个词都要出现
         assert_eq!(rank(&entries, &["web".into(), "10.0.0.1".into()]), [1]);
         assert_eq!(rank(&entries, &[]), [0, 1, 2, 3]);
+    }
+
+    // 同义词：五种语言的都认，不显示；只在同义词中出现的与说明一样计 1 分
+    #[test]
+    fn batch_run_has_synonyms_in_every_language() {
+        let keywords = Op::BatchRun.keywords().to_lowercase();
+        for word in [
+            "多台",
+            "群发",
+            "对比",
+            "批量",
+            "batch",
+            "run on hosts",
+            "multi",
+            "群發",
+            "一括",
+            "일괄",
+        ] {
+            assert!(keywords.contains(word), "{word}：{keywords}");
+        }
+        assert!(Op::NewHost.keywords().is_empty());
+        let mut batch = entry("批量执行…", "");
+        batch.keywords = Op::BatchRun.keywords();
+        let entries = vec![batch, entry("群发通知", ""), entry("other", "")];
+        assert_eq!(rank(&entries, &["群发".into()]), [1, 0]);
+        assert_eq!(rank(&entries, &["run".into(), "hosts".into()]), [0]);
     }
 
     /// 打开命令面板，搜 `query`，按 Enter 执行第一项。
@@ -871,5 +922,43 @@ mod tests {
         assert_eq!(tabs(cx), (1, 1));
         run_in_palette(cx, handle, &query);
         assert_eq!(tabs(cx), (2, 1), "新开一个 SFTP 的 Tab，终端还在");
+    }
+
+    // “批量执行…”：界面是哪种语言都能用各语言的同义词搜到，执行后新开批量执行 Tab 并先选主机
+    #[gpui_kit::test]
+    fn batch_run_is_found_by_synonyms(cx: &mut gpui_kit::TestAppContext) {
+        use crate::i18n::{Language, set_language};
+        use gpui_kit::test::TestWindowExt as _;
+        let handle = crate::testkit::open_workspace(cx);
+        let workspace = cx
+            .update_window(handle, |_, window, cx| {
+                crate::workspace::Workspace::in_window(window, cx).unwrap()
+            })
+            .unwrap();
+        let cases = [
+            (Language::ZhCn, "> 群发"),
+            (Language::En, "> 多台"),
+            (Language::ZhTw, "> multi"),
+            (Language::Ja, "> batch"),
+            (Language::Ko, "> run on hosts"),
+        ];
+        for (n, (language, query)) in cases.into_iter().enumerate() {
+            set_language(language);
+            run_in_palette(cx, handle, query);
+            assert_eq!(
+                cx.update(|cx| workspace.read(cx).live_batches().len()),
+                n + 1,
+                "{query}"
+            );
+            // 关掉“选择主机”再搜下一个
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                assert!(window.try_find("batch-pick-ok").is_some(), "{query}");
+                window.close_dialog(cx);
+            })
+            .unwrap();
+            cx.run_until_parked();
+        }
+        set_language(Language::ZhCn);
     }
 }

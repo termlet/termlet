@@ -86,8 +86,6 @@ pub(crate) struct BatchPanel {
     kind: TargetKind,
     /// 选中的主机（按选择时树中的顺序）
     hosts: Vec<HostId>,
-    /// 从分组打开时的分组名（Tab 上的名称用）；改了选择后不再用
-    group: Option<SharedString>,
     terminals: Vec<WeakEntity<TerminalPanel>>,
     input: Entity<TextareaState>,
     history: Vec<String>,
@@ -113,17 +111,11 @@ impl Focusable for BatchPanel {
 }
 
 impl BatchPanel {
-    /// 目标是主机（`group` 是从分组打开时的分组名）。
-    pub(crate) fn for_hosts(
-        hosts: Vec<HostId>,
-        group: Option<SharedString>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
+    /// 目标是主机。
+    pub(crate) fn for_hosts(hosts: Vec<HostId>, window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let mut this = Self::new(TargetKind::Hosts, window, cx);
             this.hosts = hosts;
-            this.group = group;
             this
         })
     }
@@ -147,7 +139,6 @@ impl BatchPanel {
             focus: cx.focus_handle(),
             kind,
             hosts: Vec::new(),
-            group: None,
             terminals: Vec::new(),
             input,
             history: Vec::new(),
@@ -203,13 +194,12 @@ impl BatchPanel {
         self.execute(window, cx);
     }
 
-    /// Tab 上的名称：“批量执行 · 生产”“批量执行 · 4 台主机”“批量执行 · 3 个终端”。
+    /// Tab 上的名称：“批量执行 · 4 台主机”“批量执行 · 3 个终端”。
     pub(crate) fn title_text(&self, cx: &App) -> SharedString {
         match self.kind {
-            TargetKind::Hosts => match (&self.group, self.hosts.len()) {
-                (Some(group), _) => t!("batch.tab_group", name = group.clone()),
-                (None, 0) => t!("batch.title"),
-                (None, count) => t!("batch.tab_hosts", count = count),
+            TargetKind::Hosts => match self.hosts.len() {
+                0 => t!("batch.title"),
+                count => t!("batch.tab_hosts", count = count),
             },
             TargetKind::Terminals => match self.live_terminals(cx).len() {
                 0 => t!("batch.title"),
@@ -283,10 +273,7 @@ impl BatchPanel {
         let on_done =
             std::rc::Rc::new(move |ids: Vec<HostId>, window: &mut Window, cx: &mut App| {
                 let _ = this.update(cx, |this, cx| {
-                    if ids != this.hosts {
-                        this.hosts = ids;
-                        this.group = None;
-                    }
+                    this.hosts = ids;
                     this.input.update(cx, |s, cx| s.focus(window, cx));
                     cx.notify();
                 });
@@ -543,12 +530,9 @@ impl BatchPanel {
         let kinds = [TargetKind::Hosts, TargetKind::Terminals];
         let picker = match self.kind {
             TargetKind::Hosts => {
-                let label = match (&self.group, self.hosts.len()) {
-                    (_, 0) => t!("batch.pick_hosts"),
-                    (Some(group), count) => {
-                        t!("batch.group_hosts", name = group.clone(), count = count)
-                    }
-                    (None, count) => t!("batch.hosts", count = count),
+                let label = match self.hosts.len() {
+                    0 => t!("batch.pick_hosts"),
+                    count => t!("batch.hosts", count = count),
                 };
                 Button::new("batch-target-hosts")
                     .outline()

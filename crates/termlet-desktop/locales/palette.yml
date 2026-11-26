@@ -239,6 +239,12 @@ palette.op.batch_run:
   zh-TW: 批次執行…
   ja: 一括実行…
   ko: 일괄 실행…
+palette.op.batch_run_keywords:
+  zh-CN: 多台 多台主机 群发 对比 批量 批处理 并行 同时执行
+  en: batch run on hosts multiple hosts multi compare parallel fan-out
+  zh-TW: 多台 多台主機 群發 對比 比較 批次 批量 平行 同時執行
+  ja: 複数 複数ホスト 一括 まとめて 比較 並列 同時実行 バッチ
+  ko: 여러 여러 호스트 다중 일괄 비교 병렬 동시 실행 배치
 palette.op.host_tools:
   zh-CN: 打开主机工具
   en: Show Host Tools

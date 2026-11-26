@@ -1,4 +1,4 @@
-//! 批量执行 Tab 的测试：分组右键打开、Telnet 主机列为未执行、连不上的主机与审计记录、本地终端不能在终端里执行、
+//! 批量执行 Tab 的测试：工具栏按钮打开、按分组选主机（分组右键菜单中没有这一项）、Telnet 主机列为未执行、连不上的主机与审计记录、本地终端不能在终端里执行、
 //! 撰写栏的“执行并对比”沿用没在执行的 Tab、插入快捷命令、移到别的窗口；连真实 sshd 的（`TERMLET_TEST_SSH`）：
 //! 输出相同的合并成一组、不同的另成一组、危险命令先确认、停止后重试没有成功的、还在执行时关闭先确认。
 
@@ -77,8 +77,9 @@ fn open_group(
     workspace: &Entity<Workspace>,
     group: &GroupId,
 ) -> Entity<BatchPanel> {
+    let hosts = cx.update(|cx| crate::sidebar::host_tree::hosts_under(&AppState::store(cx), group));
     cx.update_window(handle, |_, window, cx| {
-        workspace.update(cx, |w, cx| w.open_batch_for_group(group, window, cx))
+        workspace.update(cx, |w, cx| w.open_batch_for_hosts(hosts, window, cx))
     })
     .unwrap();
     cx.run_until_parked();
@@ -174,9 +175,10 @@ fn server_group(cx: &mut TestAppContext) -> Option<(GroupId, Vec<HostId>)> {
     Some((group, ids))
 }
 
-// 分组右键的“批量执行…”：新开批量执行 Tab，目标是分组中的主机（含子分组），Tab 上写分组名
+// 工具栏的“批量执行”（默认隐藏，在设置中打开）：新开批量执行 Tab 并先选主机，勾选分组即选中其中的主机（含子分组）；
+// 分组的右键菜单中不再有“批量执行…”
 #[gpui_kit::test]
-fn group_menu_opens_a_tab_for_its_hosts(cx: &mut TestAppContext) {
+fn toolbar_button_opens_a_tab_and_picks_a_group(cx: &mut TestAppContext) {
     let (handle, workspace) = setup(cx);
     let (group, ids) = group_with(
         cx,
@@ -205,38 +207,72 @@ fn group_menu_opens_a_tab_for_its_hosts(cx: &mut TestAppContext) {
     expand_host_tree(cx);
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
+        assert!(
+            window.try_find("title-batch-run").is_none(),
+            "工具栏的按钮默认隐藏"
+        );
         window.right_click(format!("row-group-{}", group.as_str()), cx);
     })
     .unwrap();
     cx.run_until_parked();
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
-        let mut menu = window.within("popup-menu");
-        let ix = (0..20usize)
-            .find(|i| {
-                menu.try_find(*i)
-                    .is_some_and(|item| item.label() == Some("批量执行…"))
+        let menu = window.within("popup-menu");
+        let labels: Vec<String> = (0..20usize)
+            .filter_map(|i| {
+                menu.try_find(i)
+                    .and_then(|item| item.label().map(String::from))
             })
-            .expect("分组的菜单中有“批量执行…”");
-        menu.click(ix, cx);
+            .collect();
+        assert!(!labels.is_empty(), "弹出了分组的菜单");
+        assert!(
+            !labels.iter().any(|l| l == "批量执行…"),
+            "分组的菜单中没有“批量执行…”：{labels:?}"
+        );
+        window.press("escape", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+
+    cx.update(|cx| {
+        let mut entries = crate::toolbar::defaults();
+        for entry in &mut entries {
+            if entry.0 == crate::toolbar::ToolbarItem::BatchRun {
+                entry.1 = true;
+            }
+        }
+        AppState::store(cx)
+            .update_local_settings(|s| s.window.toolbar = crate::toolbar::to_saved(&entries, &[]))
+            .unwrap()
+    });
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("title-batch-run", cx);
     })
     .unwrap();
     cx.run_until_parked();
     let panel = cx.update(|cx| workspace.read(cx).live_batches()[0].clone());
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("batch-pick-ok").is_some(), "先选主机");
+        window.click(format!("batch-pick-group-{}", group.as_str()), cx);
+        window.render_frame(cx);
+        window.click("batch-pick-ok", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
     cx.update(|cx| {
         let p = panel.read(cx);
         assert_eq!(p.kind(), TargetKind::Hosts);
         assert_eq!(p.hosts.len(), 3, "含子分组中的主机");
         assert!(p.hosts.contains(&ids[0]));
-        assert_eq!(p.title_text(cx), "批量执行 · 生产");
+        assert_eq!(p.title_text(cx), "批量执行 · 3 台主机");
     });
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
+        assert!(window.try_find("batch-pick-ok").is_none(), "选好后关掉");
         assert!(window.try_find("batch-panel").is_some());
-        assert_eq!(
-            window.find("batch-target-hosts").label(),
-            Some("生产 · 3 台主机")
-        );
+        assert_eq!(window.find("batch-target-hosts").label(), Some("3 台主机"));
     })
     .unwrap();
 }

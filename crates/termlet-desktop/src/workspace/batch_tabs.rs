@@ -1,14 +1,11 @@
-//! 批量执行 Tab（[`BatchPanel`]）在工作区中的打开、切换与关闭：分组右键的“批量执行…”（目标是分组中的主机，含子分组）、
-//! 命令面板的“批量执行…”（先选主机）、撰写栏的“执行并对比”（目标是撰写栏选中的终端，立即执行；这个窗口里已有目标是
-//! 终端、没在执行的批量执行 Tab 时在其中再执行一次，不再新开）。
+//! 批量执行 Tab（[`BatchPanel`]）在工作区中的打开、切换与关闭：命令面板的“批量执行…”与工具栏的“批量执行”按钮（先选
+//! 主机，可以按分组勾选）、撰写栏的“执行并对比”（目标是撰写栏选中的终端，立即执行；这个窗口里已有目标是终端、没在执行的
+//! 批量执行 Tab 时在其中再执行一次，不再新开）。
 
 use gpui_kit::component::dock::{DockPlacement, PanelId, panel_handle};
-use gpui_kit::{Context, Entity, Focusable as _, SharedString, Window};
-use termlet_core::id::GroupId;
-use termlet_core::model::Group;
+use gpui_kit::{Context, Entity, Focusable as _, Window};
 
 use super::Workspace;
-use crate::app_state::AppState;
 use crate::batch_run::{BatchPanel, BatchPanelEvent, TargetKind};
 use crate::terminal_panel::TerminalPanel;
 
@@ -17,36 +14,27 @@ impl Workspace {
         self.batches.iter().filter_map(|p| p.upgrade()).collect()
     }
 
-    /// 分组右键的“批量执行…”：目标是分组中的主机（含子分组）。
-    pub(crate) fn open_batch_for_group(
-        &mut self,
-        group: &GroupId,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        if self.vault_gate.is_some() {
-            return;
-        }
-        let store = AppState::store(cx);
-        let Some(record) = store.get::<Group>(group) else {
-            return;
-        };
-        let hosts = crate::sidebar::host_tree::hosts_under(&store, group);
-        tracing::info!(hosts = hosts.len(), "打开批量执行（分组）");
-        let name = SharedString::from(record.doc.name);
-        let panel = BatchPanel::for_hosts(hosts, Some(name), window, cx);
-        self.add_batch(&panel, window, cx);
-    }
-
-    /// 命令面板的“批量执行…”：新开一个，先选主机。
+    /// 命令面板的“批量执行…”、工具栏的“批量执行”：新开一个，先选主机。
     pub(crate) fn open_batch(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.vault_gate.is_some() {
             return;
         }
         tracing::info!("打开批量执行");
-        let panel = BatchPanel::for_hosts(Vec::new(), None, window, cx);
+        let panel = BatchPanel::for_hosts(Vec::new(), window, cx);
         self.add_batch(&panel, window, cx);
         panel.update(cx, |panel, cx| panel.pick_hosts(window, cx));
+    }
+
+    /// 测试用：新开一个，目标是这几台主机（不经过“选择主机”）。
+    #[cfg(test)]
+    pub(crate) fn open_batch_for_hosts(
+        &mut self,
+        hosts: Vec<termlet_core::id::HostId>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let panel = BatchPanel::for_hosts(hosts, window, cx);
+        self.add_batch(&panel, window, cx);
     }
 
     /// 撰写栏的“执行并对比”：在这几个终端里执行 `command`，结果在批量执行 Tab 中。

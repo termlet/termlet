@@ -47,6 +47,12 @@ toolbar.item.compose:
   zh-TW: 撰寫列
   ja: コンポーズバー
   ko: 작성 표시줄
+toolbar.item.batch_run:
+  zh-CN: 批量执行
+  en: Batch run
+  zh-TW: 批次執行
+  ja: 一括実行
+  ko: 일괄 실행
 toolbar.item.highlight:
   zh-CN: 关键词高亮
   en: Keyword highlighting

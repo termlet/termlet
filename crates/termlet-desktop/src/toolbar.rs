@@ -35,6 +35,8 @@ pub enum ToolbarItem {
     Snippets,
     /// 打开 / 关闭撰写栏
     Compose,
+    /// 新开批量执行的 Tab（先选主机）
+    BatchRun,
     /// 关键词高亮的设置
     Highlight,
     /// 切换浅色 / 深色
@@ -44,14 +46,15 @@ pub enum ToolbarItem {
 }
 
 impl ToolbarItem {
-    /// 全部按钮，按默认的顺序（与做成可自定义之前的标题栏相同，撰写栏是新加的）。
-    pub const ALL: [ToolbarItem; 9] = [
+    /// 全部按钮，按默认的顺序（与做成可自定义之前的标题栏相同，撰写栏、批量执行是后加的）。
+    pub const ALL: [ToolbarItem; 10] = [
         ToolbarItem::HostTools,
         ToolbarItem::MultiExec,
         ToolbarItem::Forwards,
         ToolbarItem::Sftp,
         ToolbarItem::Snippets,
         ToolbarItem::Compose,
+        ToolbarItem::BatchRun,
         ToolbarItem::Highlight,
         ToolbarItem::Theme,
         ToolbarItem::Lock,
@@ -66,6 +69,7 @@ impl ToolbarItem {
             ToolbarItem::Sftp => "sftp",
             ToolbarItem::Snippets => "snippets",
             ToolbarItem::Compose => "compose",
+            ToolbarItem::BatchRun => "batchRun",
             ToolbarItem::Highlight => "highlight",
             ToolbarItem::Theme => "theme",
             ToolbarItem::Lock => "lock",
@@ -76,9 +80,9 @@ impl ToolbarItem {
         Self::ALL.into_iter().find(|item| item.id() == id)
     }
 
-    /// 默认显示：撰写栏的按钮是新加的，默认不显示（撰写栏原来只从快捷键、命令面板打开，默认的标题栏不变）。
+    /// 默认显示：撰写栏、批量执行的按钮是后加的，默认不显示（它们原来只从快捷键、命令面板打开，默认的标题栏不变）。
     pub fn shown_by_default(self) -> bool {
-        self != ToolbarItem::Compose
+        !matches!(self, ToolbarItem::Compose | ToolbarItem::BatchRun)
     }
 
     /// 设置中、“更多”菜单中的名称。
@@ -90,6 +94,7 @@ impl ToolbarItem {
             ToolbarItem::Sftp => t!("toolbar.item.sftp"),
             ToolbarItem::Snippets => t!("toolbar.item.snippets"),
             ToolbarItem::Compose => t!("toolbar.item.compose"),
+            ToolbarItem::BatchRun => t!("toolbar.item.batch_run"),
             ToolbarItem::Highlight => t!("toolbar.item.highlight"),
             ToolbarItem::Theme => t!("toolbar.item.theme"),
             ToolbarItem::Lock => t!("toolbar.item.lock"),
@@ -106,7 +111,7 @@ impl ToolbarItem {
             ToolbarItem::Forwards => Some(t!("toolbar.when.forwards")),
             ToolbarItem::Sftp => Some(t!("toolbar.when.ssh")),
             ToolbarItem::Lock => Some(t!("toolbar.when.app_lock")),
-            ToolbarItem::Highlight | ToolbarItem::Theme => None,
+            ToolbarItem::BatchRun | ToolbarItem::Highlight | ToolbarItem::Theme => None,
         }
     }
 
@@ -119,6 +124,8 @@ impl ToolbarItem {
             ToolbarItem::Sftp => IconName::FolderOpen,
             ToolbarItem::Snippets => IconName::Zap,
             ToolbarItem::Compose => IconName::SquarePen,
+            // 与批量执行 Tab 的图标相同
+            ToolbarItem::BatchRun => IconName::Layers,
             ToolbarItem::Highlight => IconName::Highlighter,
             ToolbarItem::Theme => IconName::Moon,
             ToolbarItem::Lock => IconName::Lock,
@@ -333,16 +340,21 @@ mod tests {
         }
     }
 
-    // 设置为空时是默认：与原来的标题栏相同的顺序，撰写栏默认不显示；ID 各不相同、能认回来
+    // 设置为空时是默认：与原来的标题栏相同的顺序，撰写栏、批量执行默认不显示；ID 各不相同、能认回来
     #[test]
     fn empty_setting_is_the_default() {
         let entries = resolve(&[]);
         assert_eq!(entries, defaults());
         assert_eq!(entries.len(), ToolbarItem::ALL.len());
+        let hidden: Vec<ToolbarItem> = entries
+            .iter()
+            .filter(|(_, shown)| !shown)
+            .map(|(item, _)| *item)
+            .collect();
         assert_eq!(
-            entries.iter().filter(|(_, shown)| !shown).count(),
-            1,
-            "只有撰写栏默认不显示"
+            hidden,
+            [ToolbarItem::Compose, ToolbarItem::BatchRun],
+            "只有撰写栏、批量执行默认不显示"
         );
         assert_eq!(shown(&[]).first(), Some(&ToolbarItem::HostTools));
         for item in ToolbarItem::ALL {
@@ -409,10 +421,12 @@ mod tests {
         assert_eq!(
             order,
             [
-                Theme, Lock, HostTools, MultiExec, Forwards, Sftp, Snippets, Compose, Highlight
+                Theme, Lock, HostTools, MultiExec, Forwards, Sftp, Snippets, Compose, BatchRun,
+                Highlight
             ]
         );
         assert!(entries.contains(&(Compose, false)), "撰写栏默认不显示");
+        assert!(entries.contains(&(BatchRun, false)), "批量执行默认不显示");
         assert!(entries.contains(&(HostTools, false)));
         assert!(entries.contains(&(Lock, true)));
     }
