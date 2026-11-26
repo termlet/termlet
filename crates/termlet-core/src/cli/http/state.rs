@@ -131,6 +131,8 @@ pub(super) enum Rejected {
     Token,
     TooLarge,
     TooMany,
+    /// 传输链接不存在、已过期或不是给这个地址的
+    Link,
 }
 
 impl Rejected {
@@ -142,6 +144,7 @@ impl Rejected {
             Rejected::Token => "token",
             Rejected::TooLarge => "too_large",
             Rejected::TooMany => "too_many",
+            Rejected::Link => "link",
         }
     }
 
@@ -153,6 +156,7 @@ impl Rejected {
             Rejected::Token => "没有令牌或令牌不对",
             Rejected::TooLarge => "正文超过上限",
             Rejected::TooMany => "同时的连接太多",
+            Rejected::Link => "传输链接不存在、已过期或不是给这台电脑的",
         }
     }
 }

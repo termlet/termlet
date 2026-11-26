@@ -4,15 +4,17 @@
 
 use std::fs::Metadata;
 use std::path::Path;
+use std::sync::atomic::AtomicU64;
 
-use tokio::io::BufReader;
+use tokio::io::{AsyncRead, BufReader};
 
 use super::upload::local_mtime;
 use super::{FileError, PartPath, Partial, Transfer, claim_remote_part};
 use crate::sftp::cancel::Cancel;
 use crate::sftp::client::{is_regular, is_symlink, mtime_of, perm_bits, size_of};
-use crate::sftp::error::{self, SftpError};
+use crate::sftp::error::{self, Rejection, SftpError, Side};
 use crate::sftp::manager::Inner;
+use crate::sftp::names::remote_temp_part;
 use crate::sftp::scp::{ScpFailure, ScpRemote, scp_error};
 
 /// 本机读文件的缓冲。
@@ -102,4 +104,58 @@ pub(crate) async fn upload_file(
     }
     t.set_part(None);
     Ok(())
+}
+
+/// 把 `reader` 中正好 `size` 字节写成服务器上的 `target`（经 HTTP 收到的文件，见 `single::put_stream`；与 SFTP 的
+/// `upload::upload_stream` 相同）：先写同目录下的一次性临时文件，完成后 `mv` 成正式文件名；失败、取消时删除临时文件。
+/// 返回实际写入的路径。
+pub(crate) async fn upload_stream<R: AsyncRead + Unpin>(
+    remote: &ScpRemote,
+    ctx: &Cancel,
+    reader: &mut R,
+    size: u64,
+    target: &str,
+    progress: &AtomicU64,
+) -> Result<String, SftpError> {
+    let mut target = target.to_string();
+    let mut existing = remote.lstat(&target).await.ok();
+    if existing.as_ref().is_some_and(is_symlink)
+        && let Ok(resolved) = remote.resolve_link(&target).await
+        && let Ok(st) = remote.stat(&resolved).await
+        && is_regular(&st)
+    {
+        existing = Some(st);
+        target = resolved;
+    }
+    if existing.as_ref().is_some_and(|e| !is_regular(e)) {
+        return Err(Rejection::NotRegularFile.into());
+    }
+    let keep_mode = existing.as_ref().map(perm_bits);
+    let part = remote_temp_part(&target);
+    let sent = remote
+        .upload(
+            &part,
+            keep_mode.unwrap_or(NEW_FILE_MODE),
+            None,
+            size,
+            reader,
+            ctx,
+            progress,
+        )
+        .await;
+    if let Err(failure) = sent {
+        let _ = remote.remove_file(&part).await;
+        if ctx.is_canceled() {
+            return Err(SftpError::Canceled);
+        }
+        return Err(match failure {
+            ScpFailure::Local(e) => SftpError::failed(Side::Local, &target, e.to_string()),
+            other => scp_error(&target, other),
+        });
+    }
+    if let Err(e) = remote.commit_upload(&part, &target, keep_mode).await {
+        let _ = remote.remove_file(&part).await;
+        return Err(error::remote(&target, &e));
+    }
+    Ok(target)
 }

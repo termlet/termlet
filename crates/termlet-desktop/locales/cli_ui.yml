@@ -558,11 +558,11 @@ cli_ui.mcp.target_lan:
   ja: LAN 上の別のコンピューター
   ko: LAN의 다른 컴퓨터
 cli_ui.mcp.lan_target_note:
-  zh-CN: 下面的配置用在局域网中的另一台电脑上：地址是这台电脑的局域网地址，令牌是局域网令牌。那台电脑上的 AI 工具只能列出主机与执行命令。
-  en: "Use this configuration on another computer on your LAN: the address is this computer's LAN address and the token is the LAN token. AI tools on that computer can only list hosts and run commands."
-  zh-TW: 下面的設定用在區域網路中的另一台電腦上：位址是這台電腦的區域網路位址，權杖是區域網路權杖。那台電腦上的 AI 工具只能列出主機與執行指令。
-  ja: 以下の設定は LAN 上の別のコンピューターで使います。アドレスはこのコンピューターの LAN アドレス、トークンは LAN トークンです。そのコンピューター上の AI ツールはホストの一覧表示とコマンドの実行だけができます。
-  ko: 아래 구성은 LAN의 다른 컴퓨터에서 사용합니다. 주소는 이 컴퓨터의 LAN 주소이고 토큰은 LAN 토큰입니다. 그 컴퓨터의 AI 도구는 호스트 목록 보기와 명령 실행만 할 수 있습니다.
+  zh-CN: 以下配置用于局域网中的另一台电脑：地址是这台电脑的局域网地址，令牌是局域网令牌。
+  en: "Use this configuration on another computer on your LAN: the address is this computer's LAN address and the token is the LAN token."
+  zh-TW: 以下設定用於區域網路中的另一台電腦：位址是這台電腦的區域網路位址，權杖是區域網路權杖。
+  ja: 以下の設定は LAN 上の別のコンピューターで使います。アドレスはこのコンピューターの LAN アドレス、トークンは LAN トークンです。
+  ko: 아래 구성은 LAN의 다른 컴퓨터에서 사용합니다. 주소는 이 컴퓨터의 LAN 주소이고 토큰은 LAN 토큰입니다.
 cli_ui.mcp.lan_codex_proxy:
   zh-CN: 那台电脑开着系统代理（如 Clash）时，Codex 访问 %{address} 也可能经过代理：先设环境变量 NO_PROXY=%{address}，再启动 Codex。
   en: If that computer has a system proxy on (such as Clash), Codex may send requests for %{address} through it too. Set the environment variable NO_PROXY=%{address} before starting Codex.
@@ -930,11 +930,11 @@ cli_ui.http.lan_approval:
   ja: 危険なコマンドの承認ダイアログはこのコンピューターに表示されます。誰も応答しないと %{seconds} 秒後に拒否されます。
   ko: 위험한 명령의 승인 창은 이 컴퓨터에 표시됩니다. 아무도 응답하지 않으면 %{seconds}초 후 거부됩니다.
 cli_ui.http.lan_tools:
-  zh-CN: 局域网中的电脑只能列出主机、执行命令，不能上传、下载文件（这两个工具读写的是这台电脑上的文件）；小的文本文件可以让 AI 用 cat 读、用 heredoc 写。
-  en: Computers on the LAN can only list hosts and run commands, not upload or download files (those tools read and write files on this computer); for small text files, the AI can use cat to read and a heredoc to write.
-  zh-TW: 區域網路中的電腦只能列出主機、執行指令，不能上傳、下載檔案（這兩個工具讀寫的是這台電腦上的檔案）；小的文字檔可以讓 AI 用 cat 讀、用 heredoc 寫。
-  ja: LAN 上のコンピューターからはホストの一覧表示とコマンドの実行だけができ、ファイルのアップロードとダウンロードはできません（この 2 つのツールはこのコンピューター上のファイルを読み書きするため）。小さなテキストファイルは、AI に cat で読ませ、heredoc で書かせることができます。
-  ko: LAN의 컴퓨터는 호스트 목록 보기와 명령 실행만 할 수 있고 파일 업로드와 다운로드는 할 수 없습니다(이 두 도구는 이 컴퓨터의 파일을 읽고 쓰기 때문). 작은 텍스트 파일은 AI가 cat으로 읽고 heredoc으로 쓰게 할 수 있습니다.
+  zh-CN: 局域网中的 AI 用一次性链接与 curl 传文件，读写不到这台电脑上的文件。
+  en: AI tools on the LAN transfer files with one-time links and curl; they can't read or write files on this computer.
+  zh-TW: 區域網路中的 AI 用一次性連結與 curl 傳輸檔案，讀寫不到這台電腦上的檔案。
+  ja: LAN 上の AI は 1 回限りのリンクと curl でファイルを転送します。このコンピューター上のファイルは読み書きできません。
+  ko: LAN의 AI는 일회용 링크와 curl로 파일을 전송합니다. 이 컴퓨터의 파일은 읽거나 쓸 수 없습니다.
 cli_ui.rules.hint:
   zh-CN: 通过 termlet 命令与 MCP 服务执行的命令（包括 Claude Code 等 AI 工具发出的）命中以下规则时，先请你批准或直接拦截，并记入审计日志；粘贴、同步输入与撰写栏发送前也按这些规则检查。规则用于防止误操作，命令可以通过编码、脚本等方式绕过，不是安全边界；请为 AI 工具与脚本使用服务器上的低权限账号（编辑主机 → AI 与自动化 → AI 工具与脚本使用单独的凭据）。
   en: Commands run through the termlet command or the MCP server (including those from AI tools such as Claude Code) that match these rules need your approval or are blocked, and are recorded in the audit log. Pasting, synchronized input and the compose bar check these rules too. The rules prevent mistakes but can be bypassed with encoding or scripts, so they aren't a security boundary; use a low-privilege server account for AI tools and scripts (Edit host → AI & automation → Use a separate credential for AI tools and scripts).

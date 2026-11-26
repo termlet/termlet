@@ -6,6 +6,10 @@
 //! 一次调用分三步：[`request`] 检查参数、写成发给 Termlet 的请求（与命令行工具的请求相同）；交给 Termlet；
 //! [`outcome`] 把回答写成工具的结果。`termlet mcp` 用 [`call`] 经 [`Backend`] 同步地走完三步，应用内的 HTTP 服务
 //! 在异步运行时上直接处理请求，只用第一步与第三步。
+//!
+//! 局域网中的客户端（[`Reach::Lan`]）的 `upload_file`、`download_file` 不读写这台电脑上的文件：参数只有主机与
+//! 服务器上的路径（[`link_request`]），HTTP 服务检查后给出一次性的传输链接（[`link_outcome`]），AI 在它那台电脑上用
+//! curl 收发。同名的工具按客户端在哪里给不同的说明与参数（`tools/list` 本来就按连接给出）。
 
 use std::borrow::Cow;
 use std::path::Path;
@@ -61,7 +65,7 @@ impl Tool {
         Self::ALL.into_iter().find(|tool| tool.name() == name)
     }
 
-    /// 读写运行 Termlet 的这台电脑上的文件（本机路径）：局域网中的客户端不能用。
+    /// 传文件的工具：本机的客户端读写这台电脑上的文件（本机路径），局域网中的客户端改为取一次性传输链接。
     pub fn local_files(self) -> bool {
         matches!(self, Tool::UploadFile | Tool::DownloadFile)
     }
@@ -76,28 +80,37 @@ impl Tool {
         }
     }
 
-    fn description(self) -> &'static str {
-        match self {
-            Tool::ListHosts => {
+    fn description(self, reach: Reach) -> &'static str {
+        match (self, reach) {
+            (Tool::UploadFile, Reach::Lan) => {
+                "Upload one file from your computer to a server saved in Termlet. You're connected to Termlet over the local network, so this tool doesn't take the file: give the destination path on the server, and it checks the host and the path and returns a one-time link with the exact curl command to run on your computer (`curl --fail-with-body --noproxy <address> -T <local file> <link>`). The file then streams through Termlet to the server over SFTP (or SCP when the server has no SFTP), never through this conversation, so its size doesn't matter. The link works once, within 10 minutes, only from your computer, and only for this host, path and direction. An existing file is overwritten. Directories aren't supported; archive them first (for example with tar). You need to be able to run curl on your computer."
+            }
+            (Tool::DownloadFile, Reach::Lan) => {
+                "Download one file from a server saved in Termlet to your computer. You're connected to Termlet over the local network, so this tool doesn't return the content: give the path on the server, and it checks the file and returns a one-time link with the exact curl command to run on your computer (`curl --fail --noproxy <address> -o <local file> <link>`). The file then streams from the server through Termlet to your computer, never through this conversation, so its size doesn't matter. The link works once, within 10 minutes, only from your computer, and only for this host, path and direction. Directories aren't supported; archive them on the server first. You need to be able to run curl on your computer; to just read a short text file, cat it with run_command."
+            }
+            (Tool::ListHosts, _) => {
                 "List the servers saved in Termlet that the user allows AI tools to use. Each entry has the host's id, name, address, port, login user and protocol, never a password or key. Pass the id or name as `host` to the other tools. A server that is missing here needs \"Allow AI tools and scripts to use this host\" turned on in Termlet first."
             }
-            Tool::RunCommand => {
+            (Tool::RunCommand, _) => {
                 "Run a shell command on a server saved in Termlet (same as `termlet exec`) and return its exit code, stdout and stderr. Termlet logs in with the credentials it keeps; you never see them. Each call is a new SSH session, so nothing carries over between calls: put related steps in one command (for example `cd /srv/app && git pull`). Interactive programs and password prompts don't work; use non-interactive options such as `-y`. Commands that match the user's dangerous-command rules wait for the user to approve them in Termlet (up to 60 seconds); on command_denied or command_blocked, don't try to get around the rule, ask the user to run it themselves. Output is capped at 32 KB (the beginning and the end are kept), so redirect long output to a file and read it in parts."
             }
-            Tool::RunCommandOnHosts => {
+            (Tool::RunCommandOnHosts, _) => {
                 "Run the same shell command on several servers saved in Termlet at once (same as `termlet exec -g/-t/-H`) and get the results merged: hosts with the same exit code and output are grouped, so many servers that agree take the space of one. Choose hosts with `hosts` (ids or names), `groups` (group names or paths such as `prod/web`, subgroups included), `tags`, or `all`; `exclude` removes hosts. Hosts the user hasn't allowed for AI tools are listed as not run. Each host gets a new SSH session (up to 10 at a time), so put related steps in one command. If the command matches the user's dangerous-command rules, the user approves the whole batch once in Termlet (up to 60 seconds). Use `timeout_seconds` to stop hosts that hang. Output per group is clipped so the whole result stays around 32 KB."
             }
-            Tool::UploadFile => {
+            (Tool::UploadFile, Reach::Local) => {
                 "Upload one file from this computer to a server saved in Termlet over SFTP, or SCP when the server has no SFTP (same as `termlet upload`, scp semantics). `local_path` must be an absolute path. If `remote_path` is an existing directory or ends with `/`, the file keeps its name inside it; otherwise `remote_path` is the new file's path. An existing file is overwritten. Directories aren't supported; archive them first (for example with tar)."
             }
-            Tool::DownloadFile => {
+            (Tool::DownloadFile, Reach::Local) => {
                 "Download one file from a server saved in Termlet to this computer over SFTP, or SCP when the server has no SFTP (same as `termlet download`). `local_path` must be an absolute path; if it is an existing directory, the file keeps its name inside it, otherwise `local_path` is the new file's path. An existing local file is overwritten. Directories aren't supported; archive them on the server first."
             }
         }
     }
 
-    /// 参数名（不认识的参数报错，免得 AI 写错了名字却以为生效了）。
-    fn arguments(self) -> &'static [&'static str] {
+    /// 参数名（不认识的参数报错，免得 AI 写错了名字却以为生效了）。局域网中的客户端传文件只给主机与服务器上的路径。
+    fn arguments(self, reach: Reach) -> &'static [&'static str] {
+        if reach == Reach::Lan && self.local_files() {
+            return &["host", "remote_path"];
+        }
         match self {
             Tool::ListHosts => &["query"],
             Tool::RunCommand => &["host", "command", "terminal"],
@@ -115,11 +128,42 @@ impl Tool {
         }
     }
 
-    fn input_schema(self) -> Value {
+    fn input_schema(self, reach: Reach) -> Value {
         let host = json!({
             "type": "string",
             "description": "ID or name of a host from list_hosts.",
         });
+        match (self, reach) {
+            (Tool::UploadFile, Reach::Lan) => {
+                return json!({
+                    "type": "object",
+                    "properties": {
+                        "host": host,
+                        "remote_path": {
+                            "type": "string",
+                            "description": "Full path of the file on the server, including its name (not a directory); an existing file is overwritten.",
+                        },
+                    },
+                    "required": ["host", "remote_path"],
+                    "additionalProperties": false,
+                });
+            }
+            (Tool::DownloadFile, Reach::Lan) => {
+                return json!({
+                    "type": "object",
+                    "properties": {
+                        "host": host,
+                        "remote_path": {
+                            "type": "string",
+                            "description": "Path of the file on the server.",
+                        },
+                    },
+                    "required": ["host", "remote_path"],
+                    "additionalProperties": false,
+                });
+            }
+            _ => {}
+        }
         match self {
             Tool::ListHosts => json!({
                 "type": "object",
@@ -218,12 +262,14 @@ impl Tool {
     }
 
     /// 行为提示（客户端据此决定是否先问用户；只是提示，真正的检查在 Termlet 中）。
-    fn annotations(self) -> Value {
-        let (read_only, destructive, idempotent, open_world) = match self {
-            Tool::ListHosts => (true, false, true, false),
-            Tool::RunCommand | Tool::RunCommandOnHosts => (false, true, false, true),
+    fn annotations(self, reach: Reach) -> Value {
+        let (read_only, destructive, idempotent, open_world) = match (self, reach) {
+            (Tool::ListHosts, _) => (true, false, true, false),
+            (Tool::RunCommand | Tool::RunCommandOnHosts, _) => (false, true, false, true),
+            // 局域网中的客户端取下载链接只读服务器；写它那边的文件的是之后的 curl
+            (Tool::DownloadFile, Reach::Lan) => (true, false, true, true),
             // 覆盖已有的文件
-            Tool::UploadFile | Tool::DownloadFile => (false, true, true, true),
+            (Tool::UploadFile | Tool::DownloadFile, _) => (false, true, true, true),
         };
         json!({
             "title": self.title(),
@@ -234,43 +280,158 @@ impl Tool {
         })
     }
 
-    fn definition(self, annotations: bool, title: bool) -> Value {
+    fn definition(self, reach: Reach, annotations: bool, title: bool) -> Value {
         let mut tool = json!({
             "name": self.name(),
-            "description": self.description(),
-            "inputSchema": self.input_schema(),
+            "description": self.description(reach),
+            "inputSchema": self.input_schema(reach),
         });
         if title {
             tool["title"] = json!(self.title());
         }
         if annotations {
-            tool["annotations"] = self.annotations();
+            tool["annotations"] = self.annotations(reach);
         }
         tool
     }
 }
 
-/// `tools/list` 中的工具：局域网中的客户端没有传文件的工具。`annotations`、`title` 按协议版本（较早的版本没有
-/// 这些字段）。
+/// `tools/list` 中的工具：局域网中的客户端的传文件工具换成取传输链接的写法。`annotations`、`title` 按协议版本
+/// （较早的版本没有这些字段）。
 pub fn list(reach: Reach, annotations: bool, title: bool) -> Value {
     Value::Array(
         Tool::ALL
             .into_iter()
-            .filter(|tool| reach == Reach::Local || !tool.local_files())
-            .map(|tool| tool.definition(annotations, title))
+            .map(|tool| tool.definition(reach, annotations, title))
             .collect(),
     )
 }
 
-/// 局域网中的客户端调用了传文件的工具：工具执行错误，说明小的文本文件可以用 `run_command` 读写。
-pub fn lan_unavailable(tool: Tool, lang: Lang) -> Outcome {
-    let text = messages::MCP_LAN_UNAVAILABLE.fill(lang, &[&tool.name()]);
-    let code = messages::CODE_LAN_UNAVAILABLE;
+/// 局域网中的客户端要传的一个文件：要 Termlet 给出一次性传输链接。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkRequest {
+    /// 主机的 ID 或名称（原样，由 Termlet 查找）
+    pub host: String,
+    /// 服务器上的路径：上传时是文件的完整路径
+    pub remote: String,
+    pub upload: bool,
+}
+
+/// 局域网中的客户端调用传文件的工具：检查参数（只有主机与服务器上的路径），写成取传输链接的请求。参数不对时为
+/// 工具执行错误（AI 可以改了重试）。
+pub fn link_request(
+    tool: Tool,
+    arguments: &Map<String, Value>,
+    lang: Lang,
+) -> Result<LinkRequest, Outcome> {
+    let args = Args {
+        map: arguments,
+        lang,
+    };
+    args.only(tool.arguments(Reach::Lan))?;
+    let host = args.required("host")?;
+    let remote = args.required("remote_path")?;
+    let upload = tool == Tool::UploadFile;
+    // 上传的数据来自 curl，Termlet 不知道那边的文件名：要写到哪个文件得写全
+    if upload && remote.ends_with('/') {
+        return Err(args.invalid(messages::MCP_LINK_FULL_PATH.fill(lang, &[&"remote_path"])));
+    }
+    Ok(LinkRequest {
+        host,
+        remote,
+        upload,
+    })
+}
+
+/// 给出的一次性传输链接（结果中的说明用）。
+#[derive(Clone, Copy, Debug)]
+pub struct Link<'a> {
+    /// 完整的地址（含随机串，只写进给 AI 的结果）
+    pub url: &'a str,
+    pub upload: bool,
+    /// 主机名
+    pub host: &'a str,
+    /// 服务器上的路径
+    pub remote: &'a str,
+    /// 下载的文件现在的大小
+    pub size: Option<u64>,
+    /// 多少分钟内有效
+    pub minutes: u64,
+}
+
+impl Link<'_> {
+    /// 在 AI 那台电脑上运行的命令（`<local file>` 由 AI 换成它的文件）。`--noproxy` 只写这台电脑的地址：那边设了
+    /// `http_proxy` 时链接（一次性的凭据）与文件也不经代理（代理多半也连不到局域网地址）。地址中只有字母、数字与
+    /// `:/.-`，各种 shell 中都不用加引号（cmd 不认单引号，`'*'` 写不了）。
+    pub fn command(&self) -> String {
+        let host = self
+            .url
+            .strip_prefix("http://")
+            .and_then(|rest| rest.split([':', '/']).next())
+            .unwrap_or_default();
+        if self.upload {
+            format!(
+                "curl --fail-with-body --noproxy {host} -T <local file> {}",
+                self.url
+            )
+        } else {
+            format!("curl --fail --noproxy {host} -o <local file> {}", self.url)
+        }
+    }
+}
+
+/// 传输链接写成工具的结果：链接给谁用、怎么用（curl 的命令，PowerShell 中写 curl.exe），失败了怎么办。
+pub fn link_outcome(link: &Link<'_>, lang: Lang) -> Outcome {
+    let head = if link.upload {
+        messages::MCP_UPLOAD_LINK.fill(lang, &[&link.remote, &link.host, &link.minutes])
+    } else {
+        let size = messages::format_bytes(link.size.unwrap_or_default());
+        messages::MCP_DOWNLOAD_LINK.fill(lang, &[&link.remote, &link.host, &size, &link.minutes])
+    };
+    let after = if link.upload {
+        messages::MCP_UPLOAD_LINK_AFTER
+    } else {
+        messages::MCP_DOWNLOAD_LINK_AFTER
+    };
+    let command = link.command();
+    let text = format!(
+        "{head}\n{command}\n{}\n{}",
+        messages::MCP_LINK_POWERSHELL.get(lang),
+        after.get(lang)
+    );
+    let mut structured = json!({
+        "url": link.url,
+        "method": if link.upload { "PUT" } else { "GET" },
+        "host": link.host,
+        "remotePath": link.remote,
+        "expiresInSeconds": link.minutes * 60,
+        "command": command,
+    });
+    if let Some(size) = link.size {
+        structured["size"] = json!(size);
+    }
+    Outcome::ok(text, Some(structured))
+}
+
+/// 没用过的传输链接已到上限：工具执行错误。
+pub fn too_many_links(max: usize, minutes: u64, lang: Lang) -> Outcome {
+    let text = messages::MCP_TOO_MANY_LINKS.fill(lang, &[&max, &minutes]);
+    let code = messages::CODE_TOO_MANY_LINKS;
     Outcome {
         text: format!("[{code}] {text}"),
         structured: Some(json!({ "error": code, "message": text })),
         is_error: true,
     }
+}
+
+/// 失败的说明（`[错误码] 说明`，与工具结果中的相同）：传输链接的 HTTP 回答用它写正文。
+pub fn failure_text(code: &str, message: &str, lang: Lang) -> String {
+    Outcome::error(code, message, lang).text
+}
+
+/// 传完的说明（与 `upload_file`、`download_file` 的结果相同）：经传输链接上传完时写进 HTTP 的回答，curl 打印出来。
+pub fn transfer_text(done: &TransferResponse, upload: bool, lang: Lang) -> String {
+    transfer_outcome(done, upload, lang).text
 }
 
 /// 一次工具调用用到的东西。
@@ -400,7 +561,8 @@ pub fn outcome(
 }
 
 /// 检查参数，写成发给 Termlet 的请求（与命令行工具的请求相同，调用方换成 MCP 的：`callers`）。参数不对时为
-/// 工具执行错误（AI 可以改了重试），不发请求；`reach` 见 [`outcome`]。
+/// 工具执行错误（AI 可以改了重试），不发请求；`reach` 见 [`outcome`]。局域网中的客户端传文件不经这里（见
+/// [`link_request`]）。
 pub fn request(
     tool: Tool,
     arguments: &Map<String, Value>,
@@ -412,7 +574,7 @@ pub fn request(
         map: arguments,
         lang,
     };
-    args.only(tool.arguments())?;
+    args.only(tool.arguments(Reach::Local))?;
     let caller = callers.to_vec();
     Ok(match tool {
         Tool::ListHosts => Request::ListHosts {
@@ -1011,84 +1173,220 @@ mod tests {
 
     #[test]
     fn definitions_follow_the_protocol_version() {
-        let tools = list(Reach::Local, true, true);
-        let tools = tools.as_array().unwrap();
-        let names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
-        assert_eq!(
-            names,
-            [
-                "list_hosts",
-                "run_command",
-                "run_command_on_hosts",
-                "upload_file",
-                "download_file"
-            ]
-        );
-        for tool in tools {
-            let name = tool["name"].as_str().unwrap();
-            assert!(
-                name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'),
-                "工具名只用字母、数字与下划线：{name}"
+        for reach in [Reach::Local, Reach::Lan] {
+            let tools = list(reach, true, true);
+            let tools = tools.as_array().unwrap();
+            let names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
+            assert_eq!(
+                names,
+                [
+                    "list_hosts",
+                    "run_command",
+                    "run_command_on_hosts",
+                    "upload_file",
+                    "download_file"
+                ]
             );
-            let schema = &tool["inputSchema"];
-            assert_eq!(schema["type"], "object", "{name}");
-            assert_eq!(schema["additionalProperties"], false, "{name}");
-            // Schema 中的参数与检查时认的参数一致
-            let mut properties: Vec<&str> = schema["properties"]
-                .as_object()
-                .unwrap()
-                .keys()
-                .map(String::as_str)
-                .collect();
-            let mut allowed = Tool::parse(name).unwrap().arguments().to_vec();
-            properties.sort_unstable();
-            allowed.sort_unstable();
-            assert_eq!(properties, allowed, "{name}");
-            for required in schema["required"].as_array().into_iter().flatten() {
-                assert!(allowed.contains(&required.as_str().unwrap()), "{name}");
+            for tool in tools {
+                let name = tool["name"].as_str().unwrap();
+                assert!(
+                    name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'),
+                    "工具名只用字母、数字与下划线：{name}"
+                );
+                let schema = &tool["inputSchema"];
+                assert_eq!(schema["type"], "object", "{name}");
+                assert_eq!(schema["additionalProperties"], false, "{name}");
+                // Schema 中的参数与检查时认的参数一致
+                let mut properties: Vec<&str> = schema["properties"]
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .map(String::as_str)
+                    .collect();
+                let mut allowed = Tool::parse(name).unwrap().arguments(reach).to_vec();
+                properties.sort_unstable();
+                allowed.sort_unstable();
+                assert_eq!(properties, allowed, "{name}");
+                for required in schema["required"].as_array().into_iter().flatten() {
+                    assert!(allowed.contains(&required.as_str().unwrap()), "{name}");
+                }
+                assert!(tool["description"].as_str().unwrap().len() > 80, "{name}");
+                assert!(tool["annotations"].is_object() && tool["title"].is_string());
             }
-            assert!(tool["description"].as_str().unwrap().len() > 80, "{name}");
-            assert!(tool["annotations"].is_object() && tool["title"].is_string());
-        }
-        assert_eq!(tools[0]["annotations"]["readOnlyHint"], true);
-        assert_eq!(tools[1]["annotations"]["destructiveHint"], true);
-        // 较早的版本没有 annotations、title
-        for tool in list(Reach::Local, false, false).as_array().unwrap() {
-            assert!(tool.get("annotations").is_none() && tool.get("title").is_none());
+            assert_eq!(tools[0]["annotations"]["readOnlyHint"], true);
+            assert_eq!(tools[1]["annotations"]["destructiveHint"], true);
+            // 较早的版本没有 annotations、title
+            for tool in list(reach, false, false).as_array().unwrap() {
+                assert!(tool.get("annotations").is_none() && tool.get("title").is_none());
+            }
         }
     }
 
-    // 局域网中的客户端：没有传文件的工具；直接调用时是工具执行错误，说明怎样用 run_command 读写小文件
+    // 局域网中的客户端：传文件的工具只要主机与服务器上的路径，说明写明用 curl 收发；本机的照旧要本机路径
     #[test]
-    fn lan_clients_get_no_file_tools() {
-        let tools = list(Reach::Lan, true, true);
-        let names: Vec<&str> = tools
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|t| t["name"].as_str().unwrap())
-            .collect();
-        assert_eq!(names, ["list_hosts", "run_command", "run_command_on_hosts"]);
-        assert!(Tool::UploadFile.local_files() && Tool::DownloadFile.local_files());
-        assert!(!Tool::ListHosts.local_files() && !Tool::RunCommand.local_files());
+    fn lan_file_tools_take_only_the_server_path() {
+        let tool = |reach, name: &str| {
+            list(reach, true, true)
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|t| t["name"] == name)
+                .unwrap()
+                .clone()
+        };
+        let lan_upload = tool(Reach::Lan, "upload_file");
+        assert_eq!(
+            lan_upload["inputSchema"]["required"],
+            json!(["host", "remote_path"])
+        );
+        let description = lan_upload["description"].as_str().unwrap();
+        assert!(
+            description.contains("curl --fail-with-body --noproxy <address> -T")
+                && description.contains("one-time link"),
+            "{description}"
+        );
+        let lan_download = tool(Reach::Lan, "download_file");
+        assert!(
+            lan_download["description"]
+                .as_str()
+                .unwrap()
+                .contains("curl --fail --noproxy <address> -o")
+        );
+        assert_eq!(lan_download["annotations"]["readOnlyHint"], true);
+        let local = tool(Reach::Local, "upload_file");
+        assert!(local["inputSchema"]["properties"]["local_path"].is_object());
+        assert!(!local["description"].as_str().unwrap().contains("curl"));
 
-        let outcome = lan_unavailable(Tool::DownloadFile, Lang::En);
-        assert!(outcome.is_error());
+        let args = |pairs: Value| pairs.as_object().unwrap().clone();
+        let ok = link_request(
+            Tool::UploadFile,
+            &args(json!({ "host": "web", "remote_path": "/srv/a.tar.gz" })),
+            Lang::En,
+        )
+        .unwrap();
+        assert_eq!(
+            ok,
+            LinkRequest {
+                host: "web".into(),
+                remote: "/srv/a.tar.gz".into(),
+                upload: true,
+            }
+        );
+        let down = link_request(
+            Tool::DownloadFile,
+            &args(json!({ "host": "web", "remote_path": "logs/app.log" })),
+            Lang::En,
+        )
+        .unwrap();
+        assert!(!down.upload && down.remote == "logs/app.log");
+        // 本机路径的参数不认；上传要写全文件名
+        let Err(outcome) = link_request(
+            Tool::DownloadFile,
+            &args(json!({ "host": "web", "remote_path": "/a", "local_path": "/tmp/a" })),
+            Lang::En,
+        ) else {
+            panic!("local_path 不应被接受");
+        };
+        assert!(
+            outcome.text.starts_with("[bad_request]") && outcome.text.contains("local_path"),
+            "{}",
+            outcome.text
+        );
+        for lang in [Lang::En, Lang::Zh] {
+            let Err(outcome) = link_request(
+                Tool::UploadFile,
+                &args(json!({ "host": "web", "remote_path": "/srv/" })),
+                lang,
+            ) else {
+                panic!("目录不应被接受");
+            };
+            assert!(
+                outcome.is_error() && outcome.text.contains("remote_path"),
+                "{}",
+                outcome.text
+            );
+        }
+        let Err(outcome) = link_request(
+            Tool::UploadFile,
+            &args(json!({ "remote_path": "/srv/a" })),
+            Lang::Zh,
+        ) else {
+            panic!("缺少主机");
+        };
+        assert!(outcome.text.contains("缺少参数 host"), "{}", outcome.text);
+    }
+
+    // 传输链接的结果：curl 的命令（上传带 --fail-with-body，下载带 --fail），PowerShell 写 curl.exe，几分钟内有效；
+    // 结构化的结果中有地址与方法
+    #[test]
+    fn link_outcome_tells_how_to_use_it() {
+        let url = "http://192.168.1.5:47800/transfer/abc";
+        let upload = Link {
+            url,
+            upload: true,
+            host: "web",
+            remote: "/srv/a.tar.gz",
+            size: None,
+            minutes: 10,
+        };
+        let outcome = link_outcome(&upload, Lang::En);
+        assert!(!outcome.is_error());
         assert!(
             outcome.text.starts_with(
-                "[lan_unavailable] download_file isn't available over the local network"
+                "Upload link ready for /srv/a.tar.gz on web; nothing has been uploaded yet. It works once, within 10 minutes"
             ),
             "{}",
             outcome.text
         );
-        assert!(outcome.text.contains("cat") && outcome.text.contains("heredoc"));
-        let result = outcome.into_result(true);
-        assert_eq!(result["structuredContent"]["error"], "lan_unavailable");
-        let zh = lan_unavailable(Tool::UploadFile, Lang::Zh);
         assert!(
-            zh.text.contains("通过局域网连接时不能使用 upload_file"),
+            outcome.text.contains(&format!(
+                "\ncurl --fail-with-body --noproxy 192.168.1.5 -T <local file> {url}\n"
+            )),
             "{}",
-            zh.text
+            outcome.text
+        );
+        assert!(outcome.text.contains("curl.exe") && outcome.text.contains("upload_file"));
+        let result = outcome.into_result(true);
+        let structured = &result["structuredContent"];
+        assert_eq!(structured["url"], url);
+        assert_eq!(structured["method"], "PUT");
+        assert_eq!(structured["expiresInSeconds"], 600);
+        assert!(structured.get("size").is_none());
+
+        let download = Link {
+            upload: false,
+            size: Some(2048),
+            ..upload
+        };
+        let outcome = link_outcome(&download, Lang::Zh);
+        assert!(
+            outcome.text.starts_with(
+                "下载链接已准备好：/srv/a.tar.gz（主机 web，2.0 KB）。只能用一次，10 分钟内有效"
+            ),
+            "{}",
+            outcome.text
+        );
+        assert!(
+            outcome.text.contains(&format!(
+                "\ncurl --fail --noproxy 192.168.1.5 -o <local file> {url}\n"
+            )),
+            "{}",
+            outcome.text
+        );
+        assert!(outcome.text.contains("curl.exe") && outcome.text.contains("download_file"));
+        let result = outcome.into_result(true);
+        assert_eq!(result["structuredContent"]["method"], "GET");
+        assert_eq!(result["structuredContent"]["size"], 2048);
+
+        let full = too_many_links(32, 10, Lang::En);
+        assert!(full.is_error());
+        assert!(
+            full.text
+                .starts_with("[too_many_links] there are already 32 unused transfer links")
+        );
+        assert_eq!(
+            failure_text("path_not_found", "/nope", Lang::En),
+            "[path_not_found] path not found: /nope"
         );
     }
 }

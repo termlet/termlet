@@ -9,6 +9,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Added
 
 - The SFTP local side can open WSL: the "Places and Drives" menu (the drive icon) lists your WSL distributions after the drives (the same ones as the menu next to "+" in the title bar, without Docker Desktop's internal distributions; three or more go into a "WSL Distributions" submenu). Choose one to open the default user's home folder in it and upload or download between WSL and the server directly, without installing sftp-server in the distribution. A distribution that isn't running is started only when you choose it, which can take a few seconds. In WSL, names starting with `.` count as hidden; Linux permissions, symbolic links and file names Windows doesn't allow can't be kept when going through Windows, so use the WSL file manager when you need them.
+- Computers on the LAN can transfer files over MCP too: the AI over there calls `upload_file` or `download_file` with just the host and the path on the server, Termlet checks it and gives a one-time transfer link, and the AI sends or fetches the file with curl on its computer (`curl -T` to upload, `curl -o` to download). The file goes between that computer and the server through Termlet (over SFTP, or SCP when the server has no SFTP), never through the AI's conversation and with no size limit, and files on this computer stay out of reach. A link works once, for 10 minutes, and only from the computer that asked for it; host access and the audit log work as usual (source "MCP·LAN"), and an upload cut off halfway deletes its temporary file on the server, leaving the file there as it was. Before, computers on the LAN could only list hosts and run commands.
 
 ### Changed
 
@@ -18,6 +19,8 @@ This file lists the changes you will notice in each version, newest first. Versi
 
 - Deleting on the local side in places without a Recycle Bin (network shares, mapped network drives, WSL, USB sticks and other removable drives) said "Move to Recycle Bin" but deleted the files permanently, with no way to get them back. These places now say "Delete Permanently" in the menu and that the items will be deleted permanently and can't be recovered; everywhere else items still go to the Recycle Bin, and if Windows can't move something there (for example, it's too large), nothing is deleted and you're asked whether to delete permanently, so nothing is deleted permanently without asking.
 - Uploading a named pipe, device file or other special file no longer hangs: it's skipped and you're told such files can't be transferred (inside folders they're skipped as before). Such files in WSL look like regular files through Windows; the local side now recognizes them too, where it used to report a system error after about 20 seconds.
+
+## 0.3.4 (2026-11-25)
 
 ### Added
 

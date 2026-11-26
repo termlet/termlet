@@ -48,8 +48,8 @@ macro_rules! msg {
 /// 命令行工具自己产生的用法错误的错误码（不经过 Termlet）。
 pub const CODE_USAGE: &str = "usage";
 
-/// 局域网中的客户端调用了传文件的工具（不交给 Termlet，只在 MCP 的结果中）。
-pub const CODE_LAN_UNAVAILABLE: &str = "lan_unavailable";
+/// 局域网中的客户端没用过的传输链接已到上限，不再给新的（不交给 Termlet，只在 MCP 的结果中）。
+pub const CODE_TOO_MANY_LINKS: &str = "too_many_links";
 
 msg!(
     UPLOAD_IS_DIR,
@@ -139,10 +139,41 @@ msg!(
     "主机不存在，请先调用 list_hosts 查看可用的主机",
     "host not found; call list_hosts to see the available hosts"
 );
+// 局域网中的客户端传文件：一次性传输链接，用 curl 收发
 msg!(
-    MCP_LAN_UNAVAILABLE,
-    "通过局域网连接时不能使用 {}：它读写的是运行 Termlet 的那台电脑上的文件，不是你这边的。小的文本文件可以用 run_command：cat 读取，heredoc（cat > 文件 <<'EOF' … EOF）写入。",
-    "{} isn't available over the local network: it reads and writes files on the computer running Termlet, not on yours. For small text files, use run_command instead: cat to read a file, and a heredoc (cat > file <<'EOF' ... EOF) to write one."
+    MCP_LINK_FULL_PATH,
+    "{} 要写服务器上文件的完整路径（含文件名），不能以 / 结尾",
+    "{} must be the full path of the file on the server, including its name (not ending with /)"
+);
+msg!(
+    MCP_UPLOAD_LINK,
+    "上传链接已准备好：{}（主机 {}），还没有传任何内容。只能用一次，{} 分钟内有效，只能从你这台电脑使用。在你的电脑上运行（文件经 Termlet 直接写到服务器，不经过对话）：",
+    "Upload link ready for {} on {}; nothing has been uploaded yet. It works once, within {} minutes, and only from your computer. Run this on your computer (the file goes through Termlet straight to the server, not through this conversation):"
+);
+msg!(
+    MCP_DOWNLOAD_LINK,
+    "下载链接已准备好：{}（主机 {}，{}）。只能用一次，{} 分钟内有效，只能从你这台电脑使用。在你的电脑上运行（文件经 Termlet 直接从服务器取回，不经过对话）：",
+    "Download link ready for {} on {} ({}). It works once, within {} minutes, and only from your computer. Run this on your computer (the file comes through Termlet straight from the server, not through this conversation):"
+);
+msg!(
+    MCP_LINK_POWERSHELL,
+    "在 Windows 的 PowerShell 中把 curl 写成 curl.exe（那里的 curl 是 Invoke-WebRequest 的别名）。",
+    "In Windows PowerShell, type curl.exe instead of curl (curl there is an alias of Invoke-WebRequest)."
+);
+msg!(
+    MCP_UPLOAD_LINK_AFTER,
+    "curl 早于 7.76 时没有 --fail-with-body，改用 --fail。服务器上已有的同名文件会被覆盖。curl 会打印 Termlet 的结果；退出码不是 0 表示没有上传成功，服务器上的文件保持原样。要重试时再调用 upload_file 取一个新链接。",
+    "With curl older than 7.76, use --fail instead of --fail-with-body. An existing file at that path is overwritten. curl prints Termlet's result; a non-zero exit code means the upload failed and the file on the server is unchanged. To try again, call upload_file for a new link."
+);
+msg!(
+    MCP_DOWNLOAD_LINK_AFTER,
+    "退出码不是 0 表示没有下载完整。要重试时再调用 download_file 取一个新链接（它会重新检查文件，出了问题会说明）。",
+    "A non-zero exit code means the file didn't arrive in full. To try again, call download_file for a new link (it checks the file again and says what's wrong)."
+);
+msg!(
+    MCP_TOO_MANY_LINKS,
+    "没用过的传输链接已有 {} 个，不能再给新的：先用掉它们，或等它们过期（{} 分钟）",
+    "there are already {} unused transfer links, so no new one can be made: use them, or wait for them to expire ({} minutes)"
 );
 msg!(MCP_EXIT, "退出码 {}，用时 {}", "exit code {}, took {}");
 msg!(

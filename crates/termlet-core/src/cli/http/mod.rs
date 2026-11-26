@@ -23,14 +23,16 @@
 //! 1. `Host`：本机的连接必须是 `127.0.0.1:<端口>`、`localhost:<端口>` 或 `[::1]:<端口>`；局域网的连接必须是这条连接的
 //!    本机地址或这台电脑的名字加上端口（回环的名字不认）。否则 403（防 DNS 重绑定）；
 //! 2. 带 `Origin` 的一律 403：正常的 MCP 客户端不在浏览器中，浏览器中的网页一定带它；
-//! 3. 路径不是 `/mcp` 时 404，方法不是 POST 时 405（`OPTIONS` 同样 405，任何回答都不带 CORS 的头）；
+//! 3. 路径是 `/transfer/<随机串>` 时交给传输链接（[`link`]，链接本身就是凭据，不要令牌）；不是 `/mcp` 时 404，方法
+//!    不是 POST 时 405（`OPTIONS` 同样 405，任何回答都不带 CORS 的头）；
 //! 4. `Authorization: Bearer <令牌>`：本机的连接只认本机的令牌，局域网的只认局域网的令牌（[`token::TokenKind`]），
 //!    与保存的 SHA-256 摘要做常量时间比较，不对时 401（JSON 正文）；
 //! 5. 正文最多 [`termlet_mcp::MAX_MESSAGE`]（8MB），同时最多 [`MAX_CONNECTIONS`] 条连接。
 //!
 //! 令牌见 [`token`]。被拒绝的请求在运行日志中记一条原因（同一原因每分钟最多一条；局域网来的带上对方的地址），不记
-//! 内容与令牌。局域网中的客户端只有列出主机与执行命令两个工具（`termlet_mcp::Reach`）：传文件的工具读写的是这台电脑
-//! 上的文件。局域网上是明文（没有 TLS），界面与文档写明只在信任的网络中使用。
+//! 内容与令牌。局域网中的客户端（`termlet_mcp::Reach`）碰不到这台电脑上的文件：传文件的工具给出一次性传输链接，
+//! 对方用 curl 收发（`/transfer/<随机串>`，不要令牌，见 [`link`]）。局域网上是明文（没有 TLS），界面与文档写明只在
+//! 信任的网络中使用。
 //!
 //! # 协议
 //!
@@ -54,6 +56,7 @@
 //! 连接查不到那边的进程，写成 `["mcp:<客户端名>", "http", "lan:<对方的 IP>"]`。
 
 pub mod lan;
+mod link;
 mod peer;
 mod serve;
 mod state;
@@ -116,6 +119,10 @@ pub enum HttpError {
 pub(crate) struct HttpOptions {
     pub keepalive: Duration,
     pub max_connections: usize,
+    /// 传输链接从给出到开始传输的有效期
+    pub link_ttl: Duration,
+    /// 经传输链接收发时，一次读写等对方最多多久
+    pub transfer_idle: Duration,
     /// 测试用，平时为空
     pub fake_lan: FakeLan,
 }
@@ -125,6 +132,8 @@ impl Default for HttpOptions {
         Self {
             keepalive: KEEPALIVE,
             max_connections: MAX_CONNECTIONS,
+            link_ttl: link::LINK_TTL,
+            transfer_idle: link::TRANSFER_IDLE,
             fake_lan: FakeLan::default(),
         }
     }
@@ -167,6 +176,8 @@ pub(super) struct Inner {
     /// 正在监听的端口与它的停止开关；启停、换端口时持有，免得两次对照交错
     running: tokio::sync::Mutex<Option<Running>>,
     state: Arc<state::State>,
+    /// 局域网中的客户端没用过的传输链接
+    links: link::Links,
 }
 
 struct Running {
@@ -195,6 +206,7 @@ impl Http {
             status: watch::channel(HttpStatus::Off).0,
             running: tokio::sync::Mutex::new(None),
             state: Arc::default(),
+            links: link::Links::default(),
         });
         let watcher = crate::runtime::spawn(watch_settings(inner.clone(), events));
         Self { inner, watcher }
@@ -215,6 +227,11 @@ impl Http {
             inner.reconcile().await;
             inner.status.borrow().clone()
         })
+    }
+
+    /// 没用过的传输链接全部作废（局域网令牌重新生成后：撤销局域网中的电脑）。
+    pub(super) fn clear_links(&self) {
+        self.inner.clear_links();
     }
 
     /// 停止：不再监听（服务的停止开关已打开，进行中的请求随之取消）。
@@ -251,6 +268,14 @@ async fn watch_settings(inner: Arc<Inner>, mut events: broadcast::Receiver<Store
 }
 
 impl Inner {
+    /// 没用过的传输链接全部作废：停止监听、换端口或范围（链接中的地址失效，或局域网不再能连）、局域网令牌重新生成时。
+    fn clear_links(&self) {
+        let dropped = self.links.clear();
+        if dropped > 0 {
+            tracing::info!(dropped, "MCP 的传输链接已作废");
+        }
+    }
+
     /// 对照设置：该监听而没有监听（或端口、监听范围变了）时监听，不该监听时停止；该监听时没有令牌就生成一个
     /// （局域网的令牌在监听范围为局域网时才生成）。
     async fn reconcile(self: &Arc<Self>) {
@@ -278,6 +303,7 @@ impl Inner {
             if let Some(old) = running.take() {
                 let port = old.port;
                 old.stop().await;
+                self.clear_links();
                 tracing::info!(port, "MCP 的 HTTP 服务已停止");
             }
             self.status.send_replace(HttpStatus::Off);
@@ -290,6 +316,7 @@ impl Inner {
         // 设置一致）
         if let Some(old) = running.take() {
             old.stop().await;
+            self.clear_links();
         }
         match bind(port, scope, &self.options.fake_lan) {
             Ok(listener) => {

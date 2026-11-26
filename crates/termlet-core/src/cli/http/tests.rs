@@ -1,5 +1,5 @@
 //! HTTP 接入的测试：真实的命令行服务（内存中的存储、模拟的界面，见 `cli::tests`）在随机的空闲端口上监听，
-//! 用 reqwest 当客户端。
+//! 用 reqwest 当客户端。经传输链接收发文件的测试连真实的 sshd（`TERMLET_TEST_SSH`，没有设置时跳过）。
 
 use std::net::IpAddr;
 use std::time::Duration;
@@ -8,7 +8,7 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::{Value, json};
 
 use super::*;
-use crate::audit::{AuditSource, AuditStatus};
+use crate::audit::{AuditAction, AuditSource, AuditStatus};
 use crate::cli::tests::{Approve, Fixture, store_with};
 use crate::cli::{APPROVAL_TIMEOUT, TokenView};
 use crate::model::HttpScope;
@@ -34,6 +34,8 @@ fn options(max_connections: usize) -> HttpOptions {
     HttpOptions {
         keepalive: Duration::from_millis(100),
         max_connections,
+        link_ttl: link::LINK_TTL,
+        transfer_idle: link::TRANSFER_IDLE,
         fake_lan: FakeLan::default(),
     }
 }
@@ -911,13 +913,22 @@ const PUBLIC_SOURCE: [u8; 4] = [127, 0, 0, 3];
 /// 局域网的连接连到的本机地址
 const LAN_LOCAL: [u8; 4] = [192, 168, 1, 5];
 
-/// 监听范围为局域网（实际仍在 127.0.0.1 上），从 127.0.0.2 来的连接当作 192.168.1.23、127.0.0.3 来的当作 8.8.8.8。
+/// 当作局域网中另一台电脑的源地址与它代表的地址。
+const OTHER_SOURCE: [u8; 4] = [127, 0, 0, 4];
+const OTHER_PEER: [u8; 4] = [192, 168, 1, 24];
+
+/// 监听范围为局域网（实际仍在 127.0.0.1 上），从 127.0.0.2 来的连接当作 192.168.1.23、127.0.0.4 来的当作
+/// 192.168.1.24、127.0.0.3 来的当作 8.8.8.8。
 fn lan_fixture() -> Fixture {
-    let mut options = options(MAX_CONNECTIONS);
+    lan_fixture_with(options(MAX_CONNECTIONS))
+}
+
+fn lan_fixture_with(mut options: HttpOptions) -> Fixture {
     options.fake_lan = FakeLan {
         bind: Some(IpAddr::from([127, 0, 0, 1])),
         peers: vec![
             (IpAddr::from(LAN_SOURCE), IpAddr::from(LAN_PEER)),
+            (IpAddr::from(OTHER_SOURCE), IpAddr::from(OTHER_PEER)),
             (IpAddr::from(PUBLIC_SOURCE), IpAddr::from([8, 8, 8, 8])),
         ],
         local: Some(IpAddr::from(LAN_LOCAL)),
@@ -971,8 +982,9 @@ fn lan_token_of(f: &Fixture) -> String {
     }
 }
 
-// 监听范围为局域网：生成局域网令牌；按对端地址选令牌、核对 Host；局域网中的客户端只有两个工具，调用传文件的工具得到
-// 说明而不交给 Termlet；审计的调用方是 lan:<IP>；不在私有网段的连接直接关闭；改回只有本机后局域网的连接被关闭
+// 监听范围为局域网：生成局域网令牌；按对端地址选令牌、核对 Host；局域网中的客户端传文件的工具只要服务器上的路径
+// （给本机路径时是参数错误，不交给 Termlet）；审计的调用方是 lan:<IP>；不在私有网段的连接直接关闭；改回只有本机后
+// 局域网的连接被关闭
 #[test]
 fn lan_clients_are_separated_by_peer_address() {
     let f = lan_fixture();
@@ -1055,17 +1067,18 @@ fn lan_clients_are_separated_by_peer_address() {
             .map(|t| t["name"].as_str().unwrap().to_string())
             .collect()
     };
-    assert_eq!(
-        tool_names(&send_lan(&list).1),
-        ["list_hosts", "run_command", "run_command_on_hosts"]
-    );
+    let lan_list = send_lan(&list).1;
+    assert_eq!(tool_names(&lan_list).len(), 5);
+    let lan_list: Value = serde_json::from_str(&lan_list).unwrap();
+    let upload = &lan_list["result"]["tools"][3]["inputSchema"]["properties"];
+    assert!(upload.get("local_path").is_none(), "{upload}");
     assert_eq!(
         tool_names(&send_local(&local_token, &list).1).len(),
         5,
         "本机照旧全部五个"
     );
 
-    // 直接调用传文件的工具：工具执行错误，不交给 Termlet（没有审计记录）
+    // 带本机路径调用传文件的工具：参数错误，不交给 Termlet（没有审计记录）
     let download = request(
         3,
         "tools/call",
@@ -1079,7 +1092,10 @@ fn lan_clients_are_separated_by_peer_address() {
     let result = &events(&text)[0]["result"];
     assert_eq!(result["isError"], true);
     let message = result["content"][0]["text"].as_str().unwrap();
-    assert!(message.starts_with("[lan_unavailable]"), "{result}");
+    assert!(
+        message.starts_with("[bad_request]") && message.contains("local_path"),
+        "{result}"
+    );
     assert!(f.entries().is_empty(), "没有交给 Termlet");
 
     // 执行命令：审计的调用方是 mcp < http < lan:<IP>，没有进程链
@@ -1214,4 +1230,525 @@ fn lan_scope_listens_on_all_ipv4_interfaces() {
     };
     assert_eq!(send(&lan_token), 200, "经 {} 连接", address.ip);
     assert_eq!(send(&local_token), 401, "本机的令牌不能用在局域网");
+}
+
+// ------------------------------------------------------------ 局域网的传输链接
+
+/// 打开监听（范围为局域网），返回端口。
+fn listen_lan(f: &Fixture) -> u16 {
+    let port = free_port();
+    f.store
+        .update_local_settings(|s| {
+            s.cli.http.enabled = true;
+            s.cli.http.port = port;
+            s.cli.http.scope = HttpScope::Lan;
+        })
+        .unwrap();
+    wait_status(
+        f,
+        &HttpStatus::Listening {
+            port,
+            scope: HttpScope::Lan,
+        },
+    );
+    port
+}
+
+/// 局域网中的电脑（192.168.1.23）调用一个工具，返回结果（`result`）。
+fn lan_tool(f: &Fixture, port: u16, name: &str, arguments: Value) -> Value {
+    let body = request(
+        1,
+        "tools/call",
+        json!({ "name": name, "arguments": arguments }),
+    );
+    let host = format!("192.168.1.5:{port}");
+    let client = client_from(LAN_SOURCE);
+    // 2025-06-18 起的结果才有 structuredContent
+    let version = [("mcp-protocol-version", "2025-11-25")];
+    let (status, text) = lan_send(&client, port, &host, &lan_token_of(f), &body, &version).unwrap();
+    assert_eq!(status, 200, "{text}");
+    events(&text)[0]["result"].clone()
+}
+
+fn result_text(result: &Value) -> String {
+    result["content"][0]["text"].as_str().unwrap().to_string()
+}
+
+/// 结果中的传输链接的路径（`/transfer/…`）：地址是客户端连来时用的 192.168.1.5。
+fn link_path(result: &Value) -> String {
+    let url = result["structuredContent"]["url"].as_str().unwrap();
+    let (authority, token) = url
+        .strip_prefix("http://")
+        .and_then(|u| u.split_once("/transfer/"))
+        .unwrap_or_else(|| panic!("{result}"));
+    assert!(authority.starts_with("192.168.1.5:"), "{url}");
+    assert_eq!(token.len(), 52, "{url}");
+    format!("/transfer/{token}")
+}
+
+/// 以 `source` 为源地址经传输链接收发：返回（状态，回答头，正文）；连接被断开时为 `None`。
+fn transfer(
+    source: [u8; 4],
+    port: u16,
+    method: reqwest::Method,
+    path: &str,
+    body: Option<Vec<u8>>,
+) -> Option<(u16, HeaderMap, Vec<u8>)> {
+    block_on(async {
+        let client = client_from(source);
+        let mut request = client
+            .request(method, format!("http://127.0.0.1:{port}{path}"))
+            .header("host", format!("192.168.1.5:{port}"));
+        if let Some(body) = body {
+            request = request.body(body);
+        }
+        let response = request.send().await.ok()?;
+        let status = response.status().as_u16();
+        let headers = response.headers().clone();
+        let bytes = response.bytes().await.ok()?.to_vec();
+        Some((status, headers, bytes))
+    })
+}
+
+/// 以 `source` 为源地址发原始的 HTTP 请求（`head` 含结尾的空行）：`hang_up` 时发完就断开，否则读回答直到对方关闭
+/// （最多 30 秒）。
+fn raw_http(source: [u8; 4], port: u16, head: &str, body: &[u8], hang_up: bool) -> String {
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    block_on(async {
+        let socket = tokio::net::TcpSocket::new_v4().unwrap();
+        socket
+            .bind(std::net::SocketAddr::from((source, 0)))
+            .unwrap();
+        let mut stream = socket
+            .connect(std::net::SocketAddr::from(([127, 0, 0, 1], port)))
+            .await
+            .unwrap();
+        stream.write_all(head.as_bytes()).await.unwrap();
+        stream.write_all(body).await.unwrap();
+        if hang_up {
+            return String::new();
+        }
+        let mut out = Vec::new();
+        let _ = tokio::time::timeout(Duration::from_secs(30), stream.read_to_end(&mut out)).await;
+        String::from_utf8_lossy(&out).into_owned()
+    })
+}
+
+/// 等审计中出现这样的记录（连服务器要时间，最多 20 秒），返回它。
+fn wait_entry(
+    f: &Fixture,
+    what: &str,
+    found: impl Fn(&crate::audit::AuditEntry) -> bool,
+) -> crate::audit::AuditEntry {
+    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    loop {
+        if let Some(entry) = f.entries().into_iter().find(|e| found(e)) {
+            return entry;
+        }
+        assert!(std::time::Instant::now() < deadline, "等待超时：{what}");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+// 给出链接之前检查：连不上、主机未允许时不给，审计记一条失败的传输（调用方是取链接的客户端，详情是“路径 → 对方的
+// 地址”）；上传要写全文件名（参数错误，不交给 Termlet）。不存在的链接 404（纯文本，不要令牌，不记审计）
+#[test]
+fn lan_transfer_links_are_checked_before_they_are_given() {
+    let f = lan_fixture();
+    f.add_dead_host("web", true);
+    f.add_dead_host("closed", false);
+    let port = listen_lan(&f);
+
+    let result = lan_tool(
+        &f,
+        port,
+        "download_file",
+        json!({ "host": "web", "remote_path": "/etc/hostname" }),
+    );
+    assert_eq!(result["isError"], true);
+    assert!(
+        result_text(&result).starts_with("[connect_failed]"),
+        "{result}"
+    );
+    let entry = f.entries()[0].clone();
+    assert_eq!(
+        (entry.action, entry.status, entry.error_code.as_str()),
+        (AuditAction::Download, AuditStatus::Failed, "connect_failed")
+    );
+    assert_eq!(entry.caller, "mcp < http < lan:192.168.1.23");
+    assert_eq!(entry.detail, "/etc/hostname → 192.168.1.23");
+    assert_eq!(entry.host_name, "web");
+
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "closed", "remote_path": "/tmp/a.txt" }),
+    );
+    assert!(
+        result_text(&result).starts_with("[host_not_allowed]"),
+        "{result}"
+    );
+    let entry = f.entries()[0].clone();
+    assert_eq!(entry.action, AuditAction::Upload);
+    assert_eq!(entry.detail, "192.168.1.23 → /tmp/a.txt");
+
+    let audited = f.entries().len();
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "web", "remote_path": "/tmp/" }),
+    );
+    assert!(
+        result_text(&result).starts_with("[bad_request]"),
+        "{result}"
+    );
+    assert_eq!(f.entries().len(), audited, "参数错误不交给 Termlet");
+
+    let unknown = format!("/transfer/{}", "a".repeat(52));
+    let (status, headers, body) =
+        transfer(LAN_SOURCE, port, reqwest::Method::GET, &unknown, None).unwrap();
+    assert_eq!(status, 404);
+    assert_eq!(headers["content-type"], "text/plain; charset=utf-8");
+    assert!(
+        String::from_utf8_lossy(&body).contains("download_file"),
+        "说明怎样取新链接"
+    );
+    assert_eq!(f.entries().len(), audited);
+}
+
+// 连真实 sshd：下载、上传经链接收发（内容不变，覆盖时沿用权限）；只有取链接的电脑能用、方法要对、上传要有
+// Content-Length（这些不算用过）；用过一次后 404；中途断开、对方停住时删除服务器上的临时文件，审计记为已取消；
+// 给链接之前说明路径的问题；监听重启、局域网令牌重新生成后没用过的链接作废
+#[test]
+fn lan_transfer_links_over_ssh() {
+    let Some(server) = crate::testkit::test_server() else {
+        eprintln!("没有设置 TERMLET_TEST_SSH，跳过");
+        return;
+    };
+    use crate::cli::tests::exec_ok;
+    use crate::cli::tests::sshd::{add_server_at, trust};
+    use reqwest::Method;
+    use sha2::{Digest as _, Sha256};
+
+    let mut options = options(MAX_CONNECTIONS);
+    options.transfer_idle = Duration::from_secs(1);
+    let f = lan_fixture_with(options);
+    let id = add_server_at(&f, server, "e2e", Some(crate::testkit::SSH_PASSWORD));
+    trust(&f, &id);
+    let port = listen_lan(&f);
+    let dir = format!("/tmp/termlet-link-{}", crate::id::random_token(4));
+    let shell = |command: &str| exec_ok(f.exec("e2e", command)).stdout;
+    shell(&format!(
+        "mkdir -p {dir} && printf 'hello from server\\n' > {dir}/hello.txt"
+    ));
+    let from_lan = |e: &crate::audit::AuditEntry| e.caller == "mcp < http < lan:192.168.1.23";
+
+    // 下载
+    let result = lan_tool(
+        &f,
+        port,
+        "download_file",
+        json!({ "host": "e2e", "remote_path": format!("{dir}/hello.txt") }),
+    );
+    assert_eq!(result["isError"], false, "{result}");
+    let text = result_text(&result);
+    assert!(
+        text.contains("curl --fail --noproxy 192.168.1.5 -o <local file> http://192.168.1.5:"),
+        "{text}"
+    );
+    assert_eq!(result["structuredContent"]["size"], 18);
+    assert!(!f.entries().iter().any(from_lan), "给出链接不记审计");
+    let path = link_path(&result);
+    let (status, _, body) = transfer(OTHER_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 403, "{}", String::from_utf8_lossy(&body));
+    let (status, headers, _) =
+        transfer(LAN_SOURCE, port, Method::PUT, &path, Some(b"x".to_vec())).unwrap();
+    assert_eq!(status, 405);
+    assert_eq!(headers["allow"], "GET");
+    let (status, headers, body) = transfer(LAN_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 200);
+    assert_eq!(body, b"hello from server\n");
+    assert_eq!(headers["content-length"], "18");
+    assert_eq!(headers["content-type"], "application/octet-stream");
+    assert!(
+        headers["content-disposition"]
+            .to_str()
+            .unwrap()
+            .contains("filename=\"hello.txt\"")
+    );
+    let (status, _, _) = transfer(LAN_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 404, "只能用一次");
+    let entry = wait_entry(&f, "下载的审计", |e| {
+        from_lan(e) && e.action == AuditAction::Download && e.status == AuditStatus::Ok
+    });
+    assert_eq!(entry.bytes, Some(18));
+    assert_eq!(entry.detail, format!("{dir}/hello.txt → 192.168.1.23"));
+    assert_eq!(entry.source, AuditSource::Mcp);
+
+    // 上传：几 MB 的文件（多个分块），覆盖已有的文件时沿用它的权限
+    let data: Vec<u8> = (0..3_000_000u32).map(|i| (i * 7 % 251) as u8).collect();
+    shell(&format!(
+        "printf old > {dir}/up.bin && chmod 640 {dir}/up.bin"
+    ));
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "e2e", "remote_path": format!("{dir}/up.bin") }),
+    );
+    assert!(
+        result_text(&result)
+            .contains("curl --fail-with-body --noproxy 192.168.1.5 -T <local file> http://"),
+        "{result}"
+    );
+    let path = link_path(&result);
+    let chunked = raw_http(
+        LAN_SOURCE,
+        port,
+        &format!(
+            "PUT {path} HTTP/1.1\r\nHost: 192.168.1.5:{port}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
+        ),
+        b"5\r\nhello\r\n0\r\n\r\n",
+        false,
+    );
+    assert!(chunked.starts_with("HTTP/1.1 411"), "{chunked}");
+    let (status, _, body) =
+        transfer(LAN_SOURCE, port, Method::PUT, &path, Some(data.clone())).unwrap();
+    let body = String::from_utf8_lossy(&body).into_owned();
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.starts_with(&format!("已上传 2.9 MB → {dir}/up.bin")),
+        "{body}"
+    );
+    let check = shell(&format!(
+        "sha256sum {dir}/up.bin | cut -c1-64; stat -c %a {dir}/up.bin; ls -a {dir}"
+    ));
+    let sha = data_encoding::HEXLOWER.encode(&Sha256::digest(&data));
+    let mut lines = check.lines();
+    assert_eq!(lines.next(), Some(sha.as_str()), "{check}");
+    assert_eq!(lines.next(), Some("640"), "沿用原来的权限：{check}");
+    assert!(!check.contains("termlet-part"), "{check}");
+    let (status, _, _) =
+        transfer(LAN_SOURCE, port, Method::PUT, &path, Some(b"x".to_vec())).unwrap();
+    assert_eq!(status, 404, "只能用一次");
+    let entry = wait_entry(&f, "上传的审计", |e| {
+        from_lan(e) && e.action == AuditAction::Upload && e.status == AuditStatus::Ok
+    });
+    assert_eq!(entry.bytes, Some(3_000_000));
+    assert_eq!(entry.detail, format!("192.168.1.23 → {dir}/up.bin"));
+
+    // 给链接之前说明路径的问题
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "e2e", "remote_path": dir }),
+    );
+    let text = result_text(&result);
+    assert!(
+        text.starts_with("[bad_request]") && text.contains("是服务器上的目录"),
+        "{text}"
+    );
+    let result = lan_tool(
+        &f,
+        port,
+        "download_file",
+        json!({ "host": "e2e", "remote_path": format!("{dir}/nope") }),
+    );
+    assert!(
+        result_text(&result).starts_with("[path_not_found]"),
+        "{result}"
+    );
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "e2e", "remote_path": format!("{dir}/no/such/dir/a.txt") }),
+    );
+    assert!(
+        result_text(&result).starts_with("[path_not_found]"),
+        "{result}"
+    );
+
+    // 中途断开：不留半截文件，审计记为已取消
+    let canceled_before = f
+        .entries()
+        .iter()
+        .filter(|e| from_lan(e) && e.error_code == "canceled")
+        .count();
+    let cut = |name: &str, hang_up: bool, sent: &[u8]| {
+        let result = lan_tool(
+            &f,
+            port,
+            "upload_file",
+            json!({ "host": "e2e", "remote_path": format!("{dir}/{name}") }),
+        );
+        let path = link_path(&result);
+        raw_http(
+            LAN_SOURCE,
+            port,
+            &format!(
+                "PUT {path} HTTP/1.1\r\nHost: 192.168.1.5:{port}\r\nContent-Length: 1000000\r\n\r\n"
+            ),
+            sent,
+            hang_up,
+        )
+    };
+    cut("cut.bin", true, &vec![b'x'; 65536]);
+    wait_until("中途断开的上传记为已取消", || {
+        f.entries()
+            .iter()
+            .filter(|e| from_lan(e) && e.error_code == "canceled")
+            .count()
+            > canceled_before
+    });
+    // 对方停住：等 1 秒（测试中的时限）后中止，回答 503
+    let stalled = cut("stall.bin", false, b"0123456789");
+    assert!(stalled.starts_with("HTTP/1.1 503"), "{stalled}");
+    assert!(stalled.contains("[canceled]"), "{stalled}");
+    let listing = shell(&format!("ls -a {dir}"));
+    assert!(
+        !listing.contains("cut.bin")
+            && !listing.contains("stall.bin")
+            && !listing.contains("termlet-part"),
+        "不留半截文件：{listing}"
+    );
+
+    // 监听重启（换范围）、局域网令牌重新生成：没用过的链接作废
+    let fresh = |f: &Fixture| {
+        link_path(&lan_tool(
+            f,
+            port,
+            "download_file",
+            json!({ "host": "e2e", "remote_path": format!("{dir}/hello.txt") }),
+        ))
+    };
+    let path = fresh(&f);
+    f.store
+        .update_local_settings(|s| s.cli.http.scope = HttpScope::Local)
+        .unwrap();
+    wait_status(&f, &listening(port));
+    f.store
+        .update_local_settings(|s| s.cli.http.scope = HttpScope::Lan)
+        .unwrap();
+    wait_status(
+        &f,
+        &HttpStatus::Listening {
+            port,
+            scope: HttpScope::Lan,
+        },
+    );
+    let (status, _, _) = transfer(LAN_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 404, "监听重启后作废");
+    let path = fresh(&f);
+    f.service.regenerate_http_token(TokenKind::Lan).unwrap();
+    let (status, _, _) = transfer(LAN_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 404, "局域网令牌重新生成后作废");
+
+    shell(&format!("rm -r {dir}"));
+}
+
+// 连真实 sshd：链接过期后 410（之后 404），过期前照常
+#[test]
+fn lan_transfer_links_expire() {
+    let Some(server) = crate::testkit::test_server() else {
+        eprintln!("没有设置 TERMLET_TEST_SSH，跳过");
+        return;
+    };
+    use crate::cli::tests::sshd::{add_server_at, trust};
+
+    let mut options = options(MAX_CONNECTIONS);
+    options.link_ttl = Duration::from_millis(1500);
+    let f = lan_fixture_with(options);
+    let id = add_server_at(&f, server, "e2e", Some(crate::testkit::SSH_PASSWORD));
+    trust(&f, &id);
+    let port = listen_lan(&f);
+    let result = lan_tool(
+        &f,
+        port,
+        "download_file",
+        json!({ "host": "e2e", "remote_path": "/etc/hostname" }),
+    );
+    assert!(result_text(&result).contains("1 分钟内有效"), "{result}");
+    let path = link_path(&result);
+    std::thread::sleep(Duration::from_millis(1600));
+    let (status, _, body) = transfer(LAN_SOURCE, port, reqwest::Method::GET, &path, None).unwrap();
+    assert_eq!(status, 410);
+    assert!(
+        String::from_utf8_lossy(&body).contains("已过期"),
+        "{}",
+        String::from_utf8_lossy(&body)
+    );
+    let (status, _, _) = transfer(LAN_SOURCE, port, reqwest::Method::GET, &path, None).unwrap();
+    assert_eq!(status, 404);
+}
+
+// 服务器没有 SFTP（testing/nosftp 的临时容器，`TERMLET_TEST_NOSFTP`）：经链接的上传、下载改用 SCP
+#[test]
+fn lan_transfer_links_over_scp() {
+    let Some(server) = crate::testkit::nosftp_server() else {
+        eprintln!("没有设置 TERMLET_TEST_NOSFTP，跳过");
+        return;
+    };
+    use crate::cli::tests::exec_ok;
+    use crate::cli::tests::sshd::{add_server_at, trust};
+    use reqwest::Method;
+
+    let f = lan_fixture();
+    let id = add_server_at(&f, server, "nosftp", Some(crate::testkit::SSH_PASSWORD));
+    trust(&f, &id);
+    let port = listen_lan(&f);
+    let dir = format!("/tmp/termlet-link-scp-{}", crate::id::random_token(4));
+    exec_ok(f.exec("nosftp", &format!("mkdir -p {dir}")));
+    let data: Vec<u8> = (0..300_000u32).map(|i| (i % 253) as u8).collect();
+    let remote = format!("{dir}/up.bin");
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "nosftp", "remote_path": remote }),
+    );
+    let path = link_path(&result);
+    let (status, _, body) =
+        transfer(LAN_SOURCE, port, Method::PUT, &path, Some(data.clone())).unwrap();
+    let body = String::from_utf8_lossy(&body).into_owned();
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("SCP"), "结果中说明改用了 SCP：{body}");
+    let result = lan_tool(
+        &f,
+        port,
+        "download_file",
+        json!({ "host": "nosftp", "remote_path": remote }),
+    );
+    let path = link_path(&result);
+    let (status, _, body) = transfer(LAN_SOURCE, port, Method::GET, &path, None).unwrap();
+    assert_eq!(status, 200);
+    assert_eq!(body, data);
+    // 中途断开：同样删除临时文件
+    let result = lan_tool(
+        &f,
+        port,
+        "upload_file",
+        json!({ "host": "nosftp", "remote_path": format!("{dir}/cut.bin") }),
+    );
+    let path = link_path(&result);
+    raw_http(
+        LAN_SOURCE,
+        port,
+        &format!(
+            "PUT {path} HTTP/1.1\r\nHost: 192.168.1.5:{port}\r\nContent-Length: 1000000\r\n\r\n"
+        ),
+        &vec![b'x'; 65536],
+        true,
+    );
+    wait_entry(&f, "中途断开的上传记为已取消", |e| {
+        e.action == AuditAction::Upload && e.error_code == "canceled"
+    });
+    let listing = exec_ok(f.exec("nosftp", &format!("ls -a {dir}; rm -r {dir}"))).stdout;
+    assert!(
+        !listing.contains("termlet-part") && !listing.contains("cut.bin"),
+        "{listing}"
+    );
 }

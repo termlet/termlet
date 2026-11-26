@@ -5,10 +5,11 @@ use std::fs::Metadata;
 use std::io::SeekFrom;
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use russh_sftp::client::error::Error as ClientError;
 use russh_sftp::protocol::{FileAttributes, OpenFlags, StatusCode};
-use tokio::io::{AsyncSeekExt, BufReader};
+use tokio::io::{AsyncRead, AsyncSeekExt, BufReader};
 
 use super::{FileError, PartPath, Partial, Transfer, claim_remote_part};
 use crate::sftp::backend::Backend;
@@ -312,6 +313,77 @@ pub(crate) async fn upload_file(
     t.set_part(None);
     let _ = client.setstat(&remote, time_attrs(mtime)).await;
     Ok(())
+}
+
+/// 把 `reader` 中正好 `size` 字节写成服务器上的 `remote`（经 HTTP 收到的文件，见 `single::put_stream`）：先写同目录下
+/// 的一次性临时文件，收齐后改名（覆盖已有文件时沿用它的权限）；没收齐、出错、取消时删除临时文件，服务器上的文件保持
+/// 原样（不继续传输）。`reader` 读出错是对方（发送的一端）的问题，报告为本机一侧的失败。返回实际写入的路径（`remote`
+/// 是指向普通文件的符号链接时为它指向的文件）。
+pub(crate) async fn upload_stream<R: AsyncRead + Unpin>(
+    client: &SftpClient,
+    ctx: &Cancel,
+    reader: &mut R,
+    size: u64,
+    remote: &str,
+    progress: &AtomicU64,
+) -> Result<String, SftpError> {
+    let mut remote = remote.to_string();
+    let mut existing = client.lstat(&remote).await.ok();
+    if let Some(target) = link_target(client, &remote).await {
+        existing = client.stat(&target).await.ok();
+        remote = target;
+    }
+    if existing.as_ref().is_some_and(|e| !is_regular(e)) {
+        return Err(Rejection::NotRegularFile.into());
+    }
+    let mode = existing.as_ref().map(perm_bits);
+    let part = remote_temp_part(&remote);
+    let flags = OpenFlags::WRITE | OpenFlags::CREATE | OpenFlags::EXCLUDE;
+    let attrs = mode.map(perm_attrs).unwrap_or_else(FileAttributes::empty);
+    let handle = client
+        .open(&part, flags, attrs)
+        .await
+        .map_err(|e| error::remote(&remote, &e))?;
+    let written = client.write_from(&handle, 0, reader, ctx, progress).await;
+    let closed = client.close_handle(&handle).await;
+    let failure = match (written, closed) {
+        (Ok(end), Ok(())) if end == size => None,
+        (Ok(end), Ok(())) => Some(SftpError::failed(
+            Side::Local,
+            &remote,
+            format!("只收到 {end} / {size} 字节"),
+        )),
+        (Ok(_), Err(e)) => Some(write_error(client, &remote, &part, &e).await),
+        (Err(f), _) => Some(match f.error {
+            PipeError::Remote(e) => write_error(client, &remote, &part, &e).await,
+            PipeError::Local(e) => SftpError::failed(Side::Local, &remote, e.to_string()),
+            PipeError::Canceled => SftpError::Canceled,
+            PipeError::TooLarge => SftpError::failed(Side::Remote, &remote, "超过上限"),
+        }),
+    };
+    if let Some(error) = failure {
+        let _ = client.remove(&part).await;
+        return Err(if ctx.is_canceled() {
+            SftpError::Canceled
+        } else {
+            error
+        });
+    }
+    if let Some(mode) = mode {
+        let _ = client.setstat(&part, perm_attrs(mode)).await;
+    }
+    if let Err(e) = client.posix_rename(&part, &remote).await {
+        let renamed = if client.rename_unsupported(&e) {
+            rename_replacing(client, &part, &remote, existing.is_some()).await
+        } else {
+            Err(error::remote(&remote, &e))
+        };
+        if let Err(e) = renamed {
+            let _ = client.remove(&part).await;
+            return Err(e);
+        }
+    }
+    Ok(remote)
 }
 
 /// 新建上传用的远程临时文件 `p.part`：先删掉以前留下的同名文件，再带 EXCLUDE 创建（不会写进别人预先放好的

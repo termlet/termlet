@@ -55,7 +55,6 @@ pub(super) const LONG_DESCRIPTIONS: &[(&str, usize)] = &[
     ("cli_ui.http.note_windows", 118),
     ("cli_ui.intro", 126),
     ("cli_ui.mcp.hint", 280),
-    ("cli_ui.mcp.lan_target_note", 64),
     ("cli_ui.rules.custom_hint", 59),
     ("cli_ui.rules.hint", 178),
     ("cli_ui.skill.hint", 160),

@@ -10,11 +10,11 @@ use crate::ssh::{self, Answer, ConnectOptions};
 use crate::testkit::{SSH_PASSWORD, SSH_USER, test_server};
 
 /// 允许命令行访问的测试服务器；`password` 为空时不保存密码。
-fn add_server(f: &Fixture, name: &str, password: Option<&str>) -> HostId {
+pub(in crate::cli) fn add_server(f: &Fixture, name: &str, password: Option<&str>) -> HostId {
     add_server_at(f, test_server().unwrap(), name, password)
 }
 
-fn add_server_at(
+pub(in crate::cli) fn add_server_at(
     f: &Fixture,
     (address, port): (String, u16),
     name: &str,
@@ -51,7 +51,7 @@ fn add_server_at(
 }
 
 /// 先在"界面"中连接一次并确认指纹（命令行不能询问）。
-fn trust(f: &Fixture, host: &HostId) {
+pub(in crate::cli) fn trust(f: &Fixture, host: &HostId) {
     let store = f.store.clone();
     let host = host.clone();
     crate::runtime::runtime().block_on(async move {

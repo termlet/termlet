@@ -44,8 +44,9 @@ const CACHE_TTL_MS: u64 = 60 * 60 * 1000;
 /// 给 AI 的说明（`initialize`、`server/discover` 的 `instructions`）。
 const INSTRUCTIONS: &str = "Termlet is the user's SSH client. These tools list the servers saved in Termlet that the user allows AI tools to use, run shell commands on them and transfer single files, with credentials that stay inside Termlet (you never see passwords or keys). Use them instead of running ssh, scp or sftp yourself. Start with list_hosts and pass a host's id or name to the other tools. Every call goes through the user's settings in Termlet: the external CLI switch, per-host access, dangerous-command rules that need the user's approval, and an audit log. If a call fails with command_denied or command_blocked, do not try to get around the rule; tell the user and let them run the command themselves.";
 
-/// 局域网中的客户端看到的说明：没有传文件的工具，小的文本文件用 `run_command` 读写。
-const INSTRUCTIONS_LAN: &str = "Termlet is the user's SSH client. These tools list the servers saved in Termlet that the user allows AI tools to use and run shell commands on them, with credentials that stay inside Termlet (you never see passwords or keys). Use them instead of running ssh yourself. You are connected to Termlet over the local network from another computer, so there are no file transfer tools: upload_file and download_file would read and write files on the computer running Termlet, not on yours. For small text files, use run_command: cat to read a file, and a heredoc (cat > file <<'EOF' ... EOF) to write one. Start with list_hosts and pass a host's id or name to run_command. Every call goes through the user's settings in Termlet: the external CLI switch, per-host access, dangerous-command rules that need the user's approval, and an audit log. If a call fails with command_denied or command_blocked, do not try to get around the rule; tell the user and let them run the command themselves.";
+/// 局域网中的客户端看到的说明：传文件的工具只给出一次性链接，用 curl 收发；不能运行命令时小的文本文件用
+/// `run_command` 读写。
+const INSTRUCTIONS_LAN: &str = "Termlet is the user's SSH client. These tools list the servers saved in Termlet that the user allows AI tools to use, run shell commands on them and transfer single files, with credentials that stay inside Termlet (you never see passwords or keys). Use them instead of running ssh, scp or sftp yourself. Start with list_hosts and pass a host's id or name to the other tools. You are connected to Termlet over the local network from another computer, so upload_file and download_file only take the path on the server: each returns a one-time link and the exact curl command to run on your computer (curl --fail-with-body --noproxy <address> -T <local file> <link> to upload, curl --fail --noproxy <address> -o <local file> <link> to download; in Windows PowerShell type curl.exe). The file then streams between your computer and the server through Termlet and never passes through this conversation. If you can't run commands on your computer, use run_command with cat to read small text files and a heredoc (cat > file <<'EOF' ... EOF) to write them. Every call goes through the user's settings in Termlet: the external CLI switch, per-host access, dangerous-command rules that need the user's approval, and an audit log. If a call fails with command_denied or command_blocked, do not try to get around the rule; tell the user and let them run the command themselves.";
 
 /// 请求没有 `_meta` 中的版本、之前也没有 `initialize` 时的说明。
 const NOT_INITIALIZED: &str = "missing _meta[\"io.modelcontextprotocol/protocolVersion\"]: include it in every request (protocol 2026-07-28), or send initialize first (2025-11-25 and earlier)";
@@ -56,7 +57,7 @@ pub enum Reach {
     /// 这台电脑上的 AI 工具（stdio，或经回环地址的 HTTP）
     #[default]
     Local,
-    /// 局域网中的另一台电脑：只有不碰这台电脑上的文件的工具（见 [`Tool::local_files`]）
+    /// 局域网中的另一台电脑：碰不到这台电脑上的文件，传文件的工具改为给出一次性传输链接（见 [`Tool::local_files`]）
     Lan,
 }
 
@@ -253,10 +254,10 @@ impl ToolCall {
             .collect()
     }
 
-    /// 这个客户端不能用这个工具时的结果（局域网中的客户端调用传文件的工具），不交给 Termlet；能用时为 `None`。
-    pub fn refusal(&self, lang: Lang) -> Option<Outcome> {
-        (self.reach == Reach::Lan && self.tool.local_files())
-            .then(|| tools::lan_unavailable(self.tool, lang))
+    /// 局域网中的客户端调用传文件的工具：不读写这台电脑上的文件，由传输层给出一次性传输链接（参数见
+    /// [`tools::link_request`]）。
+    pub fn via_link(&self) -> bool {
+        self.reach == Reach::Lan && self.tool.local_files()
     }
 
     /// 这个调用的进度通知；客户端没有在请求中要（没有 `progressToken`）时为 `None`，不发。

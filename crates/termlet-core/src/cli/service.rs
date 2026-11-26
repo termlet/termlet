@@ -207,7 +207,12 @@ impl CliService {
     /// 重新生成 HTTP 令牌（本机的或局域网的，另一个不变），立即生效（用旧令牌的 AI 工具随即被拒绝），返回新令牌。
     /// 保险库锁定时返回 [`crate::CoreError::VaultLocked`]。在后台执行器上调用。
     pub fn regenerate_http_token(&self, kind: TokenKind) -> crate::Result<SecretString> {
-        http::token::regenerate(&self.shared.store, kind)
+        let token = http::token::regenerate(&self.shared.store, kind)?;
+        // 撤销局域网中的电脑：它们没用过的传输链接一起作废
+        if kind == TokenKind::Lan {
+            self.http.clear_links();
+        }
+        Ok(token)
     }
 
     /// 监听的通道。

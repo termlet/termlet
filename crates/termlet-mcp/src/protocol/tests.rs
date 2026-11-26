@@ -304,10 +304,10 @@ fn progress_follows_the_token() {
     assert!(legacy_call("2025-11-25", json!(1.5)).progress().is_none());
 }
 
-// 局域网中的客户端：说明中写明没有传文件的工具、怎样用 run_command 读写小文件；tools/list 只有两个工具；直接调用
-// 传文件的工具时交给传输层的调用带着 Lan，由 refusal 给出工具执行错误（不交给 Termlet）
+// 局域网中的客户端：说明中写明传文件用一次性链接与 curl、不能运行命令时怎样用 run_command 读写小文件；tools/list
+// 同样五个工具，传文件的只要服务器上的路径；调用传文件的工具时交给传输层的调用带着 Lan（via_link，取传输链接）
 #[test]
-fn lan_clients_see_three_tools() {
+fn lan_clients_transfer_through_links() {
     let init = |reach| {
         let params = json!({
             "protocolVersion": "2025-11-25",
@@ -324,7 +324,10 @@ fn lan_clients_see_three_tools() {
         .unwrap()
         .to_string();
     assert!(
-        lan.contains("local network") && lan.contains("heredoc"),
+        lan.contains("local network")
+            && lan.contains("heredoc")
+            && lan.contains("curl --fail-with-body --noproxy <address> -T")
+            && lan.contains("curl.exe"),
         "{lan}"
     );
     let local = init(Reach::Local)["result"]["instructions"]
@@ -349,10 +352,16 @@ fn lan_clients_see_three_tools() {
         Some(&session),
         Reach::Lan,
     ));
-    assert_eq!(
-        names(&listed),
-        ["list_hosts", "run_command", "run_command_on_hosts"]
-    );
+    let five = [
+        "list_hosts",
+        "run_command",
+        "run_command_on_hosts",
+        "upload_file",
+        "download_file",
+    ];
+    assert_eq!(names(&listed), five);
+    let upload = &listed["result"]["tools"][3]["inputSchema"]["properties"];
+    assert!(upload["remote_path"].is_object() && upload.get("local_path").is_none());
     let modern = reply(request_in(
         &json!(3),
         "tools/list",
@@ -360,10 +369,7 @@ fn lan_clients_see_three_tools() {
         None,
         Reach::Lan,
     ));
-    assert_eq!(
-        names(&modern),
-        ["list_hosts", "run_command", "run_command_on_hosts"]
-    );
+    assert_eq!(names(&modern), five);
     let discover = reply(request_in(
         &json!(4),
         "server/discover",
@@ -385,21 +391,14 @@ fn lan_clients_see_three_tools() {
             other => panic!("应交给传输层执行：{other:?}"),
         }
     };
-    let refused = call("download_file", Reach::Lan).refusal(Lang::En).unwrap();
-    assert!(refused.is_error());
-    assert!(call("run_command", Reach::Lan).refusal(Lang::En).is_none());
-    assert!(call("list_hosts", Reach::Lan).refusal(Lang::En).is_none());
-    assert!(
-        call("run_command_on_hosts", Reach::Lan)
-            .refusal(Lang::En)
-            .is_none()
-    );
-    assert!(
-        call("upload_file", Reach::Local)
-            .refusal(Lang::En)
-            .is_none()
-    );
-    // 本机的客户端照旧全部五个工具
+    assert!(call("download_file", Reach::Lan).via_link());
+    assert!(call("upload_file", Reach::Lan).via_link());
+    assert!(!call("run_command", Reach::Lan).via_link());
+    assert!(!call("list_hosts", Reach::Lan).via_link());
+    assert!(!call("run_command_on_hosts", Reach::Lan).via_link());
+    assert!(!call("upload_file", Reach::Local).via_link());
+    // 本机的客户端照旧全部五个工具，传文件的要本机路径
     let all = reply(request(&json!(6), "tools/list", None, Some(&session)));
-    assert_eq!(names(&all).len(), 5);
+    assert_eq!(names(&all), five);
+    assert!(all["result"]["tools"][3]["inputSchema"]["properties"]["local_path"].is_object());
 }

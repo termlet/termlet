@@ -1,7 +1,7 @@
 //! 命令行服务的测试：真实的本机通道（每个测试一个临时数据目录，通道名各不相同）+ 内存中的存储，
 //! 用 `termlet-proto` 的同步客户端发请求；界面由一个后台线程模拟（批准、在终端中执行）。
 
-mod sshd;
+pub(super) mod sshd;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

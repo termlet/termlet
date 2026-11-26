@@ -25,11 +25,11 @@ use tokio::sync::{OnceCell, mpsc, watch};
 
 use super::state::{self, Rejected};
 use super::token::TokenKind;
-use super::{Inner, peer, token};
+use super::{Inner, link, peer, token};
 use crate::cli::handler;
-use crate::cli::service::{Cancel, InFlight, Shared};
+use crate::cli::service::{Cancel, InFlight};
 
-type HttpBody = BoxBody<Bytes, Infallible>;
+pub(super) type HttpBody = BoxBody<Bytes, Infallible>;
 
 /// 读一个请求头的时限：也是空闲的长连接多久后关闭（占着连接数的上限）。
 const HEADER_TIMEOUT: Duration = Duration::from_secs(30);
@@ -68,8 +68,13 @@ impl Conn {
         })
     }
 
+    /// 对方的地址（IPv4 映射的 IPv6 按 IPv4）。
+    pub(super) fn peer_ip(&self) -> IpAddr {
+        self.peer.ip().to_canonical()
+    }
+
     /// 被拒绝时日志中记下的对方地址：局域网的连接才记。
-    fn from(&self) -> Option<IpAddr> {
+    pub(super) fn from(&self) -> Option<IpAddr> {
         (self.reach == Reach::Lan).then_some(self.peer.ip())
     }
 
@@ -184,6 +189,11 @@ async fn handle(
             StatusCode::FORBIDDEN,
             "Forbidden: requests from web pages (with an Origin header) are not accepted",
         );
+    }
+    // 局域网中的客户端取的一次性传输链接：链接本身就是凭据，不要令牌
+    if let Some(token) = request.uri().path().strip_prefix(link::TRANSFER_PATH) {
+        let token = token.to_string();
+        return link::serve(inner, conn, &token, request).await;
     }
     if request.uri().path() != HTTP_PATH {
         return empty(StatusCode::NOT_FOUND);
@@ -404,8 +414,7 @@ async fn tool_call(
     session: Option<String>,
     call: ToolCall,
 ) -> Response<HttpBody> {
-    let shared = inner.shared.clone();
-    let lang = shared.lang();
+    let lang = inner.shared.lang();
     let mut rest = vec![CALLER_HTTP.to_string()];
     rest.extend(conn.callers().await);
     let callers = call.callers(rest);
@@ -414,10 +423,23 @@ async fn tool_call(
     let tracked = inner
         .state
         .track(session, call.id.to_string(), gone_tx.clone());
-    let cancel = Cancel::new(gone.clone(), shared.shutdown.subscribe());
+    let cancel = Cancel::new(gone.clone(), inner.shared.shutdown.subscribe());
     tracing::debug!(tool = call.tool.name(), "MCP 的 HTTP：调用工具");
     let progress = call.progress();
-    let work = run(shared, call, callers, lang, cancel, gone);
+    // 传输链接用客户端连来时的地址（Host 已核对过是这台电脑）
+    let authority = header_str(headers, header::HOST.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let work = run(
+        inner.clone(),
+        conn.clone(),
+        authority,
+        call,
+        callers,
+        lang,
+        cancel,
+        gone,
+    );
     if !accepts_event_stream(headers) {
         let reply = work.await;
         drop(tracked);
@@ -476,26 +498,31 @@ async fn tool_call(
 }
 
 /// 执行一个工具调用：检查参数、交给处理命令行请求的同一套代码、写出结果。被取消（客户端断开）时为 `None`：不再回答。
+/// 局域网中的客户端传文件时给出一次性传输链接（[`link::offer`]），`authority` 是链接中的地址。
+#[allow(clippy::too_many_arguments)]
 async fn run(
-    shared: Arc<Shared>,
+    inner: Arc<Inner>,
+    conn: Arc<Conn>,
+    authority: String,
     call: ToolCall,
     callers: Vec<String>,
     lang: Lang,
     cancel: Cancel,
     gone: watch::Receiver<bool>,
 ) -> Option<Value> {
-    // 局域网中的客户端调用传文件的工具：不交给 Termlet
-    if let Some(refusal) = call.refusal(lang) {
-        return Some(call.reply(refusal));
+    if call.via_link() {
+        let outcome = link::offer(&inner, &conn, &authority, &call, callers, lang, cancel).await;
+        return (!*gone.borrow()).then(|| call.reply(outcome));
     }
+    let shared = &inner.shared;
     let request = match tools::request(call.tool, &call.arguments, lang, &callers, call.reach) {
         Ok(request) => request,
         Err(outcome) => return Some(call.reply(outcome)),
     };
     let terminal = tools::in_terminal(&request);
     let response = {
-        let _busy = InFlight::enter(&shared);
-        handler::handle(&shared, lang, request, cancel).await
+        let _busy = InFlight::enter(shared);
+        handler::handle(shared, lang, request, cancel).await
     };
     if *gone.borrow() {
         tracing::debug!(

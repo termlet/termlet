@@ -61,7 +61,9 @@ pub use local::{
 pub use manager::{ManagerOptions, SftpEvent, SftpManager, SshTarget};
 pub use names::{MAX_NAME_LEN, PART_SUFFIX, is_reserved_name, safe_name};
 pub use session::{ChmodRequest, ChmodScope, SessionId, SessionInfo, SessionState, SftpSession};
-pub use single::{Transferred, get_file, put_file};
+pub use single::{
+    Probe, RemoteReader, Transferred, get_file, open_reader, probe, put_file, put_stream,
+};
 pub use sudo::{SudoAsker, SudoError, SudoPrompt};
 pub use transfer::batch::{BatchId, BatchReport, BatchSummary, QUIET};
 pub use transfer::{
