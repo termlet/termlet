@@ -156,7 +156,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
       # arm64 的核心测试（与 arm64.yml 相同；x64 的由 windows.yml 测过）：预编译的 cargo-nextest，与 ci.yml 的版本相同
       - if: matrix.arch == 'arm64'
-        uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
+        uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2.90.6
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
@@ -267,7 +267,7 @@ jobs:
             libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libfontconfig-dev libfreetype-dev nodejs
       # arm64 的核心测试（与 arm64.yml 相同；x64 的由 ci.yml 测过）。install-action 在容器中缺 jq 时自己用 apt 装上
       - if: matrix.arch == 'arm64'
-        uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
+        uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2.90.6
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
