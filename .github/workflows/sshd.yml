@@ -48,7 +48,7 @@ jobs:
           shared-key: linux-core
           save-if: false
       # 预编译的二进制（校验发布页的 SHA-256），不从源码编译
-      - uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
+      - uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2.90.6
         with:
           tool: cargo-nextest@0.9.150
           fallback: none
