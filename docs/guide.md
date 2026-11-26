@@ -23,7 +23,7 @@
 - [同步](#同步)：[同步什么](#同步什么) · [同步位置](#同步位置) · [加密](#加密) · [合并](#合并) · [保护](#保护) · [自动同步](#自动同步)
 - [界面与设置](#界面与设置)：[设置的各页](#设置的各页) · [字体与光标](#字体与光标) · [侧边栏](#侧边栏) · [窗口与标题栏](#窗口与标题栏) · [工具栏](#工具栏) · [启动时打开](#启动时打开)
 - [更新、诊断与卸载](#更新诊断与卸载)：[更新](#更新) · [使用统计](#使用统计) · [诊断信息](#诊断信息) · [日志](#日志) · [崩溃记录](#崩溃记录) · [卸载](#卸载)
-- [命令行工具与 AI](#命令行工具与-ai)：[开启](#开启) · [Agent Skill](#agent-skill) · [MCP 服务](#mcp-服务) · [MCP 的 HTTP 接入](#mcp-的-http-接入) · [MCP 的局域网访问](#mcp-的局域网访问) · [输出](#输出) · [退出码](#退出码) · [上传与下载](#上传与下载) · [主机名与大小限制](#主机名与大小限制) · [`exec --terminal`](#exec---terminal) · [危险命令](#危险命令) · [审计](#审计) · [PATH](#path) · [限制](#限制)
+- [命令行工具与 AI](#命令行工具与-ai)：[开启](#开启) · [Agent Skill](#agent-skill) · [MCP 服务](#mcp-服务) · [MCP 的 HTTP 接入](#mcp-的-http-接入) · [MCP 的局域网访问](#mcp-的局域网访问) · [输出](#输出) · [退出码](#退出码) · [上传与下载](#上传与下载) · [主机名与大小限制](#主机名与大小限制) · [`exec --terminal`](#exec---terminal) · [危险命令](#危险命令) · [审计](#审计) · [PATH](#path) · [在 WSL 中](#在-wsl-中) · [限制](#限制)
 - [已知限制](#已知限制)
 
 ## 安装
@@ -1771,7 +1771,7 @@ termlet version
   | `upload_file` | `upload` |
   | `download_file` | `download` |
 
-- `upload_file`、`download_file` 的本机路径须为绝对路径（Termlet 这台电脑上的路径）；局域网中的电脑传文件改用一次性传输链接，见 [MCP 的局域网访问](#mcp-的局域网访问)。
+- `upload_file`、`download_file` 的本机路径须为绝对路径（Termlet 这台电脑上的路径，WSL 中的写法见[在 WSL 中](#在-wsl-中)）；局域网中的电脑传文件改用一次性传输链接，见 [MCP 的局域网访问](#mcp-的局域网访问)。
 - 每次调用照常经过 Termlet："允许 AI 工具与脚本访问"的开关、按主机授权、危险命令的批准、审计日志与"凭据不出 Termlet"都与命令行工具相同。
 - 审计日志的来源一栏写“MCP（客户端名）”，经 HTTP 的写“MCP·HTTP（客户端名）”，局域网中的另一台电脑来的写“MCP·局域网 <对方的地址>（客户端名）”，可以单独筛选出来。调用方前面是 `mcp:<客户端名>`，经 HTTP 的接着是 `http` 与发起连接的进程链（Windows、Linux 上记录），局域网来的是 `lan:<对方的地址>`。
 - 危险命令的批准框标题写明是哪个 AI 工具，如“Claude Code（MCP）要在…上执行危险命令”：常见的 AI 工具写产品名，其他写它自报的名字；没有品牌标志的配上通用的 AI 图标。
@@ -1964,6 +1964,19 @@ termlet exec <主机> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev
 - Windows 上命令位于安装目录的 `bin\termlet.exe`。可在设置的"AI 与自动化"中一键"加入 PATH"（当前用户的 PATH，新打开的终端中生效；卸载时自动移除，重装时换了安装位置会自动改到新位置）。
 - macOS、Linux 上 Termlet 不修改 PATH，设置的"AI 与自动化"中给出手动链接的命令（如 `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`）。
 - Linux 的 deb、rpm 装好后命令就是 `/usr/bin/termlet`，tar.gz 中的 `install.sh` 会把它链接为 `~/.local/bin/termlet`，AppImage 要自己链接（见 [Linux](#linux)）。
+
+### 在 WSL 中
+
+- Termlet 装在 Windows 上，WSL 中的 AI 工具与脚本经 `termlet.exe` 使用它：WSL 默认把 Windows 的 PATH 带进来，在设置中“加入 PATH”后，新打开的 WSL 中就能直接运行。命令、输出与退出码与 Windows 上相同，凭据、设置与审计都在 Windows 上的 Termlet 中。
+- 想用 `termlet` 这个名字：`ln -s "$(command -v termlet.exe)" ~/.local/bin/termlet`。不要用 `alias`，AI 工具执行命令的 shell 不展开它。
+- 本机路径（上传、下载、`--script`、`--input`、`--output-dir`、`-H @文件`、`skill install --dir`）：
+  - 相对路径照常按当前目录解析；
+  - `/mnt/c/…` 换成 `C:\…`；
+  - WSL 中的绝对路径（如 `/home/…`）在当前目录也在 WSL 中时换成 `\\wsl.localhost\<发行版>\home\…`；当前目录在 `/mnt/…` 下时不知道是哪个发行版，报用法错误（退出码 1），请改用相对路径、先进入 WSL 中的目录，或写成 `"$(wslpath -w /home/…)"`。
+- Agent Skill 要装到 WSL 中：`termlet.exe skill install --dir "$(wslpath -w ~/.claude/skills)"`（Codex 等读通用目录的工具用 `~/.agents/skills`）。不带 `--dir` 时装到 Windows 的用户目录，WSL 中的 AI 工具读不到。
+- MCP：在 WSL 中的 AI 工具里把命令写成 `termlet.exe`、参数 `mcp`（如 `claude mcp add termlet -- termlet.exe mcp`）；设置页给出的片段中是 Windows 的路径，在 WSL 中不能直接用。
+- MCP 的 `local_path` 只收绝对路径：`/mnt/c/…` 照样换算；`/home/…` 这类只在 AI 工具从 WSL 中的目录启动 `termlet mcp` 时换算，其余情况报参数错误，要给 Windows 的路径（`wslpath -w` 的结果，如 `\\wsl.localhost\Ubuntu\…`）。经 HTTP 接入时总是这样：Termlet 在自己的程序目录中运行，不知道是哪个发行版。
+- 在 WSL 的终端中直接运行时输出可读文本；标准输入、输出、错误中有一个被重定向时（如 `2>/dev/null`），WSL 把三个都换成管道，输出 JSON。
 
 ### 限制
 

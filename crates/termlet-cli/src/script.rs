@@ -15,8 +15,9 @@ use crate::messages;
 /// 能用 `-s` 从标准输入读脚本的 shell。
 const SHELLS: [&str; 6] = ["bash", "sh", "zsh", "dash", "ksh", "ash"];
 
-/// 读本机文件（最多 1MB 的 UTF-8 文本）。
+/// 读本机文件（最多 1MB 的 UTF-8 文本；WSL 中的写法先换算，见 `termlet_mcp::local_path`）。
 pub fn read_text(path: &str, lang: Lang) -> Result<String, String> {
+    let path = &termlet_mcp::local_path::from_wsl(path, lang)?;
     let data = std::fs::read(path).map_err(|e| messages::READ_FILE.fill(lang, &[&path, &e]))?;
     if data.len() > MAX_STDIN_COMMAND {
         return Err(messages::FILE_TOO_LARGE.fill(lang, &[&path]));

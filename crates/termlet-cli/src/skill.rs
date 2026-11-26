@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
+use termlet_mcp::local_path;
 use termlet_proto::ExitCode;
 use termlet_proto::skill::{self, Agent};
 
@@ -79,12 +80,15 @@ fn home_dir() -> Option<PathBuf> {
 /// 解析 `install [--agent claude|agents|workbuddy | --dir <目录>]`，默认 Claude Code。
 /// `codex` 等同 `agents`：Codex 已改为读取通用目录 `~/.agents/skills`，不再安装到它的旧位置。
 /// `pi` 也等同 `agents`：Pi 除了自己的 `~/.pi/agent/skills`，也读取通用目录。
+/// `--dir` 是 WSL 中的写法时先换算（WSL 中的 AI 工具读 WSL 中的 `~/.claude/skills`，见 `termlet_mcp::local_path`）。
 pub fn parse_install(args: &[String], lang: Lang) -> Result<Where, String> {
     let usage = || messages::USAGE_SKILL.get(lang).to_string();
     match args {
         [install] if install == "install" => Ok(Where::Agent(Agent::ClaudeCode)),
         [install, flag, value] if install == "install" => match (flag.as_str(), value.as_str()) {
-            ("--dir", dir) if !dir.is_empty() => Ok(Where::Dir(PathBuf::from(dir))),
+            ("--dir", dir) if !dir.is_empty() => {
+                Ok(Where::Dir(PathBuf::from(local_path::from_wsl(dir, lang)?)))
+            }
             ("--agent", "codex" | "pi") => Ok(Where::Agent(Agent::Generic)),
             ("--agent", name) => Agent::parse(name)
                 .filter(|a| Agent::ALL.contains(a))
@@ -143,6 +147,19 @@ mod tests {
             &["install", "--agent", "cursor"],
         ] {
             assert!(parse_install(&args(bad), Lang::Zh).is_err(), "{bad:?}");
+        }
+        // 在 WSL 中运行 termlet.exe：/mnt/c/… 换成 C:\…；当前目录不在 WSL 中时 ~/.claude/skills 报错，不装到 C:\home\…
+        if cfg!(windows) {
+            assert_eq!(
+                parse_install(&args(&["install", "--dir", "/mnt/c/skills"]), Lang::Zh),
+                Ok(Where::Dir(r"C:\skills".into()))
+            );
+            let error = parse_install(
+                &args(&["install", "--dir", "/home/u/.claude/skills"]),
+                Lang::Zh,
+            )
+            .unwrap_err();
+            assert!(error.contains("wslpath -w"), "{error}");
         }
     }
 

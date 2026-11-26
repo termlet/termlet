@@ -8,7 +8,6 @@
 //! 它会写下原因（`run/cli.unavailable`），这里据此说明，而不是一直等到超时。
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 use termlet_proto::client::{CallError, Client, ConnectError};
@@ -113,7 +112,7 @@ pub fn connect(lang: Lang) -> Result<Client, Failure> {
         return Err(not_running(lang));
     }
     crate::debug::debug!("Termlet 没有运行，以无窗口模式拉起");
-    launch(app.as_deref(), lang)?;
+    launch(app.as_deref(), &data_dir.path, lang)?;
     let started = Instant::now();
     let deadline = started + START_TIMEOUT;
     loop {
@@ -149,32 +148,111 @@ fn data_dir_of(app: Option<&Path>) -> Result<endpoint::ResolvedDataDir, endpoint
     endpoint::data_dir_for(app.and_then(Path::parent))
 }
 
-/// 以 headless 模式拉起 Termlet（不随命令行工具退出）。
-fn launch(app: Option<&Path>, lang: Lang) -> Result<(), Failure> {
+/// 以 headless 模式拉起 Termlet（不随命令行工具退出）。`data_dir` 是解析好的数据目录（绝对路径）。
+fn launch(app: Option<&Path>, data_dir: &Path, lang: Lang) -> Result<(), Failure> {
     let app = app.ok_or_else(|| connect_error(messages::APP_NOT_FOUND.get(lang).into()))?;
     crate::debug::debug!("启动 {} --headless", app.display());
-    let mut command = Command::new(app);
-    command
+    spawn_detached(app, data_dir).map_err(|e| connect_error(messages::APP_START.fill(lang, &[&e])))
+}
+
+/// Unix 上沿用调用方的当前目录与环境（相对的 `TERMLET_DATA_DIR` 照样解析到同一处）。
+#[cfg(unix)]
+fn spawn_detached(app: &Path, _data_dir: &Path) -> std::io::Result<()> {
+    use std::os::unix::process::CommandExt;
+    use std::process::{Command, Stdio};
+    Command::new(app)
         .arg("--headless")
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const DETACHED_PROCESS: u32 = 0x0000_0008;
-        const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-        command.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::process::CommandExt;
-        command.process_group(0);
-    }
-    command
+        .stderr(Stdio::null())
+        .process_group(0)
         .spawn()
         .map(drop)
-        .map_err(|e| connect_error(messages::APP_START.fill(lang, &[&e])))
+}
+
+/// Windows 上不用 `Command`，自己调用 `CreateProcessW`：
+///
+/// - 不继承任何句柄。`Command` 总是带上本进程全部可继承的句柄，调用方交给 termlet 的标准输入输出（多是管道）与
+///   termlet 从上级继承来的都在其中，`Stdio::null()` 只换掉子进程的标准句柄：拉起的 Termlet 会一直开着这些管道，
+///   读到结束才返回的调用方（AI 工具捕获输出、`$(…)`、MCP 客户端）要等它退出（10 分钟没有请求后）。Termlet
+///   用不到标准输入输出（没有控制台，日志写文件）。
+/// - 当前目录是程序所在的目录，与从开始菜单启动时相同：不占住调用方所在的目录（Windows 上被占着的目录删不掉），
+///   也不停在 WSL 的目录（`\wsl.localhost\…`）中；应用内 HTTP 的 MCP 换算本机路径看的是应用的当前目录
+///   （`termlet_mcp::local_path`），这样规则不随 Termlet 是从哪里拉起的而变。为此相对的 `TERMLET_DATA_DIR`
+///   换成解析好的绝对路径再交给 Termlet，两边仍是同一个数据目录。
+#[cfg(windows)]
+fn spawn_detached(app: &Path, data_dir: &Path) -> std::io::Result<()> {
+    use std::ffi::{OsStr, OsString};
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::Threading::{
+        CREATE_NEW_PROCESS_GROUP, CREATE_UNICODE_ENVIRONMENT, CreateProcessW, DETACHED_PROCESS,
+        PROCESS_INFORMATION, STARTUPINFOW,
+    };
+    let app = std::path::absolute(app)?;
+    let dir = app.parent().unwrap_or(&app);
+    let wide = |text: &OsStr| -> Vec<u16> { text.encode_wide().chain(Some(0)).collect() };
+    let application = wide(app.as_os_str());
+    let directory = wide(dir.as_os_str());
+    // Windows 的路径中不会有引号
+    let mut line = OsString::from("\"");
+    line.push(app.as_os_str());
+    line.push("\" --headless");
+    let mut line = wide(&line);
+    let environment = environment_with_data_dir(data_dir);
+    // SAFETY: 两个结构都是全零即有效的 C 结构
+    let mut startup: STARTUPINFOW = unsafe { std::mem::zeroed() };
+    startup.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
+    let mut info: PROCESS_INFORMATION = unsafe { std::mem::zeroed() };
+    // SAFETY: 程序路径、命令行（可写）与当前目录是以 0 结尾的宽字符串，环境块以两个 0 结尾（没有时沿用本进程的）；
+    // 成功时关闭返回的进程与线程句柄
+    unsafe {
+        let ok = CreateProcessW(
+            application.as_ptr(),
+            line.as_mut_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            0,
+            DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT,
+            environment
+                .as_ref()
+                .map_or(std::ptr::null(), |block| block.as_ptr().cast()),
+            directory.as_ptr(),
+            &startup,
+            &mut info,
+        );
+        if ok == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        CloseHandle(info.hProcess);
+        CloseHandle(info.hThread);
+    }
+    Ok(())
+}
+
+/// 设了 `TERMLET_DATA_DIR` 时，交给 Termlet 的环境块（UTF-16，按名字排序，以两个 0 结尾）：本进程的环境，其中这个
+/// 变量换成解析好的绝对路径 `data_dir`。没有设时为 `None`（沿用本进程的环境）。
+#[cfg(windows)]
+fn environment_with_data_dir(data_dir: &Path) -> Option<Vec<u16>> {
+    use std::os::windows::ffi::OsStrExt;
+    std::env::var_os(endpoint::DATA_DIR_ENV).filter(|v| !v.is_empty())?;
+    let mut vars: Vec<_> = std::env::vars_os()
+        .filter(|(name, _)| !name.eq_ignore_ascii_case(endpoint::DATA_DIR_ENV))
+        .collect();
+    vars.push((
+        endpoint::DATA_DIR_ENV.into(),
+        data_dir.as_os_str().to_owned(),
+    ));
+    vars.sort_by_key(|(name, _)| name.to_ascii_uppercase());
+    let mut block = Vec::new();
+    for (name, value) in vars {
+        block.extend(name.encode_wide());
+        block.push(u16::from(b'='));
+        block.extend(value.encode_wide());
+        block.push(0);
+    }
+    block.push(0);
+    Some(block)
 }
 
 /// Termlet 程序的位置（见模块说明）。
@@ -247,6 +325,8 @@ pub fn process_alive(pid: u32) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::process::{Command, Stdio};
+
     use super::*;
 
     // Termlet 在运行但命令行服务没有启动时说明原因；标记是已退出的进程留下的时不采信

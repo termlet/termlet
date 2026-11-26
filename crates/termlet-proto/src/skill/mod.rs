@@ -260,6 +260,7 @@ mod tests {
             "--stdin",
             "nohup",
             "cli_disabled",
+            "wslpath -w",
         ] {
             assert!(CONTENT.contains(want), "SKILL.md 缺少 {want}");
         }

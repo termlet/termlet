@@ -33,6 +33,8 @@ enum Approve {
 struct Env {
     _dir: tempfile::TempDir,
     data_dir: PathBuf,
+    /// 连不上时拉起的程序（`TERMLET_APP`）；为空时不拉起
+    app: PathBuf,
     store: Arc<Store>,
     audit: Arc<AuditLog>,
     service: Option<CliService>,
@@ -55,6 +57,7 @@ impl Env {
         Self {
             _dir: dir,
             data_dir,
+            app: PathBuf::new(),
             store,
             audit,
             service: None,
@@ -66,15 +69,20 @@ impl Env {
 
     fn new() -> Self {
         let mut env = Self::without_service();
+        env.start_service();
+        env
+    }
+
+    fn start_service(&mut self) {
         let config = CliConfig::new(
-            DataDir::at(&env.data_dir),
-            env.store.clone(),
-            env.audit.clone(),
+            DataDir::at(&self.data_dir),
+            self.store.clone(),
+            self.audit.clone(),
         );
         let (service, events) = CliService::start(config).unwrap();
-        let approve = env.approve.clone();
-        let held = env.held.clone();
-        let calls = env.terminal_calls.clone();
+        let approve = self.approve.clone();
+        let held = self.held.clone();
+        let calls = self.terminal_calls.clone();
         // 模拟的界面：批准按设置回答；在终端中执行时输出 "ran <命令>"，退出码 3
         std::thread::spawn(move || {
             while let Ok(event) = events.recv_blocking() {
@@ -98,8 +106,7 @@ impl Env {
                 }
             }
         });
-        env.service = Some(service);
-        env
+        self.service = Some(service);
     }
 
     fn enable(&self) {
@@ -136,6 +143,17 @@ impl Env {
             .unwrap();
     }
 
+    fn command(&self, args: &[&str], lang: &str) -> Command {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_termlet"));
+        command
+            .args(args)
+            .env("TERMLET_DATA_DIR", &self.data_dir)
+            // 连不上时不拉起任何程序（拉起的测试除外）
+            .env("TERMLET_APP", &self.app)
+            .env("TERMLET_LANG", lang);
+        command
+    }
+
     /// 运行 termlet，返回（退出码，标准输出，标准错误）。
     fn run(&self, args: &[&str], stdin: Option<&str>) -> (i32, String, String) {
         self.run_in(args, stdin, "zh", None)
@@ -148,13 +166,8 @@ impl Env {
         lang: &str,
         dir: Option<&Path>,
     ) -> (i32, String, String) {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_termlet"));
+        let mut command = self.command(args, lang);
         command
-            .args(args)
-            .env("TERMLET_DATA_DIR", &self.data_dir)
-            // 连不上时不拉起任何程序
-            .env("TERMLET_APP", "")
-            .env("TERMLET_LANG", lang)
             .stdin(if stdin.is_some() {
                 Stdio::piped()
             } else {
@@ -518,7 +531,7 @@ impl Env {
         let mut child = Command::new(env!("CARGO_BIN_EXE_termlet"))
             .arg("mcp")
             .env("TERMLET_DATA_DIR", &self.data_dir)
-            .env("TERMLET_APP", "")
+            .env("TERMLET_APP", &self.app)
             .env("TERMLET_LANG", lang)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -700,6 +713,123 @@ fn mcp_when_termlet_is_not_running() {
     assert!(error);
     assert_eq!(structured["error"], "app_not_running");
     assert!(text.contains("请先打开 Termlet"), "{text}");
+}
+
+// ---------------------------------------------------------------- 拉起 Termlet
+
+/// 连不上时拉起的假 Termlet（批处理）：被拉起时在旁边写下当前目录（`cwd`）、`TERMLET_DATA_DIR`（`datadir`）与
+/// `launched`，`keep` 删掉后退出。只在 Windows 上测：那里拉起的进程会继承调用方可继承的句柄；其他系统上子进程的
+/// 0–2 换成了 /dev/null，别的描述符随 exec 关闭。
+#[cfg(windows)]
+struct FakeApp {
+    dir: PathBuf,
+}
+
+#[cfg(windows)]
+impl FakeApp {
+    fn install(env: &mut Env) -> Self {
+        let dir = env.data_dir.parent().unwrap().to_path_buf();
+        let app = dir.join("fake-termlet.cmd");
+        std::fs::write(
+            &app,
+            "@echo off\r\n\
+             cd> \"%~dp0cwd\"\r\n\
+             echo %TERMLET_DATA_DIR%> \"%~dp0datadir\"\r\n\
+             echo launched> \"%~dp0launched\"\r\n\
+             :wait\r\n\
+             if not exist \"%~dp0keep\" exit /b 0\r\n\
+             ping -n 2 127.0.0.1 > nul\r\n\
+             goto wait\r\n",
+        )
+        .unwrap();
+        std::fs::write(dir.join("keep"), "").unwrap();
+        env.app = app;
+        env.enable();
+        Self { dir }
+    }
+
+    /// 等 termlet 拉起它，再启动命令行服务（termlet 正等着服务就绪）。
+    fn serve_once_launched(&self, env: &mut Env) {
+        let launched = self.dir.join("launched");
+        wait_for("termlet 拉起 Termlet", || launched.exists());
+        env.start_service();
+        // 当前目录是程序所在的目录（不沿用调用方的），数据目录是解析好的绝对路径
+        let read = |name: &str| std::fs::read_to_string(self.dir.join(name)).unwrap();
+        let cwd = read("cwd");
+        assert!(
+            cwd.trim()
+                .eq_ignore_ascii_case(&self.dir.display().to_string()),
+            "{cwd:?}"
+        );
+        assert_eq!(read("datadir").trim(), env.data_dir.display().to_string());
+    }
+}
+
+#[cfg(windows)]
+impl Drop for FakeApp {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(self.dir.join("keep"));
+    }
+}
+
+// Termlet 没有运行时由 termlet 拉起：拉起的程序还在运行，调用方照样马上读到输出结束。之前它继承了 termlet 的
+// 标准输入输出，读管道直到结束的调用方（AI 工具捕获输出、`$(…)`）要等它退出（无窗口的 Termlet 10 分钟没有请求后）。
+// 拉起的 Termlet 在程序所在的目录中运行，相对的 TERMLET_DATA_DIR 换成绝对路径交给它
+#[cfg(windows)]
+#[test]
+fn launched_termlet_does_not_hold_the_callers_pipes() {
+    for (args, want, relative) in [
+        (&["ls"][..], 0, false),
+        (&["exec", "no-such-host", "true"], 2, false),
+        (&["ls"], 0, true),
+    ] {
+        let mut env = Env::without_service();
+        let app = FakeApp::install(&mut env);
+        let mut command = env.command(args, "zh");
+        if relative {
+            let caller = env.data_dir.parent().unwrap().join("caller");
+            std::fs::create_dir(&caller).unwrap();
+            command
+                .current_dir(&caller)
+                .env("TERMLET_DATA_DIR", Path::new("..").join("data"));
+        }
+        let child = command
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let (tx, done) = mpsc::channel();
+        std::thread::spawn(move || drop(tx.send(child.wait_with_output())));
+        app.serve_once_launched(&mut env);
+        let output = done
+            .recv_timeout(Duration::from_secs(10))
+            .unwrap_or_else(|_| panic!("{args:?}：拉起的程序还在运行，读不到 termlet 的输出结束"))
+            .unwrap();
+        assert_eq!(output.status.code(), Some(want), "{args:?} {output:?}");
+    }
+}
+
+// 同上，`termlet mcp` 拉起 Termlet：关闭标准输入后它退出，输出随之结束
+#[cfg(windows)]
+#[test]
+fn mcp_launched_termlet_does_not_hold_the_pipes() {
+    let mut env = Env::without_service();
+    let app = FakeApp::install(&mut env);
+    let mut mcp = env.mcp("zh");
+    mcp.initialize();
+    let id = mcp.start(
+        "tools/call",
+        json!({ "name": "list_hosts", "arguments": {} }),
+    );
+    app.serve_once_launched(&mut env);
+    let reply = mcp.wait(id);
+    assert_eq!(reply["result"]["isError"], false, "{reply}");
+    drop(mcp.stdin.take());
+    match mcp.lines.recv_timeout(Duration::from_secs(10)) {
+        Err(mpsc::RecvTimeoutError::Disconnected) => {}
+        other => panic!("拉起的程序还在运行，读不到 termlet mcp 的输出结束：{other:?}"),
+    }
 }
 
 // 与命令行工具走同一套：外部 CLI 的开关、按主机授权、危险命令的拦截与批准、在终端中执行、审计

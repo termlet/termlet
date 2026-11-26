@@ -23,7 +23,7 @@
 - [Sync](#sync): [What is synced](#what-is-synced) · [Sync locations](#sync-locations) · [Encryption](#encryption) · [Merging](#merging) · [Safeguards](#safeguards) · [Automatic sync](#automatic-sync)
 - [Interface and settings](#interface-and-settings): [Settings pages](#settings-pages) · [Font and cursor](#font-and-cursor) · [Sidebar](#sidebar) · [Windows and the title bar](#windows-and-the-title-bar) · [Toolbar](#toolbar) · [Opening at startup](#opening-at-startup)
 - [Updates, diagnostics and uninstalling](#updates-diagnostics-and-uninstalling): [Updates](#updates) · [Usage statistics](#usage-statistics) · [Diagnostics](#diagnostics) · [Logs](#logs) · [Crash records](#crash-records) · [Uninstalling](#uninstalling)
-- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [MCP over HTTP](#mcp-over-http) · [MCP over the LAN](#mcp-over-the-lan) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [Limits](#limits)
+- [Command-line tool and AI](#command-line-tool-and-ai): [Turning it on](#turning-it-on) · [Agent Skill](#agent-skill) · [MCP server](#mcp-server) · [MCP over HTTP](#mcp-over-http) · [MCP over the LAN](#mcp-over-the-lan) · [Output](#output) · [Exit codes](#exit-codes) · [Uploads and downloads](#uploads-and-downloads) · [Host names and size limits](#host-names-and-size-limits) · [`exec --terminal`](#exec---terminal) · [Dangerous commands](#dangerous-commands) · [Audit](#audit) · [PATH](#path) · [In WSL](#in-wsl) · [Limits](#limits)
 - [Known limitations](#known-limitations)
 
 ## Installation
@@ -1771,7 +1771,7 @@ termlet version
   | `upload_file` | `upload` |
   | `download_file` | `download` |
 
-- Local paths for `upload_file` and `download_file` must be absolute (paths on the computer running Termlet); computers on the LAN transfer files through one-time links instead, see [MCP over the LAN](#mcp-over-the-lan).
+- Local paths for `upload_file` and `download_file` must be absolute (paths on the computer running Termlet; for paths written the WSL way see [In WSL](#in-wsl)); computers on the LAN transfer files through one-time links instead, see [MCP over the LAN](#mcp-over-the-lan).
 - Every call goes through Termlet as usual: the "Allow access from AI tools and scripts" switch, per-host access, approval of dangerous commands, the audit log and credentials staying in Termlet all work as for the command-line tool.
 - The audit log's Source column shows "MCP (client name)", "MCP·HTTP (client name)" over HTTP, or "MCP·LAN <its address> (client name)" from another computer on the LAN, and you can filter for these calls. The caller starts with `mcp:<client name>`; over HTTP it's followed by `http` and the chain of processes that opened the connection (recorded on Windows and Linux), or `lan:<its address>` from the LAN.
 - The approval dialog for a dangerous command names the AI tool in its title, such as "Claude Code (MCP) wants to run a dangerous command on …": common AI tools get their product name, others the name they report; those without a brand logo get a generic AI icon.
@@ -1964,6 +1964,19 @@ termlet exec <host> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev/n
 - On Windows the command is at `bin\termlet.exe` in the installation folder. "Add to PATH" under Settings → AI & automation adds it to the current user's PATH with one click (effective in newly opened terminals; removed on uninstall, and moved to the new location if you reinstall elsewhere).
 - On macOS and Linux, Termlet doesn't change PATH; Settings → AI & automation shows the command to link it yourself (such as `sudo ln -sf /Applications/Termlet.app/Contents/MacOS/bin/termlet /usr/local/bin/termlet`).
 - On Linux, the deb and rpm install it as `/usr/bin/termlet`, the tar.gz's `install.sh` links it as `~/.local/bin/termlet`, and the AppImage needs a link you make yourself (see [Linux](#linux)).
+
+### In WSL
+
+- Termlet is installed on Windows, and AI tools and scripts in WSL use it through `termlet.exe`: WSL brings in the Windows PATH by default, so after "Add to PATH" in Settings it runs directly in newly opened WSL sessions. Commands, output and exit codes are the same as on Windows; credentials, settings and the audit log stay in Termlet on Windows.
+- To use the name `termlet`: `ln -s "$(command -v termlet.exe)" ~/.local/bin/termlet`. Don't use an `alias`: the shells AI tools run commands in don't expand it.
+- Local paths (uploads, downloads, `--script`, `--input`, `--output-dir`, `-H @file`, `skill install --dir`):
+  - relative paths resolve against the current directory as usual;
+  - `/mnt/c/…` becomes `C:\…`;
+  - absolute paths inside WSL (such as `/home/…`) become `\\wsl.localhost\<distro>\home\…` when the current directory is inside WSL too. When the current directory is under `/mnt/…`, the distro is unknown and you get a usage error (exit code 1): use a relative path, cd into a directory inside WSL first, or write `"$(wslpath -w /home/…)"`.
+- To install the Agent Skill inside WSL: `termlet.exe skill install --dir "$(wslpath -w ~/.claude/skills)"` (tools that read the shared folder, such as Codex, use `~/.agents/skills`). Without `--dir` it goes to your Windows user folder, which AI tools in WSL don't read.
+- MCP: in AI tools inside WSL, set the command to `termlet.exe` with the argument `mcp` (for example `claude mcp add termlet -- termlet.exe mcp`); the snippets in Settings use the Windows path, which doesn't work in WSL as is.
+- `local_path` in MCP only takes absolute paths: `/mnt/c/…` is converted as usual; paths like `/home/…` are converted only when the AI tool starts `termlet mcp` from a directory inside WSL, and otherwise are an argument error asking for the Windows path (what `wslpath -w` prints, such as `\\wsl.localhost\Ubuntu\…`). Over HTTP this is always the case: Termlet runs in its own program folder and can't tell which distro is meant.
+- Run directly in a WSL terminal, it prints readable text. When any of standard input, output or error is redirected (such as `2>/dev/null`), WSL turns all three into pipes and you get JSON.
 
 ### Limits
 

@@ -1,5 +1,5 @@
 //! Termlet 的 MCP 服务中与传输无关的部分：两代协议的分发（[`protocol`]）、工具的定义、参数检查与结果的写法
-//! （[`tools`]）、给人与 AI 看的中英文文本（[`text`]）。
+//! （[`tools`]）、给人与 AI 看的中英文文本（[`text`]），以及与命令行工具共用的本机路径的 WSL 写法（[`local_path`]）。
 //!
 //! 两种传输共用这里：
 //!
@@ -12,6 +12,7 @@
 //! （`isError: true`，文本中有错误码与说明，AI 据此处理）；未知的工具、参数不是对象等是 JSON-RPC 错误。
 
 mod backend;
+pub mod local_path;
 pub mod protocol;
 pub mod text;
 pub mod tools;

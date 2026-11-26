@@ -61,6 +61,18 @@ msg!(
     "{} 不是普通文件",
     "{} is not a regular file"
 );
+// 本机路径的 WSL 写法换不了（见 `local_path`）：两个参数都是这个路径
+msg!(
+    WSL_PATH,
+    "{} 是 WSL 中的路径，当前目录不在 WSL 中时 Windows 上的 termlet 打不开：改用相对路径、先进入 WSL 中的目录，或写成 \"$(wslpath -w {})\"",
+    "{} is a path inside WSL, which termlet on Windows can't open while the current directory is outside WSL: use a relative path, cd into a directory inside WSL first, or write it as \"$(wslpath -w {})\""
+);
+// 同上，MCP 的 local_path（只收绝对路径）
+msg!(
+    MCP_WSL_PATH,
+    "{} 是 WSL 中的路径，Termlet 不知道它在哪个发行版中：请给出 Windows 的路径，即在 WSL 中运行 wslpath -w {} 的结果（如 \\\\wsl.localhost\\Ubuntu\\…）；/mnt/c/… 可以直接写",
+    "{} is a path inside WSL and Termlet can't tell which distro it's in: give the Windows path instead, which is what wslpath -w {} prints in WSL (such as \\\\wsl.localhost\\Ubuntu\\…); /mnt/c/… works as is"
+);
 
 // 运行结果
 msg!(

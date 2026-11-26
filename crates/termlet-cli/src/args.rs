@@ -143,6 +143,7 @@ pub fn parse(args: &[String], lang: Lang) -> Result<Parsed, String> {
             }
             "--output-dir" => {
                 let v = value(&mut iter, flag)?;
+                let v = termlet_mcp::local_path::from_wsl(&v, lang)?;
                 parsed.output_dir = Some(PathBuf::from(v));
                 parsed.batch_only.get_or_insert("--output-dir");
             }
@@ -168,9 +169,10 @@ pub fn parse(args: &[String], lang: Lang) -> Result<Parsed, String> {
     Ok(parsed)
 }
 
-/// 逗号分隔的主机列表；`@文件` 从文件读（每行一个，`#` 之后是注释，空行跳过）。
+/// 逗号分隔的主机列表；`@文件` 从文件读（每行一个，`#` 之后是注释，空行跳过；WSL 中的写法先换算）。
 fn host_list(value: &str, lang: Lang) -> Result<Vec<String>, String> {
     if let Some(path) = value.strip_prefix('@') {
+        let path = &termlet_mcp::local_path::from_wsl(path, lang)?;
         let text = std::fs::read_to_string(path)
             .map_err(|e| messages::HOSTS_FILE.fill(lang, &[&path, &e]))?;
         return Ok(text

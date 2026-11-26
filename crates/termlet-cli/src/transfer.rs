@@ -1,5 +1,7 @@
-//! `upload` / `download`：解析参数（本机路径按当前目录解析为绝对路径）、上传前检查本机文件、输出结果。
+//! `upload` / `download`：解析参数（本机路径按当前目录解析为绝对路径，WSL 中的写法先换算）、上传前检查本机文件、
+//! 输出结果。
 
+use termlet_mcp::local_path;
 use termlet_proto::{ExitCode, TransferRequest};
 
 use crate::i18n::Lang;
@@ -23,17 +25,26 @@ pub fn parse_download(args: &[String], lang: Lang) -> Result<TransferRequest, St
 }
 
 fn request(host: &str, local: &str, remote: &str, lang: Lang) -> Result<TransferRequest, String> {
-    if host.is_empty() || local.is_empty() || remote.is_empty() {
+    if host.is_empty() || remote.is_empty() {
         return Err(messages::EMPTY_PATH.get(lang).into());
     }
-    let absolute = std::path::absolute(local)
-        .map_err(|e| messages::BAD_LOCAL_PATH.fill(lang, &[&local, &e]))?;
     Ok(TransferRequest {
         host: host.into(),
-        local: absolute.display().to_string(),
+        local: absolute(local, lang)?,
         remote: remote.into(),
         caller: Vec::new(),
     })
+}
+
+/// 本机路径按当前目录解析为绝对路径（单台与批量共用）；WSL 中的写法先换算（见 `termlet_mcp::local_path`）。
+pub fn absolute(local: &str, lang: Lang) -> Result<String, String> {
+    if local.is_empty() {
+        return Err(messages::EMPTY_PATH.get(lang).into());
+    }
+    let local = local_path::from_wsl(local, lang)?;
+    std::path::absolute(&local)
+        .map(|p| p.display().to_string())
+        .map_err(|e| messages::BAD_LOCAL_PATH.fill(lang, &[&local, &e]))
 }
 
 /// 发请求前检查本机文件存在且是普通文件（目前不支持上传目录）。通过时为 `None`，否则输出错误并返回退出码。
@@ -89,6 +100,22 @@ mod tests {
                 "download {bad:?}"
             );
         }
+    }
+
+    // 在 WSL 中运行 termlet.exe：/mnt/c/… 换成 C:\…；当前目录不在 WSL 中时其余的 Linux 路径报错，不当成 C:\home\…
+    #[cfg(windows)]
+    #[test]
+    fn wsl_paths() {
+        let up = parse_upload(&args(&["web-1", "/mnt/c/x/a.txt", "/tmp/"]), Lang::Zh).unwrap();
+        assert_eq!(up.local, r"C:\x\a.txt");
+        let error = parse_download(&args(&["web-1", "/x", "/home/u/dl"]), Lang::Zh).unwrap_err();
+        assert!(error.contains("\"$(wslpath -w /home/u/dl)\""), "{error}");
+        assert!(
+            absolute("/home/u/a.txt", Lang::En).is_err(),
+            "批量的本机路径同样检查"
+        );
+        // 反斜杠写的、带盘符的照 Windows 的规则
+        assert!(absolute(r"\x\a.txt", Lang::En).is_ok());
     }
 
     #[test]

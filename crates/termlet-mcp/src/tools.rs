@@ -703,9 +703,12 @@ impl Args<'_> {
         }
     }
 
-    /// 本机路径：必须是绝对路径（MCP 服务的当前目录由 AI 工具决定，相对路径的意思不明确）。
+    /// 本机路径：必须是绝对路径（MCP 服务的当前目录由 AI 工具决定，相对路径的意思不明确）。WSL 中的写法先换算
+    /// （`/mnt/c/…`，当前目录在 WSL 中时的 `/home/…`，见 [`crate::local_path`]）。
     fn absolute_path(&self, key: &str) -> Result<String, Outcome> {
         let path = self.required(key)?;
+        let path =
+            crate::local_path::from_wsl_for_mcp(&path, self.lang).map_err(|e| self.invalid(e))?;
         if !Path::new(&path).is_absolute() {
             return Err(self.invalid(messages::MCP_NOT_ABSOLUTE.fill(self.lang, &[&key, &path])));
         }
@@ -1098,6 +1101,32 @@ mod tests {
     }
 
     // 服务器没有 SFTP、改用了 SCP 时在结果中说明；旧版的应用不发 protocol，按 SFTP
+    // local_path 的 WSL 写法：/mnt/c/… 换成 C:\…；当前目录不在 WSL 中（应用内 HTTP 的 MCP 总是这样）时 /home/…
+    // 是参数错误，说明怎样写，不当成 C:\home\…
+    #[cfg(windows)]
+    #[test]
+    fn wsl_local_paths() {
+        let download = |local: &str| {
+            let mut arguments = Map::new();
+            arguments.insert("host".into(), json!("web"));
+            arguments.insert("remote_path".into(), json!("/var/log/syslog"));
+            arguments.insert("local_path".into(), json!(local));
+            request(Tool::DownloadFile, &arguments, Lang::Zh, &[], Reach::Local)
+        };
+        let Ok(Request::Download(ok)) = download("/mnt/c/logs/") else {
+            panic!("/mnt/c/… 应当换算");
+        };
+        assert_eq!(ok.local, r"C:\logs\");
+        let Err(outcome) = download("/home/u/syslog") else {
+            panic!("/home/… 不应当成 C:\\home\\…");
+        };
+        assert!(
+            outcome.text.starts_with("[bad_request]") && outcome.text.contains("wslpath -w"),
+            "{}",
+            outcome.text
+        );
+    }
+
     #[test]
     fn transfer_text_mentions_scp() {
         let mut done = TransferResponse {

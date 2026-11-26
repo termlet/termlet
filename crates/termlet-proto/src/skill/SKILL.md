@@ -185,6 +185,14 @@ termlet exec web-1 --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf > /dev/n
 - 语义与 scp 相同：上传时远程路径是已存在的目录（或以 `/` 结尾）则放入该目录，否则作为目标文件名；下载时本地路径是 `.` 或已存在的目录则放入该目录，否则作为目标文件名。**已存在的同名文件会被覆盖。**
 - 本地路径可以是相对路径，按当前目录解析。
 
+### 在 WSL 中
+
+WSL 中没有 `termlet` 命令时用 `termlet.exe`（Windows 上的同一个程序，命令、输出与退出码相同），上文的 `termlet` 都换成 `termlet.exe`。本机路径（上传、下载、`--script`、`--input`）：
+
+- 相对路径与 `/mnt/c/...` 可以直接写；
+- WSL 中的绝对路径（`/home/...`、`/tmp/...`）在当前目录也在 WSL 中时可以直接写；当前目录在 `/mnt/...` 下时写成 `"$(wslpath -w /home/...)"`，否则报用法错误（退出码 1）；
+- 结果中的 `local` 是 Windows 的写法（`\\wsl.localhost\<发行版>\...`、`C:\...`）。
+
 ## 常见问题
 
 | 错误码 | 原因与处理 |

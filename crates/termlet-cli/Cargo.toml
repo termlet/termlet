@@ -22,10 +22,11 @@ sys-locale.workspace = true
 # 主机列表按显示宽度对齐（中文占两列）
 unicode-width.workspace = true
 
-# Termlet 进程是否还在运行（调用方的进程链在 termlet-proto 中）
+# Termlet 进程是否还在运行、不继承句柄地拉起 Termlet（CreateProcessW 要 Win32_Security）；调用方的进程链在 termlet-proto 中
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
+    "Win32_Security",
     "Win32_System_Console",
     "Win32_System_Threading",
 ] }

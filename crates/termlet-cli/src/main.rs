@@ -271,26 +271,18 @@ fn transfer_plan(args: &[String], upload: bool, lang: Lang) -> Result<Plan, Stri
     }
     let [first, second] =
         <[String; 2]>::try_from(parsed.positional.clone()).map_err(|_| usage())?;
-    let absolute = |local: &str| {
-        if local.is_empty() {
-            return Err(messages::EMPTY_PATH.get(lang).to_string());
-        }
-        std::path::absolute(local)
-            .map(|p| p.display().to_string())
-            .map_err(|e| messages::BAD_LOCAL_PATH.fill(lang, &[&local, &e]))
-    };
     if first.is_empty() || second.is_empty() {
         return Err(messages::EMPTY_PATH.get(lang).into());
     }
     let action = if upload {
         BatchAction::Upload {
-            local: absolute(&first)?,
+            local: transfer::absolute(&first, lang)?,
             remote: second,
         }
     } else {
         BatchAction::Download {
             remote: first,
-            local: absolute(&second)?,
+            local: transfer::absolute(&second, lang)?,
         }
     };
     Ok(Plan::Batch(
