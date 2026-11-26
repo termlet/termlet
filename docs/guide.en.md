@@ -889,7 +889,12 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 - Local on the left, remote on the right. Drag between them to upload or download (drop onto a folder to transfer into it).
 - You can also drag files in from File Explorer.
-- The local side offers common places and drives, and can create folders, rename, move to the Recycle Bin and open with the default program (it asks before opening programs and scripts or accessing network locations).
+- The local side offers common places and drives, and can create folders, rename, delete and open with the default program (it asks before opening programs and scripts or accessing network locations).
+- Deleting on the local side moves items to the Recycle Bin. Where there is no Recycle Bin (network shares, mapped network drives, WSL, USB sticks and other removable drives), the menu item and the confirmation say "Delete Permanently" and the items can't be recovered; if Windows can't move something to the Recycle Bin (for example, it's too large), nothing is deleted and you're asked whether to delete permanently.
+- WSL: the "Places and Drives" menu (the drive icon) lists your WSL distributions after the drives (three or more go into a "WSL Distributions" submenu). Choose one to open the default user's home folder in it and upload or download between WSL and the server directly, without installing sftp-server in the distribution. You can also type `\\wsl.localhost\<distribution>\…` in the path box.
+  - A distribution that isn't running is started only when you choose it, which can take a few seconds; opening SFTP doesn't start it just to return to the last WSL folder.
+  - Names starting with `.` count as hidden; named pipes and other special files are skipped when uploading.
+  - Limits of going through Windows: Linux permissions aren't shown or kept (new files get the other side's default permissions); symbolic links in WSL can't be opened; characters Windows doesn't allow, such as `: * ? \`, show as boxes and change the name when uploaded. To keep these, use the [WSL](#wsl) file manager.
 - When the panel is narrow (for example beside a terminal), only the remote side shows until you click "Show Local Files (Two Panes)".
 - Drag the divider to resize, double-click to reset.
 

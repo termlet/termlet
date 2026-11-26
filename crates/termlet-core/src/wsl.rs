@@ -315,6 +315,16 @@ pub async fn find_sftp_server(distro: &str, user: &str) -> Result<String, WslErr
     }
 }
 
+/// 发行版中默认用户的主目录（`$HOME`，Linux 中的路径）；取不到时为 `None`。发行版没在运行时会启动它。
+pub async fn home(distro: &str) -> Option<String> {
+    let result = exec(distro, "", r#"printf '%s' "$HOME""#, 4096, FIND_TIMEOUT)
+        .await
+        .ok()?;
+    let home = String::from_utf8(result.stdout).ok()?;
+    let home = home.trim();
+    (result.exit_code == Some(0) && home.starts_with('/')).then(|| home.to_string())
+}
+
 /// 文件管理会话在 [`SftpManager`] 中的主机标识（同一发行版、同一用户的会话可以互相继续传输）。
 pub fn sftp_host_key(distro: &str, user: &str) -> String {
     if user.is_empty() {

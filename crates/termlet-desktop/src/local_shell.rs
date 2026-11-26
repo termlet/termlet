@@ -44,6 +44,12 @@ impl WslDistros {
         let cached = self.0.lock().unwrap_or_else(|e| e.into_inner());
         cached.clone().unwrap_or_default()
     }
+
+    /// 测试中换成给定的发行版。
+    #[cfg(test)]
+    pub fn set(&self, list: Vec<String>) {
+        *self.0.lock().unwrap_or_else(|e| e.into_inner()) = Some(list);
+    }
 }
 
 /// 本机的一个终端：本地 shell 或 WSL 发行版。
@@ -136,6 +142,14 @@ pub fn detector(cx: &App) -> Arc<Detector> {
 /// WSL 发行版的缓存（在后台线程上读取）。
 pub fn wsl_distros(cx: &App) -> Arc<WslDistros> {
     cx.global::<LocalShells>().1.clone()
+}
+
+/// 已经列出的 WSL 发行版（与标题栏“+”旁的菜单相同，不含 Docker Desktop 的内部发行版）；还没有列出时为空。
+/// 只读缓存，界面线程上用。
+pub fn cached_wsl_distros(cx: &App) -> Vec<String> {
+    cx.try_global::<LocalShells>()
+        .map(|shells| shells.1.cached())
+        .unwrap_or_default()
 }
 
 /// 设置中的默认本地终端：可以是 WSL 发行版（`wsl:<发行版>`，按设置直接打开，发行版不在时打开报错）；

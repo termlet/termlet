@@ -79,6 +79,14 @@ pub fn distributions() -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// 正在运行的发行版（`wsl.exe --list --running --quiet`，不会启动发行版）；没有在运行的、没有安装 WSL、
+/// 不是 Windows 时为空。要运行 wsl.exe（约 0.3 秒），在后台线程调用。
+pub fn running() -> Vec<String> {
+    run_list(&["--list", "--running", "--quiet"])
+        .map(|out| parse_list(&out))
+        .unwrap_or_default()
+}
+
 /// 运行 `wsl.exe` 列出发行版；没有安装任何发行版时 wsl.exe 以非零退出码说明原因，按"没有输出"处理。
 #[cfg(windows)]
 fn run_list(args: &[&str]) -> Option<Vec<u8>> {
@@ -288,6 +296,7 @@ mod tests {
     #[test]
     fn unsupported_outside_windows() {
         assert!(distributions().is_empty());
+        assert!(running().is_empty());
         assert_eq!(
             launch("Ubuntu", "", "").unwrap_err(),
             ShellError::WslUnsupported
@@ -305,6 +314,10 @@ mod tests {
         let list = distributions();
         println!("本机的 WSL 发行版：{list:?}");
         assert!(list.iter().all(|d| valid_name(d) && !hidden(d)));
+        // 只查询，不启动：运行中的都在列表里
+        let running = running();
+        println!("运行中的：{running:?}");
+        assert!(running.iter().all(|d| list.contains(d)));
         let Some(distro) = list.first() else {
             return;
         };

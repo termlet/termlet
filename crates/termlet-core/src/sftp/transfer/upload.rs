@@ -17,7 +17,8 @@ use crate::sftp::client::{
     PipeError, SftpClient, is_dir, is_regular, mtime_of, perm_attrs, perm_bits, size_attrs,
     size_of, time_attrs,
 };
-use crate::sftp::error::{self, SftpError, Side, status_of};
+use crate::sftp::error::{self, Rejection, SftpError, Side, status_of};
+use crate::sftp::local::is_wsl_special;
 use crate::sftp::manager::Inner;
 use crate::sftp::names::{random_hex, remote_name_fits, remote_temp_part, tagged_name};
 use crate::sftp::path;
@@ -58,6 +59,10 @@ pub(super) async fn run(
         let meta = tokio::fs::metadata(&local)
             .await
             .map_err(|e| error::local(&local, &e))?;
+        // 命名管道、设备文件等（含 WSL 的位置中的）读不完，不传输
+        if !meta.is_file() || is_wsl_special(&local, &meta) {
+            return Err(Rejection::NotRegularFile.into());
+        }
         t.set_totals(meta.len(), 1);
         upload_one(inner, &client, t, ctx, &local, &remote, &meta, resume)
             .await

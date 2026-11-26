@@ -289,7 +289,9 @@ fn futures_are_send(
     send(super::local_places());
     send(super::make_local_dir(Path::new(""), ""));
     send(super::rename_local(Path::new(""), "", ""));
-    send(super::trash_local(Path::new(""), &[]));
+    send(super::trash_local(Path::new(""), &[], false));
+    send(super::open_wsl(""));
+    send(super::auto_open_allowed(Path::new("")));
     send(super::put_file(
         &connection,
         Path::new(""),

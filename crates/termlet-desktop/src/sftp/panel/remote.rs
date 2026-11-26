@@ -466,6 +466,16 @@ impl SftpPanel {
         let Some(session) = self.session() else {
             return;
         };
+        // 本机栏认出的特殊文件（WSL 的位置中的命名管道等）不传输：读它会一直等到超时
+        let local = self.local.read(cx);
+        let (special, paths): (Vec<PathBuf>, Vec<PathBuf>) =
+            paths.into_iter().partition(|p| local.is_special(p));
+        if !special.is_empty() {
+            window.push_notification(
+                Notification::warning(t!("sftp.transfer.skipped_special", count = special.len())),
+                cx,
+            );
+        }
         if paths.is_empty() {
             return;
         }

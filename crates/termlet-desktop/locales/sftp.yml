@@ -371,6 +371,12 @@ sftp.error.trash_unsupported:
   zh-TW: 這個系統不支援移到資源回收筒
   ja: このシステムではごみ箱への移動に対応していません
   ko: 이 시스템에서는 휴지통으로 이동을 지원하지 않습니다
+sftp.error.not_recyclable:
+  zh-CN: 不能移到回收站，没有删除
+  en: Couldn't move to the Recycle Bin, so nothing was deleted
+  zh-TW: 無法移到資源回收筒，沒有刪除
+  ja: ごみ箱に移動できないため、削除していません
+  ko: 휴지통으로 이동할 수 없어 삭제하지 않았습니다
 sftp.name_separator:
   zh-CN: 、
   en: ", "
@@ -485,6 +491,12 @@ local.place_home:
   zh-TW: 主目錄
   ja: ホーム
   ko: 홈
+local.place_wsl:
+  zh-CN: WSL 发行版
+  en: WSL Distributions
+  zh-TW: WSL 發行版
+  ja: WSL ディストリビューション
+  ko: WSL 배포판
 local.upload:
   zh-CN: 上传到右侧远程目录
   en: Upload to the Remote Folder on the Right
@@ -557,6 +569,30 @@ local.confirm_trash:
   zh-TW: 確定要把 %{names} 移到資源回收筒嗎？
   ja: "%{names} をごみ箱に移動しますか？"
   ko: "%{names}을(를) 휴지통으로 이동하시겠습니까?"
+local.delete_permanently:
+  zh-CN: 永久删除
+  en: Delete Permanently
+  zh-TW: 永久刪除
+  ja: 完全に削除
+  ko: 영구 삭제
+local.confirm_delete:
+  zh-CN: 确定永久删除 %{names} 吗？
+  en: Permanently delete %{names}?
+  zh-TW: 確定要永久刪除 %{names} 嗎？
+  ja: "%{names} を完全に削除しますか？"
+  ko: "%{names}을(를) 영구 삭제하시겠습니까?"
+local.delete_detail:
+  zh-CN: 这个位置没有回收站，将永久删除，不能恢复。
+  en: This location has no Recycle Bin. The items will be deleted permanently and can't be recovered.
+  zh-TW: 這個位置沒有資源回收筒，將永久刪除，無法復原。
+  ja: この場所にはごみ箱がないため、完全に削除され、元に戻せません。
+  ko: 이 위치에는 휴지통이 없어 영구 삭제되며 복구할 수 없습니다.
+local.not_recyclable_detail:
+  zh-CN: 系统不能把它们移到回收站，还没有删除。永久删除后不能恢复。
+  en: Windows couldn't move them to the Recycle Bin, so they haven't been deleted. Deleting them permanently can't be undone.
+  zh-TW: 系統無法把它們移到資源回收筒，還沒有刪除。永久刪除後無法復原。
+  ja: システムがごみ箱に移動できなかったため、まだ削除していません。完全に削除すると元に戻せません。
+  ko: 시스템이 휴지통으로 옮기지 못해 아직 삭제하지 않았습니다. 영구 삭제하면 복구할 수 없습니다.
 local.empty:
   zh-CN: 空文件夹
   en: This folder is empty

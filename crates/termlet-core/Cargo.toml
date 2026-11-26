@@ -104,15 +104,21 @@ windows-sys = { workspace = true, features = [
 ] }
 # 应用锁：Windows Hello（WinRT 的 UserConsentVerifier）、系统空闲时间与锁屏状态。依赖树中已有这个版本
 # （GPUI 的 Windows 平台层、russh 的 pageant），只加特性、不加新的包
+# 本机栏的删除（IFileOperation 与回调接口，系统不能移到回收站时中止，不悄悄永久删除）另开 Win32_System_Com、
+# Win32_UI_Shell：GPUI 的 Windows 平台层对同一版本开着这两个特性，不增加编译量
 windows = { version = "0.62", features = [
     "Foundation",
     "Security_Credentials_UI",
     "Win32_Foundation",
+    "Win32_System_Com",
     "Win32_System_RemoteDesktop",
     "Win32_System_SystemInformation",
     "Win32_System_WinRT",
     "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
 ] }
+# 实现 COM 回调接口的 #[implement] 展开后引用 windows_core：依赖树中已有这个版本（GPUI 的 Windows 平台层同样直接依赖它）
+windows-core = "0.62"
 
 # 串口（termios、poll）
 [target.'cfg(unix)'.dependencies]

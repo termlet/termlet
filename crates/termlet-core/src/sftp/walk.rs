@@ -11,6 +11,7 @@ use super::SftpError;
 use super::backend::Backend;
 use super::client::is_dir;
 use super::error::{self, is_permission};
+use super::local::is_wsl_special;
 use super::path;
 
 /// 遍历中遇到的问题。
@@ -147,7 +148,7 @@ impl LocalWalker {
                         kind: LocalKind::Dir,
                     })
                 }
-                Ok(meta) if meta.is_file() => Ok(LocalItem {
+                Ok(meta) if meta.is_file() && !is_wsl_special(&self.root, &meta) => Ok(LocalItem {
                     path: self.root.clone(),
                     kind: LocalKind::File(Ok(meta)),
                 }),
@@ -196,7 +197,15 @@ async fn read_local_dir(dir: &Path) -> io::Result<Vec<LocalItem>> {
         let kind = match entry.file_type().await {
             Ok(t) if t.is_symlink() => LocalKind::Other,
             Ok(t) if t.is_dir() => LocalKind::Dir,
-            Ok(t) if t.is_file() => LocalKind::File(entry.metadata().await),
+            Ok(t) if t.is_file() => {
+                let meta = entry.metadata().await;
+                // WSL 的位置中的命名管道等在 Windows 一侧也是“文件”，读它会一直等到超时
+                if meta.as_ref().is_ok_and(|m| is_wsl_special(&path, m)) {
+                    LocalKind::Other
+                } else {
+                    LocalKind::File(meta)
+                }
+            }
             Ok(_) => LocalKind::Other,
             Err(e) => LocalKind::File(Err(e)),
         };

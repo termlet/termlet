@@ -98,6 +98,7 @@ fn describe_rejection(rejection: Rejection) -> SharedString {
         Rejection::Unencodable => t!("sftp.error.unencodable"),
         Rejection::UnencodableName => t!("sftp.error.unencodable_name"),
         Rejection::TrashUnsupported => t!("sftp.error.trash_unsupported"),
+        Rejection::NotRecyclable => t!("sftp.error.not_recyclable"),
         Rejection::ScpUnsupported => t!("sftp.error.scp_unsupported"),
     }
 }

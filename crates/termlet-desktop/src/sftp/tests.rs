@@ -354,6 +354,62 @@ fn local_pane_filters_and_selects_the_new_folder(cx: &mut TestAppContext) {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// 弹出的菜单中各项的文案（按顺序）。
+fn menu_labels(cx: &mut TestAppContext, handle: AnyWindowHandle) -> Vec<String> {
+    (0..40).filter_map(|i| menu_label(cx, handle, i)).collect()
+}
+
+// 本机栏的“常用位置与磁盘”：盘符之后列出 WSL 发行版（与标题栏“+”旁的菜单同一份缓存），3 个及以上收进子菜单
+#[gpui_kit::test]
+fn local_places_list_wsl_distributions(cx: &mut TestAppContext) {
+    setup(cx);
+    let set = |cx: &mut TestAppContext, list: &[&str]| {
+        cx.update(|cx| {
+            crate::local_shell::wsl_distros(cx).set(list.iter().map(|s| s.to_string()).collect())
+        })
+    };
+    set(cx, &["Ubuntu", "Debian"]);
+    let web = add_host(cx, "web", false);
+    let (handle, _, _) = open_panel(cx, SftpTarget::Host(web));
+    let open_menu = |cx: &mut TestAppContext| {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.click("local-places", cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        menu_labels(cx, handle)
+    };
+    let labels = open_menu(cx);
+    let ubuntu = crate::wsl_name("Ubuntu", "").to_string();
+    let at = |name: &str| labels.iter().position(|l| l == name);
+    let (Some(home), Some(first), Some(second)) = (
+        at(&t!("local.place_home")),
+        at(&ubuntu),
+        at(&crate::wsl_name("Debian", "")),
+    ) else {
+        panic!("菜单中缺项：{labels:?}");
+    };
+    assert!(home < first && first + 1 == second, "{labels:?}");
+    if cfg!(windows) {
+        let last_drive = labels.iter().rposition(|l| l.ends_with(":\\")).unwrap();
+        assert!(last_drive < first, "发行版在盘符之后：{labels:?}");
+    }
+    assert!(!labels.contains(&t!("local.place_wsl").to_string()));
+    cx.update_window(handle, |_, window, cx| window.press("escape", cx))
+        .unwrap();
+    cx.run_until_parked();
+
+    set(cx, &["Ubuntu", "Debian", "Alpine"]);
+    let labels = open_menu(cx);
+    assert_eq!(
+        labels.last(),
+        Some(&t!("local.place_wsl").to_string()),
+        "收进子菜单：{labels:?}"
+    );
+    assert!(!labels.contains(&ubuntu), "{labels:?}");
+}
+
 // 新加的文案都在 locales 中（缺了的键会原样显示键名）
 #[test]
 fn root_and_encoding_texts_exist() {

@@ -1,9 +1,12 @@
 //! 本机栏（SFTP 双栏的左侧）：浏览本机的文件，上传到右侧的远程目录，接收从远程栏拖来的文件（下载到这里）。
 //!
-//! - 打开时依次尝试上次所在的目录、上次下载到的目录、“下载”、主目录。
+//! - 打开时依次尝试上次所在的目录、上次下载到的目录、“下载”、主目录；网络位置与发行版没在运行的 WSL 位置跳过
+//!   （访问会启动发行版）。
 //! - 双击目录进入；双击文件用默认程序打开，会直接运行的文件（程序、脚本、快捷方式）先确认。
 //! - 访问网络位置（`\\server\share`）前确认一次（Windows 会把当前账户的登录信息发给那台服务器），本次运行中记住。
-//! - 删除是移到回收站。
+//! - “常用位置与磁盘”菜单在盘符之后列出 WSL 发行版（多了收进子菜单），点了进入默认用户的主目录。
+//! - 删除是移到回收站；没有回收站的位置（网络位置、WSL、可移动盘等）说明将永久删除。系统做不到移到回收站时不删，
+//!   再问一次是否永久删除。
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -37,6 +40,20 @@ struct AllowedServers(HashSet<String>);
 
 impl Global for AllowedServers {}
 
+/// 删除前问什么。
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DeleteAsk {
+    /// 移到回收站
+    Trash,
+    /// 这里没有回收站：将永久删除
+    Permanent,
+    /// 系统没能移到回收站（一项也没删）：要永久删除吗
+    NotRecyclable,
+}
+
+/// WSL 发行版达到这么多个时收进“常用位置与磁盘”菜单的子菜单。
+const WSL_SUBMENU_AT: usize = 3;
+
 /// 本机栏请求所在的面板做的事。
 pub enum LocalPaneEvent {
     /// 上传这些本机文件或目录到远程的当前目录
@@ -56,6 +73,8 @@ pub struct LocalPane {
     /// 每次加载的编号：只采用最后一次的结果
     seq: u64,
     error: Option<SharedString>,
+    /// 当前目录没有回收站，删除是永久删除
+    deletes_permanently: bool,
     /// 远程可用（上传按钮）
     remote_ready: bool,
     _load: Option<Task<()>>,
@@ -112,6 +131,7 @@ impl LocalPane {
             loading: false,
             seq: 0,
             error: None,
+            deletes_permanently: false,
             remote_ready: false,
             _load: None,
             _places: places,
@@ -194,8 +214,8 @@ impl LocalPane {
         self._load = Some(cx.spawn_in(window, async move |this, cx| {
             let job = termlet_core::runtime::spawn(async move {
                 for dir in candidates {
-                    // 网络位置要先确认，打开时不自动访问
-                    if sftp::network_server(&dir).is_some() {
+                    // 网络位置要先确认；WSL 的位置在发行版没运行时不进（访问会启动它）
+                    if !sftp::auto_open_allowed(&dir).await {
                         continue;
                     }
                     if let Ok(listing) = sftp::list_local(&dir).await {
@@ -254,11 +274,27 @@ impl LocalPane {
             });
             return;
         }
+        self.show_listing(async move { sftp::list_local(&dir).await }, window, cx);
+    }
+
+    /// 进入 WSL 发行版（默认用户的主目录；发行版没在运行时先启动它，可能要几秒）。
+    fn open_wsl(&mut self, distro: String, window: &mut Window, cx: &mut Context<Self>) {
+        tracing::info!(distro = %distro, "本机栏进入 WSL 发行版");
+        self.show_listing(async move { sftp::open_wsl(&distro).await }, window, cx);
+    }
+
+    /// 在核心的运行时上列出目录，完成后显示（只采用最后一次的结果）；出错时在栏上方说明，路径框回到原来的目录。
+    fn show_listing(
+        &mut self,
+        job: impl Future<Output = Result<sftp::LocalListing, sftp::SftpError>> + Send + 'static,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.seq += 1;
         let seq = self.seq;
         self.loading = true;
         self._load = Some(cx.spawn_in(window, async move |this, cx| {
-            let job = termlet_core::runtime::spawn(async move { sftp::list_local(&dir).await });
+            let job = termlet_core::runtime::spawn(job);
             let result = match job.await {
                 Ok(result) => result,
                 Err(_) => return,
@@ -322,6 +358,7 @@ impl LocalPane {
         self.error = None;
         self.entries = listing.entries;
         self.parent = listing.parent;
+        self.deletes_permanently = listing.deletes_permanently;
         let dir = listing.path;
         self.path
             .update(cx, |input, cx| input.set_value(dir_text, window, cx));
@@ -366,6 +403,13 @@ impl LocalPane {
         }
     }
 
+    /// `path` 是当前目录中的特殊文件（命名管道、设备文件等，如 WSL 的位置中的）：不能传输、不能打开。
+    pub fn is_special(&self, path: &Path) -> bool {
+        self.entries
+            .iter()
+            .any(|e| e.kind == sftp::EntryKind::Special && e.path == path)
+    }
+
     /// 双击或 Enter：目录进入，文件用默认程序打开（会直接运行的先确认）。
     fn open(&mut self, row: &FileRow, window: &mut Window, cx: &mut Context<Self>) {
         let Some(dir) = self.dir.clone() else {
@@ -374,6 +418,11 @@ impl LocalPane {
         let path = dir.join(&row.name);
         if row.is_dir {
             self.load(path, window, cx);
+            return;
+        }
+        if self.is_special(&path) {
+            self.error = Some(t!("sftp.error.not_regular_file"));
+            cx.notify();
             return;
         }
         if !runnable::is_runnable(&row.name, runnable::system_pathext().as_deref()) {
@@ -499,41 +548,85 @@ impl LocalPane {
         if names.is_empty() {
             return;
         }
+        let ask = if self.deletes_permanently {
+            DeleteAsk::Permanent
+        } else {
+            DeleteAsk::Trash
+        };
+        self.ask_delete(dir, names, ask, window, cx);
+    }
+
+    /// 删除前确认：移到回收站，或者（没有回收站的位置、系统做不到移到回收站时）写明将永久删除。
+    fn ask_delete(
+        &mut self,
+        dir: PathBuf,
+        names: Vec<String>,
+        ask: DeleteAsk,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let shown = super::join_names(&names);
         let pane = cx.entity().downgrade();
+        let permanent = ask != DeleteAsk::Trash;
         crate::ui_scale::open_alert(window, cx, move |alert: AlertDialog, _, _| {
             let (dir, names, pane) = (dir.clone(), names.clone(), pane.clone());
+            let alert = match ask {
+                DeleteAsk::Trash => alert
+                    .confirm()
+                    .title(t!("local.confirm_trash", names = shown.clone()))
+                    .ok_text(t!("local.trash")),
+                DeleteAsk::Permanent => alert
+                    .confirm()
+                    .title(t!("local.confirm_delete", names = shown.clone()))
+                    .description(prose(t!("local.delete_detail")))
+                    .ok_text(t!("local.delete_permanently")),
+                DeleteAsk::NotRecyclable => alert
+                    .confirm()
+                    .title(t!("local.confirm_delete", names = shown.clone()))
+                    .description(prose(t!("local.not_recyclable_detail")))
+                    .ok_text(t!("local.delete_permanently")),
+            };
             alert
-                .confirm()
-                .title(t!("local.confirm_trash", names = shown.clone()))
-                .ok_text(t!("local.trash"))
                 .ok_variant(ButtonVariant::Danger)
                 .cancel_text(t!("common.cancel"))
                 .on_ok(move |_, window, cx| {
                     let _ = pane.update(cx, |this, cx| {
-                        this.trash(dir.clone(), names.clone(), window, cx)
+                        this.trash(dir.clone(), names.clone(), permanent, window, cx)
                     });
                     true
                 })
         });
     }
 
+    /// 删除：能移到回收站的移到回收站；系统做不到而用户没有确认永久删除时一项也不删，再问一次。
     fn trash(
         &mut self,
         dir: PathBuf,
         names: Vec<String>,
+        permanent: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        tracing::info!(dir = %dir.display(), count = names.len(), "本机移到回收站");
-        let job =
-            termlet_core::runtime::spawn(async move { sftp::trash_local(&dir, &names).await });
+        tracing::info!(dir = %dir.display(), count = names.len(), permanent, "本机删除");
+        let job = {
+            let (dir, names) = (dir.clone(), names.clone());
+            termlet_core::runtime::spawn(
+                async move { sftp::trash_local(&dir, &names, permanent).await },
+            )
+        };
         cx.spawn_in(window, async move |this, cx| {
             let result = job.await;
             let _ = this.update_in(cx, |this, window, cx| {
-                if let Ok(Err(error)) = result {
-                    tracing::warn!("移到回收站失败：{error}");
-                    this.error = Some(errors::describe(&error));
+                match result {
+                    Ok(Err(sftp::SftpError::Rejected(sftp::Rejection::NotRecyclable))) => {
+                        tracing::warn!(dir = %dir.display(), "系统不能移到回收站，没有删除");
+                        this.ask_delete(dir, names, DeleteAsk::NotRecyclable, window, cx);
+                    }
+                    Ok(Err(error)) => {
+                        tracing::warn!("删除失败：{error}");
+                        this.error = Some(errors::describe(&error));
+                    }
+                    _ => {}
                 }
                 this.refresh(window, cx);
             });
@@ -644,8 +737,12 @@ impl LocalPane {
                         .on_click(act(|this, window, cx| this.copy_paths(window, cx))),
                 )
                 .item(
-                    PopupMenuItem::new(t!("local.trash"))
-                        .on_click(act(|this, window, cx| this.confirm_trash(window, cx))),
+                    PopupMenuItem::new(if self.deletes_permanently {
+                        t!("local.delete_permanently")
+                    } else {
+                        t!("local.trash")
+                    })
+                    .on_click(act(|this, window, cx| this.confirm_trash(window, cx))),
                 )
                 .separator();
         }
@@ -663,17 +760,29 @@ impl LocalPane {
 
     fn render_places(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
         let places = self.places.clone().unwrap_or_default();
+        // 与标题栏“+”旁的菜单相同的发行版（只读缓存，不运行 wsl.exe；列菜单时不访问、不启动发行版）
+        let distros = crate::local_shell::cached_wsl_distros(cx);
         let pane = cx.entity().downgrade();
         Button::new("local-places")
             .ghost()
             .small()
             .icon(IconName::HardDrive)
             .tooltip(t!("local.places"))
-            .dropdown_menu(move |menu, _, _| {
+            .dropdown_menu(move |menu, window, cx| {
                 let go = |dir: PathBuf| {
                     let pane = pane.clone();
                     move |_: &gpui_kit::ClickEvent, window: &mut Window, cx: &mut App| {
                         let _ = pane.update(cx, |this, cx| this.load(dir.clone(), window, cx));
+                    }
+                };
+                let wsl = {
+                    let pane = pane.clone();
+                    move |distro: &String| {
+                        let (pane, distro) = (pane.clone(), distro.clone());
+                        move |_: &gpui_kit::ClickEvent, window: &mut Window, cx: &mut App| {
+                            let _ = pane
+                                .update(cx, |this, cx| this.open_wsl(distro.clone(), window, cx));
+                        }
                     }
                 };
                 let named = [
@@ -693,6 +802,23 @@ impl LocalPane {
                     menu = menu.item(
                         PopupMenuItem::new(root.to_string_lossy().to_string())
                             .on_click(go(root.clone())),
+                    );
+                }
+                if distros.is_empty() {
+                    return menu;
+                }
+                menu = menu.separator();
+                if distros.len() >= WSL_SUBMENU_AT {
+                    let (distros, wsl) = (distros.clone(), wsl.clone());
+                    return menu.submenu(t!("local.place_wsl"), window, cx, move |sub, _, _| {
+                        distros.iter().fold(sub, |sub, distro| {
+                            sub.item(PopupMenuItem::new(distro.clone()).on_click(wsl(distro)))
+                        })
+                    });
+                }
+                for distro in &distros {
+                    menu = menu.item(
+                        PopupMenuItem::new(crate::wsl_name(distro, "")).on_click(wsl(distro)),
                     );
                 }
                 menu

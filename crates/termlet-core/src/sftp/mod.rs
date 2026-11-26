@@ -20,7 +20,8 @@
 //!   [`SftpManager::watch_transfers`] 推送（每次是全部任务的快照），一批结束时 [`SftpManager::events`] 送出
 //!   [`SftpEvent::BatchEnded`]（带汇总，[`BatchReport::should_announce`] 判断要不要弹提示）。取消、继续、清除见
 //!   [`SftpManager::cancel`]、[`SftpManager::resume`]、[`SftpManager::clear`]。
-//! - 本机一侧：[`list_local`]、[`local_places`]、[`make_local_dir`]、[`rename_local`]、[`trash_local`]。
+//! - 本机一侧：[`list_local`]、[`local_places`]、[`make_local_dir`]、[`rename_local`]、[`trash_local`]；
+//!   WSL 的位置见 [`open_wsl`]、[`auto_open_allowed`]。
 //! - 跟随终端目录：优先用 shell 报告的目录（OSC 7），没有时用 [`TerminalCwd::read`]。
 //!
 //! 全部是异步函数，必须在核心的运行时上执行（`crate::runtime::spawn`，返回的 future 都是 `Send`）；界面线程只等待结果。
@@ -53,8 +54,9 @@ pub use edit::{MAX_EDIT_SIZE, TextEncoding, TextFile, WriteResult, WriteTextRequ
 pub use entry::{Entry, EntryKind, Listing, mode_string};
 pub use error::{NoSftp, Rejection, SftpError, Side};
 pub use local::{
-    LocalEntry, LocalListing, LocalPlaces, list_local, local_places, local_roots, make_local_dir,
-    network_server, rename_local, trash_local, valid_local_name,
+    LocalEntry, LocalListing, LocalPlaces, auto_open_allowed, list_local, local_places,
+    local_roots, make_local_dir, network_server, open_wsl, rename_local, trash_local,
+    valid_local_name, wsl_distro, wsl_locations,
 };
 pub use manager::{ManagerOptions, SftpEvent, SftpManager, SshTarget};
 pub use names::{MAX_NAME_LEN, PART_SUFFIX, is_reserved_name, safe_name};

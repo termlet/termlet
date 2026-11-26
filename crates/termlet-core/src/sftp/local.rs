@@ -3,6 +3,11 @@
 //! 只接受绝对路径的目录与其中的名称：名称不能含路径分隔符、不能是 `.` 或 `..`，操作不会越出所在目录。设备路径
 //! （`\\?\`、`\\.\`）一律拒绝。网络位置（`\\server\share`）访问前要用户确认（访问时 Windows 会自动把当前账户的登录信息
 //! 发给对方），这一步由界面做：见 [`network_server`]。全部是异步函数，文件操作在后台线程上执行。
+//!
+//! WSL 的位置（`\\wsl.localhost\<发行版>\…`，见 [`wsl_distro`]）由本机的 WSL 提供，不当网络位置；Windows 经它看到的
+//! 文件与 Linux 中的有几处不同，这里补上：以 `.` 开头的算隐藏，命名管道、套接字、设备文件（Windows 一侧是不是链接的
+//! 重解析点）记为 [`EntryKind::Special`]，上传时跳过。访问没在运行的发行版会启动它：打开面板时不自动进入
+//! （[`auto_open_allowed`]），用户点了才进入（[`open_wsl`]）。
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -50,6 +55,8 @@ pub struct LocalListing {
     /// 上级目录；已是磁盘根目录（`C:\`、`/`）时为 `None`
     pub parent: Option<PathBuf>,
     pub entries: Vec<LocalEntry>,
+    /// 这里没有回收站，删除是永久删除（见 [`trash_local`]）
+    pub deletes_permanently: bool,
 }
 
 /// 常用位置。
@@ -77,16 +84,97 @@ fn is_device_path(path: &Path) -> bool {
 /// 访问前需要用户确认的网络位置：UNC 路径的服务器名（小写）。不是网络位置、是 WSL 的位置
 /// （`\\wsl.localhost\…`、`\\wsl$\…`，由本机的 WSL 提供）时为 `None`。界面记下本次运行中用户允许过的服务器。
 pub fn network_server(path: &Path) -> Option<String> {
+    let (server, _) = unc_parts(path)?;
+    if server.is_empty() || is_wsl_server(&server) {
+        return None;
+    }
+    Some(server)
+}
+
+/// WSL 的位置（`\\wsl.localhost\<发行版>\…`、`\\wsl$\<发行版>\…`）所在的发行版；不是 WSL 的位置时为 `None`。
+pub fn wsl_distro(path: &Path) -> Option<String> {
+    let (server, rest) = unc_parts(path)?;
+    let distro = rest.split('\\').next()?;
+    (is_wsl_server(&server) && !distro.is_empty()).then(|| distro.to_string())
+}
+
+fn is_wsl_server(server: &str) -> bool {
+    server == "wsl.localhost" || server == "wsl$"
+}
+
+/// UNC 路径的服务器名（小写）与其后的部分（`\` 分隔）；不是 UNC 路径、是设备路径时为 `None`。
+fn unc_parts(path: &Path) -> Option<(String, String)> {
     if is_device_path(path) {
         return None;
     }
     let text = path.as_os_str().to_string_lossy().replace('/', "\\");
     let rest = text.strip_prefix(r"\\")?;
-    let server = rest.split('\\').next()?.to_lowercase();
-    if server.is_empty() || server == "wsl.localhost" || server == "wsl$" {
-        return None;
+    let (server, rest) = rest.split_once('\\').unwrap_or((rest, ""));
+    Some((server.to_lowercase(), rest.to_string()))
+}
+
+/// 进入发行版时依次尝试的位置：默认用户的主目录 `home`（Linux 中的路径）、发行版的根目录；先用 `\\wsl.localhost`，
+/// 不认时（较旧的 Windows 10）用 `\\wsl$`。`home` 中有 Windows 表示不了的名称时不用它。
+pub fn wsl_locations(distro: &str, home: Option<&str>) -> Vec<PathBuf> {
+    let home: Option<Vec<&str>> = home.and_then(|home| {
+        let parts: Vec<&str> = home
+            .strip_prefix('/')?
+            .split('/')
+            .filter(|p| !p.is_empty())
+            .collect();
+        parts
+            .iter()
+            .all(|p| valid_local_name(p).is_ok())
+            .then_some(parts)
+    });
+    let mut out = Vec::new();
+    for server in ["wsl.localhost", "wsl$"] {
+        let root = format!(r"\\{server}\{distro}\");
+        if let Some(parts) = home.as_ref().filter(|p| !p.is_empty()) {
+            out.push(PathBuf::from(format!("{root}{}", parts.join(r"\"))));
+        }
+        out.push(PathBuf::from(root));
     }
-    Some(server)
+    out
+}
+
+/// 进入 WSL 发行版：取默认用户的主目录（发行版没在运行时会启动它，可能要几秒），按 [`wsl_locations`] 依次尝试，
+/// 用第一个能列出的；都不行时返回第一个的错误。
+pub async fn open_wsl(distro: &str) -> Result<LocalListing, SftpError> {
+    if !crate::localshell::wsl::valid_name(distro) {
+        return Err(Rejection::InvalidName.into());
+    }
+    let home = crate::wsl::home(distro).await;
+    let mut first = None;
+    for dir in wsl_locations(distro, home.as_deref()) {
+        match list_local(&dir).await {
+            Ok(listing) => return Ok(listing),
+            Err(e) => {
+                first.get_or_insert(e);
+            }
+        }
+    }
+    Err(first.unwrap_or_else(|| Rejection::InvalidName.into()))
+}
+
+/// 打开面板时能不能自动进入 `dir`（上次所在的目录等）：网络位置要先确认，不自动访问；WSL 的位置只在它的发行版正在
+/// 运行时进入——访问会把发行版启动起来，打开面板不该启动它。查运行状态要运行 wsl.exe（约 0.3 秒，不启动发行版）。
+pub async fn auto_open_allowed(dir: &Path) -> bool {
+    if network_server(dir).is_some() {
+        return false;
+    }
+    let Some(distro) = wsl_distro(dir) else {
+        return true;
+    };
+    blocking(crate::localshell::wsl::running)
+        .await
+        .iter()
+        .any(|d| d.eq_ignore_ascii_case(&distro))
+}
+
+/// WSL 位置中的特殊文件（命名管道、套接字、设备文件）：上传时跳过，读它会一直等到超时。
+pub(crate) fn is_wsl_special(path: &Path, meta: &std::fs::Metadata) -> bool {
+    wsl_distro(path).is_some() && os::non_link_reparse_point(meta)
 }
 
 /// 目录必须是绝对路径、不能是设备路径；返回规范化后的路径（处理 `.` 与 `..`）。
@@ -159,15 +247,20 @@ pub async fn list_local(dir: &Path) -> Result<LocalListing, SftpError> {
     let path = absolute_dir(dir)?;
     blocking(move || {
         let reader = std::fs::read_dir(&path).map_err(|e| error::local(&path, &e))?;
+        let wsl = wsl_distro(&path).is_some();
         let mut entries = Vec::new();
         for entry in reader {
             let entry = entry.map_err(|e| error::local(&path, &e))?;
             let name = entry.file_name().to_string_lossy().into_owned();
             let full = entry.path();
             let own = entry.metadata().ok();
-            let kind = entry.file_type().map(kind_of).unwrap_or(EntryKind::File);
+            let mut kind = entry.file_type().map(kind_of).unwrap_or(EntryKind::File);
+            if wsl && own.as_ref().is_some_and(os::non_link_reparse_point) {
+                kind = EntryKind::Special;
+            }
             let mut item = LocalEntry {
-                hidden: hidden(&name, own.as_ref()),
+                // WSL 的位置中以 `.` 开头的算隐藏（Windows 一侧看不到隐藏属性）
+                hidden: hidden(&name, own.as_ref()) || (wsl && name.starts_with('.')),
                 name,
                 path: full.clone(),
                 kind,
@@ -192,10 +285,12 @@ pub async fn list_local(dir: &Path) -> Result<LocalListing, SftpError> {
             entries.push(item);
         }
         let parent = path.parent().map(Path::to_path_buf);
+        let deletes_permanently = os::deletes_permanently(&path);
         Ok(LocalListing {
             path,
             parent,
             entries,
+            deletes_permanently,
         })
     })
     .await
@@ -283,9 +378,11 @@ fn same_entry(a: &Path, b: &Path) -> bool {
     }
 }
 
-/// 把 `dir` 中的这些项移到回收站（误删可以找回）。不能进回收站的位置（网络位置等）系统会提示将永久删除。
-/// 只在 Windows 上支持，其他平台返回 [`Rejection::TrashUnsupported`]。
-pub async fn trash_local(dir: &Path, names: &[String]) -> Result<(), SftpError> {
+/// 删除 `dir` 中的这些项：能移到回收站的总是移到回收站（误删可以找回）。系统不能移到回收站的（没有回收站的位置，
+/// 见 [`LocalListing::deletes_permanently`]；太大的文件等）：`permanent` 为真（界面已说明将永久删除、用户确认了）时
+/// 永久删除，并跳过已经不在的项（上一次中止前已移到回收站的）；为假时一项也不永久删除，返回
+/// [`Rejection::NotRecyclable`]。只在 Windows 上支持，其他平台返回 [`Rejection::TrashUnsupported`]。
+pub async fn trash_local(dir: &Path, names: &[String], permanent: bool) -> Result<(), SftpError> {
     let paths = names
         .iter()
         .map(|name| entry_path(dir, name))
@@ -293,7 +390,21 @@ pub async fn trash_local(dir: &Path, names: &[String]) -> Result<(), SftpError> 
     if paths.is_empty() {
         return Err(Rejection::NoPaths.into());
     }
-    blocking(move || os::trash(&paths)).await
+    blocking(move || {
+        let paths: Vec<PathBuf> = if permanent {
+            paths
+                .into_iter()
+                .filter(|p| std::fs::symlink_metadata(p).is_ok())
+                .collect()
+        } else {
+            paths
+        };
+        if paths.is_empty() {
+            return Ok(());
+        }
+        os::trash(&paths, permanent)
+    })
+    .await
 }
 
 #[cfg(test)]
@@ -396,14 +507,117 @@ mod tests {
         let dir = tmp.path();
         std::fs::write(dir.join("trash-me.txt"), "x").unwrap();
         std::fs::create_dir(dir.join("trash-dir")).unwrap();
-        trash_local(dir, &["trash-me.txt".into(), "trash-dir".into()])
+        trash_local(dir, &["trash-me.txt".into(), "trash-dir".into()], false)
             .await
             .unwrap();
         assert!(!dir.join("trash-me.txt").exists());
         assert!(!dir.join("trash-dir").exists());
         assert!(matches!(
-            trash_local(dir, &["../x".into()]).await,
+            trash_local(dir, &["../x".into()], false).await,
             Err(SftpError::Rejected(Rejection::InvalidName))
         ));
+        assert!(matches!(
+            trash_local(dir, &["none".into()], false).await,
+            Err(SftpError::NotFound { .. })
+        ));
+        // 确认了永久删除时，已经不在的项跳过
+        trash_local(dir, &["none".into()], true).await.unwrap();
+    }
+
+    // WSL 的位置（会启动发行版、在其中建临时目录，测完删掉），需要指定发行版，例如
+    //   TERMLET_TEST_WSL=Ubuntu cargo test -p termlet-core sftp::local
+    // 以 `.` 开头的算隐藏，命名管道是特殊文件，符号链接还是链接；没有回收站：不确认永久删除时一项也不删，确认后删掉；
+    // 打开面板时只在发行版运行时自动进入
+    #[cfg(windows)]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn wsl_location() {
+        let Ok(distro) = std::env::var("TERMLET_TEST_WSL") else {
+            println!("未设置 TERMLET_TEST_WSL，跳过 WSL 的测试");
+            return;
+        };
+        let wsl = |script: String| {
+            let distro = distro.clone();
+            async move {
+                let result = crate::wsl::exec(&distro, "", &script, 4096, Duration::from_secs(60))
+                    .await
+                    .unwrap();
+                String::from_utf8(result.stdout).unwrap().trim().to_string()
+            }
+        };
+        let dir = wsl(
+            "d=$(mktemp -d /tmp/termlet-wsltest.XXXXXX) && cd \"$d\" && echo x > .dot && echo x > a.txt \
+             && mkfifo pipe && ln -s a.txt link && mkdir sub && echo \"$d\""
+                .into(),
+        )
+        .await;
+        assert!(dir.starts_with("/tmp/termlet-wsltest."), "{dir}");
+        let unc = wsl_locations(&distro, Some(&dir)).remove(0);
+        assert_eq!(wsl_distro(&unc).as_deref(), Some(distro.as_str()));
+        assert!(auto_open_allowed(&unc).await, "发行版正在运行");
+        let listing = list_local(&unc).await.unwrap();
+        assert!(listing.deletes_permanently);
+        let find = |name: &str| listing.entries.iter().find(|e| e.name == name).unwrap();
+        assert!(find(".dot").hidden);
+        assert!(!find("a.txt").hidden);
+        assert_eq!(find("pipe").kind, EntryKind::Special);
+        assert_eq!(find("link").kind, EntryKind::Symlink);
+        assert_eq!(find("a.txt").kind, EntryKind::File);
+        // 上传前读的是跟随后的信息：管道同样认得出
+        let meta = std::fs::metadata(unc.join("pipe")).unwrap();
+        assert!(is_wsl_special(&unc.join("pipe"), &meta));
+        assert!(matches!(
+            trash_local(&unc, &["a.txt".into(), "sub".into()], false).await,
+            Err(SftpError::Rejected(Rejection::NotRecyclable))
+        ));
+        assert!(unc.join("a.txt").exists() && unc.join("sub").exists());
+        trash_local(&unc, &["a.txt".into(), "sub".into()], true)
+            .await
+            .unwrap();
+        assert!(!unc.join("a.txt").exists() && !unc.join("sub").exists());
+        wsl(format!("rm -rf '{dir}'")).await;
+    }
+
+    // 打开面板时自动进入：本机路径可以；网络位置、没在运行（或不存在）的发行版不进，只查询、不访问
+    #[tokio::test(flavor = "multi_thread")]
+    async fn auto_open_rules() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(auto_open_allowed(tmp.path()).await);
+        assert!(!auto_open_allowed(Path::new(r"\\nas\share\x")).await);
+        assert!(!auto_open_allowed(Path::new(r"\\wsl.localhost\termlet-no-such-distro\x")).await);
+    }
+
+    #[test]
+    fn wsl_paths() {
+        for (path, want) in [
+            (r"\\wsl.localhost\Ubuntu\home", Some("Ubuntu")),
+            (r"\\WSL.LOCALHOST\Ubuntu", Some("Ubuntu")),
+            (r"\\wsl$\Debian\", Some("Debian")),
+            ("//wsl.localhost/Ubuntu/tmp", Some("Ubuntu")),
+            (r"\\wsl.localhost\", None),
+            (r"\\wsl.localhost", None),
+            (r"\\NAS\share", None),
+            (r"\\?\UNC\wsl.localhost\Ubuntu", None),
+            (r"C:\wsl.localhost\Ubuntu", None),
+        ] {
+            assert_eq!(wsl_distro(Path::new(path)).as_deref(), want, "{path}");
+        }
+        assert_eq!(
+            wsl_locations("Ubuntu", Some("/home/ruan")),
+            [
+                r"\\wsl.localhost\Ubuntu\home\ruan",
+                r"\\wsl.localhost\Ubuntu\",
+                r"\\wsl$\Ubuntu\home\ruan",
+                r"\\wsl$\Ubuntu\",
+            ]
+            .map(PathBuf::from)
+        );
+        // Windows 表示不了的名称、根目录、取不到：只有根目录
+        for home in [Some("/home/a:b"), Some("/"), Some("relative"), None] {
+            assert_eq!(
+                wsl_locations("Ubuntu", home),
+                [r"\\wsl.localhost\Ubuntu\", r"\\wsl$\Ubuntu\"].map(PathBuf::from),
+                "{home:?}"
+            );
+        }
     }
 }

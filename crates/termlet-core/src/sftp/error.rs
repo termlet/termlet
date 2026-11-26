@@ -61,6 +61,9 @@ pub enum Rejection {
     UnencodableName,
     #[error("当前平台不支持移到回收站")]
     TrashUnsupported,
+    /// 系统不能把它移到回收站（没有回收站的位置、太大等），用户又没有确认永久删除：没有删除
+    #[error("不能移到回收站，没有删除")]
+    NotRecyclable,
     /// SCP 模式（服务器没有 SFTP）不支持的操作：修改权限等
     #[error("SCP 模式不支持这个操作")]
     ScpUnsupported,
