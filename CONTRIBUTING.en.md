@@ -140,7 +140,7 @@ The full conventions are in [CLAUDE.md](CLAUDE.md) (in Chinese; it is also the p
 
 ### New features and options
 
-Termlet deliberately stays small and clear, so please open an issue to discuss additions first:
+Termlet's aim is "everything you need, at hand when you want it and out of your way when you don't, so you can stay immersed in the terminal", so it deliberately stays small and clear. Please open an issue to discuss additions first:
 
 - Say who needs it, whether it overlaps with an existing feature, and whether it could be an option of one; "another app has it" isn't a reason on its own.
 - If a good default solves it, don't add an option. New features are off by default or appear only when used, and don't do work at startup or keep running in the background.

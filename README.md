@@ -7,6 +7,8 @@
 
 <p align="center"><img src="docs/images/home-zh.webp" width="860" alt="Termlet 的主窗口：左边是分组的主机列表，右边的终端中运行着 htop，底部的状态条显示延迟、CPU、内存与网速"></p>
 
+**功能都在，用时随手可得，不用时绝不打扰——让你沉浸在终端里。**
+
 Termlet 是 SSH 客户端，支持 Windows、macOS（Apple 芯片）与 Linux。界面与核心都用 Rust 编写（基于 GPUI / gpui-kit），整个应用只有一个进程。
 
 自带 `termlet` 命令行工具：Claude Code 等 AI 工具可以借它在你保存的服务器上执行命令、传输文件，凭据始终留在 Termlet 里。以 [AGPL-3.0-or-later](LICENSE) 开源，免费，无需账号。

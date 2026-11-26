@@ -7,6 +7,8 @@
 
 <p align="center"><img src="docs/images/home-en.webp" width="860" alt="Termlet's main window: grouped hosts in the sidebar, htop running in the terminal, and a status bar with latency, CPU, memory and network speed"></p>
 
+**Everything you need, at hand when you want it and out of your way when you don't, so you can stay immersed in the terminal.**
+
 Termlet is an SSH client for Windows, macOS (Apple silicon) and Linux. Its interface and core are both written in Rust (on GPUI / gpui-kit), and the whole app runs as a single process.
 
 It comes with the `termlet` command-line tool, which lets AI tools such as Claude Code run commands and transfer files on the servers you have saved, while the credentials never leave Termlet. Open source under the [AGPL-3.0-or-later](LICENSE), free, and no account needed.
