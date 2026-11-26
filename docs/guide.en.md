@@ -271,6 +271,7 @@ Notes:
   - Netcatty (the `.csv` exported from its hosts page)
   - ShellRS (its data folder, or its sync folder if it syncs, which needs the sync password)
   - NyaTerm (its local database `~/.nyaterm/nyaterm.redb`, or an encrypted `.nya` backup exported in its settings, which needs the password set when exporting)
+  - Termlet snippets (the `.json` exported from the Snippets page; snippets only, see [Snippets](#snippets))
   - NyaTerm quick commands (the `.json` exported from its Quick Commands panel; snippets only, see below)
 - Preview:
   - The preview appears once you pick the source.
@@ -330,8 +331,9 @@ Notes:
   - Login passwords, proxy passwords and one-time code secrets go into the vault and private keys into the key library (attached OpenSSH certificates aren't imported; the preview notes them). NyaTerm "accounts" become credential profiles (an existing profile with the same name and username is used as it is), and hosts that log in with an account use the profile; Telnet hosts get the account's username and password. Agent forwarding is turned off after importing.
   - NyaTerm encrypts its local data only with a key derived from your home folder (even with a master password), so any program on this computer can read it. On another computer, or after the home folder was renamed, it can't be decrypted; the hosts are imported without passwords.
 - **NyaTerm quick commands**:
-  - The JSON from "Export Commands" at the top right of NyaTerm's Quick Commands panel (`nyaterm-quick-commands.json`); the one in NyaTerm's config folder (`~/.nyaterm`) is filled in, or else the newest one in Downloads, Desktop or Documents. "Import Snippets…" on the Snippets page (or in the command palette) opens the dialog with this source already chosen and the title "Import Snippets".
-  - Only the quick commands are imported here (for hosts, see the previous item). The preview lists all of them, with nothing to select; ones with the same name and content as an existing snippet aren't imported again, and ones with the same name but different content are added as new snippets (existing ones aren't replaced).
+  - The JSON from "Export Commands" at the top right of NyaTerm's Quick Commands panel (`nyaterm-quick-commands.json`); the one in NyaTerm's config folder (`~/.nyaterm`) is filled in, or else the newest one in Downloads, Desktop or Documents.
+  - "Import Snippets…" under More on the Snippets page (or in the command palette) opens the dialog titled "Import Snippets" with "Termlet snippets" chosen, or with this source when no Termlet export can be found but a NyaTerm one can. Both sources recognize the format from the file's contents and switch to the right one if you picked the other.
+  - Only the quick commands are imported here (for hosts, see the previous item). The preview lists all of them, with nothing to select; ones with the same name and content as an existing snippet are marked "Exists" and aren't imported again, and ones with the same name but different content are added as new snippets (existing ones aren't replaced).
   - Categories become groups; nested categories are written as "Parent / Child". Pinned commands come first in their group.
   - Commands are converted following NyaTerm's rules: `\r` and `\n` become line breaks, `\t` a tab and `\\` a single backslash, other backslashes stay; a variable `{{name=default}}` becomes `{{name:default}}`; "execute" and line-by-line commands get a trailing line break (they run after sending), while "append to input" and character-by-character ones don't; commands NyaTerm sends as written are kept as they are.
   - Anything dropped or changed is listed in the preview: pauses `\p` (Termlet has no pauses, so the text is sent without waiting), option lists `{{name|a,b}}` (only the first option is kept, as the default), line-by-line or character-by-character intervals, variables Termlet doesn't recognize (sent as written), `{{…}}` in commands sent as written (Termlet treats them as parameters), descriptions, colors, icons, pinning and risk levels.
@@ -539,7 +541,7 @@ Default shortcuts:
 ### Command palette
 
 - Ctrl+Shift+P searches hosts, open tabs (terminals, SFTP, editors, log viewers), workspaces and actions.
-- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP for the current host, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), import / export hosts, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
+- Actions include duplicate session, reconnect, new local terminal, new host and group, open SFTP for the current host, snippets, save as workspace, sync input, compose bar, host tools (and their overview, which can pop out into an always-on-top window), import / export hosts, import / export snippets, view the audit log, show port forwards, keyword highlighting, switch light / dark, switch tab position, zoom the interface in / out, change the terminal color scheme, lock now, new window, move tab to new window, settings, customize the toolbar and more.
 - Start with `>` to search only actions, `@` only open tabs, `#` only hosts.
 - When you type an address, the first item is a quick connect.
 
@@ -640,7 +642,11 @@ Default shortcuts:
   - Go templates for docker and kubectl such as `{{.Names}}` are sent as is.
 - Manage snippets under "Snippets" in the sidebar (ticking "run after sending" adds a trailing Enter), optionally in groups.
 - A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent (snippets that are only typed, not run, aren't checked). While sync input is on, snippets go to every synced terminal.
-- Snippets exported from NyaTerm can be imported ("Import Snippets…" on the Snippets page; see NyaTerm under [Importing hosts](#importing-hosts)).
+- **Export and import**: "Export Snippets…" and "Import Snippets…" under More on the Snippets page (or in the command palette) take your snippets to another computer.
+  - Export: select groups (all by default; ungrouped snippets count as a group of their own) and save a JSON file (`termlet-snippets-date.json` by default) with each snippet's name, group (nested "Parent / Child" names as they are), content and whether it runs after sending, without this computer's IDs or other internal details.
+  - The file is plain text: passwords and anything else written in your snippets are saved as they are, and only your user account can read it. Look it over before sending it to anyone.
+  - Import: choose the file, check the preview and import. Groups are matched by name, so snippets go into an existing group with the same name; parameters `{{name}}`, `{{name:default}}` and things like `{{.Names}}` stay as written; snippets with the same name and content as an existing one are marked "Exists" and aren't imported again. A file from a newer version of Termlet needs Termlet to be upgraded first; fields it doesn't recognize are ignored.
+  - Snippets exported from NyaTerm can be imported too (see NyaTerm under [Importing hosts](#importing-hosts)); both kinds of file are recognized automatically.
 - **Snippet bar**: you can also show a snippet bar below the terminal (the button on the Snippets page or "Show Snippet Bar" in the command palette; off by default).
   - Click a button to send it to the current terminal.
   - Pick a group to show only its snippets.

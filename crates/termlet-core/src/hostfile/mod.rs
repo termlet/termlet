@@ -454,5 +454,8 @@ pub fn preview(store: &Store, file: &HostFile) -> ImportPreview {
                 .collect(),
         })
         .collect();
-    ImportPreview { items, skipped: 0 }
+    ImportPreview {
+        items,
+        ..Default::default()
+    }
 }

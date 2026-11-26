@@ -1,4 +1,4 @@
-//! 侧边栏的“快捷命令”页：按分组折叠显示，搜索、新建、编辑、删除；单击发送到当前终端。
+//! 侧边栏的“快捷命令”页：按分组折叠显示，搜索、新建、编辑、删除；单击发送到当前终端。“更多”中导入、导出。
 //!
 //! 只有未分组的快捷命令时不显示分组标题。分组的折叠状态记在本机的界面状态中（键为 `snippet-group:<分组名>`）。
 
@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
-use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenuItem};
+use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
@@ -390,13 +390,24 @@ impl Render for SnippetList {
                             }),
                     )
                     .child(
-                        Button::new("snippet-import")
+                        Button::new("snippets-more")
                             .ghost()
                             .small()
-                            .icon(IconName::Download)
-                            .tooltip(t!("snippets.import"))
-                            .on_click(|_, window, cx| {
-                                crate::backup_ui::open_import_snippets(window, cx)
+                            .icon(IconName::Ellipsis)
+                            .tooltip(t!("hosts.toolbar.more"))
+                            .dropdown_menu(|menu, _, _| {
+                                menu.item(PopupMenuItem::new(t!("snippets.import")).on_click(
+                                    |_, window, cx| {
+                                        crate::backup_ui::open_import_snippets(window, cx)
+                                    },
+                                ))
+                                .item(
+                                    PopupMenuItem::new(t!("snippets.export")).on_click(
+                                        |_, window, cx| {
+                                            crate::backup_ui::open_export_snippets(window, cx)
+                                        },
+                                    ),
+                                )
                             }),
                     )
                     .child({

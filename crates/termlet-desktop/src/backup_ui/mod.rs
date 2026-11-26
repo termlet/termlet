@@ -2,8 +2,9 @@
 //!
 //! - [`open_import`]：导入主机（OpenSSH、Xshell、FinalShell、MobaXterm、Tabby、Termora 与 Termlet 自己的主机文件），
 //!   预览、搜索、筛选、勾选后导入，显示新建、合并、跳过与没能导入的项；[`open_import_snippets`] 用同一个对话框导入
-//!   NyaTerm 导出的快捷命令。
+//!   Termlet 或 NyaTerm 导出的快捷命令。
 //! - [`open_export`]：导出主机（Termlet 主机文件或 ssh_config），可选包含凭据（整体用密码加密）与端口转发。
+//! - [`open_export_snippets`]：按分组导出快捷命令（Termlet 的快捷命令文件，明文）。
 //! - [`BackupPage`]：设置中的“备份”页：完整备份与恢复、本机快照（列表、立即保存、恢复）、自动快照的设置。
 //!
 //! 导入、导出、备份、恢复都在核心的运行时上执行（`termlet_core::runtime::spawn`），界面只显示忙碌状态。
@@ -12,6 +13,7 @@ mod errors;
 mod export;
 mod import;
 mod page;
+mod snippet_export;
 #[cfg(test)]
 mod tests;
 
@@ -37,13 +39,14 @@ pub(crate) fn open_import(window: &mut Window, cx: &mut App) {
     import::open(window, cx);
 }
 
-/// 打开“导入快捷命令”：导入对话框选好 NyaTerm 导出的快捷命令。
+/// 打开“导入快捷命令”：导入对话框选好 Termlet 导出的快捷命令（本机只找得到 NyaTerm 导出的时改选它）。
 pub(crate) fn open_import_snippets(window: &mut Window, cx: &mut App) {
-    import::open_with(
-        import::ImportFrom::Client(termlet_core::import::Source::NyaTerm),
-        window,
-        cx,
-    );
+    import::open_snippets(window, cx);
+}
+
+/// 打开“导出快捷命令”。
+pub(crate) fn open_export_snippets(window: &mut Window, cx: &mut App) {
+    snippet_export::open(window, cx);
 }
 
 /// 打开“导出主机”，勾选 `hosts`（为空时勾选全部主机）；对话框中还可以按分组或主机改选。

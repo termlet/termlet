@@ -998,12 +998,17 @@ fn feature_list_matches_the_receiver() {
         );
     }
     assert!(Feature::ALL.len() <= 64, "位图只有 64 位");
-    // 每个导入来源各有一项，互不相同
+    // 每个导入来源各有一项，互不相同（Termlet 导出的快捷命令还没有，等接收端加上名称）
+    let unmarked = [crate::import::Source::TermletSnippets];
     let imports: std::collections::HashSet<Feature> = crate::import::Source::ALL
         .into_iter()
-        .map(Feature::import)
+        .filter_map(Feature::import)
         .collect();
-    assert_eq!(imports.len(), crate::import::Source::ALL.len());
+    assert_eq!(
+        imports.len(),
+        crate::import::Source::ALL.len() - unmarked.len()
+    );
+    assert!(unmarked.iter().all(|s| Feature::import(*s).is_none()));
     assert!(!imports.contains(&Feature::ImportTermletFile));
     assert_eq!(
         features::names(Feature::Sftp.bit() | Feature::Ssh.bit() | Feature::Cli.bit()),

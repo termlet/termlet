@@ -217,9 +217,9 @@ impl Feature {
         }
     }
 
-    /// 从某个来源导入。
-    pub fn import(source: Source) -> Feature {
-        match source {
+    /// 从某个来源导入；还没有对应项的来源为 `None`（不记）。
+    pub fn import(source: Source) -> Option<Feature> {
+        Some(match source {
             Source::SshConfig => Feature::ImportSshConfig,
             Source::Xshell => Feature::ImportXshell,
             Source::FinalShell => Feature::ImportFinalShell,
@@ -232,7 +232,9 @@ impl Feature {
             Source::ShellRs => Feature::ImportShellRs,
             Source::NyaTermData => Feature::ImportNyaTerm,
             Source::NyaTerm => Feature::ImportNyaTermSnippets,
-        }
+            // 新的名称要先加进接收端的白名单（未知的名称整份统计都会被拒），之后再加
+            Source::TermletSnippets => return None,
+        })
     }
 
     /// 位图中的这一位。

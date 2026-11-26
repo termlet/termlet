@@ -20,7 +20,6 @@ pub(super) const LONG_DESCRIPTIONS: &[(&str, usize)] = &[
     ("backup_ui.hint.totp_secret_missing", 42),
     ("backup_ui.import.hint", 146),
     ("backup_ui.import.hint_hostfile", 124),
-    ("backup_ui.import.hint_snippets", 77),
     ("backup_ui.import.secrets_hint.electerm", 137),
     ("backup_ui.import.secrets_hint.finalshell", 108),
     ("backup_ui.import.secrets_hint.netcatty", 104),

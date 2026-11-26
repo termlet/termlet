@@ -23,6 +23,7 @@ pub(super) fn source_name(source: Source) -> &'static str {
         Source::Netcatty => "Netcatty",
         Source::NyaTerm | Source::NyaTermData => "NyaTerm",
         Source::ShellRs => "ShellRS",
+        Source::TermletSnippets => "Termlet",
     }
 }
 
@@ -116,6 +117,14 @@ pub(super) fn describe_import(error: &ImportError) -> SharedString {
         ImportError::ElectermEncrypted => t!("backup_ui.import_error.electerm_encrypted"),
         ImportError::NotNetcatty => t!("backup_ui.import_error.not_netcatty"),
         ImportError::NotNyaTerm(error) => t!("backup_ui.import_error.not_nyaterm", error = error),
+        ImportError::NotTermletSnippets(error) => {
+            t!("backup_ui.import_error.not_termlet_snippets", error = error)
+        }
+        ImportError::SnippetsTooNew { found, supported } => t!(
+            "backup_ui.error.too_new",
+            found = found,
+            supported = supported
+        ),
         ImportError::NyaTermNotFound => t!("backup_ui.import_error.nyaterm_not_found"),
         ImportError::NyaTermInUse => t!("backup_ui.import_error.nyaterm_in_use"),
         ImportError::NotNyaTermData(error) => {
@@ -392,6 +401,11 @@ mod tests {
             ImportError::ElectermEncrypted,
             ImportError::NotNetcatty,
             ImportError::NotNyaTerm("bad json".into()),
+            ImportError::NotTermletSnippets("no snippets".into()),
+            ImportError::SnippetsTooNew {
+                found: 2,
+                supported: 1,
+            },
             ImportError::NyaTermNotFound,
             ImportError::NyaTermInUse,
             ImportError::NotNyaTermData("no table".into()),

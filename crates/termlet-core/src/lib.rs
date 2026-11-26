@@ -45,6 +45,7 @@ pub mod serial;
 pub mod session_log;
 pub mod sftp;
 pub mod snippet_params;
+pub mod snippetfile;
 pub mod sort_key;
 pub mod ssh;
 pub mod sshcert;

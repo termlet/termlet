@@ -1,6 +1,6 @@
 //! 从其他客户端导入主机：OpenSSH 的 `~/.ssh/config`、Xshell、FinalShell、MobaXterm、Tabby、Termora 2.x、WindTerm、
-//! Electerm、Netcatty、ShellRS（数据目录或同步文件夹）、NyaTerm（本机数据库或 `.nya` 备份）；以及 NyaTerm 导出的快捷命令
-//! （文件中只有快捷命令，没有主机）。
+//! Electerm、Netcatty、ShellRS（数据目录或同步文件夹）、NyaTerm（本机数据库或 `.nya` 备份）；以及 Termlet 自己与 NyaTerm
+//! 导出的快捷命令（文件中只有快捷命令，没有主机；两个来源都按内容识别格式，见 [`snippets`]）。
 //!
 //! 解析结果是与来源无关的导入计划（[`ImportPlan`]）：分组树、主机、主机之间的跳板引用、每台主机的提示、
 //! 随主机导入的端口转发（Xshell、NyaTerm）、快捷命令（WindTerm、NyaTerm）与转换时丢掉或改动的内容，以及（Termora、
@@ -41,6 +41,7 @@ mod nyaterm;
 mod plan;
 pub mod select;
 mod shellrs;
+mod snippets;
 mod ssh_config;
 mod sys;
 mod tabby;
@@ -100,10 +101,12 @@ pub enum Source {
     NyaTerm,
     /// NyaTerm 的本机数据库（`~/.nyaterm/nyaterm.redb`）或设置中导出的加密完整备份（`.nya`）：主机与快捷命令
     NyaTermData,
+    /// Termlet 在快捷命令页导出的 JSON（`termlet-snippets-日期.json`，见 [`crate::snippetfile`]）：只有快捷命令
+    TermletSnippets,
 }
 
 impl Source {
-    pub const ALL: [Source; 12] = [
+    pub const ALL: [Source; 13] = [
         Source::SshConfig,
         Source::Xshell,
         Source::FinalShell,
@@ -115,6 +118,7 @@ impl Source {
         Source::Netcatty,
         Source::ShellRs,
         Source::NyaTermData,
+        Source::TermletSnippets,
         Source::NyaTerm,
     ];
 
@@ -133,12 +137,13 @@ impl Source {
             Source::ShellRs => "shellrs",
             Source::NyaTerm => "nyaterm",
             Source::NyaTermData => "nyaterm_data",
+            Source::TermletSnippets => "termlet_snippets",
         }
     }
 
-    /// 来源中只有快捷命令，没有主机（NyaTerm）。
+    /// 来源中只有快捷命令，没有主机（Termlet 与 NyaTerm 导出的快捷命令）。
     pub fn snippets_only(self) -> bool {
-        self == Source::NyaTerm
+        matches!(self, Source::TermletSnippets | Source::NyaTerm)
     }
 
     /// 来源中的密码是明文（或可逆）保存的，导入前要用户明确同意（界面上的“导入保存的密码”，默认不勾选）；
@@ -179,11 +184,21 @@ impl Source {
             Source::ShellRs => shellrs::default_path(&env),
             Source::NyaTerm => nyaterm::default_path(&env),
             Source::NyaTermData => nyaterm::data::default_path(&env),
+            Source::TermletSnippets => snippets::default_path(&env),
         }
     }
 }
 
-/// 按来源读取 `path`（文件或目录；MobaXterm 还可以是 [`MOBAXTERM_REGISTRY_PATH`]）中的主机。
+/// 导入快捷命令时默认选的来源与位置：找得到 Termlet 导出的快捷命令时是它，否则找得到 NyaTerm 导出的时是 NyaTerm；
+/// 都没有时为 `None`。
+pub fn default_snippet_source() -> Option<(Source, PathBuf)> {
+    [Source::TermletSnippets, Source::NyaTerm]
+        .into_iter()
+        .find_map(|source| source.default_path().map(|path| (source, path)))
+}
+
+/// 按来源读取 `path`（文件或目录；MobaXterm 还可以是 [`MOBAXTERM_REGISTRY_PATH`]）中的主机。只有快捷命令的两个来源
+/// 按内容识别格式，返回的计划的 [`ImportPlan::source`] 是识别出的来源。
 pub fn parse(source: Source, path: &Path) -> Result<ImportPlan, ImportError> {
     parse_with_password(source, path, None)
 }
@@ -208,11 +223,12 @@ pub fn parse_with_password(
         Source::Electerm => electerm::read(path, &env)?,
         Source::Netcatty => netcatty::read(path, &env)?,
         Source::ShellRs => shellrs::read(path, &env, password)?,
-        Source::NyaTerm => nyaterm::read(path, &env)?,
+        Source::NyaTerm | Source::TermletSnippets => snippets::read(source, path, &env)?,
         Source::NyaTermData => nyaterm::data::read(path, &env, password)?,
     };
+    // 快捷命令按内容识别格式，计划的来源可能与选的不同
     tracing::info!(
-        source = source.name(),
+        source = plan.source.name(),
         hosts = plan.hosts.len(),
         groups = plan.groups.len(),
         snippets = plan.snippets.len(),
@@ -322,6 +338,14 @@ pub enum ImportError {
     /// 不是 NyaTerm 导出的快捷命令（不是 JSON，或没有 `commands`）
     #[error("不是 NyaTerm 导出的快捷命令：{0}")]
     NotNyaTerm(String),
+
+    /// 不是 Termlet 导出的快捷命令（选的来源是它，文件也不是 NyaTerm 的；或 `format` 对而结构不对）
+    #[error("不是 Termlet 导出的快捷命令：{0}")]
+    NotTermletSnippets(String),
+
+    /// Termlet 导出的快捷命令来自更新的版本（文件格式版本 `found`，这个版本最高支持 `supported`），需要先升级
+    #[error("快捷命令来自更新版本的 Termlet（版本 {found}，本版本最高支持 {supported}）")]
+    SnippetsTooNew { found: i64, supported: i64 },
 
     /// 选的目录中没有 NyaTerm 的数据库（`nyaterm.redb`，或 `location.json` 指向的数据目录中的）
     #[error("没有找到 NyaTerm 的数据库（nyaterm.redb）")]

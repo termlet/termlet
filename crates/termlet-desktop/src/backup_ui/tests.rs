@@ -989,8 +989,8 @@ fn add_snippet(cx: &mut TestAppContext, group: &str, name: &str, content: &str) 
     });
 }
 
-// 快捷命令页的“导入快捷命令…”：打开导入对话框并选好 NyaTerm；预览列出快捷命令与说明，不用勾选就能导入，
-// 与已有的相同的跳过
+// 快捷命令页“更多”中的“导入快捷命令…”：打开导入对话框并选好快捷命令的来源；选 NyaTerm 导出的文件时认出格式，
+// 预览列出快捷命令与说明，不用勾选就能导入，与已有的相同的跳过
 #[gpui_kit::test]
 fn nyaterm_snippets_from_the_snippets_page(cx: &mut TestAppContext) {
     open(cx, false);
@@ -1017,7 +1017,14 @@ fn nyaterm_snippets_from_the_snippets_page(cx: &mut TestAppContext) {
     cx.run_until_parked();
     cx.update_window(handle, |_, window, cx| {
         window.render_frame(cx);
-        window.click("snippet-import", cx);
+        window.click("snippets-more", cx);
+    })
+    .unwrap();
+    // 菜单在下一帧才建好：导入快捷命令…、导出快捷命令…
+    cx.run_until_parked();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.within("popup-menu").click(0usize, cx);
     })
     .unwrap();
     cx.run_until_parked();
@@ -1113,6 +1120,135 @@ fn nyaterm_preview_lists_what_is_dropped_or_changed(cx: &mut TestAppContext) {
     assert_eq!(
         cx.read(|cx| dialog.read(cx).report_snippets()),
         Some((2, 1))
+    );
+}
+
+// 导出快捷命令：默认全选分组（含未分组），有明文的说明，取消勾选的分组不导出；
+// 导入时选的是 NyaTerm 也认出是 Termlet 的格式并改选来源，预览标出已存在的，只导入其余的
+#[gpui_kit::test]
+fn termlet_snippets_export_and_import(cx: &mut TestAppContext) {
+    let (handle, _) = open(cx, false);
+    let dir = TempDir::new("termlet-snippets");
+    let file = dir.path("termlet-snippets.json");
+    add_snippet(cx, "运维", "磁盘", "df -h\n");
+    add_snippet(
+        cx,
+        "运维 / Kubernetes",
+        "日志",
+        "kubectl logs -f {{pod}} -c {{容器:app}}",
+    );
+    add_snippet(cx, "", "多行", "cd /srv/应用\ngit pull\n");
+    add_snippet(cx, "Docker", "名称", "docker ps --format '{{.Names}}'\n");
+
+    let export = cx
+        .update_window(handle, |_, window, cx| {
+            super::snippet_export::open(window, cx)
+        })
+        .unwrap();
+    cx.run_until_parked();
+    assert_eq!(
+        cx.read(|cx| export.read(cx).chosen_groups()),
+        ["", "Docker", "运维", "运维 / Kubernetes"],
+        "默认全选，未分组的也在"
+    );
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(exists(window, "snippet-export-plaintext"));
+        window.click("snippet-export-group-Docker", cx);
+        window.render_frame(cx);
+        window.click("snippet-export-submit", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let target = file.clone();
+    cx.simulate_new_path_selection(move |_| Some(target));
+    wait_until(cx, handle, "导出完成", |window, _| {
+        exists(window, "snippet-export-done")
+    });
+    let json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    assert_eq!(json["format"], "termlet-snippets");
+    let names: Vec<&str> = json["snippets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| s["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["多行", "磁盘", "日志"], "取消勾选的 Docker 不导出");
+    cx.update_window(handle, |_, window, cx| {
+        window.click("snippet-export-close", cx)
+    })
+    .unwrap();
+    cx.run_until_parked();
+
+    // 删掉“磁盘”后导入：选的来源是 NyaTerm，认出 Termlet 的格式
+    let disk = cx.update(|cx| {
+        AppState::store(cx)
+            .list::<Snippet>()
+            .into_iter()
+            .find(|s| s.doc.name == "磁盘")
+            .unwrap()
+            .id
+    });
+    cx.update(|cx| AppState::store(cx).delete::<Snippet>(&disk).unwrap());
+    let dialog = cx
+        .update_window(handle, |_, window, cx| {
+            super::import::open_with(ImportFrom::Client(Source::NyaTerm), window, cx)
+        })
+        .unwrap();
+    cx.run_until_parked();
+    let path = file.display().to_string();
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        type_into(window, cx, "import-path", &path);
+        window.click("import-preview", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "预览列出快捷命令", |_, cx| {
+        dialog.read(cx).snippet_preview().is_some()
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).source()),
+        ImportFrom::Client(Source::TermletSnippets)
+    );
+    let (names, notes, skipped) = cx.read(|cx| dialog.read(cx).snippet_preview()).unwrap();
+    assert_eq!(names, ["多行", "磁盘", "日志"]);
+    assert!(notes.is_empty());
+    assert_eq!(skipped, 0);
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).snippet_duplicates()),
+        Some(vec![true, false, true])
+    );
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("import-apply", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "导入完成", |window, _| {
+        exists(window, "import-done")
+    });
+    assert_eq!(
+        cx.read(|cx| dialog.read(cx).report_snippets()),
+        Some((1, 2))
+    );
+    let mut rows = snippets_in_store(cx);
+    rows.sort();
+    assert_eq!(
+        rows,
+        [
+            ("".into(), "多行".into(), "cd /srv/应用\ngit pull\n".into()),
+            (
+                "Docker".into(),
+                "名称".into(),
+                "docker ps --format '{{.Names}}'\n".into()
+            ),
+            ("运维".into(), "磁盘".into(), "df -h\n".into()),
+            (
+                "运维 / Kubernetes".into(),
+                "日志".into(),
+                "kubectl logs -f {{pod}} -c {{容器:app}}".into()
+            ),
+        ]
     );
 }
 

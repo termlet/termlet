@@ -50,6 +50,8 @@ pub struct ImportPreview {
     pub items: Vec<PreviewItem>,
     /// 来源中跳过的会话数（RDP、VNC 等非 SSH 会话，缺少地址的会话，无法解密的记录）
     pub skipped: usize,
+    /// 计划中各条快捷命令（与 `ImportPlan::snippets` 一一对应）是否与已有的、或计划中更靠前的相同：导入时跳过
+    pub snippet_duplicates: Vec<bool>,
 }
 
 /// 预览中的一台主机。
@@ -269,9 +271,15 @@ pub fn preview(store: &Store, plan: &ImportPlan) -> ImportPreview {
             forwards: h.forwards.iter().map(preview_forward).collect(),
         })
         .collect();
+    let mut seen = snippet_keys(store);
     ImportPreview {
         items,
         skipped: plan.skipped,
+        snippet_duplicates: plan
+            .snippets
+            .iter()
+            .map(|s| !seen.insert(snippet_key(s)))
+            .collect(),
     }
 }
 
@@ -436,7 +444,9 @@ pub async fn apply(
                 failures = report.failures.len(),
                 "导入主机"
             );
-            crate::usage::mark(crate::usage::Feature::import(source));
+            if let Some(feature) = crate::usage::Feature::import(source) {
+                crate::usage::mark(feature);
+            }
             Ok(report)
         }
         Err(e) if e.is_panic() => std::panic::resume_unwind(e.into_panic()),
@@ -582,18 +592,34 @@ fn write_forwards(store: &Store, id: &HostId, planned: &PlannedHost, report: &mu
     }
 }
 
+/// 比较快捷命令是否相同的键：名称（去掉首尾空白）、内容（不算末尾的换行）与是否执行（末尾有没有换行）。
+/// 发送时末尾的 `\n`、`\r\n` 都是回车，因此只差在这里的算相同。
+fn snippet_key(snippet: &Snippet) -> (String, String, bool) {
+    let body = snippet.content.trim_end_matches(['\r', '\n']);
+    (
+        snippet.name.trim().to_string(),
+        body.to_string(),
+        body.len() != snippet.content.len(),
+    )
+}
+
+/// 已有快捷命令的键。
+fn snippet_keys(store: &Store) -> HashSet<(String, String, bool)> {
+    store
+        .list::<Snippet>()
+        .iter()
+        .map(|s| snippet_key(&s.doc))
+        .collect()
+}
+
 /// 添加快捷命令：与已有的（以及本次已添加的）名称、内容都相同时跳过。
 fn write_snippets(store: &Store, snippets: &[Snippet], report: &mut ImportReport) {
     if snippets.is_empty() {
         return;
     }
-    let mut seen: HashSet<(String, String)> = store
-        .list::<Snippet>()
-        .into_iter()
-        .map(|s| (s.doc.name.trim().to_string(), s.doc.content))
-        .collect();
+    let mut seen = snippet_keys(store);
     for snippet in snippets {
-        if !seen.insert((snippet.name.trim().to_string(), snippet.content.clone())) {
+        if !seen.insert(snippet_key(snippet)) {
             report.snippets_skipped += 1;
             continue;
         }

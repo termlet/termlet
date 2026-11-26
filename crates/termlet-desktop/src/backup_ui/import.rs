@@ -7,9 +7,10 @@
 //!   ShellRS 的同步文件夹先要它们的密码（导出时设置的、同步密码），密码框的说明按来源写。
 //! - 整个计划的说明（`ImportPlan::notes`）写在预览下方；ShellRS 开启了同步时那一句旁边有“改选同步文件夹”。
 //! - 来源中有快捷命令（WindTerm）时，预览下方说明会一并导入多少条，结果中列出新增了多少条。
-//! - 只有快捷命令的来源（NyaTerm 导出的快捷命令）：预览列出快捷命令（分组、名称、内容的第一行）与转换时丢掉或
-//!   改动的内容，不用勾选，全部导入（与已有的名称、内容都相同的跳过）；对话框的标题随之写“导入快捷命令”。
-//!   快捷命令页的“导入快捷命令…”打开时选好这个来源（[`open_with`]）。
+//! - 只有快捷命令的来源（Termlet 与 NyaTerm 导出的快捷命令）：预览列出快捷命令（分组、名称、内容的第一行，标出
+//!   已存在的）与转换时丢掉或改动的内容，不用勾选，全部导入（与已有的名称、内容都相同的跳过）；对话框的标题随之写
+//!   “导入快捷命令”。两个来源都按文件的内容识别格式，识别出的与选的不同时改选识别出的来源。快捷命令页的
+//!   “导入快捷命令…”打开时选好 Termlet 的来源，本机只找得到 NyaTerm 导出的文件时改选它（[`open_snippets`]）。
 //! - 密码是明文保存的来源（Electerm、Netcatty）带密码等秘密时，预览下方有“导入保存的密码”（默认不勾选）与说明；
 //!   不勾选时按 `ImportPlan::without_secrets` 只导入主机，各行也不标“带密码 / 带私钥”。结果中列出给已有主机补上了
 //!   多少个密码。
@@ -44,8 +45,8 @@ use termlet_core::backup::BackupError;
 use termlet_core::hostfile::{self, HostFile};
 use termlet_core::import::select::{self, BulkAction, StatusFilter};
 use termlet_core::import::{
-    self, ImportPlan, ImportReport, OnDuplicate, PlanNote, PreviewForward, PreviewItem,
-    SnippetNotes, Source,
+    self, ImportPlan, ImportPreview, ImportReport, OnDuplicate, PlanNote, PreviewForward,
+    PreviewItem, SnippetNotes, Source,
 };
 use termlet_core::model::{ForwardKind, Protocol, Snippet, join_host_port};
 use termlet_core::runtime;
@@ -73,10 +74,12 @@ struct SnippetRow {
     first_line: SharedString,
     /// 内容的行数（不算末尾表示执行的换行）
     lines: usize,
+    /// 与已有的名称、内容都相同：导入时跳过
+    existing: bool,
 }
 
 impl SnippetRow {
-    fn new(snippet: &Snippet) -> Self {
+    fn new(snippet: &Snippet, existing: bool) -> Self {
         let body = snippet.content.trim_end_matches(['\r', '\n']);
         Self {
             group: snippet.group.clone().into(),
@@ -89,6 +92,7 @@ impl SnippetRow {
                 .replace('\t', "    ")
                 .into(),
             lines: body.lines().count(),
+            existing,
         }
     }
 }
@@ -167,7 +171,22 @@ pub(super) fn open_with(
     window: &mut Window,
     cx: &mut App,
 ) -> Entity<ImportDialog> {
-    let view = cx.new(|cx| ImportDialog::new(from, window, cx));
+    let view = cx.new(|cx| ImportDialog::new(from, false, window, cx));
+    show_dialog(view, window, cx)
+}
+
+/// 打开“导入快捷命令”：选好 Termlet 导出的快捷命令；本机找不到它的导出、找得到 NyaTerm 导出的时改选 NyaTerm。
+pub(super) fn open_snippets(window: &mut Window, cx: &mut App) -> Entity<ImportDialog> {
+    let from = ImportFrom::Client(Source::TermletSnippets);
+    let view = cx.new(|cx| ImportDialog::new(from, true, window, cx));
+    show_dialog(view, window, cx)
+}
+
+fn show_dialog(
+    view: Entity<ImportDialog>,
+    window: &mut Window,
+    cx: &mut App,
+) -> Entity<ImportDialog> {
     let rem = window.rem_size();
     let width = rems(50.)
         .to_pixels(rem)
@@ -183,7 +202,7 @@ pub(super) fn open_with(
                 view.update(cx, |view, cx| view.on_enter(window, cx))
             }
         };
-        // 只有快捷命令的来源（NyaTerm）写“导入快捷命令”
+        // 只有快捷命令的来源（Termlet、NyaTerm 导出的快捷命令）写“导入快捷命令”
         let title = if dialog_view.read(cx).from.snippets_only() {
             t!("backup_ui.import.title_snippets")
         } else {
@@ -231,10 +250,13 @@ impl ImportFrom {
             ImportFrom::Client(Source::ShellRs) => t!("backup_ui.import.source.shellrs"),
             ImportFrom::Client(Source::NyaTerm) => t!("backup_ui.import.source.nyaterm"),
             ImportFrom::Client(Source::NyaTermData) => t!("backup_ui.import.source.nyaterm_data"),
+            ImportFrom::Client(Source::TermletSnippets) => {
+                t!("backup_ui.import.source.termlet_snippets")
+            }
         }
     }
 
-    /// 来源中只有快捷命令（NyaTerm）。
+    /// 来源中只有快捷命令（Termlet、NyaTerm 导出的快捷命令）。
     pub(super) fn snippets_only(self) -> bool {
         matches!(self, ImportFrom::Client(source) if source.snippets_only())
     }
@@ -264,6 +286,9 @@ impl ImportFrom {
             ImportFrom::Client(Source::ShellRs) => Some(t!("backup_ui.import.source_hint.shellrs")),
             ImportFrom::Client(Source::NyaTermData) => {
                 Some(t!("backup_ui.import.source_hint.nyaterm_data"))
+            }
+            ImportFrom::Client(Source::TermletSnippets) => {
+                Some(t!("backup_ui.import.source_hint.termlet_snippets"))
             }
             _ => None,
         }
@@ -329,12 +354,19 @@ struct Preview {
     index: HashMap<String, usize>,
     /// 来源中跳过的会话数
     skipped: usize,
+    /// 计划中各条快捷命令是否已存在（导入时跳过）
+    snippet_duplicates: Vec<bool>,
     /// 来源要用户同意才导入其中的秘密（Electerm、Netcatty），且确实带有秘密
     asks_for_secrets: bool,
 }
 
 impl Preview {
-    fn new(from: ImportFrom, loaded: Loaded, items: Vec<PreviewItem>, skipped: usize) -> Self {
+    fn new(from: ImportFrom, loaded: Loaded, preview: ImportPreview) -> Self {
+        let ImportPreview {
+            items,
+            skipped,
+            snippet_duplicates,
+        } = preview;
         let index = items
             .iter()
             .enumerate()
@@ -350,7 +382,18 @@ impl Preview {
             items,
             index,
             skipped,
+            snippet_duplicates,
             asks_for_secrets,
+        }
+    }
+
+    /// 只有快捷命令的预览中导入时会新增的条数（已存在的跳过）。
+    fn new_snippets(&self) -> usize {
+        match &self.loaded {
+            Loaded::Plan(plan) => {
+                plan.snippets.len() - self.snippet_duplicates.iter().filter(|d| **d).count()
+            }
+            Loaded::HostFile(_) => 0,
         }
     }
 }
@@ -452,6 +495,8 @@ pub(super) struct ImportDialog {
     password: Entity<InputState>,
     /// Termlet 的主机文件已加密：显示密码框
     needs_password: bool,
+    /// 从快捷命令页打开：默认位置按找得到的导出文件选 Termlet 或 NyaTerm 的来源（用户自己改选后不再改）
+    pick_snippet_source: bool,
     preview: Option<Preview>,
     /// 预览时的路径：之后改了路径，按 Enter 重新预览
     previewed_path: Option<String>,
@@ -477,7 +522,13 @@ pub(super) struct ImportDialog {
 }
 
 impl ImportDialog {
-    pub(super) fn new(from: ImportFrom, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    /// `pick_snippet_source`：见同名的字段。
+    pub(super) fn new(
+        from: ImportFrom,
+        pick_snippet_source: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let choices = ImportFrom::all()
             .into_iter()
             .map(|f| Choice::new(f.label(), f))
@@ -537,6 +588,7 @@ impl ImportDialog {
             path_edited: false,
             password,
             needs_password: false,
+            pick_snippet_source,
             preview: None,
             previewed_path: None,
             query,
@@ -570,6 +622,7 @@ impl ImportDialog {
             return;
         }
         self.from = from;
+        self.pick_snippet_source = false;
         self.seq += 1;
         self.busy = None;
         self.preview = None;
@@ -586,26 +639,47 @@ impl ImportDialog {
         cx.notify();
     }
 
-    /// 在后台查找来源的默认位置（查文件、注册表），找到且用户还没填写时填入。
+    /// 在后台查找来源的默认位置（查文件、注册表），找到且用户还没填写时填入。从快捷命令页打开时按找得到的导出文件
+    /// 选来源（[`import::default_snippet_source`]）。
     fn load_default_path(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.path_edited = false;
         let ImportFrom::Client(source) = self.from else {
             return;
         };
+        let pick = self.pick_snippet_source;
         let seq = self.seq;
         self._default_path = Some(cx.spawn_in(window, async move |this, cx| {
             let found = cx
-                .background_spawn(async move { source.default_path() })
+                .background_spawn(async move {
+                    if pick {
+                        import::default_snippet_source()
+                    } else {
+                        source.default_path().map(|path| (source, path))
+                    }
+                })
                 .await;
             let _ = this.update_in(cx, |this, window, cx| {
                 if this.seq != seq || this.path_edited {
                     return;
                 }
-                if let Some(path) = found {
+                if let Some((found, path)) = found {
+                    this.adopt_source(ImportFrom::Client(found), window, cx);
                     this.fill_path(path.display().to_string(), window, cx);
                 }
             });
         }));
+    }
+
+    /// 改选程序找到或认出的来源（不清空路径与预览；用户自己改选来源见 [`Self::switch_source`]）。
+    fn adopt_source(&mut self, from: ImportFrom, window: &mut Window, cx: &mut Context<Self>) {
+        if from == self.from {
+            return;
+        }
+        tracing::info!(from = ?from, "导入：改选识别出的来源");
+        self.from = from;
+        self.source_select
+            .update(cx, |state, cx| state.set_selected_value(&from, window, cx));
+        cx.notify();
     }
 
     fn fill_path(&mut self, text: String, window: &mut Window, cx: &mut Context<Self>) {
@@ -694,12 +768,9 @@ impl ImportDialog {
                 });
                 Box::pin(async move {
                     match job.await {
-                        Ok(Ok((plan, preview))) => Ok(Preview::new(
-                            from,
-                            Loaded::Plan(plan),
-                            preview.items,
-                            preview.skipped,
-                        )),
+                        Ok(Ok((plan, preview))) => {
+                            Ok(Preview::new(from, Loaded::Plan(plan), preview))
+                        }
                         Ok(Err(
                             import::ImportError::WindTermPasswordRequired
                             | import::ImportError::PasswordRequired,
@@ -717,12 +788,9 @@ impl ImportDialog {
                 });
                 Box::pin(async move {
                     match job.await {
-                        Ok(Ok((file, preview))) => Ok(Preview::new(
-                            from,
-                            Loaded::HostFile(file),
-                            preview.items,
-                            preview.skipped,
-                        )),
+                        Ok(Ok((file, preview))) => {
+                            Ok(Preview::new(from, Loaded::HostFile(file), preview))
+                        }
                         Ok(Err(BackupError::PasswordRequired)) => Err(Failure::PasswordRequired),
                         Ok(Err(e)) => Err(Failure::Message(errors::describe_backup(&e))),
                         Err(e) => Err(Failure::Message(e.to_string().into())),
@@ -755,14 +823,21 @@ impl ImportDialog {
         cx.notify();
     }
 
-    /// 显示预览：默认勾选新主机，清空搜索与筛选。
+    /// 显示预览：默认勾选新主机，清空搜索与筛选。快捷命令的格式与选的来源不同时改选识别出的来源。
     fn show(
         &mut self,
-        preview: Preview,
+        mut preview: Preview,
         path: String,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if let Loaded::Plan(plan) = &preview.loaded
+            && preview.from.snippets_only()
+            && plan.source.snippets_only()
+        {
+            preview.from = ImportFrom::Client(plan.source);
+            self.adopt_source(preview.from, window, cx);
+        }
         self.selected = select::default_selection(&preview.items);
         self.anchor = None;
         self.status = StatusFilter::All;
@@ -846,7 +921,7 @@ impl ImportDialog {
             .unwrap_or_default()
     }
 
-    /// 只有快捷命令的预览（NyaTerm）中的快捷命令；不是这种预览时为 `None`。
+    /// 只有快捷命令的预览（Termlet、NyaTerm 导出的快捷命令）中的快捷命令；不是这种预览时为 `None`。
     fn snippets_only(&self) -> Option<&ImportPlan> {
         match &self.preview.as_ref()?.loaded {
             Loaded::Plan(plan) if plan.source.snippets_only() => Some(plan),
@@ -854,12 +929,12 @@ impl ImportDialog {
         }
     }
 
-    /// 可以导入：勾选了主机，或只有快捷命令的预览中有快捷命令。
+    /// 可以导入：勾选了主机，或只有快捷命令的预览中有不是已存在的快捷命令。
     fn can_apply(&self) -> bool {
         self.busy.is_none()
-            && match self.snippets_only() {
-                Some(plan) => !plan.snippets.is_empty(),
-                None => !self.chosen().is_empty(),
+            && match (self.snippets_only(), &self.preview) {
+                (Some(_), Some(preview)) => preview.new_snippets() > 0,
+                _ => !self.chosen().is_empty(),
             }
     }
 
@@ -1553,19 +1628,34 @@ impl ImportDialog {
         )
     }
 
-    /// 只有快捷命令的预览：列表（分组、名称、内容的第一行）与转换时丢掉或改动的内容。不用勾选，全部导入。
+    /// 只有快捷命令的预览：列表（分组、名称、内容的第一行，标出已存在的）与转换时丢掉或改动的内容。不用勾选，
+    /// 已存在的以外全部导入。
     fn render_snippets(
         &self,
         plan: &ImportPlan,
-        skipped: usize,
+        preview: &Preview,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
         let theme = cx.theme();
-        let (border, radius, muted) = (theme.border, theme.radius, theme.muted_foreground);
+        let (border, radius, muted, warning) = (
+            theme.border,
+            theme.radius,
+            theme.muted_foreground,
+            theme.warning,
+        );
         let mono = theme.mono_font_family.clone();
-        let rows: Rc<Vec<SnippetRow>> =
-            Rc::new(plan.snippets.iter().map(SnippetRow::new).collect());
+        let rows: Rc<Vec<SnippetRow>> = Rc::new(
+            plan.snippets
+                .iter()
+                .enumerate()
+                .map(|(i, s)| {
+                    let existing = preview.snippet_duplicates.get(i).copied();
+                    SnippetRow::new(s, existing.unwrap_or(false))
+                })
+                .collect(),
+        );
+        let existing = plan.snippets.len() - preview.new_snippets();
         let body = if rows.is_empty() {
             div()
                 .p_3()
@@ -1577,6 +1667,7 @@ impl ImportDialog {
             let height = rems(SNIPPET_ROW).to_pixels(window.rem_size());
             let sizes = Rc::new(vec![size(px(0.), height); rows.len()]);
             let ungrouped = t!("snippets.ungrouped");
+            let exists = t!("backup_ui.import.status.duplicate");
             v_virtual_list(
                 cx.entity(),
                 "import-snippet-rows",
@@ -1609,6 +1700,15 @@ impl ImportDialog {
                                             "backup_ui.import.snippet_lines",
                                             count = row.lines
                                         )))
+                                    })
+                                    .when(row.existing, |this| {
+                                        this.child(
+                                            div()
+                                                .flex_none()
+                                                .ml_auto()
+                                                .text_color(warning)
+                                                .child(exists.clone()),
+                                        )
                                     })
                                     .into_any_element(),
                             )
@@ -1643,7 +1743,7 @@ impl ImportDialog {
         .bg(theme.list_head)
         .text_color(muted)
         .font_medium();
-        let notes = snippet_notes(&plan.snippet_notes, skipped);
+        let notes = snippet_notes(&plan.snippet_notes, preview.skipped);
         v_flex()
             .flex_1()
             .min_h_0()
@@ -1654,10 +1754,23 @@ impl ImportDialog {
                     .test_support()
                     .text_xs()
                     .text_color(muted)
-                    .child(t!(
-                        "backup_ui.import.snippet_count",
-                        count = plan.snippets.len()
-                    )),
+                    .child(if existing > 0 && existing == plan.snippets.len() {
+                        t!(
+                            "backup_ui.import.snippet_count_all_existing",
+                            count = existing
+                        )
+                    } else if existing > 0 {
+                        t!(
+                            "backup_ui.import.snippet_count_existing",
+                            count = plan.snippets.len(),
+                            existing = existing
+                        )
+                    } else {
+                        t!(
+                            "backup_ui.import.snippet_count",
+                            count = plan.snippets.len()
+                        )
+                    }),
             )
             .child(
                 v_flex()
@@ -1703,12 +1816,13 @@ impl ImportDialog {
 
     fn render_footer(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let theme = cx.theme();
-        // 只有快捷命令的来源：还没预览时也按“条”写
+        // 只有快捷命令的来源：还没预览时也按“条”写；已存在的不算
         let label = if self.from.snippets_only() {
-            t!(
-                "backup_ui.import.apply_snippets",
-                count = self.snippets_only().map_or(0, |plan| plan.snippets.len())
-            )
+            let count = match (self.snippets_only(), &self.preview) {
+                (Some(_), Some(preview)) => preview.new_snippets(),
+                _ => 0,
+            };
+            t!("backup_ui.import.apply_snippets", count = count)
         } else {
             t!("backup_ui.import.apply", count = self.chosen().len())
         };
@@ -1919,6 +2033,12 @@ impl ImportDialog {
         ))
     }
 
+    /// 只有快捷命令的预览中各条是否已存在。
+    pub(super) fn snippet_duplicates(&self) -> Option<Vec<bool>> {
+        self.snippets_only()?;
+        Some(self.preview.as_ref()?.snippet_duplicates.clone())
+    }
+
     /// 导入的结果中新增与相同而跳过的快捷命令数。
     pub(super) fn report_snippets(&self) -> Option<(usize, usize)> {
         self.report
@@ -1969,7 +2089,7 @@ impl Render for ImportDialog {
             .child(self.render_source(cx));
         let root = match (&self.preview, self.snippets_only()) {
             (Some(preview), Some(plan)) => {
-                root.child(self.render_snippets(plan, preview.skipped, window, cx))
+                root.child(self.render_snippets(plan, preview, window, cx))
             }
             (Some(preview), None) => root
                 .child(self.render_toolbar(preview, cx))
@@ -2072,7 +2192,7 @@ mod tests {
     #[test]
     fn sources_pick_files_or_folders() {
         let all = ImportFrom::all();
-        assert_eq!(all.len(), 13);
+        assert_eq!(all.len(), 14);
         assert_eq!(all[0], ImportFrom::HostFile);
         let folders: Vec<_> = all.iter().filter(|f| f.picks_directory()).collect();
         assert_eq!(
@@ -2090,9 +2210,19 @@ mod tests {
             ImportFrom::Client(Source::Netcatty).source_name(),
             "Netcatty"
         );
-        // 只有 NyaTerm 导出的快捷命令是只有快捷命令的来源（它的数据库与备份中有主机）
+        // 只有 Termlet 与 NyaTerm 导出的快捷命令是只有快捷命令的来源（NyaTerm 的数据库与备份中有主机），两者并列
         let snippets: Vec<_> = all.iter().filter(|f| f.snippets_only()).collect();
-        assert_eq!(snippets, [&ImportFrom::Client(Source::NyaTerm)]);
+        assert_eq!(
+            snippets,
+            [
+                &ImportFrom::Client(Source::TermletSnippets),
+                &ImportFrom::Client(Source::NyaTerm)
+            ]
+        );
+        assert_eq!(
+            ImportFrom::Client(Source::TermletSnippets).source_name(),
+            "Termlet"
+        );
         assert_eq!(
             ImportFrom::Client(Source::NyaTermData).source_name(),
             "NyaTerm"

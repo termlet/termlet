@@ -373,6 +373,12 @@ backup_ui.import_error.not_nyaterm:
   zh-TW: 不是 NyaTerm 匯出的快捷命令（%{error}）。請在 NyaTerm 的快捷命令面板按一下「匯出快捷命令」取得 JSON 檔案。
   ja: NyaTerm からエクスポートしたクイックコマンドではありません（%{error}）。NyaTerm のクイックコマンドパネルで「コマンドをエクスポート」をクリックして JSON ファイルを作成してください。
   ko: NyaTerm에서 내보낸 빠른 명령 파일이 아닙니다(%{error}). NyaTerm의 빠른 명령 패널에서 '명령 내보내기'를 클릭해 JSON 파일을 만드세요.
+backup_ui.import_error.not_termlet_snippets:
+  zh-CN: 不是 Termlet 或 NyaTerm 导出的快捷命令（%{error}）。请在快捷命令页的“更多”中点“导出快捷命令…”得到 JSON 文件。
+  en: This isn’t a snippet file exported from Termlet or NyaTerm (%{error}). Choose “Export Snippets…” under “More” on the Snippets page to get the JSON file.
+  zh-TW: 不是 Termlet 或 NyaTerm 匯出的快速指令（%{error}）。請在快速指令頁的「更多」中按一下「匯出快速指令…」取得 JSON 檔案。
+  ja: Termlet または NyaTerm からエクスポートしたスニペットではありません（%{error}）。スニペットページの「その他」で「スニペットをエクスポート…」をクリックして JSON ファイルを作成してください。
+  ko: Termlet이나 NyaTerm에서 내보낸 스니펫 파일이 아닙니다(%{error}). 스니펫 페이지의 '더 보기'에서 '스니펫 내보내기…'를 클릭해 JSON 파일을 만드세요.
 
 backup_ui.failure.host:
   zh-CN: 主机“%{name}”没能导入：%{reason}
@@ -707,11 +713,11 @@ backup_ui.import.hint:
   ja: インポートするのはホストの情報（名前、アドレス、ポート、ユーザー名、グループ、秘密鍵のパス、プロキシ）だけで、パスワードはインポートしません（Termora、WindTerm、NyaTerm、ShellRS の同期フォルダーを除く。Electerm、Netcatty、FinalShell のパスワードは「保存されたパスワードをインポート」をオンにした場合だけインポートします）。インポート後、パスワードでログインするホストは編集してパスワードを入力してください。
   ko: 호스트 정보(이름, 주소, 포트, 사용자 이름, 그룹, 개인 키 경로, 프록시)만 가져오고 비밀번호는 가져오지 않습니다(Termora, WindTerm, NyaTerm, ShellRS 동기화 폴더 제외. Electerm, Netcatty, FinalShell의 비밀번호는 '저장된 비밀번호 가져오기'를 켠 경우에만 가져옴). 가져온 후 비밀번호로 로그인하는 호스트는 편집해서 비밀번호를 입력하세요.
 backup_ui.import.hint_snippets:
-  zh-CN: 导入其他程序导出的快捷命令：分组、名称与内容按 Termlet 的写法转换，转换时丢掉或改动的内容在预览中列出。与已有快捷命令的名称、内容都相同的不重复导入。
-  en: Imports snippets exported from another program. Groups, names and contents are converted to Termlet’s format, and anything dropped or changed is listed in the preview. Snippets with the same name and content as existing ones aren’t imported again.
-  zh-TW: 匯入其他程式匯出的快速指令：群組、名稱與內容依 Termlet 的寫法轉換，轉換時捨棄或改動的內容會在預覽中列出。與現有快速指令名稱、內容都相同的不會重複匯入。
-  ja: ほかのプログラムからエクスポートしたスニペットをインポートします。グループ、名前、内容は Termlet の形式に変換され、変換で失われる内容や変更される内容はプレビューに表示されます。既存のスニペットと名前、内容が同じものは重複してインポートしません。
-  ko: 다른 프로그램에서 내보낸 스니펫을 가져옵니다. 그룹, 이름, 내용은 Termlet 형식으로 변환되며, 변환 중에 빠지거나 바뀌는 내용은 미리 보기에 표시됩니다. 기존 스니펫과 이름, 내용이 모두 같은 것은 다시 가져오지 않습니다.
+  zh-CN: 选择 Termlet 或 NyaTerm 导出的快捷命令文件，格式自动识别。
+  en: Choose a snippet file exported from Termlet or NyaTerm; the format is recognized automatically.
+  zh-TW: 選擇 Termlet 或 NyaTerm 匯出的快速指令檔案，格式會自動辨識。
+  ja: Termlet または NyaTerm からエクスポートしたスニペットのファイルを選択してください。形式は自動で判別します。
+  ko: Termlet이나 NyaTerm에서 내보낸 스니펫 파일을 선택하세요. 형식은 자동으로 인식합니다.
 backup_ui.import.hint_hostfile:
   zh-CN: 导入另一台电脑或其他人的 Termlet 导出的主机。导入的主机不允许 AI 工具与脚本使用，需要时在主机设置中勾选；预览中标出了连接时在本机执行的代理命令、登录后在服务器上执行的命令与随主机导入的端口转发（导入的转发不会自动启动），导入前请确认来源可信。
   en: Import hosts exported from Termlet on another computer or by someone else. Imported hosts can’t be used by AI tools and scripts; enable it in the host settings if needed. The preview marks proxy commands (run on this computer when connecting), startup commands (run on the server after login) and port forwards imported with the hosts (they aren’t started automatically). Make sure the file comes from a trusted source.
@@ -790,6 +796,12 @@ backup_ui.import.source.nyaterm_data:
   zh-TW: NyaTerm（本機資料或 .nya 備份）
   ja: NyaTerm（このコンピューターのデータまたは .nya バックアップ）
   ko: NyaTerm(이 컴퓨터의 데이터 또는 .nya 백업)
+backup_ui.import.source.termlet_snippets:
+  zh-CN: Termlet 快捷命令（.json）
+  en: Termlet snippets (.json)
+  zh-TW: Termlet 快速指令（.json）
+  ja: Termlet のスニペット（.json）
+  ko: Termlet 스니펫(.json)
 backup_ui.import.source.nyaterm:
   zh-CN: NyaTerm 快捷命令（导出的 .json）
   en: NyaTerm quick commands (exported .json)
@@ -856,6 +868,12 @@ backup_ui.import.source_hint.nyaterm_data:
   zh-TW: 預設填入本機 NyaTerm 的資料庫（資料目錄 ~/.nyaterm 中的 nyaterm.redb），讀取前請先結束 NyaTerm；也可以選擇在 NyaTerm 設定中匯出的加密 .nya 備份，並輸入匯出時設定的密碼。匯入 SSH、Telnet 與序列埠連線，群組、備註、標籤、跳板機、代理、連接埠轉送（不會自動啟動）、驗證碼與快捷命令一併匯入；登入密碼與私密金鑰存進保險庫和金鑰庫，帳號匯入為認證資訊設定檔。本機的資料只用從使用者目錄衍生的金鑰加密，本機任何程式都能讀出其中的密碼；換了電腦時請用 .nya 備份。
   ja: このコンピューターの NyaTerm のデータベース（データフォルダー ~/.nyaterm の nyaterm.redb）が入力されています。読み取る前に NyaTerm を終了してください。NyaTerm の設定でエクスポートした暗号化された .nya バックアップを選択し、エクスポート時に設定したパスワードを入力することもできます。SSH、Telnet、シリアルポートの接続をインポートし、グループ、メモ、タグ、踏み台、プロキシ、ポート転送（自動では開始されません）、ワンタイムコード、クイックコマンドも一緒にインポートします。ログインパスワードと秘密鍵は保管庫と鍵ライブラリに保存し、アカウントは認証プロファイルとしてインポートします。NyaTerm はこのコンピューターのデータをユーザーフォルダーから導いた鍵だけで暗号化しているため、このコンピューター上のどのプログラムでもパスワードを読み出せます。別のコンピューターでは .nya バックアップを使ってください。
   ko: 이 컴퓨터의 NyaTerm 데이터베이스(데이터 폴더 ~/.nyaterm의 nyaterm.redb)가 입력되어 있습니다. 읽기 전에 NyaTerm을 종료하세요. NyaTerm 설정에서 내보낸 암호화된 .nya 백업을 선택하고 내보낼 때 설정한 비밀번호를 입력할 수도 있습니다. SSH, Telnet, 직렬 포트 연결을 가져오며 그룹, 메모, 태그, 점프 호스트, 프록시, 포트 포워딩(자동으로 시작되지 않음), 일회용 코드, 빠른 명령도 함께 가져옵니다. 로그인 비밀번호와 개인 키는 보관함과 키 라이브러리에 저장하고, 계정은 자격 증명 프로필로 가져옵니다. NyaTerm은 이 컴퓨터의 데이터를 사용자 폴더에서 만든 키로만 암호화하므로 이 컴퓨터의 어떤 프로그램이든 그 안의 비밀번호를 읽을 수 있습니다. 다른 컴퓨터에서는 .nya 백업을 사용하세요.
+backup_ui.import.source_hint.termlet_snippets:
+  zh-CN: 快捷命令页“更多”中“导出快捷命令…”保存的 JSON 文件。
+  en: The JSON file saved with “Export Snippets…” under “More” on the Snippets page.
+  zh-TW: 快速指令頁「更多」中「匯出快速指令…」儲存的 JSON 檔案。
+  ja: スニペットページの「その他」にある「スニペットをエクスポート…」で保存した JSON ファイルです。
+  ko: 스니펫 페이지의 '더 보기'에 있는 '스니펫 내보내기…'로 저장한 JSON 파일입니다.
 backup_ui.import.source_hint.nyaterm:
   zh-CN: 在 NyaTerm 的快捷命令面板右上角点“导出快捷命令”，再选择导出的 JSON 文件（nyaterm-quick-commands.json，默认保存在 NyaTerm 的配置目录 ~/.nyaterm 中）。这里只导入快捷命令与它们的分类；主机请在导入主机中选“NyaTerm（本机数据或 .nya 备份）”。
   en: In NyaTerm, click “Export Commands” at the top right of the Quick Commands panel, then choose the exported JSON file (nyaterm-quick-commands.json, saved in NyaTerm’s config folder ~/.nyaterm by default). Only the quick commands and their categories are imported; for hosts, choose “NyaTerm (local data or .nya backup)” under Import Hosts.
@@ -1150,6 +1168,18 @@ backup_ui.import.snippet_count:
   zh-TW: 檔案中有 %{count} 條快速指令，全部匯入，不用勾選。
   ja: ファイルにはスニペットが %{count} 件あります。すべてインポートするため、選択は不要です。
   ko: 파일에 스니펫이 %{count}개 있습니다. 모두 가져오므로 선택할 필요가 없습니다.
+backup_ui.import.snippet_count_existing:
+  zh-CN: 文件中有 %{count} 条快捷命令，其中 %{existing} 条已存在、导入时跳过，其余全部导入，不用勾选。
+  en: "Snippets in the file: %{count}, of which %{existing} already exist and are skipped. The rest are all imported; there’s nothing to select."
+  zh-TW: 檔案中有 %{count} 條快速指令，其中 %{existing} 條已存在、匯入時略過，其餘全部匯入，不用勾選。
+  ja: ファイルにはスニペットが %{count} 件あり、そのうち %{existing} 件は既存のためスキップします。残りはすべてインポートするため、選択は不要です。
+  ko: 파일에 스니펫이 %{count}개 있으며, 그중 %{existing}개는 이미 있어 건너뜁니다. 나머지는 모두 가져오므로 선택할 필요가 없습니다.
+backup_ui.import.snippet_count_all_existing:
+  zh-CN: 文件中的 %{count} 条快捷命令都已存在，没有要导入的。
+  en: "All %{count} snippets in the file already exist; there’s nothing to import."
+  zh-TW: 檔案中的 %{count} 條快速指令都已存在，沒有要匯入的。
+  ja: ファイルのスニペット %{count} 件はすべて既存のため、インポートするものはありません。
+  ko: 파일의 스니펫 %{count}개가 모두 이미 있어 가져올 것이 없습니다.
 backup_ui.import.snippets_none:
   zh-CN: 文件中没有可以导入的快捷命令。
   en: The file has no snippets that can be imported.
@@ -1439,6 +1469,42 @@ backup_ui.export.done_encrypted:
   zh-TW: 檔案已用密碼加密，匯入時需要輸入這個密碼。
   ja: ファイルはパスワードで暗号化されています。インポート時にこのパスワードの入力が必要です。
   ko: 파일이 비밀번호로 암호화되었습니다. 가져올 때 이 비밀번호를 입력해야 합니다.
+backup_ui.snippet_export.title:
+  zh-CN: 导出快捷命令
+  en: Export Snippets
+  zh-TW: 匯出快速指令
+  ja: スニペットをエクスポート
+  ko: 스니펫 내보내기
+backup_ui.snippet_export.all:
+  zh-CN: 全部分组（%{count} 条）
+  en: All groups (%{count})
+  zh-TW: 全部群組（%{count} 條）
+  ja: すべてのグループ（%{count} 件）
+  ko: 모든 그룹(%{count}개)
+backup_ui.snippet_export.none:
+  zh-CN: 还没有快捷命令。
+  en: There are no snippets yet.
+  zh-TW: 還沒有快速指令。
+  ja: スニペットはまだありません。
+  ko: 아직 스니펫이 없습니다.
+backup_ui.snippet_export.plaintext_hint:
+  zh-CN: 文件中是明文，快捷命令里的密码等内容原样写出。
+  en: The file is plain text; passwords and anything else in your snippets are written as they are.
+  zh-TW: 檔案中是明文，快速指令裡的密碼等內容會原樣寫出。
+  ja: ファイルは平文です。スニペットに書かれたパスワードなどもそのまま書き出します。
+  ko: 파일은 평문입니다. 스니펫에 적힌 비밀번호 등도 그대로 기록됩니다.
+backup_ui.snippet_export.submit:
+  zh-CN: 导出 %{count} 条…
+  en: Export %{count}…
+  zh-TW: 匯出 %{count} 條…
+  ja: "%{count} 件をエクスポート…"
+  ko: "%{count}개 내보내기…"
+backup_ui.snippet_export.done:
+  zh-CN: 已导出 %{count} 条快捷命令到 %{path}
+  en: Exported %{count} snippets to %{path}
+  zh-TW: 已匯出 %{count} 條快速指令到 %{path}
+  ja: "%{count} 件のスニペットを %{path} にエクスポートしました"
+  ko: 스니펫 %{count}개를 %{path}에 내보냈습니다
 
 backup_ui.page.full_title:
   zh-CN: 完整备份

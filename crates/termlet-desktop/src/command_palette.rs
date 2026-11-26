@@ -101,6 +101,7 @@ enum Op {
     ImportHosts,
     ImportSnippets,
     ExportHosts,
+    ExportSnippets,
     Audit,
     LockNow,
     NewWindow,
@@ -154,6 +155,7 @@ impl Op {
             | Op::ImportHosts
             | Op::ImportSnippets
             | Op::ExportHosts
+            | Op::ExportSnippets
             | Op::Audit
             | Op::LockNow
             | Op::Shortcuts
@@ -405,6 +407,7 @@ impl CommandPalette {
                 (Op::ImportHosts, t!("hosts.toolbar.import"), true),
                 (Op::ImportSnippets, t!("snippets.import"), true),
                 (Op::ExportHosts, t!("hosts.toolbar.export"), true),
+                (Op::ExportSnippets, t!("snippets.export"), true),
                 (Op::Audit, t!("palette.op.audit"), true),
                 (
                     Op::LockNow,
@@ -587,6 +590,7 @@ impl CommandPalette {
                 Op::ImportHosts => crate::backup_ui::open_import(window, cx),
                 Op::ImportSnippets => crate::backup_ui::open_import_snippets(window, cx),
                 Op::ExportHosts => crate::backup_ui::open_export(Vec::new(), window, cx),
+                Op::ExportSnippets => crate::backup_ui::open_export_snippets(window, cx),
                 Op::Audit => crate::cli_ui::open_audit(window, cx),
                 Op::LockNow => {
                     window.close_dialog(cx);

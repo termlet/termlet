@@ -22,24 +22,24 @@
 //! - 说明、颜色、图标、置顶、风险等级、来源不导入；置顶与 `sort_order` 只决定同一分组中的先后（置顶的在前）。
 //!
 //! 丢掉或改动的内容计入 [`SnippetNotes`]，预览中说明；空的、超长的、字段类型不对的条目跳过并计数。
+//!
+//! 读文件与识别格式在 [`super::snippets`]（选这个来源时 Termlet 导出的快捷命令也认得出）。
 
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde_json::{Map, Value};
 
 use crate::model::Snippet;
 use crate::snippet_params::{is_param_name, snippet_params};
 
-use super::files::{LocalEnv, decode_text, newest_export, read_limited};
+use super::files::{LocalEnv, newest_export};
 use super::plan::{PlanBuilder, SnippetNotes, clip};
 use super::{ImportError, ImportPlan, Source};
 
 /// 主机：本机数据库与 `.nya` 备份（[`Source::NyaTermData`]）。
 pub(super) mod data;
 
-/// 文件的大小上限（与 NyaTerm 自己导入时相同）。
-const MAX_FILE: u64 = 4 << 20;
 /// 导出的默认文件名（小写），在“下载”等处找时按开头匹配（另存时可能带了序号）。
 const FILE_NAME: &str = "nyaterm-quick-commands";
 /// NyaTerm 的配置目录（正式版、预览版）：导出时保存对话框默认打开这里。
@@ -50,12 +50,6 @@ const MAX_GROUP_DEPTH: usize = 32;
 const GROUP_SEPARATOR: &str = " / ";
 /// 快捷命令内容的上限（字符，与保存时的校验相同）。
 const MAX_CONTENT: usize = 64 * 1024;
-
-pub(super) fn read(path: &Path, env: &LocalEnv) -> Result<ImportPlan, ImportError> {
-    let path = env.input_path(path);
-    let raw = read_limited(&path, MAX_FILE)?;
-    parse(&decode_text(&raw, env.ansi))
-}
 
 /// 默认位置：NyaTerm 配置目录中的 `nyaterm-quick-commands.json`，没有时为“下载”“桌面”“文档”中最新的
 /// `nyaterm-quick-commands*.json`。
@@ -73,9 +67,8 @@ pub(super) fn default_path(env: &LocalEnv) -> Option<PathBuf> {
     })
 }
 
-pub(super) fn parse(text: &str) -> Result<ImportPlan, ImportError> {
-    let value: Value =
-        serde_json::from_str(text).map_err(|e| ImportError::NotNyaTerm(e.to_string()))?;
+/// 读出导出的文件（已解析成 JSON）中的快捷命令；结构不对时返回 [`ImportError::NotNyaTerm`]。
+pub(super) fn parse_value(value: Value) -> Result<ImportPlan, ImportError> {
     let mut plan = PlanBuilder::new(Source::NyaTerm);
     let skipped =
         add_snippets(&mut plan, value).map_err(|r| ImportError::NotNyaTerm(r.to_string()))?;
@@ -378,8 +371,18 @@ fn convert_variable(inner: &str, changes: &mut Changes) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::*;
     use crate::import::files::tests::env;
+
+    fn read(path: &Path, env: &LocalEnv) -> Result<ImportPlan, ImportError> {
+        super::super::snippets::read(Source::NyaTerm, path, env)
+    }
+
+    fn parse(text: &str) -> Result<ImportPlan, ImportError> {
+        super::super::snippets::parse(Source::NyaTerm, text)
+    }
 
     /// 测试样例按 NyaTerm 提交 daedb58（2.0.7）的导出格式（`QuickCommandsExportConfig`）与文档的写法手写。
     fn testdata(name: &str) -> PathBuf {

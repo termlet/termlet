@@ -1101,3 +1101,136 @@ fn snippets_only() {
         Err(BackupError::NothingSelected)
     ));
 }
+
+/// 存储中全部快捷命令的（分组，名称，内容），按快捷命令页的顺序。
+fn snippet_rows(m: &Machine) -> Vec<(String, String, String)> {
+    let mut rows: Vec<(String, String, String)> = m
+        .store
+        .list::<Snippet>()
+        .into_iter()
+        .map(|s| (s.doc.group, s.doc.name, s.doc.content))
+        .collect();
+    rows.sort_by(|a, b| a.0.cmp(&b.0));
+    rows
+}
+
+// Termlet 导出的快捷命令：导到另一台上原样还原（分组层级、中文、多行、参数），预览中没有重复；
+// 导回原来的那台时全部相同、默认跳过（末尾的换行写法不同也算相同）
+#[test]
+fn termlet_snippet_file_round_trips() {
+    let a = Machine::new();
+    for (group, name, content) in [
+        ("", "磁盘", "df -h\n"),
+        ("运维", "进程", "ps aux | grep {{名称}}\n"),
+        (
+            "运维 / Kubernetes",
+            "日志",
+            "kubectl logs -f {{pod}} -c {{容器:app}}",
+        ),
+        (
+            "运维 / Kubernetes",
+            "容器名",
+            "docker ps --format '{{.Names}}'\n",
+        ),
+        ("部署", "多行", "cd /srv/应用\r\ngit pull\r\n"),
+    ] {
+        a.store
+            .create(
+                Snippet {
+                    name: name.into(),
+                    group: group.into(),
+                    content: content.into(),
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+    }
+    let file = a.dir.path().join(crate::snippetfile::default_file_name());
+    let groups = crate::snippetfile::groups(&a.store.list::<Snippet>())
+        .into_iter()
+        .map(|(group, _)| group)
+        .collect();
+    let exported = block_on(crate::snippetfile::export(
+        a.store.clone(),
+        file.clone(),
+        groups,
+    ))
+    .unwrap();
+    assert_eq!(exported, 5);
+
+    let b = Machine::new();
+    let plan = crate::import::parse(Source::TermletSnippets, &file).unwrap();
+    assert_eq!(plan.source, Source::TermletSnippets);
+    assert_eq!(preview(&b.store, &plan).snippet_duplicates, [false; 5]);
+    let report = block_on(apply(
+        b.backups.clone(),
+        plan.clone(),
+        Vec::new(),
+        OnDuplicate::Skip,
+    ))
+    .unwrap();
+    assert_eq!((report.snippets, report.snippets_skipped), (5, 0));
+    let mut want = snippet_rows(&a);
+    // 内容末尾的 \r\n 导出为“执行”，导入后写成 \n；中间的照旧
+    want[4].2 = "cd /srv/应用\r\ngit pull\n".into();
+    assert_eq!(snippet_rows(&b), want);
+
+    // 导回原来的那台：全部已有
+    assert_eq!(preview(&a.store, &plan).snippet_duplicates, [true; 5]);
+    let again = block_on(apply(
+        a.backups.clone(),
+        plan,
+        Vec::new(),
+        OnDuplicate::Skip,
+    ))
+    .unwrap();
+    assert_eq!((again.snippets, again.snippets_skipped), (0, 5));
+    assert_eq!(a.store.list::<Snippet>().len(), 5);
+}
+
+// 重复：名称、内容都相同（名称的首尾空白、内容末尾的换行写法不算）；文件中重复的也只导入第一条；
+// 名称相同、内容不同或执行与否不同的照常导入
+#[test]
+fn snippet_duplicates_in_preview_and_apply() {
+    let m = Machine::new();
+    m.store
+        .create(
+            Snippet {
+                name: "磁盘".into(),
+                content: "df -h\n".into(),
+                ..Default::default()
+            },
+            None,
+            Position::Last,
+        )
+        .unwrap();
+    let mut b = PlanBuilder::new(Source::TermletSnippets);
+    for (name, content) in [
+        (" 磁盘 ", "df -h\r\n"),
+        ("磁盘", "df -h"),
+        ("磁盘", "df -hT\n"),
+        ("新的", "uptime\n"),
+        ("新的", "uptime\n"),
+    ] {
+        b.add_snippet(Snippet {
+            name: name.into(),
+            content: content.into(),
+            ..Default::default()
+        });
+    }
+    let plan = b.finish();
+    assert_eq!(
+        preview(&m.store, &plan).snippet_duplicates,
+        [true, false, false, false, true]
+    );
+    let report = block_on(apply(
+        m.backups.clone(),
+        plan,
+        Vec::new(),
+        OnDuplicate::Skip,
+    ))
+    .unwrap();
+    assert_eq!((report.snippets, report.snippets_skipped), (3, 2));
+}
