@@ -200,6 +200,74 @@ mod registry {
         for place in PLACES {
             assert_eq!(temp.string(&format!(r"{place}\{VERB}")), None);
         }
+
+        // 菜单中写的程序与安装目录一边是短文件名、一边是长文件名（CI 的临时目录是 C:\Users\RUNNER~1\…，Windows
+        // PowerShell 的 GetFullPath 会把它展开）：也认得出是同一个
+        std::fs::create_dir_all(&install).unwrap();
+        let (short, long) = (short_path(&install), long_path(&install));
+        if short == long {
+            println!("临时目录所在的卷没有短文件名，只测了写法相同的情况");
+        }
+        for (written, given) in [(&short, &long), (&long, &short)] {
+            let program = written.join("Termlet.exe");
+            enable(classes, &program, "在此处打开 Termlet").unwrap();
+            run(given);
+            assert_eq!(
+                state(classes, &program).unwrap(),
+                MenuState::Off,
+                "菜单中是 {}，安装目录是 {}",
+                written.display(),
+                given.display()
+            );
+        }
+    }
+
+    /// Windows 的路径换算（`GetShortPathNameW` / `GetLongPathNameW`），换不了时原样返回。
+    fn convert_path(
+        path: &Path,
+        convert: unsafe extern "system" fn(*const u16, *mut u16, u32) -> u32,
+    ) -> PathBuf {
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+        let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+        let mut buf = vec![0u16; 1024];
+        // SAFETY: wide 以 0 结尾；buf 的长度如实传入，返回值不超过它时是写入的字符数
+        let len = unsafe { convert(wide.as_ptr(), buf.as_mut_ptr(), buf.len() as u32) } as usize;
+        if len == 0 || len >= buf.len() {
+            return path.to_path_buf();
+        }
+        PathBuf::from(std::ffi::OsString::from_wide(&buf[..len]))
+    }
+
+    fn short_path(path: &Path) -> PathBuf {
+        convert_path(
+            path,
+            windows_sys::Win32::Storage::FileSystem::GetShortPathNameW,
+        )
+    }
+
+    fn long_path(path: &Path) -> PathBuf {
+        convert_path(
+            path,
+            windows_sys::Win32::Storage::FileSystem::GetLongPathNameW,
+        )
+    }
+
+    // 菜单中写的是同一个程序的短文件名：状态照样是“指向这个程序”（启动时不当成别处的、不跟随）
+    #[test]
+    fn short_and_long_names_are_the_same_program() {
+        let temp = TempClasses::new();
+        let classes = temp.classes.as_str();
+        let dir = tempfile::tempdir().unwrap();
+        let install = dir.path().join("Termlet 安装目录");
+        std::fs::create_dir_all(&install).unwrap();
+        std::fs::write(install.join("Termlet.exe"), b"").unwrap();
+        let short = short_path(&install).join("Termlet.exe");
+        let long = long_path(&install).join("Termlet.exe");
+        enable(classes, &short, "在此处打开 Termlet").unwrap();
+        assert_eq!(state(classes, &long).unwrap(), MenuState::This);
+        assert_eq!(follow(classes, &long).unwrap(), None);
+        enable(classes, &long, "在此处打开 Termlet").unwrap();
+        assert_eq!(state(classes, &short).unwrap(), MenuState::This);
     }
 }
 

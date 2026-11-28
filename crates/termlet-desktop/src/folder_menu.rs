@@ -28,8 +28,8 @@ fn classes(cx: &App) -> String {
         .map_or_else(|| folder_menu::CLASSES.to_string(), |c| c.0.clone())
 }
 
-/// 测试中换成临时的键，不碰真实的右键菜单。
-#[cfg(test)]
+/// 测试中换成临时的键，不碰真实的右键菜单（只有 Windows 的测试用到）。
+#[cfg(all(test, windows))]
 pub(crate) fn use_classes(path: &str, cx: &mut App) {
     cx.set_global(Classes(path.to_string()));
 }

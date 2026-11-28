@@ -55,9 +55,16 @@ fn program_of(command: &str) -> Option<PathBuf> {
     (!program.is_empty()).then(|| PathBuf::from(program))
 }
 
-/// 两个程序路径是不是同一个（Windows 上不区分大小写）。
+/// 两个程序路径是不是同一个：写法相同（Windows 上不区分大小写），或者都存在、是同一个文件（同一路径的短文件名与
+/// 长文件名，例如 `C:\Users\RUNNER~1\…` 与 `C:\Users\runneradmin\…`；经过目录联接的写法）。
 fn same_program(a: &Path, b: &Path) -> bool {
-    a.to_string_lossy().to_lowercase() == b.to_string_lossy().to_lowercase()
+    if a.to_string_lossy().to_lowercase() == b.to_string_lossy().to_lowercase() {
+        return true;
+    }
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
 }
 
 /// 按两处菜单中的命令行（没有的为 `None`）判断状态。

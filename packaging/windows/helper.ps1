@@ -90,6 +90,13 @@ function Remove-FolderMenu {
         } else {
             $program = ($command.Trim() -split '\s+')[0]
         }
+        # 与 $app 一样经 GetFullPath：Windows PowerShell 的它会把短文件名展开成长文件名（C:\Users\RUNNER~1\… 换成
+        # C:\Users\runneradmin\…）。菜单中写的程序与安装目录一边是短名、一边是长名时，不这样就认不出是同一个
+        try {
+            $program = [System.IO.Path]::GetFullPath($program)
+        } catch {
+            continue
+        }
         if ([string]::Equals($program, $app, [System.StringComparison]::OrdinalIgnoreCase)) {
             [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($path, $false)
         }
