@@ -67,6 +67,7 @@ python scripts/brand-icons.py                      # 重新生成系统与品牌
 - 标题栏（`TitleBar`，在 `workspace/title_bar.rs`）整条是拖动窗口的区域：其中的按钮要放进 `workspace.rs` 的 `no_drag()`（`occlude`）容器，否则 Windows 上真实的鼠标点击会被当成拖动窗口。右边的按钮是可自定义的工具栏：新按钮加进 `toolbar.rs` 的 `ToolbarItem`（ID 发布后不能改），放不下时收进“更多”菜单。`scripts/post-input.ps1` 投递的点击绕过 WM_NCHITTEST，验证不了这一点；不要用真实的鼠标键盘输入测试（用户在用这台电脑）。
 - 文案在 `crates/termlet-desktop/locales/*.yml`（rust-i18n `_version: 2`，键的全名在最外层，下面 `zh-CN`、`en`、`zh-TW`、`ja`、`ko` 五种语言并排），代码用 `crate::t!`；中文（简体）是源语言，改中文时同一个键的其余语言一起改：繁体用台湾用语，按 `docs/rust/繁体中文用语.md`（引号用「」，人称照原文用“你”，指标签页的 Tab 译作“分頁”），日文、韩文按 `docs/rust/日文韩文用语.md`（日文です・ます体、引号用「」，韩文합니다체、半角标点，都不写人称）；键说用途，一句话一个键，不拼片段。`i18n.rs` 的 `locales_are_complete` 检查各语言的键、插值一致。gpui-kit 自己的文案没有日文、韩文，在 `locales/gpui_kit.yml` 中补（键以 `gpui_component.` 开头）。命令行工具 `termlet` 只有简体中文与英文。
 - 注释、文档、提交说明用简体中文；标识符用英文。
+- 提交说明要简洁：第一行一句话说清做了什么，约 50 字以内；确有必要时空一行，再写几行要点（行为的变化、不兼容之处、取舍的理由、改大上限的理由）。实现细节、测试清单、给用户看的完整说明分别写进代码注释、测试与更新日志，不在提交说明里复述。
 - 秘密不进日志、不进 `Debug` 输出、不以明文进数据库。
 - ShellRS、OxideTerm、Zed 的 terminal_view 是 GPL：只看思路，不复制代码。贡献按 CLA 可由维护者另行授权，代码只能是自己写的或宽松许可的；依赖同样只用宽松许可（`deny.toml`）。
 - 终端内核（现在是 alacritty_terminal）只经 `termlet-terminal` 的 `engine/kernel.rs`（`trait Kernel`）使用，它的类型只出现在 `engine/alacritty.rs` 与 `engine/alacritty/` 下；视图、查找、高亮、shell 集成、按键与鼠标编码只认 `grid.rs` 等引擎自己的类型，绘制读 `TerminalEngine::snapshot` 的快照（为以后换 libghostty-vt 留的接口）。内核只在引擎线程（`engine/worker.rs`）上创建与使用，不需要 `Send`（测试构建中特意是 `!Send`）：界面要读内核时加命令或 `TerminalEngine::call` 的闭包，不要让内核跨线程。

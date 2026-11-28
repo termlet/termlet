@@ -25,7 +25,7 @@ Please follow the [Code of Conduct](CODE_OF_CONDUCT.en.md) when taking part in t
 3. Before submitting, run the commands under "Checks" below locally.
 4. Open a pull request that references the issue. Your first pull request requires signing the Contributor License Agreement (see below).
 
-Code comments, documentation and commit messages follow the project's convention of Simplified Chinese; English is fine if that is easier for you, and the maintainer will tidy it up when merging.
+Code comments, documentation and commit messages follow the project's convention of Simplified Chinese; English is fine if that is easier for you, and the maintainer will tidy it up when merging. Keep commit messages short: one line saying what changed, then, if needed, a blank line and a few points; details belong in code comments and the changelog.
 
 ### Contributor License Agreement (CLA)
 
