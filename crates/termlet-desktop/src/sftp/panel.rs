@@ -153,6 +153,32 @@ impl SftpTarget {
         }
     }
 
+    /// 连接目标（Tab 的悬停提示，见 [`crate::host_info::connection_target`]）：保存的主机按主机的设置，快速连接、
+    /// 被调起的按连接的参数，WSL 为发行版（以 root 登录的写成 `root@发行版`）；经 sudo 以 root 身份打开的在后面
+    /// 标上 root（与 Tab 上的标记相同）。
+    pub(super) fn target_label(&self, store: &Store) -> Option<String> {
+        use crate::host_info::{ConnectionTarget, connection_target};
+        match self {
+            SftpTarget::Host(id) => crate::host_info::host_target(store, id),
+            SftpTarget::Quick(target) => connection_target(&ConnectionTarget::Ssh {
+                username: &target.username,
+                address: &target.host,
+                port: target.port,
+            }),
+            SftpTarget::Launch(target) => connection_target(&ConnectionTarget::Ssh {
+                username: &target.username,
+                address: &target.address,
+                port: target.port,
+            }),
+            SftpTarget::Wsl { distro, user } => {
+                connection_target(&ConnectionTarget::Wsl { distro, user })
+            }
+            SftpTarget::Sudo(target) => target
+                .target_label(store)
+                .map(|label| format!("{label} · {}", t!("sftp.root_badge"))),
+        }
+    }
+
     /// 以 root 身份打开的（Tab 标题与工具栏上标出）。
     pub fn is_root(&self) -> bool {
         match self {
@@ -1455,6 +1481,15 @@ impl SftpPanel {
         badges
     }
 
+    /// 连接目标（见 [`SftpTarget::target_label`]）：横排的 Tab 的悬停提示（名称就写在 Tab 上，不再重复），竖排时在
+    /// 名称下面；与名称相同时不再写（快速连接的名称就是 `用户@地址`）。
+    fn tab_target(&self) -> Option<SharedString> {
+        self.target
+            .target_label(&self.store)
+            .filter(|target| target.as_str() != self.name.as_ref())
+            .map(SharedString::from)
+    }
+
     /// 竖排的 Tab 列表中这个 Tab 的一行：与横排的 Tab 上相同的图标、名称与状态；按主机分组时与同一台主机的终端归在
     /// 一起。
     pub(crate) fn tab_face(&self, cx: &App) -> crate::workspace::TabFace {
@@ -1479,6 +1514,7 @@ impl SftpPanel {
                 .into_any_element(),
             name: self.name.clone(),
             detail: None,
+            target: self.tab_target(),
             badges: self.tab_badges(cx),
             status: status.into_iter().collect(),
             host: Some((
@@ -1498,6 +1534,13 @@ impl Panel for SftpPanel {
             .id(("sftp-tab-title", cx.entity_id().as_u64() as usize))
             .test_support()
             .gap_1()
+            // 悬停提示是连接目标（也是无障碍的描述）
+            .when_some(self.tab_target(), |this, target| {
+                this.aria_description(target.clone())
+                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
+                        gpui_kit::component::tooltip::Tooltip::new(target.clone()).build(window, cx)
+                    }))
+            })
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
                 let this = cx.entity().downgrade();

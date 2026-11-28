@@ -70,6 +70,7 @@ impl EditorPanel {
                 .into_any_element(),
             name: self.tab_label(),
             detail: Some(visible_name(&self.path).into()),
+            target: None,
             badges: status
                 .map(|color| div().size_1p5().rounded_full().bg(color).into_any_element())
                 .into_iter()

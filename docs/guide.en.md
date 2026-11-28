@@ -683,6 +683,7 @@ Default shortcuts:
 ### Tabs, panes and workspaces
 
 - A tab shows the name it was created with (host name, local shell and so on); a title set by the program (such as `user@host: ~`) appears when you hover over the tab.
+  - The tooltip also shows what the tab is connected to, on a line of its own: `user@address` for SSH (with the port when it isn't 22), `address:port` for Telnet, `COM3 · 115200` for a serial port and the distribution for WSL (`user@distribution` when a user is set). SFTP opened as root has root after it, and local terminals don't have this line. The vertical tab list and its icons show the same.
 - Drag tabs to reorder them.
 - Middle-click a tab to close it (the same as its ×, asking first where that would).
 - When the tabs don't fit, scroll the mouse wheel over the tab bar to move along them.

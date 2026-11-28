@@ -923,7 +923,7 @@ pub(crate) fn set_jump(store: &Store, id: &HostId, jump: &HostId) -> Result<(), 
 
 /// 已有主机实际使用的用户名：主机自己的 > 凭据档案的（含沿用分组默认的档案）> 分组逐级向上的默认用户名；
 /// 都没有时为空（与连接时的解析相同，只是不取本机的用户名）。
-pub(crate) fn effective_username(store: &Store, host: &Host, parent: Option<&str>) -> String {
+pub fn effective_username(store: &Store, host: &Host, parent: Option<&str>) -> String {
     let own = host.username.trim();
     if !own.is_empty() {
         return own.to_string();

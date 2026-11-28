@@ -10,6 +10,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 
 - The portable version can remember its master password on this computer (issue #3): check "Remember on this computer" (unchecked by default) where you enter the master password, then unlock. A copy of the master key goes into this computer's Credential Manager (the master key, not the master password), and you aren't asked again when you open Termlet on this computer. On other computers you still enter the master password; several portable copies on one computer are told apart by their own data and don't affect each other, and it keeps working after you move the folder or change the master password. To stop, click "Forget" under Settings → Security and you're asked again next time. Resetting the vault removes it, and a remembered key that no longer matches the data (for example, the vault was reset elsewhere) is removed automatically and you're asked as usual. It stays on this computer and isn't synced or backed up; it isn't offered when no system keychain is available. The installed version and portable copies set to "This computer only" are unchanged.
 
+### Changed
+
+- Hovering over a terminal or SFTP tab now shows what it's connected to, on a line of its own: `user@address` for SSH (with the port when it isn't 22), `address:port` for Telnet, the port and baud rate for a serial port (such as `COM3 · 115200`) and the distribution for WSL; SFTP opened as root has root after it. Horizontal tabs, the vertical tab list and its collapsed icons all show it, a title set by the program still appears, and local terminals don't get this line. Before, horizontal tabs only had a tooltip when the program had set a title.
+
 ## 0.3.5 (2026-11-26)
 
 ### Added

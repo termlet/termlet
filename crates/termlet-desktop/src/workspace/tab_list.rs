@@ -126,6 +126,9 @@ pub(crate) struct TabFace {
     pub name: SharedString,
     /// 悬停时名称下面的说明（程序设置的标题、日志的来源、文件的路径等）
     pub detail: Option<SharedString>,
+    /// 连接目标（`用户@地址` 等，见 [`crate::host_info::connection_target`]）：悬停提示中说明之后单独一行，窄栏的
+    /// 悬停提示中也有；终端与文件管理之外的、本地终端为 `None`
+    pub target: Option<SharedString>,
     /// 名称后的状态（连接中 / 出错的圆点、新输出、铃声、记日志、录制中、同步输入等）
     pub badges: Vec<AnyElement>,
     /// 这些状态的颜色与说明，最要紧的在前：窄栏上图标角上画第一个，悬停提示中逐条写明
@@ -562,6 +565,7 @@ impl Workspace {
                     .into_any_element(),
                 name: SharedString::from(view.panel_name(cx)),
                 detail: None,
+                target: None,
                 badges: Vec::new(),
                 status: Vec::new(),
                 host: None,
@@ -1592,10 +1596,8 @@ impl Workspace {
             .drop
             .filter(|(p, _)| *p == panel && cx.has_active_drag())
             .map(|(_, place)| place);
-        let tip: SharedString = match &face.detail {
-            Some(detail) => format!("{}\n{detail}", face.name).into(),
-            None => face.name.clone(),
-        };
+        let description = row_description(&face);
+        let tip = named_tooltip(&face.name, description.as_ref());
         let theme = cx.theme();
         let (active, hover, radius) = (theme.list_active, theme.list_hover, theme.radius);
         let (foreground, tab_foreground) = (theme.foreground, theme.tab_foreground);
@@ -1605,6 +1607,9 @@ impl Workspace {
             .test_support()
             .role(gpui_kit::Role::Tab)
             .aria_label(face.name.clone())
+            .when_some(description, |el, description| {
+                el.aria_description(description)
+            })
             .aria_selected(highlighted)
             .group("vtab-row")
             .relative()
@@ -1738,7 +1743,7 @@ impl Workspace {
     }
 
     /// 只显示图标的窄栏：每个 Tab 一个图标（几个窗格时各窗格之间有分隔线），图标角上是它最要紧的状态，悬停提示写明
-    /// 名称与全部状态；点击切换，中键关闭；悬停时在右边浮出展开的列表。
+    /// 名称、连接目标与全部状态；点击切换，中键关闭；悬停时在右边浮出展开的列表。
     fn render_rail(
         &mut self,
         listing: &mut Listing,
@@ -1774,13 +1779,17 @@ impl Workspace {
                 let panel = *panel;
                 let id = panel.as_u64() as usize;
                 let highlighted = listing.highlighted == Some(panel);
-                let tip = rail_tooltip(&face.name, &face.status);
+                let description = rail_description(face.target.as_ref(), &face.status);
+                let tip = named_tooltip(&face.name, description.as_ref());
                 items.push(
                     div()
                         .id(("vtab-rail", id))
                         .test_support()
                         .role(gpui_kit::Role::Tab)
                         .aria_label(face.name.clone())
+                        .when_some(description, |el, description| {
+                            el.aria_description(description)
+                        })
                         .aria_selected(highlighted)
                         .relative()
                         .flex_none()
@@ -1914,13 +1923,27 @@ impl Workspace {
     }
 }
 
-/// 窄栏上图标的悬停提示：名称，下面逐行是全部状态。
-fn rail_tooltip(name: &SharedString, status: &[TabStatus]) -> SharedString {
-    std::iter::once(name.clone())
-        .chain(status.iter().map(|s| s.label.clone()))
-        .collect::<Vec<_>>()
-        .join("\n")
-        .into()
+/// 悬停提示的几行（没有的跳过）连成一段；一行也没有时为 `None`。
+pub(crate) fn tooltip_lines<'a>(
+    lines: impl IntoIterator<Item = Option<&'a SharedString>>,
+) -> Option<SharedString> {
+    let lines: Vec<&str> = lines.into_iter().flatten().map(|s| s.as_ref()).collect();
+    (!lines.is_empty()).then(|| lines.join("\n").into())
+}
+
+/// 竖排的列表与窄栏上的悬停提示：名称，下面是 `description`（名称之后的几行，也是无障碍的描述）。
+fn named_tooltip(name: &SharedString, description: Option<&SharedString>) -> SharedString {
+    tooltip_lines([Some(name), description]).unwrap_or_default()
+}
+
+/// 展开的列表中一行的悬停提示中名称之后的部分：说明（程序设置的标题等）与连接目标，各占一行。
+fn row_description(face: &TabFace) -> Option<SharedString> {
+    tooltip_lines([face.detail.as_ref(), face.target.as_ref()])
+}
+
+/// 窄栏上图标的悬停提示中名称之后的部分：连接目标，下面逐行是全部状态。
+fn rail_description(target: Option<&SharedString>, status: &[TabStatus]) -> Option<SharedString> {
+    tooltip_lines(std::iter::once(target).chain(status.iter().map(|s| Some(&s.label))))
 }
 
 /// 窄栏上图标右上角的状态：圆点（响铃是铃铛），垫一圈底色与图标隔开。
@@ -1975,9 +1998,24 @@ mod tests {
         assert_eq!(host_group_key(&root), "h_1");
     }
 
-    // 窄栏的悬停提示：名称，下面逐行是全部状态（最要紧的在前）；没有状态时只有名称
+    // 悬停提示的几行：没有的跳过，一行也没有时没有提示
     #[test]
-    fn rail_tooltip_lists_every_status() {
+    fn tooltip_lines_skip_missing_ones() {
+        let (title, target) = (
+            SharedString::from("vim notes.txt"),
+            SharedString::from("ops@10.0.0.5"),
+        );
+        assert_eq!(
+            tooltip_lines([Some(&title), Some(&target)]),
+            Some(SharedString::from("vim notes.txt\nops@10.0.0.5"))
+        );
+        assert_eq!(tooltip_lines([None, Some(&target)]), Some(target.clone()));
+        assert_eq!(tooltip_lines([None, None]), None);
+    }
+
+    // 窄栏的悬停提示：名称，下面是连接目标，再下面逐行是全部状态（最要紧的在前）；都没有时只有名称
+    #[test]
+    fn rail_tooltip_lists_the_target_and_every_status() {
         let color = gpui_kit::Hsla::default();
         let status = [
             TabStatus::dot(color, "连接已断开".into()),
@@ -1986,11 +2024,21 @@ mod tests {
                 ..TabStatus::dot(color, "响铃了".into())
             },
         ];
+        let name = SharedString::from("web");
+        let target = SharedString::from("ops@10.0.0.5:2222");
+        let tip = |target: Option<&SharedString>, status: &[TabStatus]| {
+            named_tooltip(&name, rail_description(target, status).as_ref())
+        };
         assert_eq!(
-            rail_tooltip(&"web".into(), &status),
+            tip(Some(&target), &status),
+            SharedString::from("web\nops@10.0.0.5:2222\n连接已断开\n响铃了")
+        );
+        assert_eq!(
+            tip(None, &status),
             SharedString::from("web\n连接已断开\n响铃了")
         );
-        assert_eq!(rail_tooltip(&"web".into(), &[]), SharedString::from("web"));
+        assert_eq!(tip(None, &[]), SharedString::from("web"));
+        assert_eq!(rail_description(None, &[]), None, "没有无障碍的描述");
     }
 
     // 窗格按位置起名：居中的一格、四角、只分一个方向时

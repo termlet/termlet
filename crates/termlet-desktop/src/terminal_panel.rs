@@ -705,17 +705,18 @@ impl TerminalPanel {
         }
     }
 
-    /// 登录的用户与地址（`用户@地址`，端口不是 22 时带上端口）：主机工具的确认框写明操作的是哪台主机。
-    /// SSH 开始连接后才有（按实际的连接参数，含分组的默认用户名）；本地终端、WSL、Telnet、串口为 `None`。
+    /// 登录的用户与地址（`用户@地址`，端口不是 22 时带上端口，写法见 [`crate::host_info::connection_target`]）：
+    /// 主机工具的确认框写明操作的是哪台主机。SSH 开始连接后才有（按实际的连接参数，含分组的默认用户名）；本地终端、
+    /// WSL、Telnet、串口为 `None`。
     pub fn login_label(&self) -> Option<SharedString> {
         let spec = self.spec.as_ref().filter(|_| !self.is_raw())?;
         let hop = spec.plan.target();
-        let address = match hop.port {
-            22 => hop.address.clone(),
-            port if hop.address.contains(':') => format!("[{}]:{port}", hop.address),
-            port => format!("{}:{port}", hop.address),
-        };
-        Some(format!("{}@{address}", hop.username).into())
+        crate::host_info::connection_target(&crate::host_info::ConnectionTarget::Ssh {
+            username: &hop.username,
+            address: &hop.address,
+            port: hop.port,
+        })
+        .map(SharedString::from)
     }
 
     /// 连的主机的地址（Tab 菜单的“复制 IP”）；本地终端、WSL、串口没有。
@@ -3178,13 +3179,47 @@ impl BasePanel for TerminalPanel {
 }
 
 impl TerminalPanel {
-    /// Tab 的悬停提示：程序设置的标题（见 [`program_title`]）。
-    fn tab_tooltip(&self, cx: &App) -> Option<SharedString> {
+    /// 程序设置的标题（见 [`program_title`]）：Tab 的悬停提示中的说明。
+    fn program_title(&self, cx: &App) -> Option<SharedString> {
         program_title(
             &self.name,
             self.view.as_ref().and_then(|view| view.read(cx).title()),
         )
         .map(SharedString::from)
+    }
+
+    /// 连接目标（见 [`crate::host_info::connection_target`]）：保存的主机按主机的设置，快速连接、被调起的按连接的
+    /// 参数，WSL 为发行版；本地终端没有。与 Tab 的名称相同时不再写（快速连接的名称就是 `用户@地址`）。
+    fn tab_target(&self) -> Option<SharedString> {
+        use crate::host_info::{ConnectionTarget, connection_target};
+        let target = match &self.session {
+            Session::Host { host } => crate::host_info::host_target(&self.store, host),
+            Session::Quick { target } => connection_target(&ConnectionTarget::Ssh {
+                username: &target.username,
+                address: &target.host,
+                port: target.port,
+            }),
+            Session::Launch { target } => connection_target(&ConnectionTarget::Ssh {
+                username: &target.username,
+                address: &target.address,
+                port: target.port,
+            }),
+            Session::Wsl { distro, user } => {
+                connection_target(&ConnectionTarget::Wsl { distro, user })
+            }
+            Session::Local { .. } => connection_target(&ConnectionTarget::Local),
+        };
+        target
+            .filter(|target| target.as_str() != self.name.as_ref())
+            .map(SharedString::from)
+    }
+
+    /// 横排的 Tab 的悬停提示：程序设置的标题与连接目标，各占一行（名称就写在 Tab 上，不再重复）；都没有时不提示。
+    fn tab_tooltip(&self, cx: &App) -> Option<SharedString> {
+        crate::workspace::tooltip_lines([
+            self.program_title(cx).as_ref(),
+            self.tab_target().as_ref(),
+        ])
     }
 
     /// Tab 标题前的图标（与 SFTP 的 Tab 一样，同一台主机的终端与 SFTP 的 Tab 同名）。
@@ -3309,7 +3344,8 @@ impl TerminalPanel {
                 .with_size(crate::workspace::RAIL_ICON)
                 .into_any_element(),
             name: self.name.clone(),
-            detail: self.tab_tooltip(cx),
+            detail: self.program_title(cx),
+            target: self.tab_target(),
             badges: self.tab_badges(cx),
             status: self.tab_status(cx),
             host: self.tab_host(cx),
@@ -3319,8 +3355,9 @@ impl TerminalPanel {
 
 impl Panel for TerminalPanel {
     fn title(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        // Tab 上写创建时的名称（主机名、本地 shell 等，与 SFTP 的 Tab 一致），不随远端程序设置的标题变化
-        let program_title = self.tab_tooltip(cx);
+        // Tab 上写创建时的名称（主机名、本地 shell 等，与 SFTP 的 Tab 一致），不随远端程序设置的标题变化；
+        // 程序设置的标题与连接目标在悬停提示中（也是无障碍的描述）
+        let tooltip = self.tab_tooltip(cx);
         // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
         // 自己的关闭按钮（Dock 自带的不显示）：有连接时按设置先确认
@@ -3335,10 +3372,12 @@ impl Panel for TerminalPanel {
                 gpui_kit::MouseButton::Left,
                 cx.listener(|this, _, window, cx| this.focus_handle(cx).focus(window, cx)),
             )
-            .when_some(program_title, |this, title| {
-                this.tooltip(crate::menu_tooltip::quiet(move |window, cx| {
-                    gpui_kit::component::tooltip::Tooltip::new(title.clone()).build(window, cx)
-                }))
+            .when_some(tooltip, |this, tooltip| {
+                this.aria_description(tooltip.clone())
+                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
+                        gpui_kit::component::tooltip::Tooltip::new(tooltip.clone())
+                            .build(window, cx)
+                    }))
             })
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
@@ -3902,6 +3941,87 @@ mod tests {
             program_title("PowerShell", Some("vim notes.txt")).as_deref(),
             Some("vim notes.txt")
         );
+    }
+
+    // 横排的 Tab：悬停提示（无障碍的描述同样）写连接目标，名称写在 Tab 上、不再重复：保存的 SSH 主机写
+    // `用户@地址:端口`，Telnet 写 `地址:端口`；快速连接的名称就是 `用户@地址:端口`，不再写；本地终端没有提示。主机的
+    // 地址连不上（打开很快失败，不影响提示）
+    #[gpui_kit::test]
+    fn horizontal_tabs_show_the_connection_target(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        use termlet_core::store::Position;
+        let handle = crate::testkit::open_workspace(cx);
+        crate::i18n::set_language(crate::i18n::Language::ZhCn);
+        let store = cx.update(|cx| AppState::store(cx));
+        let ssh = store
+            .create(
+                Host {
+                    name: "web".into(),
+                    address: "127.0.0.1".into(),
+                    port: 1,
+                    username: "alice".into(),
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+        let telnet = store
+            .create(
+                Host {
+                    name: "switch".into(),
+                    protocol: Protocol::Telnet,
+                    address: "127.0.0.1".into(),
+                    port: 1,
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap();
+        let quick = QuickTarget {
+            username: "bob".into(),
+            host: "::1".into(),
+            port: 1,
+        };
+        let local = cx
+            .update_window(handle, |_, window, cx| {
+                let workspace = Workspace::in_window(window, cx).expect("主窗口");
+                workspace.update(cx, |w, cx| {
+                    w.open_host(&ssh, window, cx);
+                    w.open_host(&telnet, window, cx);
+                    w.open_quick(quick, window, cx);
+                    w.open_local_terminal(window, cx);
+                });
+                let local = workspace.read(cx).live_terminals().pop().expect("本地终端");
+                // 不真的启动本地 shell：没有程序设置的标题
+                local.update(cx, |panel, _| panel._connect = None);
+                local
+            })
+            .unwrap();
+        cx.run_until_parked();
+        let description = |cx: &mut gpui_kit::TestAppContext, name: &str| {
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                let workspace = Workspace::in_window(window, cx).expect("主窗口");
+                let panel = workspace
+                    .read(cx)
+                    .live_terminals()
+                    .into_iter()
+                    .find(|p| p.read(cx).name().as_ref() == name)
+                    .unwrap_or_else(|| panic!("找不到 Tab：{name}"));
+                window
+                    .find(("tab-title", panel.entity_id().as_u64() as usize))
+                    .description()
+                    .map(str::to_string)
+            })
+            .unwrap()
+        };
+        assert_eq!(description(cx, "web").as_deref(), Some("alice@127.0.0.1:1"));
+        assert_eq!(description(cx, "switch").as_deref(), Some("127.0.0.1:1"));
+        assert_eq!(description(cx, "bob@[::1]:1"), None, "与名称相同");
+        let local_name = cx.update(|cx| local.read(cx).name().to_string());
+        assert_eq!(description(cx, &local_name), None, "本地终端");
     }
 
     // 界面大小只管界面（rem）：放大到 150% 后窗口的 rem 跟着变，已经打开的终端的字号不变

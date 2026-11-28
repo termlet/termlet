@@ -202,7 +202,8 @@ fn tab_title(panel: &Entity<SftpPanel>) -> ElementId {
     ("sftp-tab-title", panel.entity_id().as_u64() as usize).into()
 }
 
-// SFTP 面板（Tab 的右键菜单）：普通的有“以 root 身份打开 SFTP”，点了请求工作区另开；以 root 打开的有标记、没有这一项
+// SFTP 面板（Tab 的右键菜单）：普通的有“以 root 身份打开 SFTP”，点了请求工作区另开；以 root 打开的有标记、没有这一项。
+// Tab 的悬停提示（无障碍的描述同样）是连接目标，以 root 打开的在后面标上 root
 #[gpui_kit::test]
 fn panel_menu_offers_root_and_marks_root_tabs(cx: &mut TestAppContext) {
     setup(cx);
@@ -212,6 +213,10 @@ fn panel_menu_offers_root_and_marks_root_tabs(cx: &mut TestAppContext) {
         window.render_frame(cx);
         assert!(window.try_find("sftp-tab-root-badge").is_none());
         assert!(window.try_find("sftp-root-badge").is_none());
+        assert_eq!(
+            window.find(tab_title(&panel)).description(),
+            Some("alice@127.0.0.1:1")
+        );
         window.right_click(tab_title(&panel), cx);
     })
     .unwrap();
@@ -237,6 +242,10 @@ fn panel_menu_offers_root_and_marks_root_tabs(cx: &mut TestAppContext) {
         window.render_frame(cx);
         assert!(window.find("sftp-tab-root-badge").visible());
         assert!(window.find("sftp-root-badge").visible());
+        assert_eq!(
+            window.find(tab_title(&panel)).description(),
+            Some(format!("alice@127.0.0.1:1 · {}", t!("sftp.root_badge")).as_str())
+        );
         window.right_click(tab_title(&panel), cx);
     })
     .unwrap();
@@ -506,6 +515,16 @@ fn root_target_is_a_separate_host(cx: &mut TestAppContext) {
         let wsl_root = wsl.as_root(&store).unwrap();
         assert!(wsl_root.is_root());
         assert!(wsl_root.as_root(&store).is_none());
+        // 悬停提示中的连接目标：经 sudo 的标上 root，WSL 以 root 用户登录，写成用户即可
+        assert_eq!(
+            root.target_label(&store),
+            Some(format!("alice@127.0.0.1:1 · {}", t!("sftp.root_badge")))
+        );
+        assert_eq!(wsl.target_label(&store).as_deref(), Some("Ubuntu"));
+        assert_eq!(
+            wsl_root.target_label(&store).as_deref(),
+            Some("root@Ubuntu")
+        );
     });
 }
 

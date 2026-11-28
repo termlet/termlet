@@ -52,13 +52,15 @@ mod xshell;
 use std::path::{Path, PathBuf};
 
 pub(crate) use apply::{
-    ExistingHosts, GroupIndex, effective_username, has_credentials, move_into, one_line,
-    proxy_command, set_jump, snapshot_before_import, write_secrets,
+    ExistingHosts, GroupIndex, has_credentials, move_into, one_line, proxy_command, set_jump,
+    snapshot_before_import, write_secrets,
 };
 pub use apply::{
     FailureReason, FailureSubject, HostOutcome, ImportFailure, ImportPreview, ImportReport,
     ImportedHost, OnDuplicate, PreviewForward, PreviewItem, apply, preview,
 };
+// 主机实际使用的用户名：导出主机文件、界面上的连接目标（Tab 的悬停提示）也用
+pub use apply::effective_username;
 pub use mobaxterm::MOBAXTERM_REGISTRY_PATH;
 pub use plan::{
     Endpoint, Hint, ImportPlan, JumpRef, KeyAlgorithm, PlanNote, PlannedGroup, PlannedHost,

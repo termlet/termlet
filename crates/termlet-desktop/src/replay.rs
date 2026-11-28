@@ -859,6 +859,7 @@ impl ReplayPanel {
                 .into_any_element(),
             name: self.title_text(),
             detail: Some(self.path.display().to_string().into()),
+            target: None,
             badges: Vec::new(),
             status: Vec::new(),
             host: None,

@@ -713,6 +713,7 @@ impl BatchPanel {
                 .into_any_element(),
             name: self.title_text(cx),
             detail: self.results.as_ref().map(|r| r.command.clone()),
+            target: None,
             badges: running
                 .then(|| {
                     div()

@@ -142,6 +142,7 @@ pub(crate) use close_tabs::close_tab_items;
 pub(crate) use move_tab::SoleTabDrag;
 pub(crate) use tab_list::{
     RAIL_ICON, TabFace, TabStatus, host_group_key, key_bindings as tab_list_key_bindings,
+    tooltip_lines,
 };
 
 /// Tab 菜单中的“在侧栏中显示主机”（终端、文件管理的 Tab 连的是保存的主机时）。

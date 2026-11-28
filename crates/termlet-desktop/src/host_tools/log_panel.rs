@@ -1111,6 +1111,7 @@ impl LogPanel {
                 .into_any_element(),
             name: self.title_text(),
             detail: Some(self.tab_tooltip()),
+            target: None,
             badges: following
                 .then(|| {
                     div()

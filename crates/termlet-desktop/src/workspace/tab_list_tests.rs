@@ -895,6 +895,71 @@ fn rail_icons_show_status_dots(cx: &mut TestAppContext) {
     .unwrap();
 }
 
+// 竖排的列表与窄栏：悬停提示（无障碍的描述同样）在名称下面写连接目标：终端为 `用户@地址:端口`，以 root 身份打开的
+// 文件管理在后面标上 root；窄栏在连接目标下面接着写状态。主机的地址连不上（打开很快失败，不影响连接目标）
+#[gpui_kit::test]
+fn rows_and_rail_show_the_connection_target(cx: &mut TestAppContext) {
+    let (handle, workspace) = open(cx, 1024., 640.);
+    set_position(cx, TabPosition::Left);
+    let host = cx.update(|cx| {
+        AppState::store(cx)
+            .create(
+                Host {
+                    name: "web".into(),
+                    address: "127.0.0.1".into(),
+                    port: 1,
+                    username: "alice".into(),
+                    ..Default::default()
+                },
+                None,
+                Position::Last,
+            )
+            .unwrap()
+    });
+    cx.update_window(handle, |_, window, cx| {
+        workspace.update(cx, |w, cx| {
+            w.open_host(&host, window, cx);
+            w.open_host_sftp_root(&host, window, cx);
+        })
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let (terminal, sftp) = cx.update(|cx| {
+        let w = workspace.read(cx);
+        (
+            PanelId::from(w.live_terminals()[0].entity_id()),
+            PanelId::from(w.live_sftps()[0].entity_id()),
+        )
+    });
+    let description = |cx: &mut TestAppContext, id: ElementId| {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.find(id).description().map(str::to_string)
+        })
+        .unwrap()
+    };
+    assert_eq!(
+        description(cx, row(terminal)).as_deref(),
+        Some("alice@127.0.0.1:1")
+    );
+    assert_eq!(
+        description(cx, row(sftp)),
+        Some(format!("alice@127.0.0.1:1 · {}", t!("sftp.root_badge")))
+    );
+
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("vtab-collapse", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    let rail: ElementId = ("vtab-rail", terminal.as_u64() as usize).into();
+    let failed = format!("alice@127.0.0.1:1\n{}", t!("tab_list.status.disconnected"));
+    poll_until(cx, "连接失败", |cx| {
+        description(cx, rail.clone()).as_deref() == Some(failed.as_str())
+    });
+}
+
 /// 在窗口中派发动作（键盘焦点所在的位置）。
 fn dispatch(cx: &mut TestAppContext, handle: AnyWindowHandle, action: impl gpui_kit::Action) {
     cx.update_window(handle, |_, window, cx| {

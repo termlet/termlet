@@ -240,6 +240,7 @@ impl SettingsPanel {
                 .into_any_element(),
             name: self.label(cx),
             detail: Some(self.form.read(cx).page().title()),
+            target: None,
             badges: Vec::new(),
             status: Vec::new(),
             host: None,
