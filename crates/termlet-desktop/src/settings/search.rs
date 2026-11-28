@@ -589,10 +589,21 @@ pub(super) static ITEMS: &[Item] = &[
         &[
             "lock_ui.master.title",
             "lock_ui.master.description",
+            "lock_ui.master.description_portable",
             "lock_ui.master.change",
         ],
     )
     .when(|cx| crate::app_state::AppState::store(cx).vault_uses_password()),
+    // 便携版在这台电脑上记住了主密码时才有
+    item(
+        Page::Security,
+        "master-remembered",
+        &["lock_ui.master.remembered", "lock_ui.master.forget"],
+    )
+    .when(|cx| {
+        crate::app_state::AppState::store(cx).vault_remember()
+            == termlet_core::vault::Remember::Remembered
+    }),
     item(
         Page::Security,
         "host-cas",

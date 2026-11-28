@@ -42,20 +42,7 @@ pub(crate) async fn wait_until_async(what: &str, mut ok: impl FnMut() -> bool) {
 }
 
 /// 多次打开同一个数据库文件时共用的内存钥匙串。
-#[derive(Clone, Default)]
-pub(crate) struct SharedKeys(Arc<MemoryKeyStore>);
-
-impl KeyStore for SharedKeys {
-    fn load(&self) -> Result<Option<Zeroizing<[u8; KEY_LEN]>>> {
-        self.0.load()
-    }
-    fn store(&self, key: &[u8; KEY_LEN]) -> Result<()> {
-        self.0.store(key)
-    }
-    fn delete(&self) -> Result<()> {
-        self.0.delete()
-    }
-}
+pub(crate) type SharedKeys = Arc<MemoryKeyStore>;
 
 /// 内存数据库上的存储（主密钥在内存钥匙串中）。
 pub(crate) fn memory_store() -> Arc<Store> {

@@ -7,9 +7,10 @@ use gpui_kit::test::TestWindowExt as _;
 use gpui_kit::{AnyWindowHandle, AppContext as _, Entity, TestAppContext};
 
 use super::*;
+use crate::app_state::AppState;
 use crate::i18n::set_language;
 use crate::settings::{SettingsForm, Target};
-use crate::testkit::{open_workspace, open_workspace_sized};
+use crate::testkit::{open_workspace, open_workspace_sized, open_workspace_with};
 use crate::workspace::Workspace;
 
 /// 搜到的项的锚点（不管这个系统上有没有这一项）。
@@ -278,6 +279,27 @@ fn every_item_is_drawn_where_it_says(cx: &mut TestAppContext) {
         }
     }
     assert!(missing.is_empty(), "没有画出：{}", missing.join("、"));
+}
+
+// 只在某些情况下才有的“主密码”一节与其中记住的主密码（便携版用主密码、在这台电脑上记住时）也画在登记的地方
+// （上一个测试中保险库在钥匙串中，没有它们）
+#[gpui_kit::test]
+fn remembered_master_password_is_drawn_where_it_says(cx: &mut TestAppContext) {
+    let handle = open_workspace_with(cx, |cx| {
+        let remembered = Box::new(termlet_core::vault::MemoryKeyStore::default());
+        AppState::install_in_memory_locked("master pw 1", Some(remembered), cx);
+        let store = AppState::store(cx);
+        store.unlock_vault(&"master pw 1".into()).unwrap();
+        store.remember_vault_key().unwrap();
+    });
+    open_settings(cx, handle);
+    for anchor in ["master-password", "master-remembered"] {
+        let item = ITEMS.iter().find(|item| item.anchor == anchor).unwrap();
+        assert!(item.shown.is_some_and(|shown| cx.update(|cx| shown(cx))));
+        let title = rust_i18n::t!(item.keys[0], locale = "zh-CN").into_owned();
+        search(cx, handle, &strip_placeholders(&title));
+        assert!(drawn(cx, handle).contains(&anchor), "没有画出 {anchor}");
+    }
 }
 
 fn is_open(cx: &mut TestAppContext, form: &Entity<SettingsForm>, fold: Fold) -> bool {

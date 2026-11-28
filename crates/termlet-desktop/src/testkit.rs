@@ -22,7 +22,11 @@ pub(crate) fn open_portable_workspace(cx: &mut TestAppContext) -> AnyWindowHandl
     open_workspace_with(cx, AppState::install_in_memory_portable)
 }
 
-fn open_workspace_with(cx: &mut TestAppContext, install: fn(&mut App)) -> AnyWindowHandle {
+/// 用 `install` 装好应用状态后打开主窗口（例如保险库等着输入主密码时）。
+pub(crate) fn open_workspace_with(
+    cx: &mut TestAppContext,
+    install: impl FnOnce(&mut App),
+) -> AnyWindowHandle {
     open_workspace_sized_with(cx, install, size(px(1024.), px(640.)))
 }
 
@@ -36,7 +40,7 @@ pub(crate) fn open_workspace_sized(
 
 fn open_workspace_sized_with(
     cx: &mut TestAppContext,
-    install: fn(&mut App),
+    install: impl FnOnce(&mut App),
     window_size: gpui_kit::Size<gpui_kit::Pixels>,
 ) -> AnyWindowHandle {
     cx.executor().allow_parking();

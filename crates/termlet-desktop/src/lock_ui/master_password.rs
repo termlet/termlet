@@ -4,6 +4,9 @@
 //! 主密钥不变，保存的秘密不用重新加密（[`termlet_core::store::Store::change_vault_password`]，几百毫秒的密钥派生在
 //! 后台执行）。只影响这台电脑：云同步用的是同步密码，其他电脑有各自的保险库（钥匙串或它们自己的主密码），不用跟着改；
 //! 备份、快照不带主密码，恢复时也不会把主密码改回去。
+//!
+//! 便携版第一次使用时选了主密码的也在主密码模式，说明换成便携版的（主密码随数据走）。在这台电脑上记住了主密码时
+//! （解锁时勾选的），这里多一行说明与“忘记”：忘记后下次启动时重新询问。
 
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
@@ -17,7 +20,7 @@ use gpui_kit::{
 };
 use termlet_core::CoreError;
 use termlet_core::secret::SecretString;
-use termlet_core::vault::MIN_PASSWORD_LEN;
+use termlet_core::vault::{MIN_PASSWORD_LEN, Remember};
 
 use crate::app_state::AppState;
 use crate::prose::prose;
@@ -27,6 +30,7 @@ use crate::t;
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Message {
     Changed,
+    Forgotten,
     Mismatch,
     TooShort,
     WrongPassword,
@@ -35,12 +39,13 @@ enum Message {
 
 impl Message {
     fn is_error(&self) -> bool {
-        *self != Message::Changed
+        !matches!(self, Message::Changed | Message::Forgotten)
     }
 
     fn text(&self) -> SharedString {
         match self {
             Message::Changed => t!("lock_ui.master.changed"),
+            Message::Forgotten => t!("lock_ui.master.forgotten"),
             Message::Mismatch => t!("lock_ui.security.mismatch"),
             Message::TooShort => t!("lock_ui.master.too_short", min = MIN_PASSWORD_LEN),
             Message::WrongPassword => t!("lock_ui.master.wrong_password"),
@@ -165,6 +170,59 @@ impl MasterPassword {
         }));
     }
 
+    /// 忘记这台电脑记住的主密钥（钥匙串的操作在后台执行）。
+    fn forget(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.busy {
+            return;
+        }
+        self.busy = true;
+        self.message = None;
+        cx.notify();
+        let store = AppState::store(cx);
+        let job = cx.background_spawn(async move { store.forget_vault_key() });
+        self._task = Some(cx.spawn_in(window, async move |this, cx| {
+            let result = job.await;
+            let _ = this.update(cx, |this, cx| {
+                this.busy = false;
+                this.message = Some(match result {
+                    Ok(()) => Message::Forgotten,
+                    Err(e) => Message::Failed(crate::store_errors::describe(&e).to_string()),
+                });
+                cx.notify();
+            });
+        }));
+    }
+
+    /// 便携版在这台电脑上记住了主密码时的一行说明与“忘记”。
+    fn render_remembered(
+        &self,
+        hits: &crate::settings::search::Hits,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        h_flex()
+            .gap_2()
+            .justify_between()
+            .child(
+                hits.mark(
+                    div()
+                        .flex_1()
+                        .text_sm()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(prose(t!("lock_ui.master.remembered"))),
+                    "master-remembered",
+                    cx,
+                ),
+            )
+            .child(
+                Button::new("master-forget")
+                    .outline()
+                    .small()
+                    .label(t!("lock_ui.master.forget"))
+                    .disabled(self.busy)
+                    .on_click(cx.listener(|this, _, window, cx| this.forget(window, cx))),
+            )
+    }
+
     fn finish(
         &mut self,
         result: termlet_core::Result<()>,
@@ -240,6 +298,13 @@ impl MasterPassword {
 impl Render for MasterPassword {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let hits = crate::settings::search::hits(window, cx);
+        let remembered = AppState::store(cx).vault_remember() == Remember::Remembered;
+        // 便携版是自己选的主密码（钥匙串可能可用），主密码随数据走，不说“没有可用的钥匙串”“只影响这台电脑”
+        let description = if AppState::is_portable(cx) {
+            t!("lock_ui.master.description_portable")
+        } else {
+            t!("lock_ui.master.description")
+        };
         let theme = cx.theme();
         let (danger, success, muted, border) = (
             theme.danger,
@@ -276,12 +341,10 @@ impl Render for MasterPassword {
                     cx,
                 ),
             )
-            .child(
-                div()
-                    .text_sm()
-                    .text_color(muted)
-                    .child(prose(t!("lock_ui.master.description"))),
-            )
+            .child(div().text_sm().text_color(muted).child(prose(description)))
+            .when(remembered, |this| {
+                this.child(self.render_remembered(&hits, cx))
+            })
             .child(body)
             .when_some(self.message.clone(), |this, message| {
                 this.child(

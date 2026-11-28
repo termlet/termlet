@@ -5,6 +5,7 @@ use std::sync::Arc;
 use gpui_kit::{App, AppContext as _, Context, Entity, EventEmitter, Global, Task};
 use termlet_core::db::Database;
 use termlet_core::paths::DataDir;
+use termlet_core::secret::SecretString;
 use termlet_core::sftp::{ManagerOptions, SftpManager};
 use termlet_core::store::{Store, StoreEvent};
 use termlet_core::ui_state::UiStateFile;
@@ -197,22 +198,45 @@ impl AppState {
 
     /// 使用内存数据库与指定的钥匙串（UI 集成测试用，例如模拟钥匙串不可用）。
     pub fn install_in_memory_with(keys: Box<dyn KeyStore>, cx: &mut App) {
-        Self::install_in_memory_as(keys, false, cx);
+        let db = Database::open_in_memory().expect("内存数据库");
+        let vault = Vault::open(&db, keys).expect("保险库");
+        Self::install_in_memory_store(db, vault, false, cx);
     }
 
     /// 像便携版那样使用内存数据库（UI 集成测试用）：数据目录标为便携版，保险库第一次使用时先让用户选择。
     pub fn install_in_memory_portable(cx: &mut App) {
-        Self::install_in_memory_as(Box::new(MemoryKeyStore::default()), true, cx);
+        let db = Database::open_in_memory().expect("内存数据库");
+        let vault = Vault::open_portable(
+            &db,
+            Box::new(MemoryKeyStore::default()),
+            Box::new(MemoryKeyStore::default()),
+        )
+        .expect("保险库");
+        Self::install_in_memory_store(db, vault, true, cx);
     }
 
-    fn install_in_memory_as(keys: Box<dyn KeyStore>, portable: bool, cx: &mut App) {
+    /// 使用内存数据库，保险库已用主密码 `password` 保护、等着解锁（UI 集成测试用）。`remembered` 为 `Some` 时像便携版，
+    /// 是这台电脑记住主密钥的地方（换成内存中的，不碰系统的凭据管理器）；为 `None` 时像安装版。
+    pub fn install_in_memory_locked(
+        password: &str,
+        remembered: Option<Box<dyn KeyStore>>,
+        cx: &mut App,
+    ) {
         let db = Database::open_in_memory().expect("内存数据库");
-        let vault = if portable {
-            Vault::open_portable(&db, keys)
-        } else {
-            Vault::open(&db, keys)
+        Vault::open(&db, Box::new(MemoryKeyStore::unavailable()))
+            .and_then(|vault| vault.set_new_password(&db, &SecretString::new(password)))
+            .expect("设置主密码");
+        let keys = Box::new(MemoryKeyStore::default());
+        let portable = remembered.is_some();
+        let vault = match remembered {
+            Some(remembered) => Vault::open_portable(&db, keys, remembered),
+            None => Vault::open(&db, keys),
         }
         .expect("保险库");
+        Self::install_in_memory_store(db, vault, portable, cx);
+    }
+
+    fn install_in_memory_store(db: Database, vault: Vault, portable: bool, cx: &mut App) {
         let store = Store::open(db, vault).expect("存储");
         // 界面语言由测试自己设定：保存设置时不切换（语言是进程全局的，会影响并行的其他测试）
         crate::appearance::assume_language(store.settings().appearance.language, cx);

@@ -263,12 +263,36 @@ lock_ui.master.description:
   zh-TW: "這台電腦沒有可用的系統鑰匙圈，儲存的密碼、私密金鑰等用主密碼加密，每次啟動時輸入；應用程式鎖定的鎖定密碼只擋住介面，與主密碼無關。修改後用新的主密碼解鎖，儲存的內容不用重新加密。只影響這台電腦：雲端同步用的是同步密碼，其他電腦有各自的鑰匙圈或主密碼，不用跟著改。"
   ja: このコンピューターには使用できるシステムのキーチェーンがないため、保存したパスワードや秘密鍵などはマスターパスワードで暗号化され、起動のたびに入力します。アプリロックのロックパスワードは画面を隠すだけで、マスターパスワードとは別のものです。変更後は新しいマスターパスワードでロックを解除します。保存した内容を暗号化し直す必要はありません。影響するのはこのコンピューターだけです。クラウド同期では同期パスワードを使い、ほかのコンピューターにはそれぞれのキーチェーンまたはマスターパスワードがあるため、変更は不要です。
   ko: 이 컴퓨터에는 사용할 수 있는 시스템 키체인이 없어 저장한 비밀번호, 개인 키 등을 마스터 비밀번호로 암호화하며, 시작할 때마다 입력해야 합니다. 앱 잠금의 잠금 비밀번호는 화면만 가리며 마스터 비밀번호와는 별개입니다. 변경한 뒤에는 새 마스터 비밀번호로 잠금을 해제하며, 저장한 내용을 다시 암호화할 필요는 없습니다. 이 컴퓨터에만 영향을 줍니다. 클라우드 동기화는 동기화 비밀번호를 쓰고, 다른 컴퓨터에는 각자의 키체인이나 마스터 비밀번호가 있으므로 함께 바꿀 필요가 없습니다.
+lock_ui.master.description_portable:
+  zh-CN: "便携版的密码、私钥等用主密码加密，带到别的电脑上也能解开。"
+  en: "The portable version encrypts saved passwords, private keys and other secrets with the master password, so they can be unlocked on any computer."
+  zh-TW: "可攜版的密碼、私密金鑰等用主密碼加密，帶到別的電腦上也能解開。"
+  ja: ポータブル版で保存したパスワードや秘密鍵などはマスターパスワードで暗号化されるため、ほかのコンピューターでも復号できます。
+  ko: 포터블 버전에 저장된 비밀번호, 개인 키 등은 마스터 비밀번호로 암호화되어 다른 컴퓨터에서도 열 수 있습니다.
 lock_ui.master.change:
   zh-CN: "修改主密码…"
   en: "Change Master Password…"
   zh-TW: "修改主密碼…"
   ja: マスターパスワードを変更…
   ko: 마스터 비밀번호 변경…
+lock_ui.master.remembered:
+  zh-CN: "这台电脑记住了主密码，启动时不再询问"
+  en: "This computer remembers the master password, so you aren't asked for it at startup"
+  zh-TW: "這台電腦記住了主密碼，啟動時不再詢問"
+  ja: このコンピューターでマスターパスワードを記憶しているため、起動時の入力は不要です
+  ko: 이 컴퓨터에서 마스터 비밀번호를 기억하고 있어 시작할 때 묻지 않습니다
+lock_ui.master.forget:
+  zh-CN: "忘记"
+  en: "Forget"
+  zh-TW: "忘記"
+  ja: 記憶を解除
+  ko: 기억 해제
+lock_ui.master.forgotten:
+  zh-CN: "已忘记，下次启动时输入主密码"
+  en: "Forgotten. You'll be asked for the master password next time."
+  zh-TW: "已忘記，下次啟動時輸入主密碼"
+  ja: 記憶を解除しました。次回の起動時からマスターパスワードを入力します
+  ko: 기억을 해제했습니다. 다음에 시작할 때부터 마스터 비밀번호를 입력하세요
 lock_ui.master.current:
   zh-CN: "当前主密码"
   en: "Current master password"

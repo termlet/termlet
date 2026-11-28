@@ -2,10 +2,12 @@
 //!
 //! Windows 上主密钥在凭据管理器中，几乎不会出现；出现的情形是主密码模式（钥匙串不可用）、
 //! 数据目录来自另一台电脑或另一个账户（主密钥不在 / 不符）、读取钥匙串出错，以及便携版第一次使用时
-//! 选择用主密码还是这台电脑的凭据管理器。
+//! 选择用主密码还是这台电脑的凭据管理器。便携版用主密码、这台电脑的钥匙串可用时，可以勾选“在这台电脑上记住”，
+//! 以后在这台电脑上启动时不再询问。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Icon, h_flex, v_flex};
 use gpui_kit::{
@@ -14,11 +16,21 @@ use gpui_kit::{
 };
 use termlet_core::CoreError;
 use termlet_core::secret::SecretString;
-use termlet_core::vault::{MIN_PASSWORD_LEN, VaultStatus};
+use termlet_core::store::Store;
+use termlet_core::vault::{MIN_PASSWORD_LEN, Remember, VaultStatus};
 
 use crate::app_state::AppState;
 use crate::prose::prose;
 use crate::t;
+
+/// 后台操作成功后另外要告诉用户的事。
+enum Outcome {
+    Done,
+    /// 解锁了，但没能在这台电脑上记住主密钥（原因）
+    NotRemembered(String),
+}
+
+type Job = Box<dyn FnOnce(&Store) -> termlet_core::Result<Outcome> + Send>;
 
 /// 提交失败的原因（渲染时翻译）。
 #[derive(Clone, Debug, PartialEq)]
@@ -32,6 +44,8 @@ enum GateError {
 pub struct VaultGate {
     password: Entity<InputState>,
     confirm: Entity<InputState>,
+    /// 勾了“在这台电脑上记住”（默认不勾）
+    remember: bool,
     error: Option<GateError>,
     busy: bool,
     _subscriptions: Vec<Subscription>,
@@ -65,6 +79,7 @@ impl VaultGate {
         Self {
             password,
             confirm,
+            remember: false,
             error: None,
             busy: false,
             _subscriptions: subscriptions,
@@ -75,42 +90,52 @@ impl VaultGate {
         AppState::store(cx).vault_status()
     }
 
+    /// 能不能勾“在这台电脑上记住”：便携版用主密码、这台电脑的钥匙串可用时（安装版没有这一项）。
+    fn can_remember(cx: &gpui_kit::App) -> bool {
+        let store = AppState::store(cx);
+        store.vault_status() == VaultStatus::NeedsPassword
+            && store.vault_remember() == Remember::Available
+    }
+
     fn submit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.busy {
             return;
         }
         let status = Self::status(cx);
         let password = SecretString::new(self.password.read(cx).value().to_string());
-        let job: Box<dyn FnOnce(&termlet_core::store::Store) -> termlet_core::Result<()> + Send> =
-            match status {
-                VaultStatus::NeedsPassword => Box::new(move |store| store.unlock_vault(&password)),
-                VaultStatus::NeedsNewPassword { .. } | VaultStatus::ChooseKeyStore => {
-                    if password.expose().chars().count() < MIN_PASSWORD_LEN {
-                        self.set_error(Some(GateError::TooShort), cx);
-                        return;
+        let job: Job = match status {
+            VaultStatus::NeedsPassword => {
+                let remember = self.remember && Self::can_remember(cx);
+                Box::new(move |store| {
+                    store.unlock_vault(&password)?;
+                    // 记不住（钥匙串出错）时照常解锁，之后提示
+                    if remember && let Err(e) = store.remember_vault_key() {
+                        return Ok(Outcome::NotRemembered(e.to_string()));
                     }
-                    if self.confirm.read(cx).value().as_ref() != password.expose() {
-                        self.set_error(Some(GateError::Mismatch), cx);
-                        return;
-                    }
-                    Box::new(move |store| store.set_vault_password(&password))
+                    Ok(Outcome::Done)
+                })
+            }
+            VaultStatus::NeedsNewPassword { .. } | VaultStatus::ChooseKeyStore => {
+                if password.expose().chars().count() < MIN_PASSWORD_LEN {
+                    self.set_error(Some(GateError::TooShort), cx);
+                    return;
                 }
-                VaultStatus::KeyringError(_) => Box::new(|store| {
-                    store.vault().retry(store.database()).map(|_| ())?;
-                    Ok(())
-                }),
-                _ => return,
-            };
+                if self.confirm.read(cx).value().as_ref() != password.expose() {
+                    self.set_error(Some(GateError::Mismatch), cx);
+                    return;
+                }
+                Box::new(move |store| store.set_vault_password(&password).map(|()| Outcome::Done))
+            }
+            VaultStatus::KeyringError(_) => {
+                Box::new(|store| store.vault().retry(store.database()).map(|_| Outcome::Done))
+            }
+            _ => return,
+        };
         self.run(job, window, cx);
     }
 
     /// 在后台执行（Argon2 派生要几百毫秒），完成后更新错误提示。
-    fn run(
-        &mut self,
-        job: Box<dyn FnOnce(&termlet_core::store::Store) -> termlet_core::Result<()> + Send>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    fn run(&mut self, job: Job, window: &mut Window, cx: &mut Context<Self>) {
         self.busy = true;
         self.error = None;
         cx.notify();
@@ -118,10 +143,16 @@ impl VaultGate {
         let task = cx.background_spawn(async move { job(&store) });
         cx.spawn_in(window, async move |this, cx| {
             let result = task.await;
+            // 解锁后关卡随即关掉，记不住的原因弹出通知
+            if let Ok(Outcome::NotRemembered(error)) = &result {
+                let _ = cx.update(|window, cx| {
+                    crate::notify::warning(t!("vault.remember_failed", error = error), window, cx)
+                });
+            }
             let _ = this.update(cx, |this, cx| {
                 this.busy = false;
                 this.error = match result {
-                    Ok(()) => None,
+                    Ok(_) => None,
                     Err(CoreError::WrongPassword) => Some(GateError::WrongPassword),
                     Err(e) => Some(GateError::Failed(e.to_string())),
                 };
@@ -136,7 +167,8 @@ impl VaultGate {
         if self.busy || Self::status(cx) != VaultStatus::ChooseKeyStore {
             return;
         }
-        self.run(Box::new(|store| store.choose_vault_keyring()), window, cx);
+        let job: Job = Box::new(|store| store.choose_vault_keyring().map(|()| Outcome::Done));
+        self.run(job, window, cx);
     }
 
     fn set_error(&mut self, error: Option<GateError>, cx: &mut Context<Self>) {
@@ -158,7 +190,9 @@ impl VaultGate {
                 .on_ok(move |_, window, cx| {
                     if let Some(gate) = gate.upgrade() {
                         gate.update(cx, |gate, cx| {
-                            gate.run(Box::new(|store| store.reset_vault(None)), window, cx)
+                            let job: Job =
+                                Box::new(|store| store.reset_vault(None).map(|()| Outcome::Done));
+                            gate.run(job, window, cx)
                         });
                     }
                     true
@@ -226,6 +260,7 @@ impl Render for VaultGate {
             status,
             VaultStatus::NeedsNewPassword { .. } | VaultStatus::ChooseKeyStore
         );
+        let can_remember = Self::can_remember(cx);
         let choose = status == VaultStatus::ChooseKeyStore;
         let can_reset = matches!(
             status,
@@ -271,6 +306,18 @@ impl Render for VaultGate {
                         Input::new(&self.confirm)
                             .id("vault-confirm")
                             .disabled(self.busy),
+                    )
+                })
+                .when(can_remember, |this| {
+                    this.child(
+                        Checkbox::new("vault-remember")
+                            .label(t!("vault.remember"))
+                            .checked(self.remember)
+                            .disabled(self.busy)
+                            .on_change(cx.listener(|this, checked: &bool, _, cx| {
+                                this.remember = *checked;
+                                cx.notify();
+                            })),
                     )
                 })
                 .children(self.render_error(cx))
@@ -324,13 +371,18 @@ impl Render for VaultGate {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use gpui_kit::test::TestWindowExt as _;
     use gpui_kit::{AnyWindowHandle, AppContext as _, TestAppContext};
-    use termlet_core::vault::VaultStatus;
+    use termlet_core::vault::{KeyStore, MemoryKeyStore, Remember, Vault, VaultStatus};
 
     use crate::app_state::AppState;
     use crate::i18n::{Language, set_language};
-    use crate::testkit::{open_portable_workspace, wait_until};
+    use crate::testkit::{open_portable_workspace, open_workspace_with, wait_until};
+
+    /// 共用的内存钥匙串：解锁后还要查看其中的主密钥。
+    type SharedKeys = Arc<MemoryKeyStore>;
 
     /// 打开像便携版那样的主窗口（保险库还没有选保管方式）。
     fn open_portable(cx: &mut TestAppContext) -> AnyWindowHandle {
@@ -379,5 +431,111 @@ mod tests {
             AppState::store(cx).vault_status() == VaultStatus::Unlocked
         });
         assert!(cx.update(|cx| AppState::store(cx).vault_uses_password()));
+    }
+
+    const PASSWORD: &str = "correct horse battery";
+
+    /// 打开用主密码 [`PASSWORD`] 保护、等着解锁的主窗口。`remembered` 为 `Some` 时像便携版，是这台电脑记住
+    /// 主密钥的地方（内存中的，不碰系统的凭据管理器）；为 `None` 时像安装版。
+    fn open_locked(
+        cx: &mut TestAppContext,
+        remembered: Option<Box<dyn KeyStore>>,
+    ) -> AnyWindowHandle {
+        set_language(Language::ZhCn);
+        let handle = open_workspace_with(cx, move |cx| {
+            AppState::install_in_memory_locked(PASSWORD, remembered, cx)
+        });
+        assert_eq!(
+            cx.update(|cx| AppState::store(cx).vault_status()),
+            VaultStatus::NeedsPassword
+        );
+        handle
+    }
+
+    fn unlock(cx: &mut TestAppContext, handle: AnyWindowHandle, remember: bool) {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            if remember {
+                window.click("vault-remember", cx);
+            }
+            window.click("vault-password", cx);
+            window.input(PASSWORD, cx);
+            window.click("vault-submit", cx);
+        })
+        .unwrap();
+        wait_until(cx, handle, "保险库解锁", |window, cx| {
+            AppState::store(cx).vault_status() == VaultStatus::Unlocked
+                && window.try_find("vault-password").is_none()
+        });
+    }
+
+    // 便携版用主密码：输入主密码处有“在这台电脑上记住”，默认不勾；勾上解锁后记住主密钥，下次在这台电脑上打开时
+    // 直接解锁
+    #[gpui_kit::test]
+    fn portable_unlock_can_remember_this_computer(cx: &mut TestAppContext) {
+        let remembered = SharedKeys::default();
+        let handle = open_locked(cx, Some(Box::new(remembered.clone())));
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert_eq!(
+                window.find("vault-remember").checked(),
+                Some(false),
+                "默认不勾"
+            );
+        })
+        .unwrap();
+        unlock(cx, handle, true);
+        // 记住在 remember_vault_key 中、解锁之后
+        wait_until(cx, handle, "记住主密钥", |_, cx| {
+            AppState::store(cx).vault_remember() == Remember::Remembered
+        });
+        assert!(remembered.load().unwrap().is_some());
+        // 下次启动：直接解锁
+        let next = cx.update(|cx| {
+            Vault::open_portable(
+                AppState::store(cx).database(),
+                Box::new(MemoryKeyStore::default()),
+                Box::new(remembered.clone()),
+            )
+            .unwrap()
+        });
+        assert_eq!(next.status(), VaultStatus::Unlocked);
+    }
+
+    // 不勾：照常解锁，不记
+    #[gpui_kit::test]
+    fn portable_unlock_without_remembering(cx: &mut TestAppContext) {
+        let remembered = SharedKeys::default();
+        let handle = open_locked(cx, Some(Box::new(remembered.clone())));
+        unlock(cx, handle, false);
+        assert_eq!(
+            cx.update(|cx| AppState::store(cx).vault_remember()),
+            Remember::Available
+        );
+        assert!(remembered.load().unwrap().is_none());
+    }
+
+    // 钥匙串不可用时（Linux 没有 Secret Service）不显示“在这台电脑上记住”
+    #[gpui_kit::test]
+    fn no_remember_option_without_a_keyring(cx: &mut TestAppContext) {
+        let handle = open_locked(cx, Some(Box::new(MemoryKeyStore::unavailable())));
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert!(window.try_find("vault-password").is_some());
+            assert!(window.try_find("vault-remember").is_none());
+        })
+        .unwrap();
+    }
+
+    // 安装版用主密码时（钥匙串不可用）没有这一项
+    #[gpui_kit::test]
+    fn installed_version_has_no_remember_option(cx: &mut TestAppContext) {
+        let handle = open_locked(cx, None);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert!(window.try_find("vault-password").is_some());
+            assert!(window.try_find("vault-remember").is_none());
+        })
+        .unwrap();
     }
 }

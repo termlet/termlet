@@ -65,6 +65,11 @@
 - The first time you open it, choose one of:
   - set a master password: saved passwords and private keys can then be unlocked on other computers too; you enter it each time you open Termlet;
   - use it on this computer only: the master key goes into this computer's Credential Manager and no master password is needed.
+- With a master password, you can check "Remember on this computer" where you enter it (unchecked by default):
+  - A copy of the master key goes into this computer's Credential Manager (the master key, not the master password), so you aren't asked again on this computer. On other computers you still enter the master password.
+  - It's tied to this copy of the data: several portable copies on one computer don't affect each other, and moving the folder doesn't matter. It keeps working after you change the master password.
+  - To stop, click "Forget" under Settings → Security; you're asked again the next time you open Termlet. Resetting the vault removes it too.
+  - It stays on this computer and isn't synced or backed up.
 - Compared with the installed version:
   - It creates no shortcuts, doesn't change PATH and has no uninstall entry (just delete the folder).
   - For new versions it only notifies you and opens the download page.
@@ -120,6 +125,7 @@
 - When the keychain is unavailable (for example, no Secret Service on Linux), the master key is protected by a master password that you enter at every start:
   - change it under Settings → Security;
   - the master key stays the same, and only this computer is affected: sync uses your sync password, and your other computers have their own keychain or master password.
+- The portable version can remember its master password on this computer so you don't enter it each time; see "Windows portable".
 - Set the `TERMLET_DATA_DIR` environment variable to use another folder.
 - Termlet restricts the data folder to the current user. If it is a drive root, your home folder, Documents, Downloads or another shared location, or holds other files, only the database, logs, backups and session logs inside it are restricted.
 
@@ -1553,7 +1559,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 | Local Terminals | — |
 | Colors & Highlighting | two tabs: color schemes and keyword highlighting |
 | Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, opening by bastion hosts and other programs; collapsed by default, "ssh-agent, X11 and local proxy": ssh-agent address, local X display, the local proxy lent to servers and its port, confirmed proxy commands |
-| Security | app lock; host keys (trusted host CAs and recorded fingerprints) |
+| Security | app lock; master password (when you use one: change it, forget the one remembered on this computer); host keys (trusted host CAs and recorded fingerprints) |
 | AI & automation | allowing access from AI tools and scripts, audit log, dangerous command rules (the built-in rules collapsed into one line); collapsed by default, "Ways to connect": the termlet command and PATH, Agent Skill, MCP server configuration and HTTP |
 | Backup | full backups and restore, local snapshots |
 | Sync | — |
@@ -2002,7 +2008,7 @@ termlet exec <host> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev/n
   - On macOS, the two shortcut presets, which copy Windows clients, aren't offered.
   - macOS is Apple silicon only, and Linux comes in x64 and arm64 (tar.gz, deb, rpm and AppImage; no Flatpak, Snap or package repository, so the deb and rpm don't upgrade with system updates).
   - The arm64 versions for Windows and Linux are experimental and have never run on real hardware.
-- **Portable version**: it isn't entirely traceless. Temporary files for pasted screenshots go to the system's temp folder, the master key is in this computer's Credential Manager if you chose "This computer only", and the Agent Skill is installed in AI tools' folders under your home folder. The command-line tool isn't on PATH, so AI tools need its full path unless you add it to PATH yourself.
+- **Portable version**: it isn't entirely traceless. Temporary files for pasted screenshots go to the system's temp folder, the master key is in this computer's Credential Manager if you chose "This computer only" or checked "Remember on this computer", and the Agent Skill is installed in AI tools' folders under your home folder. The command-line tool isn't on PATH, so AI tools need its full path unless you add it to PATH yourself.
 - **Untested agents and services**: Pageant and the 1Password and Bitwarden agents have not been tried on real devices; public WebDAV services such as Nutstore and Nextcloud have not been tested either.
 - **Serial ports**: cannot send Break.
 - **File transfers**: resuming only checks the source's size and modification time, not its content; file management inside WSL does not reconnect automatically; with the remote file name encoding set to GBK or another encoding, following the terminal's folder and command-line transfers still treat names as UTF-8; remote files cannot be dragged straight into File Explorer.

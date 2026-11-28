@@ -4,12 +4,16 @@
 //!   钥匙串不可用（Linux 没有 Secret Service）时改用主密码：主密钥经主密码派生的密钥（Argon2id）加密后存在 `meta` 中，
 //!   改主密码只需重新加密主密钥。便携版第一次使用时由用户选择用主密码（数据带到别的电脑上也能解开）还是
 //!   这台电脑的钥匙串（[`VaultStatus::ChooseKeyStore`]）。
+//! - **记住主密码**：便携版用主密码时，可以在这台电脑上记住（[`Remember`]）：主密钥另存一份在这台电脑的钥匙串中
+//!   （账户名 `remembered-master-key:<数据目录 ID>`，与钥匙串模式的条目分开），启动时直接用它解锁；数据带到别的电脑上
+//!   仍要主密码。改主密码时主密钥不变，记住的照常有效；对不上（别处重置过保险库等）时删掉它、照常询问主密码。
 //! - **校验值**：`meta` 中存一份用主密钥加密的固定内容。启动时解不开，说明主密钥不对（数据目录被拷到了另一台电脑或另一个账户），
 //!   直接提示重置保险库，而不是等到连接时才失败。
 //! - **加密**：AES-256-GCM，每次随机 nonce；密文格式为 `版本(1) || nonce(12) || 密文与标签`。附加数据由调用方给出，
 //!   绑定这条秘密属于谁（例如 `termlet:secret:v1:host/h_…:password`），两条秘密互换位置会解密失败。
 //!
-//! 环境变量 `TERMLET_VAULT_PROVIDER=file` 把主密钥放在 `run/vault-key.bin`（只用于自动化测试，不安全）。
+//! 环境变量 `TERMLET_VAULT_PROVIDER=file` 把主密钥放在 `run/vault-key.bin`、记住的主密钥放在
+//! `run/vault-remembered-key.bin`（只用于自动化测试，不安全）。
 
 use std::sync::{Mutex, RwLock};
 
@@ -62,6 +66,18 @@ pub enum VaultStatus {
     KeyringError(String),
 }
 
+/// 便携版能不能、有没有在这台电脑上记住主密钥（主密码模式下，见 [`Vault::remember`]）。只在这台电脑的钥匙串中，
+/// 不进数据库，因此不同步、不进备份。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Remember {
+    /// 不能记住：安装版、不是主密码模式，或这台电脑的钥匙串不可用
+    Unavailable,
+    /// 可以记住，还没有记住
+    Available,
+    /// 记住了：启动时直接用它解锁
+    Remembered,
+}
+
 /// 主密钥放在哪里。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -77,6 +93,21 @@ pub trait KeyStore: Send + Sync {
     fn delete(&self) -> Result<()>;
 }
 
+/// 共用的保管处（测试中多次打开同一个数据库、打开后还要查看其中的主密钥时）。
+impl<T: KeyStore + ?Sized> KeyStore for std::sync::Arc<T> {
+    fn load(&self) -> Result<Option<MasterKey>> {
+        (**self).load()
+    }
+
+    fn store(&self, key: &[u8; KEY_LEN]) -> Result<()> {
+        (**self).store(key)
+    }
+
+    fn delete(&self) -> Result<()> {
+        (**self).delete()
+    }
+}
+
 /// 系统钥匙串（Windows 凭据管理器、macOS 钥匙串、Linux Secret Service）。
 pub struct KeyringStore {
     service: String,
@@ -88,6 +119,15 @@ impl KeyringStore {
         Self {
             service: "termlet".into(),
             account: format!("master-key:{data_dir_id}"),
+        }
+    }
+
+    /// 便携版在这台电脑上记住的主密钥（[`Remember`]）。与 [`KeyringStore::new`] 的条目分开：删掉对不上的记住的
+    /// 主密钥时，碰不到钥匙串模式的主密钥（同一份数据的副本可能在用它）。
+    pub fn remembered(data_dir_id: &str) -> Self {
+        Self {
+            service: "termlet".into(),
+            account: format!("remembered-master-key:{data_dir_id}"),
         }
     }
 
@@ -200,6 +240,16 @@ pub fn key_store_for(data_dir: &DataDir, data_dir_id: &str) -> Box<dyn KeyStore>
             })
         }
         _ => Box::new(KeyringStore::new(data_dir_id)),
+    }
+}
+
+/// 便携版在这台电脑上记住主密钥的地方（[`Remember`]），与 [`key_store_for`] 一样按 `TERMLET_VAULT_PROVIDER` 选择。
+pub fn remembered_key_store_for(data_dir: &DataDir, data_dir_id: &str) -> Box<dyn KeyStore> {
+    match std::env::var("TERMLET_VAULT_PROVIDER").as_deref() {
+        Ok("file") => Box::new(FileKeyStore {
+            path: data_dir.run_dir().join("vault-remembered-key.bin"),
+        }),
+        _ => Box::new(KeyringStore::remembered(data_dir_id)),
     }
 }
 
@@ -334,25 +384,40 @@ pub struct Vault {
     key: RwLock<Option<MasterKey>>,
     status: RwLock<VaultStatus>,
     store: Box<dyn KeyStore>,
+    /// 便携版在这台电脑上记住主密钥的地方（安装版没有）
+    remembered: Option<Box<dyn KeyStore>>,
+    remember: RwLock<Remember>,
 }
 
 impl Vault {
     /// 打开保险库：第一次使用时生成主密钥，之后从钥匙串取出并核对校验值。
     pub fn open(db: &Database, store: Box<dyn KeyStore>) -> Result<Self> {
-        Self::open_with(db, store, false)
+        Self::open_with(db, store, None)
     }
 
     /// 打开便携版的保险库：第一次使用时不直接放进钥匙串（钥匙串属于这台电脑，数据带到别的电脑上就解不开），
-    /// 由用户选择主密码或这台电脑的钥匙串（[`VaultStatus::ChooseKeyStore`]）。之后与 [`Vault::open`] 相同。
-    pub fn open_portable(db: &Database, store: Box<dyn KeyStore>) -> Result<Self> {
-        Self::open_with(db, store, true)
+    /// 由用户选择主密码或这台电脑的钥匙串（[`VaultStatus::ChooseKeyStore`]）。之后与 [`Vault::open`] 相同，
+    /// 只是用主密码时先找 `remembered` 中这台电脑记住的主密钥（[`Remember`]）。
+    pub fn open_portable(
+        db: &Database,
+        store: Box<dyn KeyStore>,
+        remembered: Box<dyn KeyStore>,
+    ) -> Result<Self> {
+        Self::open_with(db, store, Some(remembered))
     }
 
-    fn open_with(db: &Database, store: Box<dyn KeyStore>, portable: bool) -> Result<Self> {
+    fn open_with(
+        db: &Database,
+        store: Box<dyn KeyStore>,
+        remembered: Option<Box<dyn KeyStore>>,
+    ) -> Result<Self> {
+        let portable = remembered.is_some();
         let vault = Self {
             key: RwLock::new(None),
             status: RwLock::new(VaultStatus::KeyMissing),
             store,
+            remembered,
+            remember: RwLock::new(Remember::Unavailable),
         };
         let check = db.meta(META_CHECK)?;
         let mode = Self::mode(db)?;
@@ -363,7 +428,7 @@ impl Vault {
                 Err(CoreError::Keyring(reason)) => VaultStatus::NeedsNewPassword { reason },
                 Err(e) => return Err(e),
             },
-            (Some(_), Some(Mode::Password)) => VaultStatus::NeedsPassword,
+            (Some(check), Some(Mode::Password)) => vault.open_remembered(&check),
             (Some(check), _) => match vault.store.load() {
                 Ok(Some(key)) if open_with(&key, CHECK_AAD, &check).is_ok() => {
                     *vault.key.write().unwrap() = Some(key);
@@ -376,6 +441,38 @@ impl Vault {
         };
         *vault.status.write().unwrap() = status;
         Ok(vault)
+    }
+
+    /// 主密码模式下取出这台电脑记住的主密钥（便携版）：对得上时直接解锁；对不上（别处重置过保险库等）时删掉它，
+    /// 照常询问主密码；读不了钥匙串时不能记住。安装版照常询问主密码。
+    fn open_remembered(&self, check: &[u8]) -> VaultStatus {
+        let Some(remembered) = &self.remembered else {
+            return VaultStatus::NeedsPassword;
+        };
+        let (status, remember) = match remembered.load() {
+            Ok(Some(key)) if open_with(&key, CHECK_AAD, check).is_ok() => {
+                *self.key.write().unwrap() = Some(key);
+                tracing::info!("用这台电脑记住的主密钥解锁了保险库");
+                (VaultStatus::Unlocked, Remember::Remembered)
+            }
+            Ok(Some(_)) => match remembered.delete() {
+                Ok(()) => {
+                    tracing::info!("这台电脑记住的主密钥与数据对不上，已删除，改为询问主密码");
+                    (VaultStatus::NeedsPassword, Remember::Available)
+                }
+                Err(e) => {
+                    tracing::warn!("这台电脑记住的主密钥与数据对不上，删除失败：{e}");
+                    (VaultStatus::NeedsPassword, Remember::Unavailable)
+                }
+            },
+            Ok(None) => (VaultStatus::NeedsPassword, Remember::Available),
+            Err(e) => {
+                tracing::info!("读不了这台电脑的钥匙串，不能记住主密码：{e}");
+                (VaultStatus::NeedsPassword, Remember::Unavailable)
+            }
+        };
+        *self.remember.write().unwrap() = remember;
+        status
     }
 
     fn mode(db: &Database) -> Result<Option<Mode>> {
@@ -487,7 +584,45 @@ impl Vault {
         Ok(Self::mode(db)? == Some(Mode::Password))
     }
 
-    /// 主密码模式下修改主密码（主密钥不变，秘密不用重新加密）。当前主密码不对时返回
+    /// 便携版能不能、有没有在这台电脑上记住主密钥。
+    pub fn remember_state(&self) -> Remember {
+        *self.remember.read().unwrap()
+    }
+
+    /// 在这台电脑上记住主密钥（便携版主密码模式下解锁之后，[`Remember::Available`] 时）：以后在这台电脑上启动时
+    /// 直接用它解锁。存的是主密钥本身（与钥匙串模式存法相同），不是主密码。
+    pub fn remember(&self) -> Result<()> {
+        let Some(remembered) = &self.remembered else {
+            return Err(CoreError::VaultLocked);
+        };
+        if self.remember_state() == Remember::Unavailable {
+            return Err(CoreError::VaultLocked);
+        }
+        let key = self
+            .key
+            .read()
+            .unwrap()
+            .clone()
+            .ok_or(CoreError::VaultLocked)?;
+        remembered.store(&key)?;
+        *self.remember.write().unwrap() = Remember::Remembered;
+        Ok(())
+    }
+
+    /// 忘记这台电脑记住的主密钥：这次照常可用，下次启动时重新询问主密码。
+    pub fn forget(&self) -> Result<()> {
+        let Some(remembered) = &self.remembered else {
+            return Ok(());
+        };
+        remembered.delete()?;
+        let mut remember = self.remember.write().unwrap();
+        if *remember == Remember::Remembered {
+            *remember = Remember::Available;
+        }
+        Ok(())
+    }
+
+    /// 主密码模式下修改主密码（主密钥不变，秘密不用重新加密，这台电脑记住的照常有效）。当前主密码不对时返回
     /// [`CoreError::WrongPassword`]，新主密码少于 [`MIN_PASSWORD_LEN`] 个字符时返回 `password` 字段的
     /// `too_short`。
     pub fn change_password(
@@ -519,7 +654,7 @@ impl Vault {
     }
 
     /// 重置保险库：生成新的主密钥（`password` 为 `None` 时放进钥匙串，否则改用主密码），
-    /// 并在同一个事务中执行 `clear`（由存储层删除全部解不开的秘密）。
+    /// 并在同一个事务中执行 `clear`（由存储层删除全部解不开的秘密）。这台电脑记住的旧主密钥一并删掉。
     pub fn reset(
         &self,
         db: &Database,
@@ -560,6 +695,18 @@ impl Vault {
         if mode == Mode::Password {
             let _ = self.store.delete();
         }
+        // 记住的是旧的主密钥
+        if let Some(remembered) = &self.remembered {
+            if let Err(e) = remembered.delete() {
+                tracing::warn!("重置保险库时删除这台电脑记住的主密钥失败：{e}");
+            }
+            let mut remember = self.remember.write().unwrap();
+            if mode == Mode::Keyring {
+                *remember = Remember::Unavailable;
+            } else if *remember == Remember::Remembered {
+                *remember = Remember::Available;
+            }
+        }
         *self.key.write().unwrap() = Some(key);
         *self.status.write().unwrap() = VaultStatus::Unlocked;
         tracing::warn!("保险库已重置，原有的秘密已清空");
@@ -583,6 +730,8 @@ impl Vault {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
     use crate::testkit::SharedKeys;
 
@@ -686,17 +835,17 @@ mod tests {
     #[test]
     fn portable_vault_lets_the_user_choose() {
         let db = Database::open_in_memory().unwrap();
-        let vault = Vault::open_portable(&db, Box::new(MemoryKeyStore::default())).unwrap();
+        let vault = Vault::open_portable(&db, memory(), memory()).unwrap();
         assert_eq!(vault.status(), VaultStatus::ChooseKeyStore);
         assert!(!vault.is_unlocked());
         let password = SecretString::new("correct horse");
         vault.set_new_password(&db, &password).unwrap();
         assert!(vault.is_unlocked() && Vault::uses_password(&db).unwrap());
-        let reopened = Vault::open_portable(&db, Box::new(MemoryKeyStore::default())).unwrap();
+        let reopened = Vault::open_portable(&db, memory(), memory()).unwrap();
         assert_eq!(reopened.status(), VaultStatus::NeedsPassword, "已经选过");
 
         let db = Database::open_in_memory().unwrap();
-        let vault = Vault::open_portable(&db, Box::new(MemoryKeyStore::default())).unwrap();
+        let vault = Vault::open_portable(&db, memory(), memory()).unwrap();
         assert_eq!(vault.choose_keyring(&db).unwrap(), VaultStatus::Unlocked);
         assert!(!Vault::uses_password(&db).unwrap());
         assert!(vault.seal(b"x", b"value").is_ok());
@@ -704,15 +853,238 @@ mod tests {
             vault.choose_keyring(&db),
             Err(CoreError::VaultLocked)
         ));
+        // 只在这台电脑上使用：没有主密码可记
+        assert_eq!(vault.remember_state(), Remember::Unavailable);
+        assert!(vault.remember().is_err());
 
         let db = Database::open_in_memory().unwrap();
-        let vault = Vault::open_portable(&db, Box::new(MemoryKeyStore::unavailable())).unwrap();
+        let vault =
+            Vault::open_portable(&db, Box::new(MemoryKeyStore::unavailable()), memory()).unwrap();
         assert!(matches!(
             vault.choose_keyring(&db).unwrap(),
             VaultStatus::NeedsNewPassword { .. }
         ));
         vault.set_new_password(&db, &password).unwrap();
         assert!(vault.is_unlocked());
+    }
+
+    fn memory() -> Box<dyn KeyStore> {
+        Box::new(MemoryKeyStore::default())
+    }
+
+    /// 便携版用主密码 `password` 保护的数据（第一次使用时已经选了设置主密码）。
+    fn portable_with_password(password: &SecretString) -> Database {
+        let db = Database::open_in_memory().unwrap();
+        let vault = Vault::open_portable(&db, memory(), memory()).unwrap();
+        vault.set_new_password(&db, password).unwrap();
+        db
+    }
+
+    /// 像启动时那样打开便携版的保险库，`remembered` 是这台电脑记住主密钥的地方。
+    fn open_portable(db: &Database, remembered: &SharedKeys) -> Vault {
+        Vault::open_portable(db, memory(), Box::new(remembered.clone())).unwrap()
+    }
+
+    // 便携版用主密码时：勾选“在这台电脑上记住”解锁后，下次直接解锁；不勾不记；改主密码后仍有效；忘记后重新询问
+    #[test]
+    fn portable_password_can_be_remembered_on_this_computer() {
+        let password = SecretString::new("correct horse");
+        let db = portable_with_password(&password);
+        let remembered = SharedKeys::default();
+
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword);
+        assert_eq!(vault.remember_state(), Remember::Available);
+        assert!(
+            matches!(vault.remember(), Err(CoreError::VaultLocked)),
+            "解锁前没有主密钥可记"
+        );
+        // 不勾：照常解锁，不记
+        vault.unlock(&db, &password).unwrap();
+        let blob = vault.seal(b"x", b"value").unwrap();
+        assert!(remembered.load().unwrap().is_none());
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword, "没勾，照常询问");
+
+        // 勾上：记住的是主密钥本身（不是主密码），下次直接解锁
+        vault.unlock(&db, &password).unwrap();
+        vault.remember().unwrap();
+        assert_eq!(vault.remember_state(), Remember::Remembered);
+        assert_eq!(remembered.load().unwrap().unwrap().len(), KEY_LEN);
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::Unlocked);
+        assert_eq!(vault.remember_state(), Remember::Remembered);
+        assert_eq!(&vault.open_sealed(b"x", &blob).unwrap()[..], b"value");
+        assert!(Vault::uses_password(&db).unwrap(), "仍是主密码模式");
+
+        // 改主密码：主密钥不变，记住的照常有效；别的电脑上用新的主密码
+        let new_password = SecretString::new("battery staple");
+        vault
+            .change_password(&db, &password, &new_password)
+            .unwrap();
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::Unlocked, "改主密码后仍记得");
+        let elsewhere = open_portable(&db, &SharedKeys::default());
+        assert_eq!(elsewhere.status(), VaultStatus::NeedsPassword);
+        elsewhere.unlock(&db, &new_password).unwrap();
+
+        // 忘记：这次照常可用，下次重新询问
+        vault.forget().unwrap();
+        assert_eq!(vault.remember_state(), Remember::Available);
+        assert!(remembered.load().unwrap().is_none());
+        assert!(vault.is_unlocked());
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword);
+        assert_eq!(vault.remember_state(), Remember::Available);
+    }
+
+    /// 按账户名分开存的钥匙串（像系统的凭据管理器那样，几份数据共用一个）。
+    #[derive(Clone, Default)]
+    struct Keyring(Arc<Mutex<std::collections::HashMap<String, [u8; KEY_LEN]>>>);
+
+    /// 钥匙串中的一个条目，账户名与 [`KeyringStore::remembered`] 相同。
+    struct KeyringEntry {
+        keyring: Keyring,
+        account: String,
+    }
+
+    impl Keyring {
+        fn remembered(&self, db: &Database) -> Box<dyn KeyStore> {
+            Box::new(KeyringEntry {
+                keyring: self.clone(),
+                account: KeyringStore::remembered(&data_dir_id(db).unwrap()).account,
+            })
+        }
+    }
+
+    impl KeyStore for KeyringEntry {
+        fn load(&self) -> Result<Option<MasterKey>> {
+            let keys = self.keyring.0.lock().unwrap();
+            Ok(keys.get(&self.account).copied().map(Zeroizing::new))
+        }
+
+        fn store(&self, key: &[u8; KEY_LEN]) -> Result<()> {
+            let mut keys = self.keyring.0.lock().unwrap();
+            keys.insert(self.account.clone(), *key);
+            Ok(())
+        }
+
+        fn delete(&self) -> Result<()> {
+            self.keyring.0.lock().unwrap().remove(&self.account);
+            Ok(())
+        }
+    }
+
+    // 同一台电脑上的两份便携数据：条目按各自的数据目录 ID 区分，互不干扰；与钥匙串模式的条目也分开
+    #[test]
+    fn remembered_keys_of_two_portable_copies_do_not_mix() {
+        let password = SecretString::new("correct horse");
+        let (a, b) = (
+            portable_with_password(&password),
+            portable_with_password(&password),
+        );
+        let (id_a, id_b) = (data_dir_id(&a).unwrap(), data_dir_id(&b).unwrap());
+        assert_ne!(id_a, id_b);
+        assert_eq!(
+            data_dir_id(&a).unwrap(),
+            id_a,
+            "数据目录 ID 存在数据中，移动文件夹不变"
+        );
+        assert_eq!(
+            KeyringStore::remembered(&id_a).account,
+            format!("remembered-master-key:{id_a}")
+        );
+        assert_ne!(
+            KeyringStore::remembered(&id_a).account,
+            KeyringStore::new(&id_a).account
+        );
+
+        let keyring = Keyring::default();
+        let open = |db: &Database| Vault::open_portable(db, memory(), keyring.remembered(db));
+        let vault = open(&a).unwrap();
+        vault.unlock(&a, &password).unwrap();
+        vault.remember().unwrap();
+        assert_eq!(open(&a).unwrap().status(), VaultStatus::Unlocked);
+        assert_eq!(
+            open(&b).unwrap().status(),
+            VaultStatus::NeedsPassword,
+            "另一份数据没记住"
+        );
+
+        let vault = open(&b).unwrap();
+        vault.unlock(&b, &password).unwrap();
+        vault.remember().unwrap();
+        vault.forget().unwrap();
+        assert_eq!(
+            open(&a).unwrap().status(),
+            VaultStatus::Unlocked,
+            "忘记 b 不影响 a"
+        );
+        assert_eq!(open(&b).unwrap().status(), VaultStatus::NeedsPassword);
+    }
+
+    // 记住的主密钥与数据对不上（别处重置过保险库等）：删掉它，照常询问主密码，不报错
+    #[test]
+    fn mismatched_remembered_key_is_deleted() {
+        let password = SecretString::new("correct horse");
+        let db = portable_with_password(&password);
+        let remembered = SharedKeys::default();
+        remembered.store(&[7u8; KEY_LEN]).unwrap();
+        let vault = open_portable(&db, &remembered);
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword);
+        assert_eq!(vault.remember_state(), Remember::Available);
+        assert!(remembered.load().unwrap().is_none(), "删掉了");
+        vault.unlock(&db, &password).unwrap();
+    }
+
+    // 重置保险库时删掉记住的旧主密钥：改用主密码时可以重新记住，改用钥匙串时没有主密码可记
+    #[test]
+    fn reset_deletes_the_remembered_key() {
+        let password = SecretString::new("correct horse");
+        let db = portable_with_password(&password);
+        let remembered = SharedKeys::default();
+        let vault = open_portable(&db, &remembered);
+        vault.unlock(&db, &password).unwrap();
+        vault.remember().unwrap();
+
+        vault.reset(&db, Some(&password), |_| Ok(())).unwrap();
+        assert!(remembered.load().unwrap().is_none());
+        assert_eq!(vault.remember_state(), Remember::Available);
+        assert_eq!(
+            open_portable(&db, &remembered).status(),
+            VaultStatus::NeedsPassword
+        );
+
+        vault.remember().unwrap();
+        vault.reset(&db, None, |_| Ok(())).unwrap();
+        assert!(remembered.load().unwrap().is_none());
+        assert_eq!(vault.remember_state(), Remember::Unavailable);
+    }
+
+    // 安装版、钥匙串不可用时不能记住
+    #[test]
+    fn remembering_needs_portable_and_a_keyring() {
+        let password = SecretString::new("correct horse");
+        let db = Database::open_in_memory().unwrap();
+        let vault = Vault::open(&db, Box::new(MemoryKeyStore::unavailable())).unwrap();
+        vault.set_new_password(&db, &password).unwrap();
+        let vault = Vault::open(&db, memory()).unwrap();
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword);
+        assert_eq!(vault.remember_state(), Remember::Unavailable, "安装版");
+        vault.unlock(&db, &password).unwrap();
+        assert!(vault.remember().is_err());
+
+        let db = portable_with_password(&password);
+        let vault =
+            Vault::open_portable(&db, memory(), Box::new(MemoryKeyStore::unavailable())).unwrap();
+        assert_eq!(vault.status(), VaultStatus::NeedsPassword);
+        assert_eq!(
+            vault.remember_state(),
+            Remember::Unavailable,
+            "钥匙串不可用"
+        );
+        vault.unlock(&db, &password).unwrap();
+        assert!(vault.remember().is_err());
     }
 
     // 钥匙串模式不能改主密码

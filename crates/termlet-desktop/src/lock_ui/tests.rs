@@ -21,6 +21,7 @@ use termlet_core::crash::CrashLog;
 use termlet_core::model::{LocalSettings, Settings};
 use termlet_core::secret::SecretString;
 use termlet_core::update::UpdateStatus;
+use termlet_core::vault::{KeyStore as _, MemoryKeyStore, Remember};
 
 use super::{AboutExtras, Endpoint, LockScreen, SecurityPage, Setup};
 use crate::app_state::AppState;
@@ -539,6 +540,54 @@ fn security_page_changes_the_master_password(cx: &mut TestAppContext) {
         assert!(store.unlock_vault(&secret("old master pw")).is_err());
         store.unlock_vault(&secret("new master pw")).unwrap();
     });
+}
+
+/// 便携版在这台电脑上记住了主密码时，“主密码”一节多一行说明与“忘记”：忘记后删掉记住的主密钥（下次启动重新询问），
+/// 这一行随之不见；没记住时没有这一行。
+#[gpui_kit::test]
+fn security_page_forgets_the_remembered_master_password(cx: &mut TestAppContext) {
+    let _dir = setup(cx, FakePlatform::new(false));
+    let remembered = Arc::new(MemoryKeyStore::default());
+    {
+        let remembered = remembered.clone();
+        cx.update(move |cx| {
+            AppState::install_in_memory_locked("master pw 1", Some(Box::new(remembered)), cx);
+            AppState::store(cx)
+                .unlock_vault(&secret("master pw 1"))
+                .unwrap();
+        });
+    }
+    let local = cx.update(|cx| AppState::store(cx).local_settings());
+    let (handle, harness) = open(cx, move |window, cx| PageHarness {
+        page: cx.new(|cx| SecurityPage::new(&local, window, cx)),
+    });
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("master-password").is_some());
+        assert!(window.try_find("master-forget").is_none(), "还没记住");
+    })
+    .unwrap();
+
+    cx.update(|cx| AppState::store(cx).remember_vault_key().unwrap());
+    let master = cx.read(|cx| harness.read(cx).page.read(cx).master().clone());
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("master-forget", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "忘记记住的主密钥", |window, cx| {
+        master.read(cx).snapshot() == (Some("Forgotten".into()), false)
+            && window.try_find("master-forget").is_none()
+    });
+    assert!(remembered.load().unwrap().is_none());
+    assert_eq!(
+        cx.update(|cx| AppState::store(cx).vault_remember()),
+        Remember::Available
+    );
+    assert!(
+        cx.update(|cx| AppState::store(cx).vault().is_unlocked()),
+        "这次照常可用"
+    );
 }
 
 #[gpui_kit::test]

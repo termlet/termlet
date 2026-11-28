@@ -28,7 +28,7 @@ use crate::model::{
     Kind, LocalSettings, MAX_JUMP_DEPTH, Profile, ProfileAuth, RemoteOs, Settings, Snippet,
     Workspace,
 };
-use crate::vault::{Vault, VaultStatus};
+use crate::vault::{Remember, Vault, VaultStatus};
 use crate::{CoreError, Invalid, Result};
 
 /// 存储发出的变更事件。界面收到后重新读取对应的数据。
@@ -488,6 +488,31 @@ impl Store {
     /// 主密钥是否由主密码保护（系统钥匙串不可用时）；读不出时当作不是。
     pub fn vault_uses_password(&self) -> bool {
         Vault::uses_password(&self.db).unwrap_or(false)
+    }
+
+    /// 便携版能不能、有没有在这台电脑上记住主密钥（主密码模式下）。
+    pub fn vault_remember(&self) -> Remember {
+        self.vault.remember_state()
+    }
+
+    /// 在这台电脑上记住主密钥（便携版主密码模式下解锁之后）：以后在这台电脑上启动时直接解锁。
+    pub fn remember_vault_key(&self) -> Result<()> {
+        self.vault
+            .remember()
+            .inspect_err(|e| tracing::warn!("没能在这台电脑上记住主密钥：{e}"))?;
+        tracing::info!("已在这台电脑上记住主密钥");
+        self.emit(StoreEvent::VaultChanged);
+        Ok(())
+    }
+
+    /// 忘记这台电脑记住的主密钥：下次启动时重新询问主密码。
+    pub fn forget_vault_key(&self) -> Result<()> {
+        self.vault
+            .forget()
+            .inspect_err(|e| tracing::warn!("忘记这台电脑记住的主密钥失败：{e}"))?;
+        tracing::info!("已忘记这台电脑记住的主密钥");
+        self.emit(StoreEvent::VaultChanged);
+        Ok(())
     }
 
     /// 主密码模式下修改主密码：主密钥不变，保存的秘密不用重新加密。只影响这台电脑：云同步、备份与快照

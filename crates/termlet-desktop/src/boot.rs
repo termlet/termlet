@@ -86,9 +86,11 @@ fn open_store(data_dir: &DataDir) -> termlet_core::Result<Store> {
     let db = Database::open(&data_dir.database(), &data_dir.backups_dir())?;
     let id = vault::data_dir_id(&db)?;
     let key_store = vault::key_store_for(data_dir, &id);
-    // 便携版第一次使用时先让用户选主密码还是这台电脑的凭据管理器（数据可能被带到别的电脑上）
+    // 便携版第一次使用时先让用户选主密码还是这台电脑的凭据管理器（数据可能被带到别的电脑上）；用主密码时
+    // 先找这台电脑记住的主密钥
     let vault = if data_dir.is_portable() {
-        Vault::open_portable(&db, key_store)?
+        let remembered = vault::remembered_key_store_for(data_dir, &id);
+        Vault::open_portable(&db, key_store, remembered)?
     } else {
         Vault::open(&db, key_store)?
     };

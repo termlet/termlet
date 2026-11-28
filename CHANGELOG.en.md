@@ -4,6 +4,12 @@
 
 This file lists the changes you will notice in each version, newest first. Versions follow [Semantic Versioning](https://semver.org/): before 1.0, a minor version bump (0.x) may bring incompatible changes, which are noted in that version. Each version's heading gives the version number and release date (changes not yet released go into a section marked "unreleased" at the top, which gets its date on release), and its changes are grouped into Added, Changed, Fixed and Security (empty groups are left out; the first version is summarized by area instead). Any change to the anonymous usage statistics collected is noted in the version that makes it. For downloading and installing, see [Installation](README.en.md#installation) in the README.
 
+## 0.3.6 (unreleased)
+
+### Added
+
+- The portable version can remember its master password on this computer (issue #3): check "Remember on this computer" (unchecked by default) where you enter the master password, then unlock. A copy of the master key goes into this computer's Credential Manager (the master key, not the master password), and you aren't asked again when you open Termlet on this computer. On other computers you still enter the master password; several portable copies on one computer are told apart by their own data and don't affect each other, and it keeps working after you move the folder or change the master password. To stop, click "Forget" under Settings → Security and you're asked again next time. Resetting the vault removes it, and a remembered key that no longer matches the data (for example, the vault was reset elsewhere) is removed automatically and you're asked as usual. It stays on this computer and isn't synced or backed up; it isn't offered when no system keychain is available. The installed version and portable copies set to "This computer only" are unchanged.
+
 ## 0.3.5 (2026-11-26)
 
 ### Added
