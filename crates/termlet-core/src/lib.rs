@@ -12,6 +12,7 @@ pub mod crash;
 pub mod db;
 pub mod diag;
 mod error;
+pub mod folder_menu;
 pub mod forward;
 pub mod guard;
 pub mod history;

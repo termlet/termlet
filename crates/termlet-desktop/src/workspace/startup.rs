@@ -21,6 +21,10 @@ impl Workspace {
         let startup = store.local_settings().window.startup;
         match startup.open {
             StartupOpen::Nothing => {}
+            // 启动参数要求在指定的目录打开（`--open-folder`）：本地终端改在那里打开，不另开一个
+            StartupOpen::Local if crate::open_folder::pending(cx) => {
+                tracing::info!("启动时打开本地终端：改在启动参数指定的目录打开");
+            }
             StartupOpen::Local => {
                 let existing = self
                     .live_terminals()
@@ -278,5 +282,55 @@ mod tests {
                 .read(cx)
                 .is_local_session()
         }));
+    }
+
+    /// 窗口中本地终端（与 WSL）的起始目录，按打开的先后（没有指定的为 `None`）。
+    fn local_dirs(
+        cx: &mut TestAppContext,
+        workspace: &Entity<Workspace>,
+    ) -> Vec<Option<std::path::PathBuf>> {
+        use crate::terminal_panel::Session;
+        cx.update(|cx| {
+            workspace
+                .read(cx)
+                .live_terminals()
+                .iter()
+                .map(|p| match p.read(cx).session() {
+                    Session::Local { profile } if !profile.dir.is_empty() => {
+                        Some(profile.dir.clone().into())
+                    }
+                    Session::Wsl { dir, .. } => dir.clone(),
+                    _ => None,
+                })
+                .collect()
+        })
+    }
+
+    // 带了要打开的目录（--open-folder）：“启动时打开”的本地终端改在这个目录打开，不另开一个；
+    // 之后再来的不存在的目录提示，不打开
+    #[gpui_kit::test]
+    fn open_folder_replaces_the_startup_local_terminal(cx: &mut TestAppContext) {
+        prepare(cx, AppState::install_in_memory);
+        let dir = std::env::temp_dir().join(format!(
+            "termlet 打开目录 {}",
+            termlet_core::id::random_token(8)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        cx.update(|cx| {
+            set_startup(cx, StartupOpen::Local, Vec::new());
+            startup_open::arm(cx);
+            crate::open_folder::queue(dir.clone(), cx);
+        });
+        let (handle, workspace) = open_window(cx);
+        assert_eq!(local_dirs(cx, &workspace), [Some(dir.clone())]);
+
+        cx.update(|cx| crate::open_folder::queue(dir.join("不存在"), cx));
+        cx.update_window(handle, |_, window, cx| {
+            workspace.update(cx, |w, cx| w.take_launches(window, cx));
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert_eq!(local_dirs(cx, &workspace).len(), 1, "不存在的目录不打开");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

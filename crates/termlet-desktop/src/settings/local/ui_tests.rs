@@ -447,3 +447,87 @@ fn changes_for_missing_shells_are_kept(cx: &mut TestAppContext) {
     assert_eq!(saved.shells.overrides.get(missing), Some(&changes));
     assert!(saved.shells.hidden.contains(&shell_key(missing)));
 }
+
+/// 当前用户下的临时键（`Software\Termlet-test-<随机>`），代替放右键菜单的 `Software\Classes`，用完删掉。
+#[cfg(windows)]
+struct TempClasses {
+    root: String,
+    classes: String,
+}
+
+#[cfg(windows)]
+impl TempClasses {
+    fn new() -> Self {
+        let root = format!(
+            r"Software\Termlet-test-{}",
+            termlet_core::id::random_token(10)
+        );
+        let classes = format!(r"{root}\Classes");
+        Self { root, classes }
+    }
+}
+
+#[cfg(windows)]
+impl Drop for TempClasses {
+    fn drop(&mut self) {
+        let _ = std::process::Command::new("reg")
+            .args(["delete", &format!(r"HKCU\{}", self.root), "/f"])
+            .output();
+    }
+}
+
+// 资源管理器右键菜单的开关（Windows）：打开时立即写入两处菜单（这里换成临时的键，不碰真实的右键菜单），关掉时
+// 删掉；与设置的“保存”无关，没有未保存的修改
+#[cfg(windows)]
+#[gpui_kit::test]
+fn folder_menu_switch_writes_and_removes_the_menu(cx: &mut TestAppContext) {
+    use termlet_core::folder_menu::{self, MenuState};
+    let temp = TempClasses::new();
+    let classes = temp.classes.clone();
+    let exe = std::env::current_exe().unwrap();
+    let real_before = folder_menu::state(folder_menu::CLASSES, &exe).unwrap();
+    let handle = open_workspace_sized(cx, size(px(1280.), px(800.)));
+    set_language(Language::ZhCn);
+    cx.update(|cx| crate::folder_menu::use_classes(&classes, cx));
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("open-settings", cx);
+        window.render_frame(cx);
+        window.click(Page::Local.nav_id(), cx);
+    })
+    .unwrap();
+    let ready = |window: &mut Window| {
+        window
+            .try_find("settings-folder-menu")
+            .is_some_and(|s| !s.disabled().unwrap_or(false))
+    };
+    wait_until(cx, handle, "右键菜单的开关", |window, _| {
+        ready(window)
+    });
+    cx.update_window(handle, |_, window, cx| {
+        assert_eq!(window.find("settings-folder-menu").checked(), Some(false));
+        window.click("settings-folder-menu", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "打开右键菜单", |window, _| {
+        ready(window) && window.find("settings-folder-menu").checked() == Some(true)
+    });
+    assert_eq!(folder_menu::state(&classes, &exe).unwrap(), MenuState::This);
+    cx.update_window(handle, |_, window, cx| {
+        assert!(
+            window.try_find("settings-unsaved").is_none(),
+            "立即生效，不算未保存的修改"
+        );
+        window.click("settings-folder-menu", cx);
+    })
+    .unwrap();
+    wait_until(cx, handle, "关掉右键菜单", |window, _| {
+        ready(window) && window.find("settings-folder-menu").checked() == Some(false)
+    });
+    assert_eq!(folder_menu::state(&classes, &exe).unwrap(), MenuState::Off);
+    assert_eq!(
+        folder_menu::state(folder_menu::CLASSES, &exe).unwrap(),
+        real_before,
+        "真实的右键菜单没有动"
+    );
+}

@@ -239,3 +239,27 @@ local_shell.reset:
   zh-TW: 還原預設值
   ja: デフォルトに戻す
   ko: 기본값으로 복원
+local_shell.folder_menu:
+  zh-CN: 在资源管理器右键菜单中加“在此处打开 Termlet”
+  en: Add "Open Termlet here" to the File Explorer context menu
+  zh-TW: 在檔案總管的右鍵選單中加入「在此處開啟 Termlet」
+  ja: エクスプローラーのコンテキストメニューに「ここで Termlet を開く」を追加
+  ko: "파일 탐색기의 컨텍스트 메뉴에 '여기에서 Termlet 열기' 추가"
+local_shell.folder_menu_hint:
+  zh-CN: 用默认的本地终端在那个文件夹打开；Windows 11 在“显示更多选项”里。
+  en: Opens the default local terminal in that folder. On Windows 11 it's under "Show more options".
+  zh-TW: 用預設的本機終端機在那個資料夾開啟；Windows 11 在「顯示其他選項」裡。
+  ja: デフォルトのローカルターミナルをそのフォルダーで開きます。Windows 11 では「その他のオプションを確認」の中にあります。
+  ko: "기본 로컬 터미널을 그 폴더에서 엽니다. Windows 11에서는 '추가 옵션 표시' 안에 있습니다."
+local_shell.folder_menu_other:
+  zh-CN: 现在打开的是另一处的 Termlet：%{path}
+  en: "It currently opens the Termlet at %{path}"
+  zh-TW: 現在開啟的是另一處的 Termlet：%{path}
+  ja: "現在は別の場所の Termlet を開きます: %{path}"
+  ko: "지금은 다른 위치의 Termlet을 엽니다: %{path}"
+local_shell.folder_menu_failed:
+  zh-CN: 修改右键菜单失败：%{error}
+  en: "Couldn't change the context menu: %{error}"
+  zh-TW: 修改右鍵選單失敗：%{error}
+  ja: "コンテキストメニューを変更できませんでした: %{error}"
+  ko: "컨텍스트 메뉴를 변경하지 못했습니다: %{error}"

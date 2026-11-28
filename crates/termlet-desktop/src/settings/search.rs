@@ -428,6 +428,13 @@ pub(super) static ITEMS: &[Item] = &[
             "local_shell.unhide",
         ],
     ),
+    // 资源管理器右键菜单（只在 Windows 上）
+    item(
+        Page::Local,
+        "settings-folder-menu",
+        &["local_shell.folder_menu", "local_shell.folder_menu_hint"],
+    )
+    .when(|_| termlet_core::folder_menu::supported()),
     item(
         Page::Local,
         "settings-shell-new",

@@ -1,6 +1,6 @@
 //! 本机 WSL 发行版的终端与文件管理（只支持 Windows）。
 //!
-//! - 终端：[`open_terminal`] 在伪终端中运行 `wsl.exe -d <发行版> [-u <用户>] --cd ~`（启动描述见
+//! - 终端：[`open_terminal`] 在伪终端中运行 `wsl.exe -d <发行版> [-u <用户>] --cd ~`（或指定的目录；启动描述见
 //!   [`crate::localshell::wsl::launch`]，会话标记经 `WSLENV` 传进 Linux）。会话结束时报告 shell 的退出码。
 //! - 一次性命令：[`exec`]（以后的资源监控、检测端口也用它）；命令经标准输入交给发行版中的 `sh`，不经过 Windows
 //!   的命令行解析，引号、换行原样到达。
@@ -64,12 +64,13 @@ pub enum WslError {
     Sftp(#[from] SftpError),
 }
 
-/// 打开发行版的终端：以 `user`（为空时是发行版的默认用户）登录，从 Linux 中的用户主目录开始。
-/// `session_key` 是终端的会话标识（`TerminalSession::key`，读取当前目录时用；为空时不设置）。
-/// 要读取用户的环境变量、创建伪终端，在后台线程调用。
+/// 打开发行版的终端：以 `user`（为空时是发行版的默认用户）登录，从 `dir`（Windows 的绝对路径）开始，没有时从
+/// Linux 中的用户主目录开始。`session_key` 是终端的会话标识（`TerminalSession::key`，读取当前目录时用；为空时
+/// 不设置）。要读取用户的环境变量、创建伪终端，在后台线程调用。
 pub fn open_terminal(
     distro: &str,
     user: &str,
+    dir: Option<&std::path::Path>,
     session_key: &str,
     size: GridSize,
 ) -> Result<TerminalIo, WslError> {
@@ -80,7 +81,7 @@ pub fn open_terminal(
         rows = size.rows,
         "打开 WSL 终端"
     );
-    let launch = launch::launch(distro, user, session_key)
+    let launch = launch::launch(distro, user, dir, session_key)
         .inspect_err(|e| tracing::warn!(distro, user, "准备 WSL 终端失败：{e}"))?;
     let pty = PtyLaunch {
         program: launch.program,
@@ -626,7 +627,7 @@ mod tests {
         use termlet_io::{CloseReason, IoEvent};
         let Some(distro) = test_distro() else { return };
         let key = format!("termlet-wsltest-{}", crate::id::random_token(4));
-        let io = open_terminal(&distro, "", &key, GridSize::new(100, 30)).unwrap();
+        let io = open_terminal(&distro, "", None, &key, GridSize::new(100, 30)).unwrap();
         let output = Arc::new(Mutex::new(String::new()));
         let closed = Arc::new(Mutex::new(None));
         {

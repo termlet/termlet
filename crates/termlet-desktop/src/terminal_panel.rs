@@ -20,6 +20,7 @@ mod suggest;
 pub(crate) use record::clock_text;
 
 use std::cell::Cell;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -167,8 +168,13 @@ const ENCODINGS: [(Encoding, &str, &str); 3] = [
 pub enum Session {
     /// 本地 shell：每次打开时重新读取用户的环境变量
     Local { profile: Profile },
-    /// WSL 发行版：`user` 为空时是发行版的默认用户（`root` 以 root 登录）
-    Wsl { distro: String, user: String },
+    /// WSL 发行版：`user` 为空时是发行版的默认用户（`root` 以 root 登录）；`dir` 为起始目录（Windows 的路径，
+    /// 启动参数 `--open-folder` 指定的），没有时从 Linux 中的用户主目录开始
+    Wsl {
+        distro: String,
+        user: String,
+        dir: Option<PathBuf>,
+    },
     /// 保存的主机
     Host { host: HostId },
     /// 快速连接（临时，不保存）
@@ -453,7 +459,9 @@ impl TerminalPanel {
             State::Waiting { .. } | State::Reconnecting { .. } => ToolsState::Reconnecting,
             State::Failed(_) | State::Ended(_) => ToolsState::Ended,
             State::Connected => match &self.session {
-                Session::Wsl { distro, user } => ToolsState::Connected(Target::wsl(distro, user)),
+                Session::Wsl { distro, user, .. } => {
+                    ToolsState::Connected(Target::wsl(distro, user))
+                }
                 _ => match &self.connection {
                     Some(connection) => {
                         ToolsState::Connected(Target::ssh(connection.clone(), false))
@@ -761,7 +769,7 @@ impl TerminalPanel {
         match &self.session {
             Session::Host { host } => Some(host.clone()),
             Session::Local { profile } => Some(crate::workspaces::local_host(&profile.id)),
-            Session::Wsl { distro, user } => Some(crate::workspaces::wsl_host(distro, user)),
+            Session::Wsl { distro, user, .. } => Some(crate::workspaces::wsl_host(distro, user)),
             Session::Quick { .. } | Session::Launch { .. } => None,
         }
     }
@@ -775,7 +783,7 @@ impl TerminalPanel {
         match &self.session {
             Session::Host { host } => Some(SftpTarget::Host(host.clone())),
             Session::Quick { target } => Some(SftpTarget::Quick(target.clone())),
-            Session::Wsl { distro, user } => Some(SftpTarget::Wsl {
+            Session::Wsl { distro, user, .. } => Some(SftpTarget::Wsl {
                 distro: distro.clone(),
                 user: user.clone(),
             }),
@@ -929,7 +937,7 @@ impl TerminalPanel {
 
     /// WSL 终端读取当前目录（没有 OSC 7 时）用的读取器；不是 WSL 终端时为 `None`。
     pub fn wsl_cwd_reader(&mut self) -> Option<Arc<termlet_core::wsl::WslCwd>> {
-        let Session::Wsl { distro, user } = &self.session else {
+        let Session::Wsl { distro, user, .. } = &self.session else {
             return None;
         };
         if !matches!(self.state, State::Connected) {
@@ -969,6 +977,12 @@ impl TerminalPanel {
     pub fn needs_close_confirm(&self) -> bool {
         !matches!(self.state, State::Failed(_) | State::Ended(_))
             && self.store.settings().general.confirm_close
+    }
+
+    /// 连的是什么（测试中检查打开的会话）。
+    #[cfg(test)]
+    pub(crate) fn session(&self) -> &Session {
+        &self.session
     }
 
     /// 本地终端或 WSL：关闭时结束的是其中运行的程序，而不是断开连接。
@@ -1167,7 +1181,7 @@ impl TerminalPanel {
                 termlet_core::history::quick_key(&target.username, &target.host, target.port)
             }
             Session::Local { profile } => termlet_core::history::local_key(&profile.id),
-            Session::Wsl { distro, user } => {
+            Session::Wsl { distro, user, .. } => {
                 termlet_core::history::local_key(&crate::workspaces::wsl_key(distro, user))
             }
             // 不记命令历史：为空
@@ -1261,7 +1275,7 @@ impl TerminalPanel {
                     });
                 }));
             }
-            Session::Wsl { distro, user } => {
+            Session::Wsl { distro, user, dir } => {
                 // 与本地终端相同：读取环境变量、创建 ConPTY 放到后台线程
                 let size = self.grid_size(cx);
                 let key = self.identity.key.clone();
@@ -1269,7 +1283,7 @@ impl TerminalPanel {
                     self.state = State::Connecting;
                 }
                 let job = cx.background_executor().spawn(async move {
-                    termlet_core::wsl::open_terminal(&distro, &user, &key, size)
+                    termlet_core::wsl::open_terminal(&distro, &user, dir.as_deref(), &key, size)
                         .map_err(|e| crate::wsl_errors::describe(&e))
                 });
                 self._connect = Some(cx.spawn_in(window, async move |this, cx| {
@@ -1290,7 +1304,7 @@ impl TerminalPanel {
                                     this.schedule_startup(TmuxStatus::Off, cx);
                                 }
                                 let target = match &this.session {
-                                    Session::Wsl { distro, user } => {
+                                    Session::Wsl { distro, user, .. } => {
                                         Some(Target::wsl(distro, user))
                                     }
                                     _ => None,
@@ -3204,7 +3218,7 @@ impl TerminalPanel {
                 address: &target.address,
                 port: target.port,
             }),
-            Session::Wsl { distro, user } => {
+            Session::Wsl { distro, user, .. } => {
                 connection_target(&ConnectionTarget::Wsl { distro, user })
             }
             Session::Local { .. } => connection_target(&ConnectionTarget::Local),

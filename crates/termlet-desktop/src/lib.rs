@@ -24,6 +24,7 @@ mod dialog_token;
 pub mod dll_search;
 mod dock_skin;
 mod editor;
+mod folder_menu;
 mod forward_dialog;
 mod forwards;
 mod group_dialog;
@@ -44,6 +45,7 @@ mod monitor_bar;
 mod monitor_model;
 mod name_dialog;
 mod notify;
+mod open_folder;
 mod output_tap;
 mod page_nav;
 mod paste_guard;
@@ -93,21 +95,30 @@ use gpui_kit::{WindowOptions, px, size};
 pub use app_state::{AppState, StoreModel};
 pub use workspace::Workspace;
 
-/// 启动应用并打开主窗口（启动参数见 `args`：`--headless`、`--log-level`、`--verbose`）。
+/// 启动应用并打开主窗口（启动参数见 `args`：`--headless`、`--log-level`、`--verbose`、`--open-folder`）。
 pub fn run() {
     let start = args::parse(std::env::args().skip(1));
     let headless = start.headless;
     let log_override = termlet_core::logging::startup_override(start.log_level.as_deref());
     let args = start.rest;
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let open_folder = start
+        .open_folder
+        .and_then(|raw| open_folder::resolve(&raw, &cwd));
     let mut booted = boot::start(log_override.clone());
     if let Err(boot::BootError::AlreadyRunning) = booted {
         // 被 termlet 拉起时已有实例：命令行工具会连上它
         if headless {
             return;
         }
-        // 已有实例在运行：把启动参数交给它，由它打开或激活主窗口；它是没在用的旧版本时请它退出，本进程接着启动
+        // 已有实例在运行：把启动参数交给它，由它打开或激活主窗口；它是没在用的旧版本时请它退出，本进程接着启动。
+        // 要打开的目录已换成绝对路径，一起交给它
         i18n::set_language(i18n::Language::system());
-        match cli_bridge::forward_to_running(&args) {
+        let mut forwarded = args.clone();
+        if let Some(dir) = &open_folder {
+            forwarded.extend(open_folder::forwarded(dir));
+        }
+        match cli_bridge::forward_to_running(&forwarded) {
             cli_bridge::Forwarded::Done => return,
             cli_bridge::Forwarded::Replaced => booted = boot::start(log_override.clone()),
             cli_bridge::Forwarded::Failed(reason) => {
@@ -117,7 +128,9 @@ pub fn run() {
         }
         // 又被别的进程抢先拿到了锁：交给它
         if let Err(boot::BootError::AlreadyRunning) = booted {
-            if let cli_bridge::Forwarded::Failed(reason) = cli_bridge::forward_to_running(&args) {
+            if let cli_bridge::Forwarded::Failed(reason) =
+                cli_bridge::forward_to_running(&forwarded)
+            {
                 show_startup_message(t!("startup.error.forward_failed", reason = reason));
             }
             return;
@@ -146,6 +159,8 @@ pub fn run() {
                 usage_ui::install(cx);
                 cli_bridge::start(cx);
                 cli_bridge::install_hooks(cx);
+                // 资源管理器右键菜单指向的程序已不在（便携版移动了位置）：改为指向这里
+                folder_menu::follow(cx);
                 // 在打开主窗口之前：主窗口一打开就按设置显示托盘图标
                 tray::install(cx);
                 // 传输进度显示在任务栏按钮、程序坞图标上
@@ -155,6 +170,9 @@ pub fn run() {
                 startup_open::arm(cx);
                 if !headless {
                     launch::queue_from_args(&args, cx);
+                    if let Some(dir) = open_folder {
+                        open_folder::queue(dir, cx);
+                    }
                     cli_bridge::open_main_window(cx);
                 }
             }

@@ -22,7 +22,8 @@
 ;   改回显示。退出 Termlet 时顺带安装（只有 --updated）照旧静默；
 ; - 安装、卸载前处理运行中的 Termlet（helper.ps1）：只剩后台实例（没有窗口，例如为命令行工具服务的）、命令行工具或
 ;   安装目录中的 OpenConsole.exe 时直接结束；有窗口时询问（静默运行时等它退出，最多 30 秒，之后结束）；
-; - 卸载：从当前用户的 PATH 中移除 bin、删除快捷方式与更新缓存；用户数据目录（%APPDATA%\termlet）保留。
+; - 卸载：从当前用户的 PATH 中移除 bin，删除资源管理器右键菜单中指向这里的“在此处打开 Termlet”、快捷方式与更新缓存；
+;   用户数据目录（%APPDATA%\termlet）保留。
 ;
 ; 在 Git Bash 中运行安装程序时要设 MSYS_NO_PATHCONV=1，否则 /S 会被转换成路径。
 ; 本机试验安装程序时可加 /DPRODUCT=TermletTest 另起一个名字：注册表项、快捷方式都用这个名字，不碰正式安装的 Termlet
@@ -368,6 +369,10 @@ Section "Uninstall"
   nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action RemovePath -Dir "$INSTDIR"'
   Pop $0
   SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment" /TIMEOUT=5000
+
+  ; 资源管理器右键菜单中的“在此处打开 Termlet”（在设置的“本地终端”中打开过时）：只删指向这个安装目录的
+  nsExec::Exec '"${POWERSHELL}" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\helper.ps1" -Action RemoveFolderMenu -Dir "$INSTDIR"'
+  Pop $0
 
   Delete "$SMPROGRAMS\${PRODUCT}.lnk"
   Delete "$DESKTOP\${PRODUCT}.lnk"

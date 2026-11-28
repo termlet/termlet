@@ -5,6 +5,8 @@
 //!
 //! 检测到的 shell 不能删除，可以编辑（名称、启动参数、起始目录、环境变量，按 shell ID 记在本机设置中）与恢复默认；
 //! 检测到的 shell 与 WSL 发行版可以隐藏（默认的一项除外）。这次没检测到的改动、隐藏照样保存，重新检测到时照旧生效。
+//!
+//! Windows 上最后另有资源管理器右键菜单“在此处打开 Termlet”的开关（[`crate::folder_menu`]，立即生效，不经“保存”）。
 
 use std::collections::BTreeMap;
 
@@ -29,6 +31,7 @@ use termlet_core::localshell::Profile;
 use termlet_core::model::{LocalShell, ShellOverride, ShellSettings};
 
 use crate::choice::{Choice, ChoiceState, choice_state};
+use crate::folder_menu::FolderMenuSection;
 use crate::local_shell::{LocalTarget, shell_key};
 use crate::prose::prose;
 use crate::{local_shell, t};
@@ -48,6 +51,8 @@ pub(super) struct LocalPage {
     default_select: Entity<ChoiceState<String>>,
     _default_subscription: Subscription,
     _detect: Task<()>,
+    /// 资源管理器右键菜单的开关（只在 Windows 上）
+    folder_menu: Option<Entity<FolderMenuSection>>,
 }
 
 impl LocalPage {
@@ -90,6 +95,8 @@ impl LocalPage {
             default_select,
             _default_subscription: default_subscription,
             _detect: detect,
+            folder_menu: termlet_core::folder_menu::supported()
+                .then(|| cx.new(FolderMenuSection::new)),
         }
     }
 
@@ -510,6 +517,12 @@ impl Render for LocalPage {
                     .child(prose(t!("local_shell.settings_hint"))),
             ),
         )
+        .map(|form| match self.folder_menu.clone() {
+            Some(section) => {
+                form.child(hits.mark(field().child(section), "settings-folder-menu", cx))
+            }
+            None => form,
+        })
     }
 }
 

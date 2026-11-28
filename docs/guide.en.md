@@ -863,6 +863,17 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
   - "Restore defaults" puts every field back to what was detected, and once saved no changes are kept;
   - changes stay on this computer and aren't synced. If the shell is uninstalled (no longer detected), the changes are kept but not listed, and apply again once it's back.
 - Ones you don't use can be hidden with "Hide" (the eye icon; WSL distributions too): they no longer appear in the menu next to "+", under This Computer in the sidebar or among the choices for the default, and the list in Settings marks them "Hidden"; click again to unhide. The one opened by default can't be hidden; pick another default first.
+- To start in a given folder, run `Termlet.exe -openfolder "D:\work"` (written the same way as for MobaXterm; `--open-folder` works too, and so do macOS and Linux):
+  - the default local terminal opens in that folder in a new tab; when the default is a WSL distribution, the folder opens in the distribution;
+  - if Termlet is already running, it gets the request and opens the tab in the current window;
+  - if the folder doesn't exist, Termlet says so and opens nothing;
+  - if "Open at startup" is set to the default local terminal, that terminal opens in the folder instead of a second one.
+- On Windows, under Settings → Local Terminals, you can turn on "Add "Open Termlet here" to the File Explorer context menu" (off by default):
+  - right-click a folder, or the empty space inside a folder, and choose "Open Termlet here"; in the new Windows 11 menu, click "Show more options" first;
+  - it only writes the current user's registry (`HKCU\Software\Classes\Directory\shell\Termlet` and `Directory\Background\shell\Termlet`), needs no administrator rights, and turning the switch off removes it; the switch takes effect at once, without "Save";
+  - the menu text uses the interface language at the time you turned it on;
+  - after you move the portable version, the menu points to the new location the next time Termlet starts; with several copies of Termlet, it points to the one that turned it on last, and the others' settings say where it points;
+  - uninstalling the installed version removes the menu that points to it; before deleting a portable copy you no longer use, turn the switch off in its settings.
 - Split panes, the compose bar and keyword highlighting all work, and each terminal picks up the system's latest environment variables.
 - On Windows, local terminals and WSL run through the Microsoft ConPTY shipped next to the program (`conpty.dll` and `OpenConsole.exe`, taken from Windows Terminal and newer than the one built into Windows):
   - programs that use the mouse, such as vim, htop, tmux, mc and pi, get clicks, drags and the wheel;
@@ -1562,7 +1573,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 |---|---|
 | General | language, appearance (light / dark / follow the system), icons (color / monochrome, for file icons and system and brand logos), interface size, confirm before closing, show addresses in the host list, minimize to the system tray when closing the window (Windows), transfer progress on the taskbar (Windows, macOS, Linux), tab position, opening remote folders in an editor, open at startup; a Toolbar section (collapsed by default): which title bar buttons to show and in what order |
 | Terminal | Appearance: color scheme, font size (13 by default), scrollback, font, cursor style and blinking; Behavior: copy on select, right-click behavior, check before pasting, sudo password filling; collapsed by default: Status bar and notifications (resource usage and network latency, full / compact status bar, new-output markers, notifications when long commands or transfers finish), File transfers (detecting ZModem and trzsz, clearing finished transfers), Session logs and recording (folders, recording input), Command history and suggestions (clearing the history, shell integration snippets, command suggestions) |
-| Local Terminals | — |
+| Local Terminals | the one opened by default, which ones show under This Computer in the sidebar, editing and hiding detected ones, adding your own; "Open Termlet here" in the File Explorer context menu (Windows) |
 | Colors & Highlighting | two tabs: color schemes and keyword highlighting |
 | Connection | keepalive interval, automatic reconnection, identifying the remote system after connecting, opening by bastion hosts and other programs; collapsed by default, "ssh-agent, X11 and local proxy": ssh-agent address, local X display, the local proxy lent to servers and its port, confirmed proxy commands |
 | Security | app lock; master password (when you use one: change it, forget the one remembered on this computer); host keys (trusted host CAs and recorded fingerprints) |
@@ -1724,8 +1735,8 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 | Version | How to uninstall |
 |---|---|
-| Windows (installed) | the uninstaller removes the termlet command from PATH and deletes the shortcuts and the update cache |
-| Windows portable | delete the whole folder (its data is in the `data` folder inside, so back it up first if you want to keep it) |
+| Windows (installed) | the uninstaller removes the termlet command from PATH, the "Open Termlet here" item in the File Explorer context menu that points to it, the shortcuts and the update cache |
+| Windows portable | delete the whole folder (its data is in the `data` folder inside, so back it up first if you want to keep it; if you turned on the File Explorer context menu, turn it off in Settings first) |
 | macOS | delete Termlet.app |
 | Linux deb or rpm | remove it with the package manager (`sudo apt remove termlet`, `sudo dnf remove termlet`) |
 | Linux AppImage | delete the AppImage file |

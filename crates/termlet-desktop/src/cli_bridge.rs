@@ -544,9 +544,16 @@ fn handle(event: CliEvent, cx: &mut App) {
     }
 }
 
-/// 第二个 Termlet 进程交来的启动参数：处理其中外部程序调起的连接，打开或激活主窗口。会话文件用它交来的内容
-/// （它退出后堡垒机就删除文件）；较早的版本不带内容，按路径读。
+/// 第二个 Termlet 进程交来的启动参数：处理其中外部程序调起的连接与要打开的目录（它已换成绝对路径），打开或激活
+/// 主窗口。会话文件用它交来的内容（它退出后堡垒机就删除文件）；较早的版本不带内容，按路径读。
 fn activate(args: Vec<String>, files: Vec<termlet_core::proto::LaunchFile>, cx: &mut App) {
+    let start = crate::args::parse(args);
+    if let Some(dir) = start.open_folder.and_then(|raw| {
+        crate::open_folder::resolve(&raw, &std::env::current_dir().unwrap_or_default())
+    }) {
+        crate::open_folder::queue(dir, cx);
+    }
+    let args = start.rest;
     let target = if files.is_empty() {
         let cwd = std::env::current_dir().unwrap_or_default();
         termlet_core::launch::parse(&args, &cwd)
@@ -1102,6 +1109,41 @@ mod tests {
         cx.run_until_parked();
         assert!(cx.update(|cx| cx.windows().is_empty()));
         assert!(QUIT_APPROVED.get(), "退出 Termlet 照样退出");
+    }
+
+    // 已开着 Termlet 时再用 --open-folder 启动：第二个进程交来的参数（目录已是绝对路径）在已有的窗口中新开一个 Tab，
+    // 用默认的本地终端在这个目录打开，不另开窗口；混在别的启动参数中也照样认出
+    #[gpui_kit::test]
+    fn forwarded_open_folder_opens_a_tab_in_the_window(cx: &mut gpui_kit::TestAppContext) {
+        use crate::terminal_panel::Session;
+        setup(cx, OperatingSystem::Windows);
+        cx.update(open_main_window);
+        cx.run_until_parked();
+        let workspace = cx.update(|cx| live_windows(cx)[0].1.clone());
+        let dir = std::env::temp_dir().join(format!(
+            "termlet 转发 {}",
+            termlet_core::id::random_token(8)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut args = vec!["--verbose".to_string()];
+        args.extend(crate::open_folder::forwarded(&dir));
+        cx.update(|cx| activate(args, Vec::new(), cx));
+        cx.run_until_parked();
+        let dirs: Vec<Option<std::path::PathBuf>> = cx.update(|cx| {
+            workspace
+                .read(cx)
+                .live_terminals()
+                .iter()
+                .map(|p| match p.read(cx).session() {
+                    Session::Local { profile } => Some(profile.dir.clone().into()),
+                    Session::Wsl { dir, .. } => dir.clone(),
+                    _ => None,
+                })
+                .collect()
+        });
+        assert_eq!(dirs, [Some(dir.clone())]);
+        assert_eq!(cx.update(|cx| live_windows(cx).len()), 1, "不另开窗口");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     // Windows、Linux：关闭最后一个窗口后退出

@@ -8,12 +8,17 @@
 #   -Action StopAll         全部结束（静默安装等了一段时间仍未退出时）
 #   -Action RemovePath      从当前用户的 PATH 中移除 <安装目录>\bin（保留 REG_SZ / REG_EXPAND_SZ 类型，
 #                           比较时不区分大小写、忽略末尾的分隔符，与 termlet-core 的 userpath 相同）
+#   -Action RemoveFolderMenu
+#                           删除资源管理器右键菜单中指向 <安装目录>\Termlet.exe 的“在此处打开 Termlet”（设置的“本地终端”
+#                           中打开过时由 Termlet 写入，见 termlet-core 的 folder_menu）；指向别处的（另一份便携版）不动。
+#                           -Classes 是当前用户下放菜单键的位置，默认 Software\Classes（测试中换成临时的键）
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Check', 'StopBackground', 'StopAll', 'RemovePath')]
+    [ValidateSet('Check', 'StopBackground', 'StopAll', 'RemovePath', 'RemoveFolderMenu')]
     [string]$Action,
     [Parameter(Mandatory = $true)]
-    [string]$Dir
+    [string]$Dir,
+    [string]$Classes = 'Software\Classes'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -69,6 +74,28 @@ function Remove-FromUserPath {
     }
 }
 
+function Remove-FolderMenu {
+    foreach ($place in @('Directory\shell', 'Directory\Background\shell')) {
+        $path = "$Classes\$place\Termlet"
+        $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey("$path\command", $false)
+        if ($null -eq $key) { continue }
+        try {
+            $command = [string]$key.GetValue('', '')
+        } finally {
+            $key.Close()
+        }
+        # 命令行的第一项是程序（Termlet 写的带引号）
+        if ($command.StartsWith('"')) {
+            $program = $command.Substring(1).Split('"')[0]
+        } else {
+            $program = ($command.Trim() -split '\s+')[0]
+        }
+        if ([string]::Equals($program, $app, [System.StringComparison]::OrdinalIgnoreCase)) {
+            [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($path, $false)
+        }
+    }
+}
+
 try {
     switch ($Action) {
         'Check' {
@@ -82,6 +109,7 @@ try {
         'StopBackground' { Stop-Termlet $false; exit 0 }
         'StopAll' { Stop-Termlet $true; exit 0 }
         'RemovePath' { Remove-FromUserPath; exit 0 }
+        'RemoveFolderMenu' { Remove-FolderMenu; exit 0 }
     }
 } catch {
     # 查不了进程时按没有在运行处理（安装时文件被占用，NSIS 会提示重试）；其余失败不影响安装与卸载

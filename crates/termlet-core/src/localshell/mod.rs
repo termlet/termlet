@@ -12,7 +12,7 @@
 //! 这里只给出启动描述，在伪终端中运行由终端模块负责（见 [`Launch`] 的说明）。
 //! 检测与读取环境变量都是同步的（检测要读注册表、运行 vswhere，约几百毫秒），在后台线程调用。
 
-mod cmdline;
+pub(crate) mod cmdline;
 mod env;
 #[cfg(test)]
 mod tests;

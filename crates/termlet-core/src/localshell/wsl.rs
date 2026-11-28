@@ -3,7 +3,7 @@
 //! `wsl.exe` 的输出到管道时是 UTF-16LE（设置了 `WSL_UTF8=1` 时是 UTF-8），解析与运行分开，
 //! 解析函数可以直接用字符串测试。发行版中的文件管理不在这里。
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 #[cfg(windows)]
 use std::time::Duration;
 
@@ -98,11 +98,18 @@ fn run_list(_args: &[&str]) -> Option<Vec<u8>> {
     None
 }
 
-/// 打开发行版的终端：以 `user`（为空时是发行版的默认用户）登录，从 Linux 中的用户主目录开始。
+/// 打开发行版的终端：以 `user`（为空时是发行版的默认用户）登录，从 `dir`（Windows 的绝对路径，WSL 换成
+/// `/mnt/…` 下对应的目录）开始，没有时从 Linux 中的用户主目录开始。
 /// `session_key` 是通道的 Key（为空时不设置），作为 [`SESSION_ENV`] 经 `WSLENV` 传进 Linux。
 /// 每次都读取用户最新的环境变量（与本地终端相同）。
-pub fn launch(distro: &str, user: &str, session_key: &str) -> Result<Launch, ShellError> {
-    let args = args(distro, user, &["--cd", "~"])?;
+pub fn launch(
+    distro: &str,
+    user: &str,
+    dir: Option<&Path>,
+    session_key: &str,
+) -> Result<Launch, ShellError> {
+    let cd = dir.map_or_else(|| "~".to_string(), |d| d.to_string_lossy().into_owned());
+    let args = args(distro, user, &["--cd", &cd])?;
     let program = exe()?;
     let mut add: Vec<(&str, String)> = Vec::new();
     if !session_key.is_empty() && !session_key.contains('\0') {
@@ -250,7 +257,7 @@ mod tests {
         assert_eq!(args("bad name", "", &[]), Err(ShellError::InvalidDistro));
         assert_eq!(args("Ubuntu", "Bad", &[]), Err(ShellError::InvalidUser));
         assert_eq!(
-            launch("x;y", "", "k").unwrap_err(),
+            launch("x;y", "", None, "k").unwrap_err(),
             ShellError::InvalidDistro
         );
     }
@@ -298,7 +305,7 @@ mod tests {
         assert!(distributions().is_empty());
         assert!(running().is_empty());
         assert_eq!(
-            launch("Ubuntu", "", "").unwrap_err(),
+            launch("Ubuntu", "", None, "").unwrap_err(),
             ShellError::WslUnsupported
         );
     }
@@ -321,9 +328,13 @@ mod tests {
         let Some(distro) = list.first() else {
             return;
         };
-        let launch = launch(distro, "", "termlet-wsltest-1").unwrap();
+        let launch = launch(distro, "", None, "termlet-wsltest-1").unwrap();
         assert!(launch.program.ends_with("wsl.exe"));
         assert_eq!(launch.args, ["-d", distro.as_str(), "--cd", "~"]);
+        // 指定了目录（启动时打开的文件夹）：从这个目录开始
+        let dir = Path::new(r"D:\work dir");
+        let opened = super::launch(distro, "", Some(dir), "").unwrap();
+        assert_eq!(opened.args, ["-d", distro.as_str(), "--cd", r"D:\work dir"]);
         assert_eq!(launch.env_var(SESSION_ENV), Some("termlet-wsltest-1"));
         assert!(
             launch
@@ -342,7 +353,7 @@ mod tests {
             println!("未设置 TERMLET_TEST_WSL，跳过 WSL 集成测试");
             return;
         };
-        let launch = launch(&distro, "", "termlet-wsltest-2").unwrap();
+        let launch = launch(&distro, "", None, "termlet-wsltest-2").unwrap();
         // 与终端相同的程序、环境变量与起始目录，只把 --cd ~ 换成执行一条命令
         let mut cmd = std::process::Command::new(&launch.program);
         cmd.args([

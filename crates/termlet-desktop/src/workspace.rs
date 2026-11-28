@@ -1,6 +1,7 @@
 //! 主窗口外壳：标题栏、侧边栏（主机、凭据档案）、Tab 区（Dock）与开始页。
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -1303,6 +1304,44 @@ impl Workspace {
         }
     }
 
+    /// 用默认的本地终端在 `dir` 打开一个 Tab（启动参数 `--open-folder`，见 [`crate::open_folder`]）；目录不存在时
+    /// 提示，不打开。默认的是 WSL 发行版时在发行版中打开这个目录。
+    pub(crate) fn open_local_in(
+        &mut self,
+        dir: PathBuf,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if !dir.is_dir() {
+            tracing::warn!("启动参数要求打开的目录不存在");
+            crate::notify::error(
+                t!("open_folder.not_found", path = dir.display().to_string()),
+                window,
+                cx,
+            );
+            return;
+        }
+        let settings = AppState::store(cx).local_settings();
+        match local_shell::default_target(&settings, cx) {
+            Some(LocalTarget::Shell(mut profile)) => {
+                profile.dir = dir.to_string_lossy().into_owned();
+                let name = local_shell::display_name(&profile);
+                self.open_terminal(name, Session::Local { profile }, window, cx);
+            }
+            Some(LocalTarget::Wsl(distro)) => {
+                let name = crate::wsl_name(&distro, "");
+                let session = Session::Wsl {
+                    distro,
+                    user: String::new(),
+                    dir: Some(dir),
+                };
+                self.open_terminal(name, session, window, cx);
+            }
+            None => crate::notify::error(t!("local_shell.none"), window, cx),
+        }
+        crate::tray::show_window(window, cx);
+    }
+
     /// 打开侧边栏"本机"中的一项（`local:<shell ID>` 或 `wsl:<发行版>`）。
     fn open_local_key(&mut self, key: &str, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(distro) = key.strip_prefix("wsl:") {
@@ -1321,7 +1360,16 @@ impl Workspace {
         cx: &mut Context<Self>,
     ) {
         let name = crate::wsl_name(&distro, &user);
-        self.open_terminal(name, Session::Wsl { distro, user }, window, cx);
+        self.open_terminal(
+            name,
+            Session::Wsl {
+                distro,
+                user,
+                dir: None,
+            },
+            window,
+            cx,
+        );
     }
 
     /// 打开 WSL 发行版的文件管理（新 Tab，不跟随终端）。
@@ -1370,6 +1418,9 @@ impl Workspace {
             return;
         }
         self.open_startup_items(window, cx);
+        for dir in crate::open_folder::take(cx) {
+            self.open_local_in(dir, window, cx);
+        }
         let workspace = cx.entity().downgrade();
         for target in crate::launch::take(cx) {
             crate::launch::handle(target, workspace.clone(), window, cx);
@@ -2285,7 +2336,11 @@ impl Workspace {
                 let name = crate::wsl_name(&distro, &user);
                 Some(TerminalPanel::open(
                     name,
-                    Session::Wsl { distro, user },
+                    Session::Wsl {
+                        distro,
+                        user,
+                        dir: None,
+                    },
                     self.prompter.clone(),
                     window,
                     cx,
