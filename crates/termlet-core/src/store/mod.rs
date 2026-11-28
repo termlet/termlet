@@ -6,10 +6,12 @@
 //! - 条目之间的引用（凭据档案、密钥库中的密钥、跳板机、端口转发的主机）在保存时检查，端口转发规则还检查
 //!   监听地址是否与已有规则冲突；仍被引用的凭据档案、密钥不能删除；删除主机时一并删除它的端口转发规则与秘密。
 //! - 秘密经保险库加密后存在 `secret` 表中；内存中只有"哪些条目有哪些秘密"的索引，取用时才解密。
+//! - 快捷命令的拖动排序、分组的重命名与整组删除在 `snippet_groups` 中（分组没有自己的条目）。
 
 mod collection;
 mod secrets;
 mod settings_store;
+mod snippet_groups;
 pub(crate) mod sync;
 
 use std::collections::HashSet;
@@ -20,6 +22,7 @@ use tokio::sync::broadcast;
 pub use collection::{Collection, Position, Record};
 pub use secrets::Owner;
 pub(crate) use secrets::raw_aad as secret_aad;
+pub use snippet_groups::GroupRename;
 
 use crate::db::Database;
 use crate::id::{GroupId, HostId, KeyId, ProfileId};

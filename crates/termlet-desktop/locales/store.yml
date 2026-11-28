@@ -29,6 +29,12 @@ store.invalid.name_too_long:
   zh-TW: 名稱太長了。
   ja: 名前が長すぎます。
   ko: 이름이 너무 깁니다.
+store.invalid.group_too_long:
+  zh-CN: 分组名称太长了。
+  en: The group name is too long.
+  zh-TW: 群組名稱太長了。
+  ja: グループ名が長すぎます。
+  ko: 그룹 이름이 너무 깁니다.
 store.invalid.address:
   zh-CN: 请填写地址，地址中不能有空格或斜杠。
   en: Enter an address. It can't contain spaces or slashes.

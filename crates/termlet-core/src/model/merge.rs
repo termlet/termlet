@@ -21,6 +21,7 @@ pub fn merge_settings(base: &Settings, mine: &Settings, theirs: &Settings) -> Se
         connection: merge_section(&base.connection, &mine.connection, &theirs.connection),
         guard: merge_section(&base.guard, &mine.guard, &theirs.guard),
         keybindings: merge_section(&base.keybindings, &mine.keybindings, &theirs.keybindings),
+        snippets: merge_section(&base.snippets, &mine.snippets, &theirs.snippets),
     }
 }
 

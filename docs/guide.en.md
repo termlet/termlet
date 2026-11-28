@@ -646,7 +646,9 @@ Default shortcuts:
 - Parameters: write `{{name}}` or `{{name:default}}` in a command to fill in a parameter before sending.
   - Names use letters, digits and underscores, optionally separated by spaces, dots or hyphens.
   - Go templates for docker and kubectl such as `{{.Names}}` are sent as is.
-- Manage snippets under "Snippets" in the sidebar (ticking "run after sending" adds a trailing Enter), optionally in groups.
+- Manage snippets under "Snippets" in the sidebar (ticking "run after sending" adds a trailing Enter), optionally in groups: when editing, type a new name in the group box or pick an existing group from the dropdown on its right.
+  - **Order**: drag snippets to reorder them; dropping one next to a snippet in another group or on a group heading moves it into that group (when every snippet is in a group, a "Drop here to move to Ungrouped" row appears at the bottom while you drag). Drag group headings to reorder groups; Ungrouped always comes first, and groups you haven't arranged follow by name. You can't drag while searching. The snippet bar, the picker and exports follow this order, and sync carries it to your other computers.
+  - **Groups**: right-click a group heading (or click ⋯ when hovering over it) to rename or delete the group. Renaming it to the name of an existing group merges it into that group, after the snippets already there; when deleting, choose whether its snippets move to Ungrouped or are deleted along with it.
 - A snippet that would run and matches a dangerous command rule asks for confirmation first; cancel and nothing is sent (snippets that are only typed, not run, aren't checked). While sync input is on, snippets go to every synced terminal.
 - **Export and import**: "Export Snippets…" and "Import Snippets…" under More on the Snippets page (or in the command palette) take your snippets to another computer.
   - Export: select groups (all by default; ungrouped snippets count as a group of their own) and save a JSON file (`termlet-snippets-date.json` by default) with each snippet's name, group (nested "Parent / Child" names as they are), content and whether it runs after sending, without this computer's IDs or other internal details.
@@ -1513,7 +1515,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### What is synced
 
-- Synced: hosts, groups, credentials (passwords, private keys, TOTP secrets), the key library, profiles, snippets, port forwards, workspaces, color schemes, and settings such as language, theme, terminal, keyword highlighting, connection, shortcuts and dangerous-command rules.
+- Synced: hosts, groups, credentials (passwords, private keys, TOTP secrets), the key library, profiles, snippets (with the order you arranged), port forwards, workspaces, color schemes, and settings such as language, theme, terminal, keyword highlighting, connection, shortcuts and dangerous-command rules.
 - Not synced: settings that belong to this computer (local terminals, app lock, interface size, the command-line tool switch, local snapshots, the session log and recordings folders, whether input is recorded and so on), command history, the audit log and host keys.
 
 ### Sync locations

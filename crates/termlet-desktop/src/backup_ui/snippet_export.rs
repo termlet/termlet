@@ -81,12 +81,19 @@ impl SnippetExportDialog {
         // 打开期间快捷命令有变化（别的窗口、云同步）：重新列出
         let store_model = AppState::global(cx).store.clone();
         let subscription = cx.subscribe(&store_model, |this, _, event: &StoreEvent, cx| {
-            if matches!(event, StoreEvent::Changed(Kind::Snippet)) && this.done.is_none() {
+            if matches!(
+                event,
+                StoreEvent::Changed(Kind::Snippet) | StoreEvent::SettingsChanged
+            ) && this.done.is_none()
+            {
                 this.reload(cx);
             }
         });
         let store = AppState::store(cx);
-        let groups = snippetfile::groups(&store.list::<Snippet>());
+        let groups = snippetfile::groups(
+            &store.list::<Snippet>(),
+            &store.settings().snippets.group_order,
+        );
         Self {
             store,
             groups,
@@ -100,7 +107,10 @@ impl SnippetExportDialog {
     }
 
     fn reload(&mut self, cx: &mut Context<Self>) {
-        self.groups = snippetfile::groups(&self.store.list::<Snippet>());
+        self.groups = snippetfile::groups(
+            &self.store.list::<Snippet>(),
+            &self.store.settings().snippets.group_order,
+        );
         let existing: HashSet<&str> = self.groups.iter().map(|(g, _)| g.as_str()).collect();
         self.excluded.retain(|g| existing.contains(g.as_str()));
         cx.notify();

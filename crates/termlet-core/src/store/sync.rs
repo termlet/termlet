@@ -23,7 +23,7 @@ use crate::model::{
     AppearanceSettings, Auth, CliAuth, ColorScheme, ConnectionSettings, Forward, GeneralSettings,
     Group, GuardSettings, HighlightSettings, Host, Item, ItemId, Jump, KeyEntry, KeySource,
     KeybindingSettings, Kind, Profile, ProfileAuth, Settings, SettingsSection, Snippet,
-    TerminalSettings, Workspace,
+    SnippetSettings, TerminalSettings, Workspace,
 };
 use crate::secret::SecretString;
 use crate::vault::Vault;
@@ -438,6 +438,7 @@ fn sections_json(s: &Settings) -> Result<Vec<(&'static str, Value)>> {
             KeybindingSettings::ID,
             serde_json::to_value(&s.keybindings)?,
         ),
+        (SnippetSettings::ID, serde_json::to_value(&s.snippets)?),
     ])
 }
 
@@ -668,6 +669,8 @@ fn put_setting(
         merge(&mut settings.guard, remote, keep_local)
     } else if id == KeybindingSettings::ID {
         merge(&mut settings.keybindings, remote, keep_local)
+    } else if id == SnippetSettings::ID {
+        merge(&mut settings.snippets, remote, keep_local)
     } else {
         None
     }

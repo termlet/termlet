@@ -1148,7 +1148,7 @@ fn termlet_snippet_file_round_trips() {
             .unwrap();
     }
     let file = a.dir.path().join(crate::snippetfile::default_file_name());
-    let groups = crate::snippetfile::groups(&a.store.list::<Snippet>())
+    let groups = crate::snippetfile::groups(&a.store.list::<Snippet>(), &[])
         .into_iter()
         .map(|(group, _)| group)
         .collect();

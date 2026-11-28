@@ -17,6 +17,7 @@ use gpui_kit::{
 };
 use termlet_core::id::SnippetId;
 use termlet_core::model::{Kind, Snippet};
+use termlet_core::snippet_order;
 use termlet_core::store::{Record, StoreEvent};
 
 use crate::app_state::AppState;
@@ -45,7 +46,10 @@ pub fn toggle(cx: &mut App) {
 }
 
 pub struct SnippetBar {
+    /// 按显示顺序
     snippets: Vec<Record<Snippet>>,
+    /// 保存的分组顺序
+    group_order: Vec<String>,
     /// 按钮那一条的横向滚动
     scroll: ScrollHandle,
     _subscriptions: Vec<Subscription>,
@@ -70,6 +74,7 @@ impl SnippetBar {
         ];
         let mut this = Self {
             snippets: Vec::new(),
+            group_order: Vec::new(),
             scroll: ScrollHandle::new(),
             _subscriptions: subscriptions,
         };
@@ -77,11 +82,11 @@ impl SnippetBar {
         this
     }
 
-    /// 与侧边栏的顺序相同：未分组在前，分组按名称，分组内按保存的顺序（排序是稳定的）。
+    /// 与侧边栏的顺序相同（[`snippet_order`]）。
     fn reload(&mut self, cx: &mut Context<Self>) {
-        let mut snippets = AppState::store(cx).list::<Snippet>();
-        snippets.sort_by(|a, b| a.doc.group.cmp(&b.doc.group));
-        self.snippets = snippets;
+        let store = AppState::store(cx);
+        self.snippets = store.snippets_in_order();
+        self.group_order = store.settings().snippets.group_order;
         cx.notify();
     }
 
@@ -96,12 +101,9 @@ impl SnippetBar {
             .filter(|g| self.snippets.iter().any(|s| &s.doc.group == g))
     }
 
-    /// 分组名，按名称排序（未分组在前，与侧边栏相同）。
+    /// 分组名，与侧边栏的顺序相同（未分组在前）。
     fn groups(&self) -> Vec<String> {
-        let mut groups: Vec<String> = self.snippets.iter().map(|s| s.doc.group.clone()).collect();
-        groups.sort();
-        groups.dedup();
-        groups
+        snippet_order::group_names(&self.snippets, &self.group_order)
     }
 
     fn render_group_menu(&self, groups: Vec<String>, current: Option<String>) -> impl IntoElement {
@@ -116,7 +118,7 @@ impl SnippetBar {
             .label(label)
             .dropdown_caret(true)
             .tooltip(t!("snippets.bar.group"))
-            .dropdown_menu(move |menu, _, _| {
+            .dropdown_menu(crate::menu_fit::fitted(move |menu, _, _| {
                 let pick = |group: Option<String>| {
                     move |_: &gpui_kit::ClickEvent, _: &mut Window, cx: &mut App| {
                         let group = group.clone();
@@ -141,7 +143,7 @@ impl SnippetBar {
                             .on_click(pick(Some(group.clone()))),
                     )
                 })
-            })
+            }))
     }
 }
 
@@ -243,6 +245,42 @@ mod tests {
     use termlet_core::store::Position;
 
     use super::*;
+
+    // 与侧边栏的顺序相同：分组的选择与按钮都按拖动排好的分组顺序，未分组在前
+    #[gpui_kit::test]
+    fn follows_the_group_order(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(crate::init);
+        cx.update(AppState::install_in_memory);
+        let bar = cx.update(|cx| {
+            let store = AppState::store(cx);
+            for (group, name) in [("b", "b1"), ("a", "a1"), ("", "n1"), ("b", "b2")] {
+                store
+                    .create(
+                        Snippet {
+                            name: name.into(),
+                            group: group.into(),
+                            content: format!("echo {name}"),
+                            ..Default::default()
+                        },
+                        None,
+                        Position::Last,
+                    )
+                    .unwrap();
+            }
+            store
+                .update_settings(|s| s.snippets.group_order = vec!["b".into(), "a".into()])
+                .unwrap();
+            cx.new(SnippetBar::new)
+        });
+        cx.run_until_parked();
+        cx.update(|cx| {
+            let bar = bar.read(cx);
+            assert_eq!(bar.groups(), ["", "b", "a"]);
+            let names: Vec<&str> = bar.snippets.iter().map(|s| s.doc.name.as_str()).collect();
+            assert_eq!(names, ["n1", "b1", "b2", "a1"]);
+        });
+    }
 
     // 按钮放不下时，鼠标滚轮（只有竖向）把这一条向左滚：最后一个按钮滚进视野，完整露出
     #[gpui_kit::test]

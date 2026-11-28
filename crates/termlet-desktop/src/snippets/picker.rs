@@ -192,7 +192,8 @@ impl CommandPicker {
             focus: cx.focus_handle(),
             target,
             query,
-            snippets: store.list::<Snippet>(),
+            // 与侧边栏的顺序相同；搜索时只筛选，顺序不变
+            snippets: store.snippets_in_order(),
             history,
             history_owner,
             items: Vec::new(),

@@ -1942,7 +1942,7 @@ impl Render for HostTree {
 }
 
 /// 拖动时跟着指针的名称。
-struct DragPreview(SharedString);
+pub(crate) struct DragPreview(pub(crate) SharedString);
 
 impl Render for DragPreview {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {

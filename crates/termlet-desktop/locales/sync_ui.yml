@@ -839,6 +839,12 @@ sync_ui.settings_group.keybindings:
   zh-TW: "快速鍵"
   ja: キーボードショートカット
   ko: 바로 가기 키
+sync_ui.settings_group.snippets:
+  zh-CN: 快捷命令分组的顺序
+  en: Snippet group order
+  zh-TW: 快速指令群組的順序
+  ja: スニペットのグループの順序
+  ko: 스니펫 그룹 순서
 sync_ui.error.not_configured:
   zh-CN: "还没有设置同步，或保险库重置后需要重新设置。"
   en: "Sync is not set up, or it needs to be set up again after the vault was reset."

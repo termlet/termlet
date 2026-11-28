@@ -1,18 +1,24 @@
-//! 新建、编辑快捷命令：名称、分组、内容（可多行）、发送后是否立即执行（内容末尾的换行）。
+//! 新建、编辑快捷命令：名称、分组（可以输入新的，也可以从右边的下拉中选已有的）、内容（可多行）、发送后是否立即执行
+//! （内容末尾的换行）。
 
 use std::cell::Cell;
 use std::rc::Rc;
 
+use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputState, Textarea, TextareaState};
-use gpui_kit::component::{ActiveTheme as _, Disableable as _, WindowExt as _, h_flex, v_flex};
+use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::{
+    ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _, h_flex, v_flex,
+};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, IntoElement, ParentElement as _, Render,
     SharedString, Styled as _, Subscription, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::SnippetId;
 use termlet_core::model::Snippet;
+use termlet_core::snippet_order;
 use termlet_core::store::Position;
 
 use crate::app_state::AppState;
@@ -76,6 +82,8 @@ struct SnippetForm {
     initial: Snippet,
     name: Entity<InputState>,
     group: Entity<InputState>,
+    /// 已有的分组（打开时的，按快捷命令页的顺序，不含未分组）
+    groups: Vec<String>,
     content: Entity<TextareaState>,
     /// 发送后立即执行（保存时内容末尾加换行）
     run: bool,
@@ -116,11 +124,20 @@ impl SnippetForm {
             cx.observe(&name, |_, _, cx| cx.notify()),
             cx.observe(&content, |_, _, cx| cx.notify()),
         ];
+        let store = AppState::store(cx);
+        let groups = snippet_order::group_names(
+            &store.list::<Snippet>(),
+            &store.settings().snippets.group_order,
+        )
+        .into_iter()
+        .filter(|g| !g.is_empty())
+        .collect();
         Self {
             id,
             initial,
             name,
             group,
+            groups,
             content,
             run,
             error: None,
@@ -174,6 +191,42 @@ impl SnippetForm {
             }
         }
     }
+
+    /// 分组输入框右边的下拉：选一个已有的分组（或未分组）填进去。还没有分组时没有它。
+    fn render_group_choices(&self, cx: &Context<Self>) -> Option<impl IntoElement + use<>> {
+        if self.groups.is_empty() {
+            return None;
+        }
+        let names: Vec<String> = std::iter::once(String::new())
+            .chain(self.groups.iter().cloned())
+            .collect();
+        let current = self.group.read(cx).value().trim().to_string();
+        let input = self.group.clone();
+        Some(
+            Button::new("snippet-group-choices")
+                .ghost()
+                .small()
+                .icon(IconName::ChevronDown)
+                .tooltip(t!("snippets.group.choose"))
+                .dropdown_menu(crate::menu_fit::fitted(move |menu, _, _| {
+                    names.iter().fold(menu, |menu, name| {
+                        let label: SharedString = if name.is_empty() {
+                            t!("snippets.ungrouped")
+                        } else {
+                            name.clone().into()
+                        };
+                        let (input, name) = (input.clone(), name.clone());
+                        menu.item(PopupMenuItem::new(label).checked(current == name).on_click(
+                            move |_, window, cx| {
+                                input.update(cx, |state, cx| {
+                                    state.set_value(name.clone(), window, cx)
+                                })
+                            },
+                        ))
+                    })
+                })),
+        )
+    }
 }
 
 impl Render for SnippetForm {
@@ -191,9 +244,13 @@ impl Render for SnippetForm {
                             .child(Input::new(&self.name).id("snippet-name")),
                     )
                     .child(
-                        div()
-                            .w(rems(9.))
-                            .child(Input::new(&self.group).id("snippet-group")),
+                        div().w(rems(9.)).child(
+                            Input::new(&self.group)
+                                .id("snippet-group")
+                                .when_some(self.render_group_choices(cx), |input, choices| {
+                                    input.suffix(choices)
+                                }),
+                        ),
                     ),
             )
             .child(Textarea::new(&self.content))

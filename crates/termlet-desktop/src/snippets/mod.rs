@@ -1,13 +1,17 @@
-//! 快捷命令：侧边栏的“快捷命令”页（[`list`]）、编辑对话框（[`editor`]）、在终端中按 Ctrl+Shift+Space 打开的
-//! 选择器（[`picker`]，也列出这台主机的命令历史），以及写入终端的方式。
+//! 快捷命令：侧边栏的“快捷命令”页（[`list`]，拖动排序见 [`drag`]、分组的菜单见 [`groups`]）、编辑对话框（[`editor`]）、
+//! 在终端中按 Ctrl+Shift+Space 打开的选择器（[`picker`]，也列出这台主机的命令历史），以及写入终端的方式。
 //!
 //! 快捷命令内容末尾带换行时发送后立即执行；`{{名称}}`、`{{名称:默认值}}` 是发送前填写的参数
 //! （见 [`termlet_core::snippet_params`]）。
 
 pub(crate) mod bar;
+mod drag;
 pub(crate) mod editor;
+mod groups;
 pub(crate) mod history;
 pub(crate) mod list;
+#[cfg(test)]
+mod list_tests;
 pub(crate) mod picker;
 
 use gpui_kit::component::button::ButtonVariant;

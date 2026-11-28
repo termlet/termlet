@@ -48,6 +48,7 @@ pub(super) fn conflict_name(conflict: &Conflict) -> SharedString {
         "connection" => t!("sync_ui.settings_group.connection"),
         "guard" => t!("sync_ui.settings_group.guard"),
         "keybindings" => t!("sync_ui.settings_group.keybindings"),
+        "snippets" => t!("sync_ui.settings_group.snippets"),
         other => other.to_string().into(),
     }
 }
@@ -189,6 +190,8 @@ mod tests {
         c.kind = RecordKind::Settings;
         c.name = "keybindings".into();
         assert_eq!(conflict_name(&c), "Shortcuts");
+        c.name = "snippets".into();
+        assert_eq!(conflict_name(&c), "Snippet group order");
         c.name = "future_group".into();
         assert_eq!(conflict_name(&c), "future_group", "不认识的组照原样显示");
         c.kind = RecordKind::Host;

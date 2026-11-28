@@ -6,8 +6,8 @@ use crate::db::{self, SettingRow};
 use crate::model::{
     AppLockSettings, AppearanceSettings, BackupSettings, CliSettings, ConnectionSettings,
     GeneralSettings, GuardSettings, HighlightSettings, KeybindingSettings, LocalConnectionSettings,
-    LocalSettings, LogSettings, Settings, SettingsSection, ShellSettings, TerminalSettings,
-    UsageSettings, WindowSettings,
+    LocalSettings, LogSettings, Settings, SettingsSection, ShellSettings, SnippetSettings,
+    TerminalSettings, UsageSettings, WindowSettings,
 };
 
 #[derive(Clone, Default)]
@@ -29,6 +29,7 @@ impl SettingsState {
                 connection: section(&synced),
                 guard: section(&synced),
                 keybindings: section(&synced),
+                snippets: section(&synced),
             },
             local: LocalSettings {
                 cli: section(&local),
@@ -84,6 +85,7 @@ pub(super) fn changed_rows(old: &Settings, new: &Settings) -> serde_json::Result
     push_changed::<ConnectionSettings>(&mut rows, &old.connection, &new.connection, now)?;
     push_changed::<GuardSettings>(&mut rows, &old.guard, &new.guard, now)?;
     push_changed::<KeybindingSettings>(&mut rows, &old.keybindings, &new.keybindings, now)?;
+    push_changed::<SnippetSettings>(&mut rows, &old.snippets, &new.snippets, now)?;
     Ok(rows)
 }
 

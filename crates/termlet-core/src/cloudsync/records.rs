@@ -205,6 +205,7 @@ pub(crate) const SETTING_GROUPS: &[&str] = &[
     "connection",
     "guard",
     "keybindings",
+    "snippets",
 ];
 
 /// 是否计入删除、数量的统计：条目（凭据随主机、档案增删，设置不会删除，都不计入）。

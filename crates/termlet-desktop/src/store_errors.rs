@@ -18,6 +18,7 @@ pub fn describe_invalid(invalid: &Invalid) -> SharedString {
     match (invalid.field, invalid.reason) {
         ("name", "required") => t!("store.invalid.name_required"),
         ("name", "too_long") => t!("store.invalid.name_too_long"),
+        ("group", "too_long") => t!("store.invalid.group_too_long"),
         ("address", "invalid") => t!("store.invalid.address"),
         ("address", "too_long") => t!("store.invalid.address_too_long"),
         ("address", "invalid_serial_port") => t!("store.invalid.serial_port"),

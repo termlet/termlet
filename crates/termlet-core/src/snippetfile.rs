@@ -19,13 +19,14 @@
 //! - `name` 名称；`group` 分组名，未分组的省略（Termlet 的分组只有一层，嵌套的写成“上级 / 下级”，原样写出）；
 //! - `content` 内容，不含末尾的换行；`run` 发送后立即执行（Termlet 中保存为内容末尾的换行）；参数 `{{名称}}`、
 //!   `{{名称:默认值}}` 与 `{{.Names}}` 这类都按原文；
-//! - 不含 ID、时间等本机的内部字段。按快捷命令页的顺序写出：未分组的在前，分组按名称，同一分组中按保存的顺序。
+//! - 不含 ID、时间等本机的内部字段。按快捷命令页的顺序写出（[`crate::snippet_order`]：未分组的在前，分组按拖动排好的
+//!   顺序、没排过的按名称，同一分组中按拖动排好的顺序）。
 //!
 //! 读取（[`parse`]）：`format` 不是 [`FORMAT_NAME`] 的不是这种文件；`version` 比 [`VERSION`] 新的报“来自更新版本”；
 //! 未知的字段忽略。一条中 `content` 不是字符串、为空或超长的跳过并计数；`name`、`group` 过长时截断，类型不对的
 //! 当作没有；没有 `run` 时内容按原文（末尾有换行即执行）。
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -50,15 +51,11 @@ pub fn default_file_name() -> String {
     )
 }
 
-/// 快捷命令的分组与各组的条数，按快捷命令页的顺序（未分组的空串在前，分组按名称）。
-pub fn groups(snippets: &[Record<Snippet>]) -> Vec<(String, usize)> {
-    let mut groups: BTreeMap<&str, usize> = BTreeMap::new();
-    for snippet in snippets {
-        *groups.entry(snippet.doc.group.as_str()).or_default() += 1;
-    }
-    groups
+/// 快捷命令的分组与各组的条数，按快捷命令页的顺序（未分组的空串在前）。`order` 是保存的分组顺序。
+pub fn groups(snippets: &[Record<Snippet>], order: &[String]) -> Vec<(String, usize)> {
+    crate::snippet_order::grouped(snippets, order)
         .into_iter()
-        .map(|(group, count)| (group.to_string(), count))
+        .map(|(group, members)| (group, members.len()))
         .collect()
 }
 
@@ -72,7 +69,8 @@ pub async fn export(
     let job = tokio::task::spawn_blocking(move || {
         let groups: HashSet<String> = groups.into_iter().collect();
         let snippets = store.list::<Snippet>();
-        let chosen = collect(&snippets, &groups);
+        let order = store.settings().snippets.group_order;
+        let chosen = collect(&snippets, &order, &groups);
         if chosen.is_empty() {
             return Err(BackupError::NothingSelected);
         }
@@ -88,16 +86,20 @@ pub async fn export(
     }
 }
 
-/// `groups` 中的快捷命令，按快捷命令页的顺序。
-fn collect<'a>(snippets: &'a [Record<Snippet>], groups: &HashSet<String>) -> Vec<&'a Snippet> {
-    let mut by_group: BTreeMap<&str, Vec<&Snippet>> = BTreeMap::new();
-    for snippet in snippets.iter().filter(|s| groups.contains(&s.doc.group)) {
-        by_group
-            .entry(snippet.doc.group.as_str())
-            .or_default()
-            .push(&snippet.doc);
-    }
-    by_group.into_values().flatten().collect()
+/// `groups` 中的快捷命令，按快捷命令页的顺序（`order` 是保存的分组顺序）。
+fn collect<'a>(
+    snippets: &'a [Record<Snippet>],
+    order: &[String],
+    groups: &HashSet<String>,
+) -> Vec<&'a Snippet> {
+    crate::snippet_order::grouped(
+        snippets.iter().filter(|s| groups.contains(&s.doc.group)),
+        order,
+    )
+    .into_iter()
+    .flat_map(|(_, members)| members)
+    .map(|s| &s.doc)
+    .collect()
 }
 
 #[derive(Serialize)]
@@ -278,7 +280,7 @@ mod tests {
         );
     }
 
-    // 只导出选中的分组，按快捷命令页的顺序（未分组在前，分组按名称，组内按保存的顺序）
+    // 只导出选中的分组，按快捷命令页的顺序（没有拖动排过时：未分组在前，分组按名称，组内按保存的顺序）
     #[test]
     fn groups_and_order_follow_the_snippets_page() {
         let store = memory_store();
@@ -288,7 +290,7 @@ mod tests {
         add(&store, "乙", "b2", "b2\n");
         let list = store.list::<Snippet>();
         assert_eq!(
-            groups(&list),
+            groups(&list, &[]),
             [
                 (String::new(), 1),
                 ("乙".to_string(), 2),
@@ -297,7 +299,7 @@ mod tests {
         );
         let names = |chosen: &[&str]| -> Vec<String> {
             let set = chosen.iter().map(|s| s.to_string()).collect();
-            collect(&list, &set)
+            collect(&list, &[], &set)
                 .iter()
                 .map(|s| s.name.clone())
                 .collect()
@@ -305,6 +307,48 @@ mod tests {
         assert_eq!(names(&["乙", "", "甲"]), ["无", "b1", "b2", "a1"]);
         assert_eq!(names(&["乙"]), ["b1", "b2"]);
         assert!(names(&["不存在"]).is_empty());
+    }
+
+    // 拖动排过分组、组内的顺序后，导出与分组列表跟着快捷命令页
+    #[test]
+    fn export_follows_the_dragged_order() {
+        let store = memory_store();
+        add(&store, "乙", "b1", "b1\n");
+        add(&store, "甲", "a1", "a1\n");
+        add(&store, "乙", "b2", "b2\n");
+        let b2 = store
+            .list::<Snippet>()
+            .into_iter()
+            .find(|s| s.doc.name == "b2")
+            .unwrap();
+        let b1 = store
+            .list::<Snippet>()
+            .into_iter()
+            .find(|s| s.doc.name == "b1")
+            .unwrap();
+        store
+            .move_snippet(&b2.id, "乙", Position::Before(b1.id))
+            .unwrap();
+        store
+            .update_settings(|s| s.snippets.group_order = vec!["甲".into(), "乙".into()])
+            .unwrap();
+        let list = store.list::<Snippet>();
+        let order = store.settings().snippets.group_order;
+        assert_eq!(
+            groups(&list, &order),
+            [("甲".to_string(), 1), ("乙".to_string(), 2)]
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(default_file_name());
+        block_on(export(
+            store.clone(),
+            path.clone(),
+            vec!["乙".into(), "甲".into()],
+        ))
+        .unwrap();
+        let (read, _) = parse_text(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        let names: Vec<&str> = read.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["a1", "b2", "b1"]);
     }
 
     #[test]

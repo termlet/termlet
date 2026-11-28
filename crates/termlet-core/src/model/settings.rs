@@ -39,6 +39,7 @@ pub struct Settings {
     pub connection: ConnectionSettings,
     pub guard: GuardSettings,
     pub keybindings: KeybindingSettings,
+    pub snippets: SnippetSettings,
 }
 
 /// 只与这台电脑有关的设置。
@@ -62,6 +63,7 @@ sections! {
     ConnectionSettings => "connection",
     GuardSettings => "guard",
     KeybindingSettings => "keybindings",
+    SnippetSettings => "snippets",
     CliSettings => "cli",
     AppLockSettings => "app_lock",
     BackupSettings => "backup",
@@ -466,6 +468,17 @@ pub struct KeybindingSettings {
     pub bindings: BTreeMap<String, Vec<String>>,
     /// macOS
     pub mac_bindings: BTreeMap<String, Vec<String>>,
+    #[serde(flatten)]
+    pub extra: Extra,
+}
+
+/// 快捷命令页的分组顺序（拖动分组时写入）。分组只是快捷命令上的名称、没有自己的条目，顺序单独存成一组设置，
+/// 同步时只与自己合并；设置界面中没有这一组。
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct SnippetSettings {
+    /// 分组名的先后（不含未分组）；不在其中的分组按名称排在后面，见 [`crate::snippet_order`]
+    pub group_order: Vec<String>,
     #[serde(flatten)]
     pub extra: Extra,
 }

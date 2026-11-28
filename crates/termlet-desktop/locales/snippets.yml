@@ -353,3 +353,63 @@ snippets.danger_title:
   zh-TW: 要執行這條危險指令嗎？
   ja: この危険なコマンドを実行しますか？
   ko: 이 위험한 명령을 실행하시겠습니까?
+snippets.group.new_in:
+  zh-CN: 在这个分组中新建…
+  en: New snippet in this group…
+  zh-TW: 在這個群組中新增…
+  ja: このグループに新規作成…
+  ko: 이 그룹에 새로 만들기…
+snippets.group.rename:
+  zh-CN: 重命名分组…
+  en: Rename group…
+  zh-TW: 重新命名群組…
+  ja: グループの名前を変更…
+  ko: 그룹 이름 바꾸기…
+snippets.group.delete:
+  zh-CN: 删除分组…
+  en: Delete group…
+  zh-TW: 刪除群組…
+  ja: グループを削除…
+  ko: 그룹 삭제…
+snippets.group.rename_title:
+  zh-CN: 重命名分组
+  en: Rename Group
+  zh-TW: 重新命名群組
+  ja: グループの名前を変更
+  ko: 그룹 이름 바꾸기
+snippets.group.merged:
+  zh-CN: 已有分组“%{name}”，快捷命令已并入其中。
+  en: The group “%{name}” already existed, so the snippets were merged into it.
+  zh-TW: 已有群組「%{name}」，快速指令已併入其中。
+  ja: グループ「%{name}」が既にあるため、スニペットをそこに統合しました。
+  ko: "'%{name}' 그룹이 이미 있어 스니펫을 그 그룹에 합쳤습니다."
+snippets.group.delete_title:
+  zh-CN: 删除分组“%{name}”？
+  en: Delete group “%{name}”?
+  zh-TW: 刪除群組「%{name}」？
+  ja: グループ「%{name}」を削除しますか？
+  ko: "'%{name}' 그룹을 삭제하시겠습니까?"
+snippets.group.delete_keep:
+  zh-CN: 把其中的 %{count} 条快捷命令移到“未分组”
+  en: Move its snippets (%{count}) to Ungrouped
+  zh-TW: 把其中的 %{count} 條快速指令移到「未分組」
+  ja: 中の %{count} 件のスニペットを「グループなし」に移動
+  ko: "그룹의 스니펫 %{count}개를 '그룹 없음'으로 이동"
+snippets.group.delete_all:
+  zh-CN: 连同其中的 %{count} 条快捷命令一起删除
+  en: Delete it along with its snippets (%{count})
+  zh-TW: 連同其中的 %{count} 條快速指令一起刪除
+  ja: 中の %{count} 件のスニペットもまとめて削除
+  ko: 그룹의 스니펫 %{count}개도 함께 삭제
+snippets.group.choose:
+  zh-CN: 选择已有的分组
+  en: Choose an existing group
+  zh-TW: 選擇已有的群組
+  ja: 既存のグループを選択
+  ko: 기존 그룹 선택
+snippets.drop_ungrouped:
+  zh-CN: 放到这里移到未分组
+  en: Drop here to move to Ungrouped
+  zh-TW: 放到這裡以移到未分組
+  ja: ここにドロップして「グループなし」に移動
+  ko: "여기에 놓으면 '그룹 없음'으로 옮깁니다"

@@ -6,6 +6,7 @@ mod gist;
 mod merge;
 mod s3;
 mod safety;
+mod snippet_order;
 mod sync;
 mod webdav;
 
