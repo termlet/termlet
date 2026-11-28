@@ -1,5 +1,6 @@
 //! 本地终端：检测本机的 shell，把设置中自定义的 shell 与检测到的一起列出，并给出打开它们需要的
-//! 启动参数（[`Launch`]）；WSL 发行版见 [`wsl`]。
+//! 启动参数（[`Launch`]）；WSL 发行版见 [`wsl`]。检测到的 shell 可以在设置中改名称、启动参数、起始目录与
+//! 环境变量，按 shell ID 记（[`Profile::customized`]）。
 //!
 //! Windows 上检测 PowerShell 7、Windows PowerShell、命令提示符、Git Bash、MSYS2、Cygwin 与
 //! Visual Studio 的开发者 PowerShell；Linux、macOS 上是 `$SHELL` 与 `/etc/shells` 中常见的 shell。
@@ -33,7 +34,7 @@ use std::path::{MAIN_SEPARATOR, Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use crate::model::LocalShell;
+use crate::model::{LocalShell, ShellOverride, ShellSettings};
 
 use env::Env;
 
@@ -83,6 +84,8 @@ pub struct Profile {
     pub id: String,
     /// 显示名称（检测到的是英文名，界面按 [`ShellKind`] 本地化）
     pub name: String,
+    /// 设置中给检测到的 shell 改的名称（见 [`Profile::with_override`]），界面上代替 `name`
+    pub custom_name: Option<String>,
     pub kind: ShellKind,
     /// 程序的完整路径；自定义的 shell 在打开时才解析，这里是命令行中的第一项
     pub path: PathBuf,
@@ -102,6 +105,7 @@ impl Profile {
         Self {
             id: shell.id.clone(),
             name: shell.name.clone(),
+            custom_name: None,
             kind: ShellKind::Custom,
             path: PathBuf::from(first),
             args: Vec::new(),
@@ -113,6 +117,36 @@ impl Profile {
 
     pub fn is_custom(&self) -> bool {
         self.kind == ShellKind::Custom
+    }
+
+    /// 检测到的 shell 加上设置中对它的改动（没有改动时原样返回）。
+    pub fn customized(self, shells: &ShellSettings) -> Self {
+        match shells.overrides.get(&self.id) {
+            Some(changes) if !self.is_custom() => self.with_override(changes),
+            _ => self,
+        }
+    }
+
+    /// 加上改动：改了的名称、启动参数、起始目录照改，环境变量加在检测到的之上（同名的以改动为准，
+    /// 名称按平台的规则比较）。
+    pub fn with_override(mut self, changes: &ShellOverride) -> Self {
+        let name = changes.name.trim();
+        if !name.is_empty() {
+            self.custom_name = Some(name.to_string());
+        }
+        if let Some(args) = &changes.args {
+            self.args = imp::custom_args(args).0;
+        }
+        self.dir = changes.dir.clone();
+        self.env
+            .retain(|key, _| !changes.env.keys().any(|k| env::key_eq(k, key)));
+        self.env.extend(changes.env.clone());
+        self
+    }
+
+    /// 启动参数写成一行（编辑检测到的 shell 时显示；按本平台的规则加引号，保存后能原样拆回）。
+    pub fn args_text(&self) -> String {
+        imp::join_args(&self.args)
     }
 
     /// 生成启动描述：读取用户最新的环境变量，确定程序、参数与起始目录。
@@ -314,20 +348,21 @@ impl Detector {
 
     /// 与 [`Detector::find`] 相同，但只在缓存中找（见 [`Detector::cached`]），不重新检测：
     /// 程序已不在原来的位置时照样返回，打开时由 [`Detector::find`] 在后台重新找。
-    pub fn find_cached(&self, id: &str, custom: &[LocalShell]) -> Result<Profile, ShellError> {
-        if let Some(shell) = custom.iter().find(|s| s.id == id) {
+    pub fn find_cached(&self, id: &str, shells: &ShellSettings) -> Result<Profile, ShellError> {
+        if let Some(shell) = shells.custom.iter().find(|s| s.id == id) {
             return Ok(Profile::custom(shell));
         }
         self.cached()
             .into_iter()
             .find(|p| p.id == id)
+            .map(|p| p.customized(shells))
             .ok_or(ShellError::UnknownShell)
     }
 
-    /// 按 ID 查找：先在自定义的 shell 中找，再在检测结果中找。缓存中没有、或程序已不在原来的位置
-    /// （刚安装、升级后路径变了）时重新检测一次。
-    pub fn find(&self, id: &str, custom: &[LocalShell]) -> Result<Profile, ShellError> {
-        if let Some(shell) = custom.iter().find(|s| s.id == id) {
+    /// 按 ID 查找：先在自定义的 shell 中找，再在检测结果中找（加上设置中对它的改动）。缓存中没有、或程序已不在
+    /// 原来的位置（刚安装、升级后路径变了）时重新检测一次。
+    pub fn find(&self, id: &str, shells: &ShellSettings) -> Result<Profile, ShellError> {
+        if let Some(shell) = shells.custom.iter().find(|s| s.id == id) {
             return Ok(Profile::custom(shell));
         }
         for refresh in [false, true] {
@@ -336,7 +371,7 @@ impl Detector {
                 .into_iter()
                 .find(|p| p.id == id && (refresh || exists(&p.path)))
             {
-                return Ok(p);
+                return Ok(p.customized(shells));
             }
         }
         Err(ShellError::UnknownShell)

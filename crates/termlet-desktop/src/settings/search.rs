@@ -414,10 +414,19 @@ pub(super) static ITEMS: &[Item] = &[
             "local_shell.default_hint_no_key",
         ],
     ),
+    // 列表中的每一项：检测到的可以编辑（启动参数等）、恢复默认、隐藏
     item(
         Page::Local,
         "settings-shells-shown",
-        &["local_shell.shown_label", "local_shell.shown_hint"],
+        &[
+            "local_shell.shown_label",
+            "local_shell.shown_hint",
+            "local_shell.edit",
+            "local_shell.args",
+            "local_shell.reset",
+            "local_shell.hide",
+            "local_shell.unhide",
+        ],
     ),
     item(
         Page::Local,

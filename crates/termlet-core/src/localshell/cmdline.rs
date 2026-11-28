@@ -78,6 +78,28 @@ pub(crate) fn split_words(s: &str) -> Vec<String> {
     words
 }
 
+/// 把参数拼成 [`split_words`] 能原样拆回的写法：只含常见字符的原样写，其余的用单引号括起来
+/// （其中的单引号写成 `'\''`）。
+#[cfg(any(unix, test))]
+pub(crate) fn join_words<S: AsRef<str>>(words: &[S]) -> String {
+    let quote = |word: &str| {
+        let plain = !word.is_empty()
+            && word
+                .chars()
+                .all(|c| c.is_alphanumeric() || "-_./=:,+@%^~".contains(c));
+        if plain {
+            word.to_string()
+        } else {
+            format!("'{}'", word.replace('\'', r"'\''"))
+        }
+    };
+    words
+        .iter()
+        .map(|w| quote(w.as_ref()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// 按 Windows C 运行库（VS 2008 起）的规则拆分程序名之后的参数：空格与制表符分隔；
 /// 2n 个反斜杠加 `"` 是 n 个反斜杠并切换引号状态，2n+1 个是 n 个反斜杠加一个字面的 `"`，
 /// 其余反斜杠原样保留；引号中的 `""` 是一个字面的 `"`。
@@ -191,6 +213,15 @@ pub(crate) fn compose_command_line<S: AsRef<str>>(program: &str, args: &[S]) -> 
     line
 }
 
+/// 把参数逐个按 [`escape_arg`] 转义后用空格连起来（[`split_windows_args`] 能原样拆回）。
+#[cfg(any(windows, test))]
+pub(crate) fn join_windows_args<S: AsRef<str>>(args: &[S]) -> String {
+    args.iter()
+        .map(|a| escape_arg(a.as_ref()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -298,5 +329,30 @@ mod tests {
         );
         assert_eq!(compose_command_line::<&str>("", &[]), r#""""#);
         assert_eq!(quote_program(r#""odd"name"#), r#""oddname""#);
+    }
+
+    // 检测到的 shell 的参数在编辑框中显示成文字，保存后再拆回来：两种写法都要能原样拆回
+    #[test]
+    fn joined_args_split_back() {
+        let cases: [&[&str]; 5] = [
+            &["-NoLogo"],
+            &["-i", "-l"],
+            &[
+                "-NoLogo",
+                "-NoExit",
+                "-Command",
+                r"&{Import-Module 'C:\Program Files\x.dll'; Enter-VsDevShell ab12}",
+            ],
+            &["", "a b", r#"say "hi""#, "it's", "中文 路径", "$HOME"],
+            &[],
+        ];
+        for args in cases {
+            let windows = join_windows_args(args);
+            assert_eq!(split_windows_args(&windows), args, "Windows：{windows}");
+            let unix = join_words(args);
+            assert_eq!(split_words(&unix), args, "Unix：{unix}");
+        }
+        assert_eq!(join_windows_args(&["-i", "-l"]), "-i -l");
+        assert_eq!(join_words(&["-l", "a b"]), "-l 'a b'");
     }
 }

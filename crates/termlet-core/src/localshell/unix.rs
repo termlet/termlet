@@ -47,6 +47,7 @@ fn detect_from(shell: &str, etc_shells: &str) -> Vec<Profile> {
         out.push(Profile {
             id: name.clone(),
             name,
+            custom_name: None,
             kind: ShellKind::Unix,
             path: PathBuf::from(path),
             args,
@@ -110,6 +111,11 @@ pub(super) fn look_path(name: &str, env: &Env) -> Option<PathBuf> {
 /// 自定义 shell 的参数：按 shell 的规则拆分（支持单引号、双引号与反斜杠转义）。
 pub(super) fn custom_args(rest: &str) -> (Vec<String>, Option<String>) {
     (cmdline::split_words(rest), None)
+}
+
+/// 参数写成一行（[`custom_args`] 能原样拆回）。
+pub(super) fn join_args(args: &[String]) -> String {
+    cmdline::join_words(args)
 }
 
 #[cfg(test)]

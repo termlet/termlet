@@ -6,6 +6,9 @@
 //!
 //! WSL 发行版与本地 shell 并列（侧边栏"本机"、默认终端），设置中写作 `wsl:<发行版>`；列出发行版要运行
 //! wsl.exe，同样在启动时于后台列出一次并缓存。
+//!
+//! 检测到的 shell 加上设置中对它的改动（名称、启动参数、起始目录、环境变量）再列出、打开；设置中隐藏的不出现在
+//! “+”旁的菜单、侧边栏“本机”与默认终端的选项中（[`visible_targets`]），按 ID 打开（工作区等）时照样能打开。
 
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
@@ -13,7 +16,7 @@ use std::time::Duration;
 use gpui_kit::{App, Global, SharedString};
 use termlet_core::localpty::PtyLaunch;
 use termlet_core::localshell::{Detector, Profile, ShellError, ShellKind};
-use termlet_core::model::LocalSettings;
+use termlet_core::model::{LocalSettings, ShellSettings};
 
 use crate::brand_icons::{self, Brand};
 use crate::t;
@@ -153,58 +156,79 @@ pub fn cached_wsl_distros(cx: &App) -> Vec<String> {
 }
 
 /// 设置中的默认本地终端：可以是 WSL 发行版（`wsl:<发行版>`，按设置直接打开，发行版不在时打开报错）；
-/// 没有设置或设置的 shell 已不存在时取 shell 列表中的第一个。
+/// 没有设置、设置的已不存在或被隐藏时取 shell 列表中没有隐藏的第一个。
 pub fn default_target(settings: &LocalSettings, cx: &App) -> Option<LocalTarget> {
-    match settings.shells.default.trim().strip_prefix("wsl:") {
-        Some(distro) if !distro.is_empty() => Some(LocalTarget::Wsl(distro.to_string())),
+    let shells = &settings.shells;
+    match shells.default.trim().strip_prefix("wsl:") {
+        Some(distro) if !distro.is_empty() && !is_hidden(shells, &wsl_key(distro)) => {
+            Some(LocalTarget::Wsl(distro.to_string()))
+        }
         _ => default_profile(settings, cx).map(LocalTarget::Shell),
     }
 }
 
-/// 设置中的默认本地终端（`local:<shell ID>`）；没有设置或已不存在时取列表中的第一个。只读缓存（见模块说明）。
+/// 设置中的默认本地终端（`local:<shell ID>`）；没有设置、已不存在或被隐藏时取列表中没有隐藏的第一个。
+/// 只读缓存（见模块说明）。
 pub fn default_profile(settings: &LocalSettings, cx: &App) -> Option<Profile> {
     let detector = cached_detector(cx);
     let shells = &settings.shells;
     let chosen = shells.default.trim();
-    if let Some(chosen) = chosen.strip_prefix("local:") {
-        match detector.find_cached(chosen, &shells.custom) {
+    if let Some(chosen) = chosen.strip_prefix("local:")
+        && !is_hidden(shells, &shell_key(chosen))
+    {
+        match detector.find_cached(chosen, shells) {
             Ok(profile) => return Some(profile),
             Err(e) => tracing::warn!(id = chosen, "设置的默认本地终端不可用：{e}"),
         }
     }
-    let mut list = detector.cached();
-    list.extend(shells.custom.iter().map(Profile::custom));
-    list.into_iter().next()
+    visible_targets(detector.cached(), Vec::new(), shells)
+        .into_iter()
+        .find_map(|t| match t {
+            LocalTarget::Shell(profile) => Some(profile),
+            LocalTarget::Wsl(_) => None,
+        })
 }
 
-/// 全部本地终端（标题栏“+”旁的菜单）：检测到的 shell、自定义的 shell、WSL 发行版。只读缓存（见模块说明）。
+/// 全部本地终端（标题栏“+”旁的菜单）：检测到的 shell、自定义的 shell、WSL 发行版，不含隐藏的。
+/// 只读缓存（见模块说明）。
 pub fn all_targets(settings: &LocalSettings, cx: &App) -> Vec<LocalTarget> {
-    let mut targets: Vec<LocalTarget> = cached_detector(cx)
-        .cached()
+    visible_targets(
+        cached_detector(cx).cached(),
+        cx.global::<LocalShells>().1.cached(),
+        &settings.shells,
+    )
+}
+
+/// 本地终端的列表：检测到的 shell（加上设置中对它的改动）在前，然后是自定义的 shell、WSL 发行版，不含隐藏的。
+pub fn visible_targets(
+    detected: Vec<Profile>,
+    wsl: Vec<String>,
+    shells: &ShellSettings,
+) -> Vec<LocalTarget> {
+    let mut targets: Vec<LocalTarget> = detected
         .into_iter()
         .filter(|p| !p.is_custom())
-        .map(LocalTarget::Shell)
+        .map(|p| LocalTarget::Shell(p.customized(shells)))
         .collect();
     targets.extend(
-        settings
-            .shells
+        shells
             .custom
             .iter()
             .map(|s| LocalTarget::Shell(Profile::custom(s))),
     );
-    targets.extend(
-        cx.global::<LocalShells>()
-            .1
-            .cached()
-            .into_iter()
-            .map(LocalTarget::Wsl),
-    );
+    targets.extend(wsl.into_iter().map(LocalTarget::Wsl));
+    targets.retain(|t| !is_hidden(shells, &t.key()));
     targets
 }
 
-/// 按 shell ID 找本地终端（工作区、侧边栏“本机”中的项）。只读缓存（见模块说明）。
+/// 设置中隐藏了这一项（`local:<shell ID>` 或 `wsl:<发行版>`）。
+pub fn is_hidden(shells: &ShellSettings, key: &str) -> bool {
+    shells.hidden.iter().any(|k| k == key)
+}
+
+/// 按 shell ID 找本地终端（工作区、侧边栏“本机”中的项；隐藏的照样找得到）。只读缓存（见模块说明）。
 pub fn find_profile(id: &str, settings: &LocalSettings, cx: &App) -> Option<Profile> {
-    match cached_detector(cx).find_cached(id, &settings.shells.custom) {
+    match cached_detector(cx).find_cached(id, &settings.shells) {
         Ok(profile) => Some(profile),
         Err(e) => {
             tracing::warn!(id, "本地终端不可用：{e}");
@@ -228,12 +252,17 @@ fn cached_detector(cx: &App) -> Arc<Detector> {
 }
 
 /// 启动参数：重新读取用户的环境变量（Termlet 启动之后改过的 PATH 也能生效）。在后台线程调用：
-/// 检测到的 shell 已不在原来的位置（卸载、升级后路径变了）时重新检测一次，按新的位置打开。
+/// 检测到的 shell 已不在原来的位置（卸载、升级后路径变了）时重新检测一次，按新的位置打开（只换程序的位置，
+/// 设置中对它的改动照旧）。
 pub fn launch(profile: &Profile) -> Result<PtyLaunch, ShellError> {
     let launch = match profile.launch() {
         Err(ShellError::ProgramNotFound) if !profile.is_custom() => {
-            let moved = shared_detector().find(&profile.id, &[])?;
-            moved.launch()?
+            let moved = shared_detector().find(&profile.id, &ShellSettings::default())?;
+            Profile {
+                path: moved.path,
+                ..profile.clone()
+            }
+            .launch()?
         }
         other => other?,
     };
@@ -245,8 +274,16 @@ pub fn launch(profile: &Profile) -> Result<PtyLaunch, ShellError> {
     })
 }
 
-/// 界面上的名称。
+/// 界面上的名称：设置中改过名称的用改过的。
 pub fn display_name(profile: &Profile) -> SharedString {
+    if let Some(name) = &profile.custom_name {
+        return name.clone().into();
+    }
+    detected_name(profile)
+}
+
+/// 检测到的名称（不看设置中改过的名称；编辑时作为默认值）。
+pub fn detected_name(profile: &Profile) -> SharedString {
     match profile.kind {
         ShellKind::Pwsh => "PowerShell".into(),
         ShellKind::PowerShell => "Windows PowerShell".into(),

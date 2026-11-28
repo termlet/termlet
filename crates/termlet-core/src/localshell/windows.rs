@@ -133,6 +133,7 @@ fn detected(
     Profile {
         id: id.to_string(),
         name: name.to_string(),
+        custom_name: None,
         kind,
         path,
         args: args.iter().map(|s| s.to_string()).collect(),
@@ -430,6 +431,7 @@ fn vs_profiles(
         out.push(Profile {
             id: format!("vs-{}", vs.instance_id),
             name,
+            custom_name: None,
             kind: ShellKind::VsDev,
             path: powershell.to_path_buf(),
             args: vec![
@@ -657,6 +659,11 @@ pub(super) fn look_path(name: &str, env: &Env) -> Option<PathBuf> {
 /// 自定义 shell 的参数：其余部分原样交给程序（Windows 的程序自己解析命令行），另按 C 运行库的规则拆一份。
 pub(super) fn custom_args(rest: &str) -> (Vec<String>, Option<String>) {
     (cmdline::split_windows_args(rest), Some(rest.to_string()))
+}
+
+/// 参数写成一行（[`custom_args`] 能原样拆回）。
+pub(super) fn join_args(args: &[String]) -> String {
+    cmdline::join_windows_args(args)
 }
 
 /// 运行一个命令行程序（vswhere、wsl.exe）并取它的标准输出，不弹出控制台窗口：

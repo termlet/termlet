@@ -857,7 +857,12 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 - Ctrl+Shift+T or "+" in the title bar opens the default one, and the menu next to "+" lists them all.
 - When you search the sidebar, the ones not shown there are listed too.
 - The context menu opens, sets as default, removes from the sidebar (or shows in the sidebar) or manages local terminals.
-- You can add your own local terminals in Settings (command line, start folder, environment variables).
+- You can add your own local terminals in Settings (command line, starting folder, environment variables).
+- Detected local terminals can't be deleted, but the edit button on their row under Settings → Local Terminals changes them. It changes that one entry, so you don't need to add a second terminal and the menu doesn't get a duplicate:
+  - the name, arguments, starting folder and environment variables (added on top of the detected ones; one with the same name replaces it). The program can't be changed; to use another program, add your own local terminal;
+  - "Restore defaults" puts every field back to what was detected, and once saved no changes are kept;
+  - changes stay on this computer and aren't synced. If the shell is uninstalled (no longer detected), the changes are kept but not listed, and apply again once it's back.
+- Ones you don't use can be hidden with "Hide" (the eye icon; WSL distributions too): they no longer appear in the menu next to "+", under This Computer in the sidebar or among the choices for the default, and the list in Settings marks them "Hidden"; click again to unhide. The one opened by default can't be hidden; pick another default first.
 - Split panes, the compose bar and keyword highlighting all work, and each terminal picks up the system's latest environment variables.
 - On Windows, local terminals and WSL run through the Microsoft ConPTY shipped next to the program (`conpty.dll` and `OpenConsole.exe`, taken from Windows Terminal and newer than the one built into Windows):
   - programs that use the mouse, such as vim, htop, tmux, mc and pi, get clicks, drags and the wheel;

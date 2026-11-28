@@ -386,6 +386,21 @@ pub fn settings_summary(settings: &Settings, local: &LocalSettings) -> Value {
             })
         })
         .collect();
+    // 对检测到的 shell 的改动：只记改了哪些项、参数的个数与环境变量的名称
+    let overrides: Vec<Value> = local
+        .shells
+        .overrides
+        .iter()
+        .map(|(id, changes)| {
+            json!({
+                "id": id,
+                "nameSet": !changes.name.trim().is_empty(),
+                "args": changes.args.as_deref().map(|args| split_command(args).len()),
+                "dirSet": !changes.dir.is_empty(),
+                "envNames": changes.env.keys().collect::<Vec<_>>(),
+            })
+        })
+        .collect();
     json!({
         "general": plain(general),
         "appearance": plain(appearance),
@@ -423,6 +438,8 @@ pub fn settings_summary(settings: &Settings, local: &LocalSettings) -> Value {
             "backup": plain(backup),
             "shells": {
                 "custom": shells,
+                "overrides": overrides,
+                "hidden": local.shells.hidden,
                 "sidebar": local.shells.sidebar.len(),
                 "default": local.shells.default,
             },

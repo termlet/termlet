@@ -9,7 +9,7 @@ use serde_json::{Map, Value, json};
 
 use super::*;
 use crate::db::Database;
-use crate::model::{HighlightRule, Host, LocalShell};
+use crate::model::{HighlightRule, Host, LocalShell, ShellOverride};
 use crate::store::{Position, Store};
 use crate::vault::{MemoryKeyStore, Vault};
 
@@ -525,6 +525,16 @@ fn settings_summary_omits_sensitive_content() {
         },
     ];
     local.logs.session_log_dir = r"D:\logs\alice".into();
+    local.shells.overrides = BTreeMap::from([(
+        "gitbash".into(),
+        ShellOverride {
+            name: "alice-work".into(),
+            args: Some("-c 'export T=ovr_tok_secret'".into()),
+            dir: "/home/alice/project".into(),
+            env: BTreeMap::from([("API_KEY".into(), "ovr_secret".into())]),
+        },
+    )]);
+    local.shells.hidden = vec!["local:cmd".into()];
 
     let summary = settings_summary(&settings, &local);
     let text = serde_json::to_string(&summary).unwrap();
@@ -539,9 +549,17 @@ fn settings_summary_omits_sensitive_content() {
         r"D:\\logs",
         "unknownFromNewerVersion",
         "/srv",
+        "alice-work",
+        "ovr_secret",
+        "/home/alice",
     ] {
         assert!(!text.contains(leak), "诊断信息不应包含 {leak}：{text}");
     }
+    assert_eq!(
+        summary["local"]["shells"]["overrides"],
+        json!([{"id": "gitbash", "nameSet": true, "args": 2, "dirSet": true, "envNames": ["API_KEY"]}])
+    );
+    assert_eq!(summary["local"]["shells"]["hidden"], json!(["local:cmd"]));
     assert_eq!(
         summary["local"]["shells"]["custom"][0]["envNames"],
         json!(["GITHUB_TOKEN", "HTTP_PROXY"])

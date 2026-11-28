@@ -585,6 +585,11 @@ impl Default for BackupSettings {
 pub struct ShellSettings {
     /// 用户添加的本地终端
     pub custom: Vec<LocalShell>,
+    /// 对检测到的本地终端的改动，按 shell ID（`local:` 后面的部分）记；检测不到时（卸载了）照样保留，
+    /// 重新检测到时照旧生效
+    pub overrides: BTreeMap<String, ShellOverride>,
+    /// 隐藏的本地终端（`local:<id>` 或 `wsl:<发行版>`）：不出现在“+”旁的菜单、侧边栏“本机”与默认终端的选项中
+    pub hidden: Vec<String>,
     /// 侧边栏"本机"中除默认的一项以外还要列出的（`local:<id>` 或 `wsl:<发行版>`）
     pub sidebar: Vec<String>,
     /// Ctrl+Shift+T 打开的本地终端（`local:<id>` 或 `wsl:<发行版>`）；留空取列表中的第一个
@@ -605,6 +610,28 @@ pub struct LocalShell {
     pub dir: String,
     /// 额外的环境变量
     pub env: BTreeMap<String, String>,
+}
+
+/// 对一个检测到的本地终端的改动；留空的项用检测到的。
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ShellOverride {
+    /// 名称；留空用检测到的名称
+    pub name: String,
+    /// 启动参数（程序后面的命令行）；`None` 用检测到的参数，`Some("")` 为不带参数
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub args: Option<String>,
+    /// 起始目录；留空为用户主目录
+    pub dir: String,
+    /// 额外的环境变量，同名的覆盖检测到的
+    pub env: BTreeMap<String, String>,
+}
+
+impl ShellOverride {
+    /// 没有任何改动（恢复默认后不再保存）。
+    pub fn is_empty(&self) -> bool {
+        *self == Self::default()
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]

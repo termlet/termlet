@@ -268,22 +268,14 @@ impl HostTree {
         tree
     }
 
-    /// "本机"一节：全部本地终端（本地 shell 在前，WSL 发行版在后），标出平时显示的（默认的一项与设置中选了
+    /// "本机"一节：没有隐藏的本地终端（本地 shell 在前，WSL 发行版在后），标出平时显示的（默认的一项与设置中选了
     /// 显示在侧边栏的）；其余的只在搜索时列出。
     fn local_entries(&self) -> Vec<LocalEntry> {
         let Some(detected) = &self.detected else {
             return Vec::new();
         };
         let shells = self.store.local_settings().shells;
-        let mut targets: Vec<LocalTarget> =
-            detected.iter().cloned().map(LocalTarget::Shell).collect();
-        targets.extend(
-            shells
-                .custom
-                .iter()
-                .map(|s| LocalTarget::Shell(Profile::custom(s))),
-        );
-        targets.extend(self.wsl.iter().cloned().map(LocalTarget::Wsl));
+        let targets = local_shell::visible_targets(detected.clone(), self.wsl.clone(), &shells);
         let default = targets
             .iter()
             .find(|t| t.key() == shells.default)

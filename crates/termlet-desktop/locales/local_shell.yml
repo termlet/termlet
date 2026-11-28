@@ -191,3 +191,51 @@ local_shell.command_required:
   zh-TW: 請填寫命令列。
   ja: コマンドラインを入力してください。
   ko: 명령줄을 입력하세요.
+local_shell.hide:
+  zh-CN: 隐藏
+  en: Hide
+  zh-TW: 隱藏
+  ja: 非表示
+  ko: 숨기기
+local_shell.unhide:
+  zh-CN: 取消隐藏
+  en: Unhide
+  zh-TW: 取消隱藏
+  ja: 再表示
+  ko: 숨기기 취소
+local_shell.hide_default:
+  zh-CN: 默认打开的一项不能隐藏
+  en: The one opened by default can't be hidden
+  zh-TW: 預設開啟的一項不能隱藏
+  ja: デフォルトで開くものは非表示にできません
+  ko: 기본으로 여는 항목은 숨길 수 없습니다
+local_shell.hidden:
+  zh-CN: 已隐藏
+  en: Hidden
+  zh-TW: 已隱藏
+  ja: 非表示
+  ko: 숨김
+local_shell.modified:
+  zh-CN: 已修改
+  en: Modified
+  zh-TW: 已修改
+  ja: 変更済み
+  ko: 수정됨
+local_shell.program:
+  zh-CN: 程序
+  en: Program
+  zh-TW: 程式
+  ja: プログラム
+  ko: 프로그램
+local_shell.args:
+  zh-CN: 启动参数
+  en: Arguments
+  zh-TW: 啟動參數
+  ja: 起動引数
+  ko: 시작 인수
+local_shell.reset:
+  zh-CN: 恢复默认
+  en: Restore defaults
+  zh-TW: 還原預設值
+  ja: デフォルトに戻す
+  ko: 기본값으로 복원

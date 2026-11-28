@@ -98,6 +98,7 @@ fn fake(id: &str, path: PathBuf) -> Profile {
     Profile {
         id: id.to_string(),
         name: id.to_uppercase(),
+        custom_name: None,
         kind: ShellKind::Cmd,
         path,
         args: Vec::new(),
@@ -142,16 +143,20 @@ fn detector_caches_and_finds() {
     assert_eq!(calls.load(Ordering::SeqCst), 1, "缓存未过期时不应重新检测");
 
     // 缓存中有、程序也在：不重新检测
-    assert_eq!(d.find("a", &[]).unwrap().name, "A");
+    let none = ShellSettings::default();
+    assert_eq!(d.find("a", &none).unwrap().name, "A");
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     // 缓存中没有的（例如刚安装的）重新检测一次
-    assert_eq!(d.find("b", &[]).unwrap().name, "B");
+    assert_eq!(d.find("b", &none).unwrap().name, "B");
     assert_eq!(calls.load(Ordering::SeqCst), 2);
     // 程序已不在原来的位置：重新检测一次，仍以检测结果为准
-    assert_eq!(d.find("gone", &[]).unwrap().id, "gone");
+    assert_eq!(d.find("gone", &none).unwrap().id, "gone");
     assert_eq!(calls.load(Ordering::SeqCst), 3);
 
-    let custom = [custom_shell("custom-x", r#""C:\x y\a.exe" -v"#, "", &[])];
+    let custom = ShellSettings {
+        custom: vec![custom_shell("custom-x", r#""C:\x y\a.exe" -v"#, "", &[])],
+        ..Default::default()
+    };
     let p = d.find("custom-x", &custom).unwrap();
     assert!(p.is_custom());
     assert_eq!(p.kind.as_str(), "custom");
@@ -176,8 +181,9 @@ fn cached_lookups_never_detect_again() {
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     // 已过期（缓存时间为 0）、程序也不在：只读缓存的查找都不重新检测
     assert!(d.is_stale());
-    assert_eq!(d.find_cached("gone", &[]).unwrap().id, "gone");
-    assert_eq!(d.find_cached("nope", &[]), Err(ShellError::UnknownShell));
+    let none = ShellSettings::default();
+    assert_eq!(d.find_cached("gone", &none).unwrap().id, "gone");
+    assert_eq!(d.find_cached("nope", &none), Err(ShellError::UnknownShell));
     assert_eq!(d.cached().len(), 1);
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 
@@ -193,6 +199,189 @@ fn cached_lookups_never_detect_again() {
     }
     let after = calls.load(Ordering::SeqCst);
     assert!((2..=4).contains(&after), "检测了 {after} 次");
+}
+
+fn vars(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
+    pairs
+        .iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect()
+}
+
+/// 对 `id` 的改动。
+fn with_changes(id: &str, changes: ShellOverride) -> ShellSettings {
+    ShellSettings {
+        overrides: BTreeMap::from([(id.to_string(), changes)]),
+        ..Default::default()
+    }
+}
+
+// 对检测到的 shell 的改动：改了的名称、参数、起始目录照改，环境变量加在检测到的之上；没改的项用检测到的
+#[test]
+fn override_changes_only_what_was_set() {
+    let mut detected = fake("gitbash", PathBuf::from("bash.exe"));
+    detected.args = vec!["-i".into(), "-l".into()];
+    detected.env = vars(&[("CHERE_INVOKING", "1"), ("MSYSTEM", "UCRT64")]);
+
+    assert_eq!(
+        detected.clone().customized(&ShellSettings::default()),
+        detected,
+        "没有改动时原样"
+    );
+    let changed = detected.clone().customized(&with_changes(
+        "gitbash",
+        ShellOverride {
+            name: "  工作  ".into(),
+            dir: "~/work".into(),
+            env: vars(&[("MSYSTEM", "MINGW64"), ("FOO", "1")]),
+            ..Default::default()
+        },
+    ));
+    assert_eq!(changed.custom_name.as_deref(), Some("工作"));
+    assert_eq!(changed.name, detected.name, "检测到的名称留着");
+    assert_eq!(changed.args, detected.args, "没改参数时用检测到的");
+    assert_eq!(changed.dir, "~/work");
+    assert_eq!(
+        changed.env,
+        vars(&[
+            ("CHERE_INVOKING", "1"),
+            ("MSYSTEM", "MINGW64"),
+            ("FOO", "1")
+        ])
+    );
+    assert_eq!(changed.path, detected.path, "程序不改");
+
+    // 参数：换成别的、清空；编辑框中显示的写法能原样拆回
+    let args = |text: &str| {
+        detected
+            .clone()
+            .with_override(&ShellOverride {
+                args: Some(text.into()),
+                ..Default::default()
+            })
+            .args
+    };
+    assert_eq!(
+        args(r#"--login -c "echo a b""#),
+        ["--login", "-c", "echo a b"]
+    );
+    assert!(args("").is_empty(), "Some(\"\") 为不带参数");
+    assert_eq!(args(&detected.args_text()), detected.args);
+    assert_eq!(detected.args_text(), "-i -l");
+
+    // 名称全是空白时不算改名；别的 shell、自定义的 shell 不受影响
+    let blank = ShellOverride {
+        name: "   ".into(),
+        ..Default::default()
+    };
+    assert_eq!(detected.clone().with_override(&blank).custom_name, None);
+    let other = with_changes("cmd", blank.clone());
+    assert_eq!(detected.clone().customized(&other), detected);
+    let custom = Profile::custom(&custom_shell("gitbash", "bash", "", &[]));
+    assert_eq!(
+        custom.clone().customized(&with_changes("gitbash", blank)),
+        custom
+    );
+    assert!(ShellOverride::default().is_empty());
+}
+
+// Windows 上环境变量的名称不分大小写：改动中的 msystem 换掉检测到的 MSYSTEM，不并存
+#[cfg(windows)]
+#[test]
+fn override_env_names_ignore_case_on_windows() {
+    let mut detected = fake("msys2", PathBuf::from("bash.exe"));
+    detected.env = vars(&[("MSYSTEM", "UCRT64")]);
+    let changed = detected.with_override(&ShellOverride {
+        env: vars(&[("msystem", "CLANG64")]),
+        ..Default::default()
+    });
+    assert_eq!(changed.env, vars(&[("msystem", "CLANG64")]));
+}
+
+// 改过的 shell 检测不到时（卸载了）按 ID 找不到、也不在列表中，设置中的改动照样留着；重新检测到时照旧生效
+#[test]
+fn override_applies_again_when_shell_reappears() {
+    let installed = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let flag = installed.clone();
+    let real = std::env::current_exe().unwrap();
+    let d = Detector::with_detect(Duration::from_secs(3600), move |_| {
+        let mut list = vec![fake("cmd", real.clone())];
+        if flag.load(Ordering::SeqCst) {
+            list.push(fake("gitbash", real.clone()));
+        }
+        list
+    });
+    let shells = with_changes(
+        "gitbash",
+        ShellOverride {
+            dir: "~/work".into(),
+            env: vars(&[("MARKER", "1")]),
+            ..Default::default()
+        },
+    );
+    assert_eq!(d.find_cached("gitbash", &shells).unwrap().dir, "~/work");
+
+    installed.store(false, Ordering::SeqCst);
+    assert!(d.list(true).iter().all(|p| p.id != "gitbash"));
+    assert_eq!(
+        d.find_cached("gitbash", &shells),
+        Err(ShellError::UnknownShell)
+    );
+    assert_eq!(
+        d.find_cached("cmd", &shells).unwrap().dir,
+        "",
+        "别的不受影响"
+    );
+
+    // 重新装上：缓存中没有，查找时重新检测，改动照旧生效
+    installed.store(true, Ordering::SeqCst);
+    let back = d.find("gitbash", &shells).unwrap();
+    assert_eq!(back.dir, "~/work");
+    assert_eq!(back.env.get("MARKER").map(String::as_str), Some("1"));
+}
+
+// 改动传到启动的进程：按改过的参数运行，带上改动中的环境变量，从改过的起始目录开始
+#[test]
+fn override_reaches_the_started_process() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("termlet-override-dir");
+    std::fs::create_dir(&dir).unwrap();
+    let (detected, args) = if cfg!(windows) {
+        let cmd = Path::new(&std::env::var("SystemRoot").unwrap_or(r"C:\Windows".into()))
+            .join(r"System32\cmd.exe");
+        (fake("cmd", cmd), r#"/d /c "echo override-%MARKER%& cd""#)
+    } else {
+        (
+            fake("sh", PathBuf::from("/bin/sh")),
+            "-c 'echo override-$MARKER; pwd'",
+        )
+    };
+    let shells = with_changes(
+        &detected.id,
+        ShellOverride {
+            args: Some(args.into()),
+            dir: dir.to_string_lossy().into_owned(),
+            env: vars(&[("MARKER", "ok-42")]),
+            ..Default::default()
+        },
+    );
+    let launch = detected.customized(&shells).launch().unwrap();
+    assert_eq!(launch.cwd, dir);
+    assert_eq!(launch.env_var("MARKER"), Some("ok-42"));
+    let mut run = Command::new(&launch.program);
+    run.args(&launch.args)
+        .env_clear()
+        .envs(launch.env.iter().map(|(k, v)| (k, v)))
+        .current_dir(&launch.cwd);
+    let out = output_of("改过的 shell", run);
+    assert!(
+        out.contains("override-ok-42"),
+        "应带着改过的参数与环境变量启动：{out}"
+    );
+    assert!(
+        out.contains("termlet-override-dir"),
+        "应从改过的起始目录开始：{out}"
+    );
 }
 
 #[test]

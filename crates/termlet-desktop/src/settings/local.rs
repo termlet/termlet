@@ -2,13 +2,16 @@
 //!
 //! 侧边栏与默认值中的项写作 `local:<shell ID>`，WSL 发行版写作 `wsl:<发行版>`。默认的一项总是显示在侧边栏中。
 //! 新添加的自定义 shell 列在侧边栏中。
+//!
+//! 检测到的 shell 不能删除，可以编辑（名称、启动参数、起始目录、环境变量，按 shell ID 记在本机设置中）与恢复默认；
+//! 检测到的 shell 与 WSL 发行版可以隐藏（默认的一项除外）。这次没检测到的改动、隐藏照样保存，重新检测到时照旧生效。
 
 use std::collections::BTreeMap;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
-use gpui_kit::component::form::{field, v_form};
+use gpui_kit::component::form::{Field, field, v_form};
 use gpui_kit::component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_kit::component::searchable_list::SearchableVec;
 use gpui_kit::component::select::{Select, SelectEvent};
@@ -18,11 +21,12 @@ use gpui_kit::component::{
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, Entity, Focusable as _, InteractiveElement as _,
     IntoElement, ParentElement as _, PathPromptOptions, Render, SharedString, Styled as _,
-    Subscription, Task, WeakEntity, Window, div, prelude::FluentBuilder as _, rems,
+    Subscription, Task, TestSupportExt as _, WeakEntity, Window, div, prelude::FluentBuilder as _,
+    rems,
 };
 use termlet_core::id::random_token;
 use termlet_core::localshell::Profile;
-use termlet_core::model::{LocalShell, ShellSettings};
+use termlet_core::model::{LocalShell, ShellOverride, ShellSettings};
 
 use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::local_shell::{LocalTarget, shell_key};
@@ -30,11 +34,15 @@ use crate::prose::prose;
 use crate::{local_shell, t};
 
 pub(super) struct LocalPage {
-    /// 检测到的 shell（不含自定义的）；`None` 为还在检测
+    /// 检测到的 shell（不含自定义的，没有加上改动）；`None` 为还在检测
     detected: Option<Vec<Profile>>,
     /// 检测到的 WSL 发行版（与 shell 一起检测完）
     wsl: Vec<String>,
     custom: Vec<LocalShell>,
+    /// 对检测到的 shell 的改动（含这次没检测到的）
+    overrides: BTreeMap<String, ShellOverride>,
+    /// 隐藏的项（含这次没检测到的）
+    hidden: Vec<String>,
     sidebar: Vec<String>,
     default: String,
     default_select: Entity<ChoiceState<String>>,
@@ -75,6 +83,8 @@ impl LocalPage {
             detected: None,
             wsl: Vec::new(),
             custom: settings.custom.clone(),
+            overrides: settings.overrides.clone(),
+            hidden: settings.hidden.clone(),
             sidebar: settings.sidebar.clone(),
             default: settings.default.clone(),
             default_select,
@@ -83,14 +93,17 @@ impl LocalPage {
         }
     }
 
-    /// 全部本地终端：检测到的 shell 在前，然后是自定义的，最后是 WSL 发行版。
+    /// 全部本地终端（含隐藏的）：检测到的 shell（加上改动）在前，然后是自定义的，最后是 WSL 发行版。
     fn targets(&self) -> Vec<LocalTarget> {
         let mut list: Vec<LocalTarget> = self
             .detected
             .clone()
             .unwrap_or_default()
             .into_iter()
-            .map(LocalTarget::Shell)
+            .map(|p| match self.overrides.get(&p.id) {
+                Some(changes) => LocalTarget::Shell(p.with_override(changes)),
+                None => LocalTarget::Shell(p),
+            })
             .collect();
         list.extend(
             self.custom
@@ -101,19 +114,29 @@ impl LocalPage {
         list
     }
 
-    /// 实际的默认项：设置的那个还在时用它，否则是列表中的第一个。
+    fn is_hidden(&self, key: &str) -> bool {
+        self.hidden.iter().any(|k| k == key)
+    }
+
+    /// 实际的默认项：设置的那个还在、没有隐藏时用它，否则是没有隐藏的第一个。
     fn default_key(&self, targets: &[LocalTarget]) -> Option<String> {
-        targets
+        let visible: Vec<String> = targets
             .iter()
             .map(LocalTarget::key)
-            .find(|k| *k == self.default)
-            .or_else(|| targets.first().map(LocalTarget::key))
+            .filter(|k| !self.is_hidden(k))
+            .collect();
+        visible
+            .iter()
+            .find(|k| **k == self.default)
+            .or(visible.first())
+            .cloned()
     }
 
     fn refresh_default_select(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let targets = self.targets();
         let mut choices: Vec<Choice<String>> = targets
             .iter()
+            .filter(|t| !self.is_hidden(&t.key()))
             .map(|t| Choice::new(t.title(), t.key()))
             .collect();
         // 设置的默认项这次没有检测到（WSL 检测超时、shell 卸载了）：照样列出并选中，保存时不被悄悄换掉
@@ -142,6 +165,8 @@ impl LocalPage {
     /// 写进设置。
     pub(super) fn apply(&self, settings: &mut ShellSettings) {
         settings.custom = self.custom.clone();
+        settings.overrides = self.overrides.clone();
+        settings.hidden = self.hidden.clone();
         settings.sidebar = self.sidebar.clone();
         settings.default = self.default.clone();
     }
@@ -151,6 +176,15 @@ impl LocalPage {
         if shown {
             self.sidebar.push(key.to_string());
         }
+    }
+
+    /// 隐藏或取消隐藏。侧边栏中显示的勾选留着，取消隐藏后照旧。
+    fn set_hidden(&mut self, key: &str, hidden: bool, window: &mut Window, cx: &mut Context<Self>) {
+        self.hidden.retain(|k| k != key);
+        if hidden {
+            self.hidden.push(key.to_string());
+        }
+        self.refresh_default_select(window, cx);
     }
 
     fn remove_custom(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
@@ -164,24 +198,43 @@ impl LocalPage {
     }
 
     /// 添加（`shell` 为 `None`）或编辑自定义的 shell。
-    fn open_editor(
+    fn edit_custom(
         &mut self,
         shell: Option<LocalShell>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let page = cx.entity().downgrade();
-        let editor = cx.new(|cx| ShellEditor::new(shell, page, window, cx));
+        let editor = cx.new(|cx| ShellEditor::custom(shell, page, window, cx));
+        self.open_editor(editor, window, cx);
+    }
+
+    /// 编辑检测到的 shell（`id` 为它的 shell ID）。
+    fn edit_detected(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(profile) = self.detected.iter().flatten().find(|p| p.id == id).cloned() else {
+            return;
+        };
+        let changes = self.overrides.get(id).cloned().unwrap_or_default();
+        let page = cx.entity().downgrade();
+        let editor = cx.new(|cx| ShellEditor::detected(profile, &changes, page, window, cx));
+        self.open_editor(editor, window, cx);
+    }
+
+    fn open_editor(
+        &mut self,
+        editor: Entity<ShellEditor>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let width = rems(30.).to_pixels(window.rem_size());
         let first = std::rc::Rc::new(std::cell::Cell::new(true));
         window.open_dialog(cx, move |dialog, window, cx| {
             if first.replace(false) {
                 editor.read(cx).name.focus_handle(cx).focus(window, cx);
             }
-            let title = if editor.read(cx).id.is_some() {
-                t!("local_shell.edit_title")
-            } else {
-                t!("local_shell.new_title")
+            let title = match &editor.read(cx).editing {
+                Editing::Custom(None) => t!("local_shell.new_title"),
+                Editing::Custom(Some(_)) | Editing::Detected(_) => t!("local_shell.edit_title"),
             };
             // 在输入框中按 Enter 与点“保存”相同（有错误时不关闭）
             let save = {
@@ -207,6 +260,22 @@ impl LocalPage {
                 self.sidebar.push(shell_key(&shell.id));
                 self.custom.push(shell);
             }
+        }
+        self.refresh_default_select(window, cx);
+    }
+
+    /// 编辑器保存了对检测到的 shell 的改动；没有改动（恢复了默认）时不再保存。
+    fn on_override_saved(
+        &mut self,
+        id: String,
+        changes: ShellOverride,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if changes.is_empty() {
+            self.overrides.remove(&id);
+        } else {
+            self.overrides.insert(id, changes);
         }
         self.refresh_default_select(window, cx);
     }
@@ -255,16 +324,33 @@ impl Render for LocalPage {
             let rows = targets.iter().enumerate().map(|(i, target)| {
                 let key = target.key();
                 let is_default = default_key.as_deref() == Some(key.as_str());
-                let shown = is_default || self.sidebar.contains(&key);
+                let hidden = self.is_hidden(&key);
+                let shown = !hidden && (is_default || self.sidebar.contains(&key));
                 let command = match target {
                     LocalTarget::Shell(profile) if profile.is_custom() => profile.command.clone(),
                     LocalTarget::Shell(profile) => profile.path.display().to_string(),
                     LocalTarget::Wsl(distro) => format!("wsl.exe -d {distro}"),
                 };
                 let id = |name: &str| ElementId::from(SharedString::from(format!("{name}-{key}")));
-                let custom = match target {
-                    LocalTarget::Shell(profile) if profile.is_custom() => Some(profile.id.clone()),
-                    _ => None,
+                let (custom, detected) = match target {
+                    LocalTarget::Shell(profile) if profile.is_custom() => {
+                        (Some(profile.id.clone()), None)
+                    }
+                    LocalTarget::Shell(profile) => (None, Some(profile.id.clone())),
+                    LocalTarget::Wsl(_) => (None, None),
+                };
+                // 自定义的可以删除，检测到的与 WSL 发行版可以隐藏
+                let can_hide = custom.is_none();
+                // 状态：隐藏的写“已隐藏”，改过的写“已修改”
+                let status = if hidden {
+                    Some(t!("local_shell.hidden"))
+                } else if detected
+                    .as_ref()
+                    .is_some_and(|id| self.overrides.contains_key(id))
+                {
+                    Some(t!("local_shell.modified"))
+                } else {
+                    None
                 };
                 h_flex()
                     .id(id("settings-shell"))
@@ -276,7 +362,7 @@ impl Render for LocalPage {
                     .child(
                         Checkbox::new(id("settings-shell-show"))
                             .checked(shown)
-                            .disabled(is_default)
+                            .disabled(is_default || hidden)
                             .on_change(cx.listener({
                                 let key = key.clone();
                                 move |this, checked: &bool, _, cx| {
@@ -290,6 +376,7 @@ impl Render for LocalPage {
                             .w(rems(10.))
                             .flex_none()
                             .truncate()
+                            .when(hidden, |this| this.text_color(muted))
                             .child(target.title()),
                     )
                     .child(
@@ -302,6 +389,17 @@ impl Render for LocalPage {
                             .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
                             .child(command),
                     )
+                    .when_some(status, |this, status| {
+                        this.child(
+                            div()
+                                .id(id("settings-shell-status"))
+                                .test_support()
+                                .flex_none()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(status),
+                        )
+                    })
                     .when_some(custom, |this, shell_id| {
                         let edit_id = shell_id.clone();
                         this.child(
@@ -313,7 +411,7 @@ impl Render for LocalPage {
                                 .on_click(cx.listener(move |this, _, window, cx| {
                                     let shell =
                                         this.custom.iter().find(|s| s.id == edit_id).cloned();
-                                    this.open_editor(shell, window, cx);
+                                    this.edit_custom(shell, window, cx);
                                 })),
                         )
                         .child(
@@ -324,6 +422,46 @@ impl Render for LocalPage {
                                 .tooltip(t!("local_shell.delete"))
                                 .on_click(cx.listener(move |this, _, window, cx| {
                                     this.remove_custom(&shell_id, window, cx)
+                                })),
+                        )
+                    })
+                    .when_some(detected, |this, shell_id| {
+                        this.child(
+                            Button::new(id("settings-shell-edit"))
+                                .ghost()
+                                .small()
+                                .icon(IconName::Pencil)
+                                .tooltip(t!("local_shell.edit"))
+                                .on_click(cx.listener(move |this, _, window, cx| {
+                                    this.edit_detected(&shell_id, window, cx)
+                                })),
+                        )
+                    })
+                    // 检测到的不能删除，可以隐藏；默认打开的一项不能隐藏（先另选一个默认的）
+                    .when(can_hide, |this| {
+                        let tooltip = if hidden {
+                            t!("local_shell.unhide")
+                        } else if is_default {
+                            t!("local_shell.hide_default")
+                        } else {
+                            t!("local_shell.hide")
+                        };
+                        this.child(
+                            Button::new(id("settings-shell-hide"))
+                                .ghost()
+                                .small()
+                                .icon(if hidden {
+                                    IconName::Eye
+                                } else {
+                                    IconName::EyeOff
+                                })
+                                .tooltip(tooltip)
+                                .disabled(is_default && !hidden)
+                                .on_click(cx.listener({
+                                    let key = key.clone();
+                                    move |this, _, window, cx| {
+                                        this.set_hidden(&key, !hidden, window, cx)
+                                    }
                                 })),
                         )
                     })
@@ -356,7 +494,7 @@ impl Render for LocalPage {
                             .icon(IconName::Plus)
                             .label(t!("local_shell.new"))
                             .on_click(cx.listener(|this, _, window, cx| {
-                                this.open_editor(None, window, cx)
+                                this.edit_custom(None, window, cx)
                             })),
                     ),
                 ),
@@ -375,12 +513,20 @@ impl Render for LocalPage {
     }
 }
 
-/// 添加、编辑一个自定义的 shell：名称、命令行（程序与参数）、起始目录、环境变量。
+/// 编辑的是哪一个本地终端。
+enum Editing {
+    /// 添加（`None`）或编辑（原来的 ID）自定义的 shell
+    Custom(Option<String>),
+    /// 检测到的 shell：检测结果，即各项的默认值
+    Detected(Profile),
+}
+
+/// 添加、编辑一个本地终端：名称、命令行（自定义的是程序与参数，检测到的只有启动参数）、起始目录、环境变量。
 struct ShellEditor {
-    /// 编辑时为原来的 ID
-    id: Option<String>,
+    editing: Editing,
     page: WeakEntity<LocalPage>,
     name: Entity<InputState>,
+    /// 自定义的 shell 是命令行，检测到的是启动参数
     command: Entity<InputState>,
     dir: Entity<InputState>,
     env: Entity<TextareaState>,
@@ -389,13 +535,65 @@ struct ShellEditor {
 }
 
 impl ShellEditor {
-    fn new(
+    /// 添加（`shell` 为 `None`）或编辑自定义的 shell。
+    fn custom(
         shell: Option<LocalShell>,
         page: WeakEntity<LocalPage>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let shell_ref = shell.as_ref();
+        let shell = shell.unwrap_or_default();
+        let id = (!shell.id.is_empty()).then(|| shell.id.clone());
+        Self::new(
+            Editing::Custom(id),
+            [
+                (shell.name, SharedString::default()),
+                (shell.command, SharedString::default()),
+            ],
+            &shell.dir,
+            &shell.env,
+            page,
+            window,
+            cx,
+        )
+    }
+
+    /// 编辑检测到的 shell：`profile` 是检测结果（没有加上改动），`changes` 是现在的改动。名称与启动参数填上
+    /// 现在的值，名称的占位文字是检测到的名称。
+    fn detected(
+        profile: Profile,
+        changes: &ShellOverride,
+        page: WeakEntity<LocalPage>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let default_name = local_shell::detected_name(&profile);
+        let name = match changes.name.trim() {
+            "" => default_name.to_string(),
+            name => name.to_string(),
+        };
+        let args = changes.args.clone().unwrap_or_else(|| profile.args_text());
+        Self::new(
+            Editing::Detected(profile),
+            [(name, default_name), (args, SharedString::default())],
+            &changes.dir,
+            &changes.env,
+            page,
+            window,
+            cx,
+        )
+    }
+
+    /// `fields` 是名称与命令行（或启动参数）的值与占位文字。
+    fn new(
+        editing: Editing,
+        fields: [(String, SharedString); 2],
+        dir: &str,
+        env: &BTreeMap<String, String>,
+        page: WeakEntity<LocalPage>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let input = |value: String,
                      placeholder: SharedString,
                      window: &mut Window,
@@ -406,32 +604,23 @@ impl ShellEditor {
                     .default_value(value)
             })
         };
-        let name = input(
-            shell_ref.map(|s| s.name.clone()).unwrap_or_default(),
-            SharedString::default(),
-            window,
-            cx,
-        );
-        let command = input(
-            shell_ref.map(|s| s.command.clone()).unwrap_or_default(),
-            SharedString::default(),
-            window,
-            cx,
-        );
+        let [(name, name_placeholder), (command, command_placeholder)] = fields;
+        let name = input(name, name_placeholder, window, cx);
+        let command = input(command, command_placeholder, window, cx);
         let dir = input(
-            shell_ref.map(|s| s.dir.clone()).unwrap_or_default(),
+            dir.to_string(),
             t!("local_shell.dir_placeholder"),
             window,
             cx,
         );
-        let env_text = shell_ref.map(|s| format_env(&s.env)).unwrap_or_default();
+        let env_text = format_env(env);
         let env = cx.new(|cx| {
             TextareaState::new(window, cx)
                 .rows(4)
                 .default_value(env_text)
         });
         Self {
-            id: shell.map(|s| s.id),
+            editing,
             page,
             name,
             command,
@@ -474,6 +663,22 @@ impl ShellEditor {
         }));
     }
 
+    /// 检测到的 shell：各项换回检测到的（点“保存”后才生效，取消则不变）。
+    fn reset(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Editing::Detected(profile) = &self.editing else {
+            return;
+        };
+        let name = local_shell::detected_name(profile).to_string();
+        let args = profile.args_text();
+        self.name.update(cx, |s, cx| s.set_value(name, window, cx));
+        self.command
+            .update(cx, |s, cx| s.set_value(args, window, cx));
+        self.dir.update(cx, |s, cx| s.set_value("", window, cx));
+        self.env.update(cx, |s, cx| s.set_value("", window, cx));
+        self.error = None;
+        cx.notify();
+    }
+
     fn save(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
         let name = self.name.read(cx).value().trim().to_string();
         let command = self.command.read(cx).value().trim().to_string();
@@ -484,6 +689,27 @@ impl ShellEditor {
                 self.error = Some(t!("local_shell.env_bad_line", line = line));
                 cx.notify();
                 return false;
+            }
+        };
+        let id = match &self.editing {
+            Editing::Custom(id) => id.clone(),
+            Editing::Detected(profile) => {
+                // 与检测到的相同的项不算改动（名称留空也是用检测到的）
+                let changes = ShellOverride {
+                    name: if name == local_shell::detected_name(profile).as_ref() {
+                        String::new()
+                    } else {
+                        name
+                    },
+                    args: (command != profile.args_text()).then_some(command),
+                    dir,
+                    env,
+                };
+                let id = profile.id.clone();
+                let _ = self.page.update(cx, |page, cx| {
+                    page.on_override_saved(id, changes, window, cx)
+                });
+                return true;
             }
         };
         let missing = if name.is_empty() {
@@ -499,10 +725,7 @@ impl ShellEditor {
             return false;
         }
         let shell = LocalShell {
-            id: self
-                .id
-                .clone()
-                .unwrap_or_else(|| format!("custom-{}", random_token(10))),
+            id: id.unwrap_or_else(|| format!("custom-{}", random_token(10))),
             name,
             command,
             dir,
@@ -513,65 +736,109 @@ impl ShellEditor {
             .update(cx, |page, cx| page.on_saved(shell, window, cx));
         true
     }
+
+    /// 自定义的 shell：命令行与选择程序的按钮。
+    fn command_field(&self, cx: &mut Context<Self>) -> Field {
+        field()
+            .label(t!("local_shell.command"))
+            .description(prose(t!("local_shell.command_hint")))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(
+                        div()
+                            .flex_1()
+                            .child(Input::new(&self.command).id("shell-command")),
+                    )
+                    .child(
+                        Button::new("shell-pick-program")
+                            .outline()
+                            .icon(IconName::FolderOpen)
+                            .tooltip(t!("local_shell.pick_program"))
+                            .on_click(
+                                cx.listener(|this, _, window, cx| this.pick_program(window, cx)),
+                            ),
+                    ),
+            )
+    }
 }
 
 impl Render for ShellEditor {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
+        let (border, danger, muted) = (theme.border, theme.danger, theme.muted_foreground);
+        let detected = match &self.editing {
+            Editing::Detected(profile) => Some(profile.path.display().to_string()),
+            Editing::Custom(_) => None,
+        };
+        let is_detected = detected.is_some();
+        let form = v_form().child(
+            field()
+                .label(t!("local_shell.name"))
+                .child(Input::new(&self.name).id("shell-name")),
+        );
+        // 检测到的 shell 不能换程序，只列出它；命令行的位置换成启动参数
+        let form = match detected {
+            Some(program) => form
+                .child(
+                    field().label(t!("local_shell.program")).child(
+                        div()
+                            .id("shell-program")
+                            .test_support()
+                            .min_w_0()
+                            .truncate()
+                            .text_xs()
+                            .text_color(muted)
+                            .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
+                            .child(program),
+                    ),
+                )
+                .child(
+                    field()
+                        .label(t!("local_shell.args"))
+                        .child(Input::new(&self.command).id("shell-args")),
+                ),
+            None => form.child(self.command_field(cx)),
+        };
         v_flex()
             .gap_3()
             .child(
-                v_form()
-                    .child(
-                        field()
-                            .label(t!("local_shell.name"))
-                            .child(Input::new(&self.name).id("shell-name")),
-                    )
-                    .child(
-                        field()
-                            .label(t!("local_shell.command"))
-                            .description(prose(t!("local_shell.command_hint")))
-                            .child(
-                                h_flex()
-                                    .gap_2()
-                                    .child(
-                                        div()
-                                            .flex_1()
-                                            .child(Input::new(&self.command).id("shell-command")),
-                                    )
-                                    .child(
-                                        Button::new("shell-pick-program")
-                                            .outline()
-                                            .icon(IconName::FolderOpen)
-                                            .tooltip(t!("local_shell.pick_program"))
-                                            .on_click(cx.listener(|this, _, window, cx| {
-                                                this.pick_program(window, cx)
-                                            })),
-                                    ),
-                            ),
-                    )
-                    .child(
-                        field()
-                            .label(t!("local_shell.dir"))
-                            .child(Input::new(&self.dir).id("shell-dir")),
-                    )
-                    .child(
-                        field()
-                            .label(t!("local_shell.env"))
+                form.child(
+                    field()
+                        .label(t!("local_shell.dir"))
+                        .child(Input::new(&self.dir).id("shell-dir")),
+                )
+                .child(
+                    field().label(t!("local_shell.env")).child(
+                        div()
+                            .id("shell-env")
+                            .test_support()
                             .child(Textarea::new(&self.env)),
                     ),
+                ),
             )
             .child(
                 h_flex()
                     .gap_2()
                     .pt_3()
                     .border_t_1()
-                    .border_color(theme.border)
+                    .border_color(border)
+                    .when(is_detected, |this| {
+                        this.child(
+                            Button::new("shell-reset")
+                                .ghost()
+                                .icon(IconName::RotateCcw)
+                                .label(t!("local_shell.reset"))
+                                .on_click(
+                                    cx.listener(|this, _, window, cx| this.reset(window, cx)),
+                                ),
+                        )
+                    })
                     .child(
                         div()
                             .flex_1()
                             .text_sm()
-                            .text_color(theme.danger)
+                            .text_color(danger)
                             .when_some(self.error.clone(), |this, e| this.child(e)),
                     )
                     .child(
@@ -658,6 +925,9 @@ fn key_name(key: &str) -> String {
         .unwrap_or(key)
         .to_string()
 }
+
+#[cfg(test)]
+mod ui_tests;
 
 #[cfg(test)]
 mod tests {
