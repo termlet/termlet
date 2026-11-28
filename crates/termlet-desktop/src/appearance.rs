@@ -1,5 +1,6 @@
 //! 把外观设置（界面语言、浅色 / 深色）落到界面上。
 
+use gpui_kit::component::scroll::ScrollbarMode;
 use gpui_kit::component::{ActiveTheme as _, Theme, ThemeMode};
 use gpui_kit::{App, Global, OperatingSystem, SharedString, Window};
 use termlet_core::model::{AppearanceSettings, LanguageSetting, ThemeSetting};
@@ -106,6 +107,13 @@ pub fn adjust_light_theme(cx: &mut App) {
     Theme::change(mode, None, cx);
 }
 
+/// 滚动条一直显示（内容放得下时照样没有）。gpui-kit 默认跟随系统：Windows 11 默认只在滚动时出现，下拉列表、
+/// 预览列表等看不出下面还有内容。gpui-kit 的下拉、列表不能单独设，只能全局设；切换浅色 / 深色时不会被重置。
+/// 终端自己画滚动条（`termlet-terminal` 的 element.rs），不受影响。
+pub fn show_scrollbars(cx: &mut App) {
+    Theme::set_scrollbar_mode(ScrollbarMode::Always, cx);
+}
+
 /// 浅色主题的弱化文字与焦点框（主题配置中的颜色，见 [`adjust_light_theme`]）。
 const LIGHT_MUTED_FOREGROUND: &str = "#666666";
 const LIGHT_RING: &str = "#737373";
@@ -136,6 +144,31 @@ mod tests {
         };
         let (x, y) = (luminance(a), luminance(b));
         (x.max(y) + 0.05) / (x.min(y) + 0.05)
+    }
+
+    // 滚动条一直显示：切换浅色 / 深色、跟随系统（都会重新载入主题配置）后照样，画滚动条的那一层也是
+    #[gpui_kit::test]
+    fn scrollbars_stay_visible_across_theme_changes(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(crate::init);
+        cx.update(|cx| {
+            let check = |cx: &App| {
+                assert_eq!(cx.theme().scrollbar_mode, ScrollbarMode::Always);
+                assert_eq!(
+                    gpui_kit::base::Theme::global(cx).scrollbar.mode(),
+                    ScrollbarMode::Always
+                );
+            };
+            check(cx);
+            Theme::change(ThemeMode::Dark, None, cx);
+            check(cx);
+            Theme::change(ThemeMode::Light, None, cx);
+            check(cx);
+            Theme::sync_system_appearance(None, cx);
+            check(cx);
+            adjust_light_theme(cx);
+            check(cx);
+        });
     }
 
     // 弱化文字在白底、浅灰底、表头的灰底上都不低于 4.5:1，焦点框在白底上不低于 3:1；跟随系统切换后也一样

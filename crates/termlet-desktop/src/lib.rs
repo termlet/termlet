@@ -243,6 +243,7 @@ pub fn init(cx: &mut gpui_kit::App) {
     i18n::extend_gpui_kit();
     menu_tooltip::init(cx);
     appearance::adjust_light_theme(cx);
+    appearance::show_scrollbars(cx);
     termlet_terminal::init(cx);
     local_shell::init(cx);
     terminal_search::init(cx);

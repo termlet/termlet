@@ -14,6 +14,7 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Changed
 
 - Hovering over a terminal or SFTP tab now shows what it's connected to, on a line of its own: `user@address` for SSH (with the port when it isn't 22), `address:port` for Telnet, the port and baud rate for a serial port (such as `COM3 · 115200`) and the distribution for WSL; SFTP opened as root has root after it. Horizontal tabs, the vertical tab list and its collapsed icons all show it, a title set by the program still appears, and local terminals don't get this line. Before, horizontal tabs only had a tooltip when the program had set a title.
+- Lists, dropdowns, the settings pages and other areas whose content doesn't fit now always show a scrollbar, so you can tell at a glance there's more (such as the "Source" dropdown when importing hosts). Before, scrollbars followed the system setting and on Windows 11 only appeared while scrolling by default. The terminal's scrollbar is unchanged.
 
 ## 0.3.5 (2026-11-26)
 
