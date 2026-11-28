@@ -219,6 +219,7 @@ pub(crate) fn parse_access(sections: &Sections) -> Result<(Engine, bool), ToolsE
         .and_then(|s| Engine::parse(&s.arg))
         .ok_or_else(missing)?;
     let sudo = sections.get("sudo").arg().trim().to_string();
+    let desktop = sections.has("desktop");
     if let Some(error) = sections.get("error") {
         let text = error.lines.join("\n");
         let root = match sudo.as_str() {
@@ -229,13 +230,17 @@ pub(crate) fn parse_access(sections: &Sections) -> Result<(Engine, bool), ToolsE
         };
         return Err(match root {
             Some(sudo) => ToolsError::NeedRoot { sudo, output: text },
-            None if docker_down(&text) => ToolsError::DockerDown,
-            // 已经是 root（或 sudo 也没有权限，例如 SELinux）
-            None if text.to_lowercase().contains("permission denied") => ToolsError::NeedRoot {
-                sudo: SudoState::Denied,
-                output: text,
+            None => match down_error(&text) {
+                // Docker Desktop 在运行、但没有为这个发行版打开 WSL 集成时，说的是连不上 docker.sock
+                Some(_) if desktop => ToolsError::DockerDesktopDown,
+                Some(down) => down,
+                // 已经是 root（或 sudo 也没有权限，例如 SELinux）
+                None if text.to_lowercase().contains("permission denied") => ToolsError::NeedRoot {
+                    sudo: SudoState::Denied,
+                    output: text,
+                },
+                None => ToolsError::DockerFailed(first_line(&text)),
             },
-            None => ToolsError::DockerFailed(first_line(&text)),
         });
     }
     Ok((engine, sudo == "used"))
@@ -334,15 +339,34 @@ pub(crate) fn created_at(text: &str) -> Option<i64> {
     Some(nanos.div_euclid(1_000_000))
 }
 
+/// 错误输出说明 Docker 用不了（守护进程没有运行）时对应的错误：WSL 中 Docker Desktop 的集成用不了时是
+/// [`ToolsError::DockerDesktopDown`]，连不上守护进程是 [`ToolsError::DockerDown`]；别的错误为 `None`。
+pub(crate) fn down_error(text: &str) -> Option<ToolsError> {
+    if desktop_down(text) {
+        Some(ToolsError::DockerDesktopDown)
+    } else if docker_down(text) {
+        Some(ToolsError::DockerDown)
+    } else {
+        None
+    }
+}
+
 /// 错误输出是不是连不上守护进程（较新的 docker 命令写作 "failed to connect to the docker API"）。
-pub(crate) fn docker_down(text: &str) -> bool {
+fn docker_down(text: &str) -> bool {
     text.contains("Cannot connect to the Docker daemon")
         || text.contains("Is the docker daemon running")
         || text.contains("failed to connect to the docker API")
         || text.contains("error during connect")
         || text.contains("Cannot connect to Podman")
-        // WSL 中 Docker Desktop 的集成程序：Docker Desktop 没有启动时
-        || text.contains("could not be found in this WSL 2 distro")
+}
+
+/// 错误输出是不是 WSL 中 Docker Desktop 的集成程序用不了：Docker Desktop 没有启动（Windows 一侧的 docker 说
+/// "could not be found in this WSL 2 distro"），或者启动过又退出、发行版一直开着（/usr/bin/docker 指向的
+/// /mnt/wsl/docker-desktop 下的挂载已经失效，执行它报 Input/output error：经 sh 是 "docker: …"，经 bash 与 Windows
+/// 一侧的 docker 是 "/usr/bin/docker: …"）。
+fn desktop_down(text: &str) -> bool {
+    text.contains("could not be found in this WSL 2 distro")
+        || text.contains("docker: Input/output error")
 }
 
 /// 一行 JSON 对象，键不区分大小写（docker 与 podman 的字段名大小写不同）。

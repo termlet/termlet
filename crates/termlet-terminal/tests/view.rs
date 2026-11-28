@@ -1297,6 +1297,13 @@ fn programs_can_write_the_clipboard_but_not_read_it(cx: &mut TestAppContext) {
         window.click("terminal", cx);
     })
     .unwrap();
+    // 测试平台的激活是排在前台的任务：先让它生效再送输出。否则引擎线程抢先发来剪贴板事件时，两个任务同时排着、
+    // 先后由调度器随机决定，先处理事件时窗口还不在前台、不写，等到超时（Linux CI 上偶发过）
+    cx.run_until_parked();
+    cx.update_window(fixture.window, |_, window, _| {
+        assert!(window.is_window_active())
+    })
+    .unwrap();
     cx.update(|cx| cx.write_to_clipboard(ClipboardItem::new_string("之前的内容".into())));
 
     // 写入（BEL 与 ST 结尾都行）：“hi”
@@ -1359,6 +1366,8 @@ fn programs_can_write_the_clipboard_but_not_read_it(cx: &mut TestAppContext) {
         window.blur(cx);
     })
     .unwrap();
+    // 同上，先让激活生效：测的是焦点，不是窗口在后台
+    cx.run_until_parked();
     assert!(!written_and_answered(cx), "终端没有焦点时不写");
 
     // 设置关掉：有焦点也不写

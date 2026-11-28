@@ -443,6 +443,12 @@ tools.docker_down_hint:
   zh-TW: 已安裝 Docker，但連不上它的常駐程式。啟動後按「重新整理」：
   ja: Docker はインストールされていますが、デーモンに接続できません。起動してから「更新」をクリックしてください：
   ko: "Docker는 설치되어 있지만 데몬에 연결할 수 없습니다. 시작한 후 '새로 고침'을 클릭하세요:"
+tools.docker_desktop_hint:
+  zh-CN: 启动 Docker Desktop，并在它的设置中为这个发行版打开 WSL 集成。
+  en: Start Docker Desktop and turn on WSL integration for this distribution in its settings.
+  zh-TW: 啟動 Docker Desktop，並在它的設定中為這個發行版開啟 WSL 整合。
+  ja: Docker Desktop を起動し、その設定でこのディストリビューションの WSL 統合をオンにしてください。
+  ko: "Docker Desktop을 시작하고 설정에서 이 배포판의 WSL 통합을 켜세요."
 tools.unavailable.need_root:
   zh-CN: 需要 root 权限
   en: Root privileges required

@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use serde_json::Value;
 
-use super::docker::{Container, Engine, ID_RE, JsonObj, docker_down};
+use super::docker::{Container, Engine, ID_RE, JsonObj, down_error};
 use super::exec::{Limits, Target, on_runtime, one_line, run, sh_script};
 use super::logs::{ReadOutput, parse_time};
 use super::sections::{first_line, unreadable};
@@ -278,8 +278,8 @@ fn read_output(result: &ExecResult) -> Result<String, ToolsError> {
     let out = String::from_utf8_lossy(&result.stdout);
     let read = ReadOutput::parse(&out, result.stdout.len()).ok_or_else(|| unreadable(result))?;
     if read.code != 0 {
-        if docker_down(&read.output) {
-            return Err(ToolsError::DockerDown);
+        if let Some(down) = down_error(&read.output) {
+            return Err(down);
         }
         return Err(ToolsError::DockerFailed(first_line(&read.output)));
     }

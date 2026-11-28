@@ -15,7 +15,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use super::action::UNIT_RE;
-use super::docker::{Engine, ID_RE, docker_down};
+use super::docker::{Engine, ID_RE, down_error};
 use super::exec::{Limits, Target, on_runtime, one_line, run, sh_script};
 use super::sections::{PrivSudo, first_line, unreadable};
 use super::{HostTools, LIST_TIMEOUT, ToolsError, scripts};
@@ -322,8 +322,10 @@ pub(crate) fn parse_logs(query: &LogQuery, result: &ExecResult) -> Result<LogRes
         matches!(query.source, LogSource::Service { .. }) && read.output.contains(JOURNAL_DENIED);
     let limited = limited || denied;
     if read.code != 0 && !denied {
-        if matches!(query.source, LogSource::Container { .. }) && docker_down(&read.output) {
-            return Err(ToolsError::DockerDown);
+        if matches!(query.source, LogSource::Container { .. })
+            && let Some(down) = down_error(&read.output)
+        {
+            return Err(down);
         }
         return Err(ToolsError::LogsFailed(first_line(&read.output)));
     }

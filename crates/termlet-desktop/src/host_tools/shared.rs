@@ -1042,6 +1042,14 @@ pub(super) fn notice(
                 ))
                 .into_any_element(),
         ),
+        // WSL 中的 docker 是 Docker Desktop 的集成：在 Windows 一侧启动，不给 systemctl 的命令
+        ToolsError::DockerDesktopDown => (
+            "docker_desktop_down",
+            t!("tools.unavailable.docker_down"),
+            div()
+                .child(prose(t!("tools.docker_desktop_hint")))
+                .into_any_element(),
+        ),
         ToolsError::NeedRoot { sudo, .. } => (
             "need_root",
             if docker {

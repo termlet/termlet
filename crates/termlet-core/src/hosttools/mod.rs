@@ -39,7 +39,7 @@
 //!   [`TerminalRequest::Action`] 拼出命令，在共用这条连接的新 Tab 中执行。跟随日志、进入容器同样用
 //!   [`terminal_command`]。
 //! - 错误：不支持（[`ToolsError::Unsupported`]、[`ToolsError::NoSystemd`]、[`ToolsError::NoDocker`]、
-//!   [`ToolsError::DockerDown`]）时整页显示原因、不再自动刷新；只用一个通道（[`ExecError::SingleChannel`]）时整个
+//!   [`ToolsError::DockerDown`]、[`ToolsError::DockerDesktopDown`]）时整页显示原因、不再自动刷新；只用一个通道（[`ExecError::SingleChannel`]）时整个
 //!   面板说明原因；连接断开（[`ExecError::Disconnected`]）时保留上次的数据，等终端重连好再读。
 
 mod action;
@@ -132,6 +132,10 @@ pub enum ToolsError {
     /// 装了 Docker，但守护进程没有运行（连不上 docker.sock）
     #[error("Docker 没有运行")]
     DockerDown,
+    /// WSL 中的 docker 是 Docker Desktop 的集成，而它用不了：Docker Desktop 没有启动、启动过又退出了，或者没有为这个
+    /// 发行版打开 WSL 集成（下一步在 Windows 一侧，与 [`ToolsError::DockerDown`] 不同）
+    #[error("Docker Desktop 没有运行，或没有为这个发行版打开 WSL 集成")]
+    DockerDesktopDown,
     /// 读取容器等失败（不是权限、不是守护进程没有运行）：带上错误输出的第一行
     #[error("读取容器失败：{0}")]
     DockerFailed(String),

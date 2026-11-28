@@ -355,8 +355,34 @@ fn other_errors() {
         parse_docker(
             "@@engine docker\n@@error 1\nThe command 'docker' could not be found in this WSL 2 distro.\nWe recommend to activate the WSL integration in Docker Desktop settings.\n"
         ),
-        Err(ToolsError::DockerDown)
+        Err(ToolsError::DockerDesktopDown)
     );
+    // Docker Desktop 启动过又退出、发行版一直开着时（2026-11-28 在本机复现的三种写法：经 sh、经 bash、经 Windows
+    // 一侧 Docker Desktop 的 docker）
+    for output in [
+        "sh: 1: docker: Input/output error",
+        "bash: line 1: /usr/bin/docker: Input/output error",
+        "/mnt/c/Program Files/Docker/Docker/resources/bin/docker: 13: /usr/bin/docker: Input/output error",
+    ] {
+        assert_eq!(
+            parse_docker(&format!("@@engine docker\n@@error 126\n{output}\n")),
+            Err(ToolsError::DockerDesktopDown),
+            "{output}"
+        );
+    }
+    // Docker Desktop 在运行、但没有为这个发行版打开 WSL 集成：连不上 docker.sock，脚本标出 docker 是 Docker Desktop 的
+    let refused = "failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory";
+    assert_eq!(
+        parse_docker(&format!(
+            "@@engine docker\n@@desktop\n@@error 1\n{refused}\n"
+        )),
+        Err(ToolsError::DockerDesktopDown)
+    );
+    // Docker Desktop 的 docker 出了别的错：照常带上原因
+    assert!(matches!(
+        parse_docker("@@engine docker\n@@desktop\n@@error 125\nunknown flag: --no-trunc\n"),
+        Err(ToolsError::DockerFailed(_))
+    ));
 }
 
 /// podman 的标签是对象，可以直接用；docker 的是以逗号连接的字符串，不用；仓库地址中的端口不是标签；

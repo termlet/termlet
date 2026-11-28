@@ -61,6 +61,7 @@ fn tools_in_wsl() {
             Err(
                 error @ (ToolsError::NoDocker
                 | ToolsError::DockerDown
+                | ToolsError::DockerDesktopDown
                 | ToolsError::NeedRoot { .. }),
             ) => println!("Docker 不可用：{error}"),
             Err(other) => panic!("读取 Docker：{other:?}"),

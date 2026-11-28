@@ -378,11 +378,22 @@ pub(crate) fn fake_proc(dir: &Path) {
     write("proc/600/status", &status_file(r"evil\n@@uid\n0", 1, 1000));
 }
 
-/// 把假 /proc 与 /etc/passwd 换进脚本的替换表。
+/// 假 /proc 中没有的 PID，当作执行脚本的 shell（见 [`proc_replace`]）。
+const NOT_A_FAKE_PID: u32 = 999_999;
+
+/// 把假 /proc 与 /etc/passwd 换进脚本的替换表。进程列表的脚本跳过自己的 shell（`me=$$`）与以它为父的进程，这里把
+/// `$$` 换成假 /proc 中没有的 PID：本机 sh 的 `$$` 可能恰好是假 /proc 中的某个 PID（MSYS2 的 PID 是顺序分配的小编号，
+/// 容器中的 PID 也从小数开始），那个进程与它的子进程就被当成脚本自己跳过，数目对不上（偶发）。
 pub(crate) fn proc_replace(dir: &Path) -> Vec<(&'static str, String)> {
+    proc_replace_as(dir, NOT_A_FAKE_PID)
+}
+
+/// 同 [`proc_replace`]，执行脚本的 shell 当作假 /proc 中的 `me`（测试跳过自己的那一段）。
+pub(crate) fn proc_replace_as(dir: &Path, me: u32) -> Vec<(&'static str, String)> {
     vec![
         ("/proc", format!("{}/proc", posix(dir))),
         ("/etc/passwd", format!("{}/passwd", posix(dir))),
+        ("me=$$", format!("me={me}")),
     ]
 }
 

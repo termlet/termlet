@@ -17,7 +17,9 @@ pub fn describe(error: &ToolsError) -> SharedString {
         }
         ToolsError::NoSystemd => t!("tools.unavailable.no_systemd"),
         ToolsError::NoDocker => t!("tools.unavailable.no_docker"),
-        ToolsError::DockerDown => t!("tools.unavailable.docker_down"),
+        ToolsError::DockerDown | ToolsError::DockerDesktopDown => {
+            t!("tools.unavailable.docker_down")
+        }
         ToolsError::DockerFailed(detail) => t!("tools.error.docker_failed", detail = detail),
         ToolsError::LogsFailed(detail) => t!("tools.error.logs_failed", detail = detail),
         ToolsError::NeedRoot { sudo, .. } => sudo_text(*sudo),

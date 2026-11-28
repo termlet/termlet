@@ -102,6 +102,8 @@ fn programs_on_the_server_write_the_clipboard(cx: &mut TestAppContext) {
         view.focus_handle(cx).focus(window, cx);
     })
     .unwrap();
+    // 测试平台的激活是排在前台的任务：先让它生效，免得剪贴板事件抢在它前面被处理（窗口还不在前台、不写）
+    cx.run_until_parked();
 
     // 默认允许：写入，弹出“web-osc52 写入了剪贴板（2 字）”，点“查看”看到内容
     printf_osc52(cx, &terminal, "hi");

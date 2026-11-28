@@ -116,7 +116,9 @@ echo @@tshow;
 
 /// 访问 Docker（Docker 页与进程页读容器名共用）：有 docker 时用 docker，否则用 podman；都没有时输出 `@@nodocker`。
 /// 以 `$f` 为格式列出容器（`$o`）；普通用户没有权限（不在 docker 组）时，免密码 sudo 可用就改用 `sudo -n`
-/// （`@@sudo used`，之后的命令都经 `$d` 带上 sudo），否则输出 `@@sudo` 与原因、`@@error` 与输出后结束。
+/// （`@@sudo used`，之后的命令都经 `$d` 带上 sudo），否则输出 `@@sudo` 与原因、`@@error` 与输出后结束。出错时 docker
+/// 是 Docker Desktop 的（WSL 中指向 /mnt/wsl/docker-desktop 的链接，或 Windows 一侧 Docker Desktop 的程序）先输出
+/// `@@desktop`：连不上守护进程时下一步在 Windows 一侧（启动 Docker Desktop、为发行版打开 WSL 集成）。
 pub(crate) const DOCKER_ACCESS: &str = r#"if command -v docker >/dev/null 2>&1; then d=docker; elif command -v podman >/dev/null 2>&1; then d=podman; else echo @@nodocker; uname -s; exit 0; fi;
 echo "@@engine $d";
 o=$($d ps -a --no-trunc --format "$f" 2>&1); r=$?;
@@ -133,7 +135,10 @@ if [ $r -ne 0 ] && [ "$(id -u)" -ne 0 ]; then
     else echo "@@sudo none"; fi;;
   esac;
 fi;
-if [ $r -ne 0 ]; then echo "@@error $r"; printf '%s\n' "$o" | q; exit 0; fi;
+if [ $r -ne 0 ]; then
+  case $(readlink -f "$(command -v docker)" 2>/dev/null) in /mnt/wsl/docker-desktop/*|*/Docker/resources/bin/*) echo @@desktop;; esac;
+  echo "@@error $r"; printf '%s\n' "$o" | q; exit 0;
+fi;
 "#;
 
 /// 列出容器、镜像、卷、网络（接在 [`DOCKER_ACCESS`] 之后，`$f` 为 `{{json .}}`）。`@@inspect` 每个容器一行：

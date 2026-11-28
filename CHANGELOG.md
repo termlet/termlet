@@ -25,6 +25,10 @@
 - 顶部 Tab 栏中名称很长的 Tab 截断名称，悬停看全名；Tab 放不下时，窗口、侧边栏或分屏变窄后当前的 Tab 仍留在视野里，还有 Tab 的一端渐隐。之前名称很长的主机一个 Tab 能占去大半条 Tab 栏，窗口变窄后当前的 Tab 会被挤到栏外，也看不出两边还有别的 Tab。
 - 截断的文字悬停显示全文：导入预览中的名称、地址、分组，侧边栏转发的名称、路线与连接目标失败的原因，快捷命令的名称与分组，主机分组名，本地终端的名称，设置“本地终端”中的名称与命令行，以及下拉框中的选项。
 
+### 修复
+
+- WSL 终端的主机工具中，Docker Desktop 启动过又退出后，Docker 页不再显示“读取容器失败：…/usr/bin/docker: Input/output error”，与 Docker Desktop 没有启动时一样说明 Docker 没有运行。WSL 中的 docker 来自 Docker Desktop 时（没有启动、启动过又退出，或没有为这个发行版打开 WSL 集成），下一步写的是在 Windows 上启动 Docker Desktop 并为这个发行版打开 WSL 集成，不再给出用不上的 `sudo systemctl start docker`。
+
 ## 0.3.5（2026-11-26）
 
 ### 新增

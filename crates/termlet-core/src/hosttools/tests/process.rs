@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use super::{ShRunner, borrow, fake_proc, proc_replace};
+use super::{ShRunner, borrow, fake_proc, proc_replace, proc_replace_as};
 use crate::hosttools::process::{
     Inner, finish_detail, parse_proc_line, parse_process_detail, parse_processes,
     process_detail_command, processes_command,
@@ -161,7 +161,7 @@ fn processes_in_tmux() {
 }
 
 /// 读取脚本自己的 shell（`$$`）与它派生的子进程不列出、不计数（每次读取都是新的 PID，会混进进程页与概览页
-/// CPU 最高的进程）；孙进程不是它派生的，照常列出。测试中把 `$$` 换成假 /proc 中的 PID。
+/// CPU 最高的进程）；孙进程不是它派生的，照常列出。测试中把 `$$` 换成假 /proc 中的 PID（[`proc_replace_as`]）。
 #[test]
 fn proc_script_skips_itself() {
     let Some(runner) = ShRunner::new() else {
@@ -183,8 +183,7 @@ fn proc_script_skips_itself() {
             &super::status_file(name, ppid, 1000),
         );
     }
-    let mut replace = proc_replace(dir.path());
-    replace.push(("me=$$", "me=700".to_string()));
+    let replace = proc_replace_as(dir.path(), 700);
     let out = runner.run(&proc_script(), &borrow(&replace), &["", ""]);
     let (list, _, _) = parse_processes(&out, "").unwrap_or_else(|e| panic!("{e}\n{out}"));
     let procs = by_pid(&list.processes);
@@ -192,7 +191,7 @@ fn proc_script_skips_itself() {
     assert!(!procs.contains_key(&701), "它派生的子进程不列出");
     assert!(procs.contains_key(&702), "孙进程照常列出");
     assert_eq!(list.total, 9, "不计入总数（原有 8 个加孙进程）");
-    // 照常执行（`$$` 是本机 sh 自己）时什么都不少
+    // 脚本自己的 shell 不在其中时什么都不少
     let out = runner.run(
         &proc_script(),
         &borrow(&proc_replace(dir.path())),

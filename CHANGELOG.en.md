@@ -25,6 +25,10 @@ This file lists the changes you will notice in each version, newest first. Versi
 - Tabs with long names in the top tab bar cut the name short, with the full name on hover. When the tabs don't fit, the current tab stays in view after the window, the sidebar or a split gets narrower, and the end where more tabs are hidden fades out. Before, a host with a long name could take up most of the tab bar, narrowing the window pushed the current tab out of view, and nothing showed that there were more tabs on either side.
 - Hovering over truncated text shows all of it: names, addresses and groups in the import preview, the names, routes and target connection errors of tunnels in the sidebar, snippet names and groups, host group names, local terminal names, the names and command lines in Settings → Local Terminals, and options in dropdown lists.
 
+### Fixed
+
+- In the host tools of a WSL terminal, the Docker page no longer shows "Failed to read containers: …/usr/bin/docker: Input/output error" after Docker Desktop has been started and quit; it says Docker is not running, as when Docker Desktop was never started. When docker in WSL comes from Docker Desktop (not started, started and quit, or WSL integration not turned on for the distribution), the next step is to start Docker Desktop on Windows and turn on WSL integration for the distribution, instead of `sudo systemctl start docker`, which doesn't apply.
+
 ## 0.3.5 (2026-11-26)
 
 ### Added
