@@ -36,7 +36,7 @@ Termlet 是 SSH 客户端，支持 Windows、macOS（Apple 芯片）与 Linux。
 
 - 下载：官网的[下载页](https://termlet.dev/download/)，备用 GitHub 上的 [Releases](https://github.com/termlet/termlet/releases/latest)。
 - arm64 版是实验版：没有真机，只在 CI 的 arm64 运行器上编译、跑核心测试。
-- macOS、Linux 版还没有在真机上测试过，遇到问题请在 [Issues](https://github.com/termlet/termlet/issues) 中反馈。
+- 遇到问题请在 [Issues](https://github.com/termlet/termlet/issues) 中反馈。
 - 各平台的安装方式、数据目录、更新与卸载，见[用户指南](docs/guide.md#安装)。
 
 ### 核对下载的文件

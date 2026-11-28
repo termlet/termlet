@@ -36,7 +36,7 @@ It comes with the `termlet` command-line tool, which lets AI tools such as Claud
 
 - Download from the website's [download page](https://termlet.dev/en/download/), or from [Releases](https://github.com/termlet/termlet/releases/latest) on GitHub.
 - The arm64 versions are experimental: there is no real hardware, so they are only built and run through the core tests on CI's arm64 runners.
-- The macOS and Linux versions haven't been tested on real hardware yet; please report problems in [Issues](https://github.com/termlet/termlet/issues).
+- Please report problems in [Issues](https://github.com/termlet/termlet/issues).
 - For how to install on each platform, the data folder, updates and uninstalling, see the [user guide](docs/guide.en.md#installation).
 
 ### Checking your download
