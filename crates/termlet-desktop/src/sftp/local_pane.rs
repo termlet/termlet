@@ -160,14 +160,17 @@ impl LocalPane {
             cx.subscribe_in(
                 path,
                 window,
-                |this, input, event: &InputEvent, window, cx| {
-                    if let InputEvent::PressEnter { .. } = event {
+                |this, input, event: &InputEvent, window, cx| match event {
+                    InputEvent::PressEnter { .. } => {
                         let text = input.read(cx).value().trim().to_string();
                         if !text.is_empty() {
                             this.load(PathBuf::from(text), window, cx);
                             this.list.focus_handle(cx).focus(window, cx);
                         }
                     }
+                    // 离开路径框后滚回末尾，露出当前目录名
+                    InputEvent::Blur => input.update(cx, super::scroll_path_to_end),
+                    _ => {}
                 },
             ),
         ]
@@ -187,6 +190,12 @@ impl LocalPane {
     #[cfg(test)]
     pub(crate) fn list(&self) -> Entity<FileList> {
         self.list.clone()
+    }
+
+    /// 路径框（测试中核对显示的位置）。
+    #[cfg(test)]
+    pub(crate) fn path_box(&self) -> Entity<InputState> {
+        self.path.clone()
     }
 
     /// 当前目录（还没打开时为 `None`）。
@@ -360,8 +369,7 @@ impl LocalPane {
         self.parent = listing.parent;
         self.deletes_permanently = listing.deletes_permanently;
         let dir = listing.path;
-        self.path
-            .update(cx, |input, cx| input.set_value(dir_text, window, cx));
+        super::show_path(&self.path, dir_text, window, cx);
         AppState::ui(cx).update(cx, |ui, cx| {
             ui.update(|s| s.sftp_local_dir = Some(dir.clone()), cx)
         });
@@ -374,8 +382,7 @@ impl LocalPane {
             .as_ref()
             .map(|d| d.to_string_lossy().to_string())
             .unwrap_or_default();
-        self.path
-            .update(cx, |input, cx| input.set_value(text, window, cx));
+        super::show_path(&self.path, text, window, cx);
     }
 
     fn go_up(&mut self, window: &mut Window, cx: &mut Context<Self>) {

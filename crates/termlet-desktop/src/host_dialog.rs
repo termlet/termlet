@@ -20,7 +20,9 @@ use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::form::{Field, Form, field, v_form};
 use gpui_kit::component::input::{Input, InputEvent, InputState, Textarea, TextareaState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::notification::Notification;
 use gpui_kit::component::radio::RadioGroup;
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::select::{Select, SelectEvent};
 use gpui_kit::component::sidebar::{SidebarItem as _, SidebarMenu, SidebarMenuItem};
 use gpui_kit::component::{
@@ -28,8 +30,8 @@ use gpui_kit::component::{
     v_flex,
 };
 use gpui_kit::{
-    AnyElement, App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
+    AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, Focusable as _,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
     StatefulInteractiveElement as _, Styled as _, Subscription, Task, TestSupportExt as _, Window,
     div, prelude::FluentBuilder as _, rems,
 };
@@ -227,6 +229,9 @@ enum JumpChoice {
     Direct,
     Via(HostId),
 }
+
+/// 测试连接的结果最高多少（rem）：更长时在框内滚动。
+const TEST_RESULT_MAX_HEIGHT: f32 = 7.5;
 
 enum TestState {
     Idle,
@@ -2502,6 +2507,10 @@ impl HostForm {
                 Some(div().text_color(theme.danger).child(prose(message.clone())))
             }
         };
+        let failure = match &self.test {
+            TestState::Failed(message) => Some(message.clone()),
+            _ => None,
+        };
         let running = matches!(self.test, TestState::Running);
         v_flex()
             .gap_2()
@@ -2511,8 +2520,41 @@ impl HostForm {
             .when_some(self.error.clone(), |this, error| {
                 this.child(div().text_sm().text_color(theme.danger).child(prose(error)))
             })
+            // 结果长时（代理命令的错误输出、指纹不符时的两行指纹）在框内滚动，不裁掉；失败时可以复制
             .when_some(test, |this, test| {
-                this.child(test.text_sm().max_h(rems(4.)).overflow_hidden())
+                this.child(
+                    h_flex()
+                        .items_start()
+                        .gap_1()
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                .max_h(rems(TEST_RESULT_MAX_HEIGHT))
+                                .text_sm()
+                                .overflow_y_scrollbar()
+                                .id("host-test-result")
+                                .child(div().id("host-test-message").test_support().child(test)),
+                        )
+                        .when_some(failure, |this, message| {
+                            this.child(
+                                Button::new("host-test-copy")
+                                    .ghost()
+                                    .xsmall()
+                                    .icon(IconName::Copy)
+                                    .tooltip(t!("host.test.copy"))
+                                    .on_click(move |_, window, cx| {
+                                        cx.write_to_clipboard(ClipboardItem::new_string(
+                                            message.to_string(),
+                                        ));
+                                        window.push_notification(
+                                            Notification::success(t!("host.test.copied")),
+                                            cx,
+                                        );
+                                    }),
+                            )
+                        }),
+                )
             })
             .child(
                 h_flex()
@@ -2871,6 +2913,42 @@ mod tests {
             cx.run_until_parked();
         }
         set_language(Language::ZhCn);
+    }
+
+    // 测试连接失败：结果放在可以滚动的框里（不再裁掉），可以复制
+    #[gpui_kit::test]
+    fn failed_test_result_can_be_copied(cx: &mut TestAppContext) {
+        use crate::testkit::wait_until;
+
+        let handle = open_workspace(cx);
+        set_language(Language::ZhCn);
+        cx.update_window(handle, |_, window, cx| super::open_new(None, window, cx))
+            .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.click("host-address", cx);
+            window.input("127.0.0.1", cx);
+            window.click("host-port", cx);
+            window.input("1", cx);
+            window.click("host-username", cx);
+            window.input("alice", cx);
+            window.click("host-test", cx);
+        })
+        .unwrap();
+        wait_until(cx, handle, "测试连接失败", |window, _| {
+            window.try_find("host-test-copy").is_some()
+        });
+        cx.update_window(handle, |_, window, cx| {
+            assert!(window.try_find("host-test-message").is_some());
+            window.click("host-test-copy", cx);
+        })
+        .unwrap();
+        let copied = cx
+            .read_from_clipboard()
+            .and_then(|item| item.text())
+            .unwrap_or_default();
+        assert!(copied.contains("127.0.0.1:1"), "复制的是错误信息：{copied}");
     }
 
     // 分组的代理命令：新主机默认沿用；X11 转发与受信任一并保存。

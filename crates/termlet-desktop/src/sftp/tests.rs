@@ -363,6 +363,64 @@ fn local_pane_filters_and_selects_the_new_folder(cx: &mut TestAppContext) {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+// 路径框放不下长路径时滚到末尾，露出当前目录名；点进去再离开后同样滚回末尾
+#[gpui_kit::test]
+fn local_path_shows_its_end(cx: &mut TestAppContext) {
+    setup(cx);
+    let dir = std::env::temp_dir()
+        .join(format!(
+            "termlet-sftp-path-{}",
+            termlet_core::id::random_token(8)
+        ))
+        .join("a-rather-long-folder-name-so-the-path-does-not-fit")
+        .join("another-long-folder-name-at-the-end");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("file.txt"), "x").unwrap();
+    let start = dir.clone();
+    cx.update(|cx| {
+        AppState::ui(cx).update(cx, |ui, cx| {
+            ui.update(|s| s.sftp_local_dir = Some(start), cx)
+        })
+    });
+    let web = add_host(cx, "web", false);
+    let (handle, panel, _) = open_panel(cx, SftpTarget::Host(web));
+    wait_until(cx, handle, "本机栏列出临时目录", |window, _| {
+        window.try_find("local-list-row-file.txt").is_some()
+    });
+    let path = cx.read(|cx| panel.read(cx).local_path(cx));
+    let offset = |cx: &mut TestAppContext| {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            path.read(cx).scroll_offset().x
+        })
+        .unwrap()
+    };
+    assert!(offset(cx) < px(0.), "滚到了末尾");
+    // 点进路径框、光标移到开头，再离开
+    cx.update_window(handle, |_, window, cx| {
+        path.update(cx, |input, cx| {
+            input.focus(window, cx);
+            input.set_cursor_position(gpui_kit::component::input::Position::new(0, 0), window, cx);
+        });
+        window.render_frame(cx);
+    })
+    .unwrap();
+    assert_eq!(offset(cx), px(0.), "光标在开头");
+    let (list, _) = cx.read(|cx| panel.read(cx).list_focus(cx));
+    cx.update_window(handle, |_, window, cx| {
+        list.focus(window, cx);
+        // 测试中的窗口不在前台，焦点移走时 GPUI 不发失焦的事件：照输入框失焦时那样发出
+        path.update(cx, |_, cx| {
+            cx.emit(gpui_kit::component::input::InputEvent::Blur)
+        });
+        window.render_frame(cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert!(offset(cx) < px(0.), "离开后滚回末尾");
+    let _ = std::fs::remove_dir_all(dir.parent().unwrap().parent().unwrap());
+}
+
 /// 弹出的菜单中各项的文案（按顺序）。
 fn menu_labels(cx: &mut TestAppContext, handle: AnyWindowHandle) -> Vec<String> {
     (0..40).filter_map(|i| menu_label(cx, handle, i)).collect()

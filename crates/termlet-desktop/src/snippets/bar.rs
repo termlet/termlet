@@ -2,16 +2,18 @@
 //! 发到当前终端（与侧边栏的单击相同：带参数的先填写参数，按保存时的设置执行或只写入）。
 //!
 //! 默认不显示；命令面板的“显示快捷命令栏”、快捷命令页的按钮或栏上的 × 切换，开关与选中的分组记在本机的
-//! 界面状态中。有分组时最前面是分组的选择（全部、未分组、各分组）。按钮太多时横向滚动。
+//! 界面状态中。有分组时最前面是分组的选择（全部、未分组、各分组）。按钮太多时横向滚动，鼠标滚轮也能左右滚（与 Tab 栏
+//! 相同，竖向的滚动换成横向）。
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
-use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex};
+use gpui_kit::component::scroll::ScrollableMask;
+use gpui_kit::component::{ActiveTheme as _, InteractiveElementExt as _, Sizable as _, h_flex};
 use gpui_kit::{
     App, Context, EventEmitter, InteractiveElement as _, IntoElement, ParentElement as _, Render,
-    SharedString, StatefulInteractiveElement as _, Styled as _, Subscription, TestSupportExt as _,
-    Window, div, prelude::FluentBuilder as _, rems,
+    ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
+    TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::SnippetId;
 use termlet_core::model::{Kind, Snippet};
@@ -43,6 +45,8 @@ pub fn toggle(cx: &mut App) {
 
 pub struct SnippetBar {
     snippets: Vec<Record<Snippet>>,
+    /// 按钮那一条的横向滚动
+    scroll: ScrollHandle,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -65,6 +69,7 @@ impl SnippetBar {
         ];
         let mut this = Self {
             snippets: Vec::new(),
+            scroll: ScrollHandle::new(),
             _subscriptions: subscriptions,
         };
         this.reload(cx);
@@ -181,15 +186,19 @@ impl Render for SnippetBar {
             })
             .child(
                 div()
-                    .id("snippet-bar-items")
+                    .relative()
                     .flex_1()
                     .min_w_0()
                     .h_full()
-                    .overflow_x_scroll()
                     .child(
                         h_flex()
-                            .h_full()
+                            .id("snippet-bar-items")
+                            .overflow_x_scroll()
+                            .lock_scroll_axis()
+                            .test_support()
+                            .size_full()
                             .gap_1()
+                            .track_scroll(&self.scroll)
                             .when(empty, |this| {
                                 this.child(
                                     div()
@@ -209,7 +218,9 @@ impl Render for SnippetBar {
                                 )
                             })
                             .children(items),
-                    ),
+                    )
+                    // 鼠标滚轮的竖向滚动换成横向（gpui-kit 的 Tab 栏也是这样做的）
+                    .child(ScrollableMask::vertical_wheel(&self.scroll)),
             )
             .child(
                 Button::new("snippet-bar-close")
@@ -219,5 +230,91 @@ impl Render for SnippetBar {
                     .tooltip(t!("snippets.bar.hide"))
                     .on_click(|_, _, cx| toggle(cx)),
             )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui_kit::test::TestWindowExt as _;
+    use gpui_kit::{
+        AppContext as _, Bounds, ScrollDelta, TestAppContext, WindowBounds, WindowOptions, point,
+        px, size,
+    };
+    use termlet_core::store::Position;
+
+    use super::*;
+
+    // 按钮放不下时，鼠标滚轮（只有竖向）把这一条向左滚：最后一个按钮滚进视野，完整露出
+    #[gpui_kit::test]
+    fn wheel_scrolls_the_bar_sideways(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(crate::init);
+        cx.update(AppState::install_in_memory);
+        let last = cx.update(|cx| {
+            let store = AppState::store(cx);
+            (0..20)
+                .map(|ix| {
+                    store
+                        .create(
+                            Snippet {
+                                name: format!("快捷命令 {ix:02}"),
+                                content: format!("echo {ix}"),
+                                ..Default::default()
+                            },
+                            None,
+                            Position::Last,
+                        )
+                        .unwrap()
+                })
+                .collect::<Vec<_>>()
+                .pop()
+                .unwrap()
+        });
+        let (handle, _) = cx
+            .update(|cx| {
+                gpui_kit::open_window(
+                    WindowOptions {
+                        window_bounds: Some(WindowBounds::Windowed(Bounds::new(
+                            Default::default(),
+                            size(px(480.), px(120.)),
+                        ))),
+                        ..Default::default()
+                    },
+                    cx,
+                    |_, cx| cx.new(SnippetBar::new),
+                )
+            })
+            .unwrap();
+        cx.run_until_parked();
+        let last = SharedString::from(format!("snippet-bar-{last}"));
+        let (strip, before) = cx
+            .update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                (
+                    window.find("snippet-bar-items").bounds(),
+                    window.find(last.clone()).bounds(),
+                )
+            })
+            .unwrap();
+        assert!(before.right() > strip.right(), "放不下：最后一个在右边外面");
+        cx.update_window(handle, |_, window, cx| {
+            window.scroll(
+                "snippet-bar-items",
+                ScrollDelta::Lines(point(0., -100.)),
+                cx,
+            );
+        })
+        .unwrap();
+        cx.run_until_parked();
+        let after = cx
+            .update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                window.find(last.clone()).bounds()
+            })
+            .unwrap();
+        assert!(
+            after.left() >= strip.left() && after.right() <= strip.right(),
+            "滚到最后：最后一个完整露出（{after:?}，可见部分 {strip:?}）"
+        );
     }
 }

@@ -397,7 +397,7 @@ fn build_plan(
         None
     };
     Ok(TelnetPlan {
-        label: host.name.clone(),
+        label: host.display_name().to_string(),
         address: host.address.clone(),
         port: host.effective_port(),
         username,

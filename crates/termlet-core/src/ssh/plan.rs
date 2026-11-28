@@ -391,7 +391,7 @@ fn resolve_hop(
     let proxy = proxy_plan(host, chain, own)?;
 
     Ok(Hop {
-        label: host.name.clone(),
+        label: host.display_name().to_string(),
         host_id: host_id.cloned(),
         address: host.address.clone(),
         port: host.effective_port(),
@@ -418,7 +418,7 @@ pub(crate) fn proxy_plan(
             username: proxy.username.clone(),
             password: own(SecretField::ProxyPassword)?,
             command: proxy.command.clone(),
-            alias: host.name.clone(),
+            alias: host.display_name().to_string(),
             from_group: None,
         }));
     }
@@ -434,7 +434,7 @@ pub(crate) fn proxy_plan(
             username: String::new(),
             password: None,
             command: command.to_string(),
-            alias: host.name.clone(),
+            alias: host.display_name().to_string(),
             from_group: Some(g.doc.name.clone()),
         })
     }))
@@ -584,6 +584,29 @@ mod tests {
             secrets: &secrets,
         };
         assert!(plan_for_draft(&store, &draft).is_err());
+    }
+
+    // 对话框中还没填名称的主机：询问（密码、指纹、代理命令的确认）与代理命令的 %n 用地址，与保存时的规则相同
+    #[test]
+    fn draft_without_a_name_is_labelled_by_its_address() {
+        let store = memory_store();
+        let mut doc = host("");
+        doc.address = "10.0.0.5".into();
+        doc.proxy = Some(crate::model::Proxy {
+            kind: ProxyKind::Command,
+            command: "nc %h %p".into(),
+            ..Default::default()
+        });
+        let secrets = SecretEdits::default();
+        let draft = HostDraft {
+            id: None,
+            group: None,
+            host: &doc,
+            secrets: &secrets,
+        };
+        let plan = plan_for_draft(&store, &draft).unwrap();
+        assert_eq!(plan.target().label, "10.0.0.5");
+        assert_eq!(plan.target().proxy.as_ref().unwrap().alias, "10.0.0.5");
     }
 
     #[test]

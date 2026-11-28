@@ -707,6 +707,18 @@ host.test.running:
   zh-TW: 正在連線…
   ja: 接続しています…
   ko: 연결하는 중…
+host.test.copy:
+  zh-CN: 复制错误信息
+  en: Copy error
+  zh-TW: 複製錯誤訊息
+  ja: エラーをコピー
+  ko: 오류 복사
+host.test.copied:
+  zh-CN: 已复制错误信息
+  en: Error copied
+  zh-TW: 已複製錯誤訊息
+  ja: エラーをコピーしました
+  ko: 오류를 복사했습니다
 host.test.passed:
   zh-CN: 连接成功，耗时 %{ms} ms（%{version}）
   en: Connected in %{ms} ms (%{version})

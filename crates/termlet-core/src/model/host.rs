@@ -428,6 +428,14 @@ impl Host {
         self.protocol == Protocol::Ssh
     }
 
+    /// 显示用的名称：没填名称时（对话框中还没保存的主机）用地址，与保存时的规则相同。
+    pub fn display_name(&self) -> &str {
+        match self.name.trim() {
+            "" => self.address.trim(),
+            name => name,
+        }
+    }
+
     /// 识别出的系统；没有识别过、键不认识时为 `None`。只有 SSH 主机识别（Telnet、串口不识别）。
     pub fn remote_os(&self) -> Option<RemoteOs> {
         self.os.as_deref().and_then(RemoteOs::from_key)

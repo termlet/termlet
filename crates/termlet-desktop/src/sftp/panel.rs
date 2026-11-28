@@ -912,9 +912,7 @@ impl SftpPanel {
         self.dir = listing.path;
         self.error = None;
         if !editing {
-            let text = self.dir.clone();
-            self.path
-                .update(cx, |input, cx| input.set_value(text, window, cx));
+            super::show_path(&self.path, self.dir.clone(), window, cx);
         }
         if user
             && let Some(link) = &mut self.link
@@ -927,9 +925,7 @@ impl SftpPanel {
 
     /// 路径框恢复为当前目录。
     fn restore_path(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let text = self.dir.clone();
-        self.path
-            .update(cx, |input, cx| input.set_value(text, window, cx));
+        super::show_path(&self.path, self.dir.clone(), window, cx);
     }
 
     fn on_path_event(
@@ -950,10 +946,11 @@ impl SftpPanel {
                 self.load(path, true, window, cx);
                 self.list.focus_handle(cx).focus(window, cx);
             }
-            // 离开时有没提交的输入：恢复为当前目录
+            // 离开时有没提交的输入：恢复为当前目录；没改过的滚回末尾，露出当前目录名
             InputEvent::Blur if input.read(cx).value().as_ref() != self.dir.as_str() => {
                 self.restore_path(window, cx);
             }
+            InputEvent::Blur => input.update(cx, super::scroll_path_to_end),
             _ => {}
         }
     }
@@ -1270,6 +1267,12 @@ impl SftpPanel {
     #[cfg(test)]
     pub(crate) fn local_list(&self, cx: &App) -> Entity<FileList> {
         self.local.read(cx).list()
+    }
+
+    /// 本机栏的路径框（测试中核对显示的位置）。
+    #[cfg(test)]
+    pub(crate) fn local_path(&self, cx: &App) -> Entity<gpui_kit::component::input::InputState> {
+        self.local.read(cx).path_box()
     }
 
     /// 编辑路径（Ctrl+L、Alt+D）：路径框取得焦点，选中其中的全部文字。

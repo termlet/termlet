@@ -1487,12 +1487,11 @@ impl FileList {
                 // 显示出来的隐藏文件淡一些
                 .when(row.hidden, |this| this.opacity(HIDDEN_OPACITY))
                 .child(self.icon(&row.name, kind, cx))
-                .child(
-                    div()
-                        .min_w_0()
-                        .truncate()
-                        .child(list_model::visible_name(&row.name)),
-                )
+                // 长文件名截断时悬停显示全名（只有末尾不同的几个文件截断后看起来一样）
+                .child(crate::truncated::truncated(
+                    SharedString::from(format!("{}-name-{}", self.id, row.name)),
+                    list_model::visible_name(&row.name),
+                ))
                 .when(row.is_link, |this| {
                     this.child(
                         Icon::new(IconName::Link)
