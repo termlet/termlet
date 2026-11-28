@@ -923,7 +923,6 @@ mod tests {
     // SSH 主机的 Tab 菜单中有“复制 IP”（主机连不上也一样）；本地终端的没有
     #[gpui_kit::test]
     fn host_tab_menu_copies_the_address(cx: &mut TestAppContext) {
-        use gpui_kit::test::TestWindowExt as _;
         use termlet_core::model::Host;
         use termlet_core::store::Position;
         cx.executor().allow_parking();
@@ -961,32 +960,11 @@ mod tests {
         wait(cx, "两个 Tab", |cx| {
             workspace.read(cx).live_terminals().len() == 2
         });
-        let labels = |cx: &mut TestAppContext, ix: usize| {
+        // `submenu` 为子菜单的名称：给了时列出子菜单中的项
+        let labels = |cx: &mut TestAppContext, ix: usize, submenu: Option<&str>| {
             let id = cx
                 .update(|cx| workspace.read(cx).live_terminals()[ix].entity_id().as_u64() as usize);
-            cx.update_window(handle, |_, window, cx| {
-                window.render_frame(cx);
-                window.right_click(("tab-title", id), cx);
-            })
-            .unwrap();
-            cx.run_until_parked();
-            let labels: Vec<String> = cx
-                .update_window(handle, |_, window, cx| {
-                    window.render_frame(cx);
-                    let menu = window.within("popup-menu");
-                    (0..30usize)
-                        .map_while(|i| {
-                            menu.try_find(i)
-                                .map(|item| item.label().map(str::to_string))
-                        })
-                        .flatten()
-                        .collect()
-                })
-                .unwrap();
-            cx.update_window(handle, |_, window, cx| window.press("escape", cx))
-                .unwrap();
-            cx.run_until_parked();
-            labels
+            crate::testkit::menu_labels_in(cx, handle, ("tab-title", id), submenu)
         };
         let copy_ip = crate::t!("hosts.menu.copy_ip").to_string();
         let (ssh, local): (Vec<_>, Vec<_>) = cx.update(|cx| {
@@ -998,11 +976,16 @@ mod tests {
                 .map(|(ix, t)| (ix, t.read(cx).is_ssh()))
                 .partition(|(_, ssh)| *ssh)
         });
+        let host_menu = crate::t!("panel.menu.host").to_string();
         assert!(
-            labels(cx, ssh[0].0).contains(&copy_ip),
-            "SSH 的 Tab 有复制 IP"
+            labels(cx, ssh[0].0, Some(&host_menu)).contains(&copy_ip),
+            "SSH 的 Tab 在“主机 ›”中有复制 IP"
         );
-        assert!(!labels(cx, local[0].0).contains(&copy_ip), "本地终端没有");
+        let local_labels = labels(cx, local[0].0, None);
+        assert!(
+            !local_labels.contains(&copy_ip) && !local_labels.contains(&host_menu),
+            "本地终端没有：{local_labels:?}"
+        );
     }
 
     // Tab 栏是自己画的（见 dock_skin），点 Tab 仍能切换过去

@@ -113,53 +113,39 @@ fn tab_title(panel: &Entity<SftpPanel>) -> ElementId {
     ("sftp-tab-title", panel.entity_id().as_u64() as usize).into()
 }
 
-/// 右键 Tab 标题弹出的菜单中的全部文案。
+/// 右键 Tab 标题弹出的菜单中的全部文案；有“打开方式 ›”时连同其中的项。
 fn tab_menu(
     cx: &mut TestAppContext,
     handle: AnyWindowHandle,
     panel: &Entity<SftpPanel>,
 ) -> Vec<String> {
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        window.right_click(tab_title(panel), cx);
-    })
-    .unwrap();
-    cx.run_until_parked();
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        let menu = window.within("popup-menu");
-        (0..40)
-            .map_while(|ix| menu.try_find(ix))
-            .filter_map(|item| item.label().map(str::to_string))
-            .collect()
-    })
-    .unwrap()
+    let open_with = t!("sftp.menu.open_with").to_string();
+    let mut labels = crate::testkit::menu_labels_in(cx, handle, tab_title(panel), None);
+    if labels.contains(&open_with) {
+        labels.extend(crate::testkit::menu_labels_in(
+            cx,
+            handle,
+            tab_title(panel),
+            Some(&open_with),
+        ));
+    }
+    labels
 }
 
-/// 关掉菜单。
-fn close_menu(cx: &mut TestAppContext, handle: AnyWindowHandle) {
-    cx.update_window(handle, |_, window, cx| window.press("escape", cx))
-        .unwrap();
-    cx.run_until_parked();
-}
+/// 关掉菜单（[`tab_menu`] 已经关了，这里什么也不用做）。
+fn close_menu(_: &mut TestAppContext, _: AnyWindowHandle) {}
 
-/// 点菜单中文案为 `label` 的一项。
+/// 点菜单中文案为 `label` 的一项（不在顶层时在“打开方式 ›”中）。
 fn click_menu(
     cx: &mut TestAppContext,
     handle: AnyWindowHandle,
     panel: &Entity<SftpPanel>,
     label: &str,
 ) {
-    let labels = tab_menu(cx, handle, panel);
-    let ix = labels
-        .iter()
-        .position(|l| l == label)
-        .unwrap_or_else(|| panic!("菜单中没有“{label}”：{labels:?}"));
-    cx.update_window(handle, |_, window, cx| {
-        window.within("popup-menu").click(ix, cx);
-    })
-    .unwrap();
-    cx.run_until_parked();
+    let open_with = t!("sftp.menu.open_with").to_string();
+    let top = crate::testkit::menu_labels_in(cx, handle, tab_title(panel), None);
+    let submenu = (!top.iter().any(|l| l == label)).then_some(open_with.as_str());
+    crate::testkit::click_menu_in(cx, handle, tab_title(panel), submenu, label);
 }
 
 fn open_label(editor: Editor) -> String {

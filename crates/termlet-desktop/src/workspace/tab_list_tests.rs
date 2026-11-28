@@ -513,6 +513,42 @@ fn group_by_host_folds_tabs_of_the_same_host(cx: &mut TestAppContext) {
     assert_eq!(groups(cx, &workspace).concat().len(), 3, "只影响显示");
 }
 
+// 终端的 Tab 菜单（横排）：子菜单中的动作照样派发给这个终端（“分屏与窗口 › 向右分屏”分出第二个窗格）；本地终端
+// 没有“主机 ›”；“日志与录制 ›”中有回放用的“打开录制文件…”
+#[gpui_kit::test]
+fn tab_menu_submenus_act_on_the_terminal(cx: &mut TestAppContext) {
+    let (handle, workspace) = open(cx, 1024., 640.);
+    let ids = open_terminals(cx, handle, &workspace, 1);
+    let tab = terminal_title(ids[0]);
+    let top = crate::testkit::menu_labels_in(cx, handle, tab.clone(), None);
+    assert!(
+        top.contains(&t!("panel.menu.layout").to_string()),
+        "{top:?}"
+    );
+    assert!(
+        !top.contains(&t!("panel.menu.host").to_string()),
+        "本地终端没有“主机 ›”：{top:?}"
+    );
+    let record = t!("panel.menu.log_record");
+    let labels = crate::testkit::menu_labels_in(cx, handle, tab.clone(), Some(&record));
+    assert!(
+        labels.contains(&t!("palette.op.open_recording").to_string()),
+        "{labels:?}"
+    );
+    let layout = t!("panel.menu.layout");
+    assert!(crate::testkit::click_menu_in(
+        cx,
+        handle,
+        tab,
+        Some(&layout),
+        &t!("panel.menu.split_right")
+    ));
+    poll_until(cx, "分出第二个窗格", |cx| {
+        panes(cx, &workspace).len() == 2
+            && cx.update(|cx| workspace.read(cx).live_terminals().len()) == 2
+    });
+}
+
 // 右键一行是与横排相同的 Tab 菜单，先切到这个 Tab（菜单中的操作派发给显示着的终端），菜单关掉后焦点在它上面；中键
 // 关闭；悬停时行尾出现关闭按钮，点它关闭
 #[gpui_kit::test]

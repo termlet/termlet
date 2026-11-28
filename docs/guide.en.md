@@ -224,7 +224,7 @@ Notes:
 
 ### Copying the address and duplicating hosts
 
-- The host's context menu (and the tab menu of terminals and SFTP) has "Copy IP address" ("Copy host name" when the address is a domain name); it copies the address only, without the port.
+- The host's context menu (and "Host ›" in a terminal's tab menu, and the SFTP tab menu) has "Copy IP address" ("Copy host name" when the address is a domain name); it copies the address only, without the port.
 - "Duplicate" in the context menu creates a copy right after the host ("Name - Copy") with the same settings and saved password, private key and verification-code secret.
 - Favorites, command-line tool access and its separate credentials, and port forwarding rules are not copied, so a copy pointed at another address doesn't let AI tools connect on its own, and two connected copies don't fight over the same local port.
 
@@ -467,7 +467,7 @@ Notes:
 - `ssh -p 2222 user@address`, `ssh://user@address:port` and IPv6 also work.
 - A dialog asks for the password when the server wants one; keys in ssh-agent are tried first.
 - Like connections opened by bastion hosts, it also accepts legacy algorithms (secure ones still come first).
-- "Save to Host List…" in the tab menu keeps it as a host (with the address, port and user filled in).
+- "Save to Host List…" under "Host ›" in the tab menu keeps it as a host (with the address, port and user filled in).
 
 ### IPv6 and dual stack
 
@@ -554,10 +554,14 @@ Default shortcuts:
 ### Tab menu and right-click
 
 - **Tab menu**: right-click a tab (terminal, SFTP or editor) to open the menu of that tab; "tab menu" in this guide refers to it.
-  - The tab menu of terminals and SFTP connected to a server has "Copy IP address".
-  - For saved hosts it has "Reveal Host in Sidebar" (shows the sidebar if it is hidden, clears the search, expands the host's groups and selects it; also in the command palette).
+  - A terminal's tab menu starts with "Duplicate session" and "Reconnect"; the rest is in three submenus, followed by "Color Scheme…" and "Server encoding ›":
+    - "Splits and Windows ›": split right or down, sync input, move to a new window or another window (each window listed directly), and "Save as Workspace…".
+    - "Host ›": "Copy IP address", "Reveal Host in Sidebar" ("Save to Host List…" for temporary connections), "Command History…", "Add a Port Forward for This Host…" and "Lend Local Proxy to the Server…". With fewer than three of these they are listed in the menu itself; local terminals have none.
+    - "Logging and Recording ›": start or stop the session log, start or stop recording, open the folder they are in, and "Open Recording…" to play one back.
+  - An SFTP tab menu has "Refresh", "Reconnect", "Open With ›" (open as root, open in VS Code or Zed; listed directly with fewer than three), "Copy IP address" and "Reveal Host in Sidebar".
+  - "Reveal Host in Sidebar" shows the sidebar if it is hidden, clears the search, expands the host's groups and selects it; it is also in the command palette.
   - It ends with "Close", "Close Others", "Close to the Right" ("Close Below" with vertical tabs) and "Close All". The last three only close tabs in the same pane as that tab (other split panes stay open), with one confirmation for all of them.
-  - Below them are "Move to New Window" and "Move to Window ›" (when other windows are open, listing the tab each of them shows); see [Tabs, panes and workspaces](#tabs-panes-and-workspaces).
+  - The tab menus of SFTP, editors and others then have "Move to New Window" and "Move to Window ›" (when other windows are open, listing the tab each of them shows); for terminals they are in "Splits and Windows ›". See [Tabs, panes and workspaces](#tabs-panes-and-workspaces).
 - **Right-click** in the terminal: copies when text is selected, otherwise pastes. Under Settings → Terminal it can always paste, or show a menu (copy, paste, select all, find, clear, encoding).
 
 ### Paste protection
@@ -585,7 +589,7 @@ Default shortcuts:
 
 ### Session logs
 
-- Start or stop with "Start Session Log" / "Stop Session Log" in the tab menu, or turn on "Record session logs automatically" under Settings → Terminal.
+- Start or stop with "Start Session Log" / "Stop Session Log" under "Logging and Recording ›" in the tab menu, or turn on "Record session logs automatically" under Settings → Terminal.
 - Logs are plain text: colors and other control sequences are removed, progress bars keep only their final state, and each line has a timestamp.
 - Screens of full-screen programs like vim are not recorded.
 - Each file is capped at 100MB.
@@ -595,7 +599,7 @@ Default shortcuts:
 ### Session recording and playback
 
 - **Recording**:
-  - Use "Start Recording" / "Stop Recording" in the tab menu or the command palette, or turn on "Record sessions automatically" under Terminal in a host's settings.
+  - Use "Start Recording" / "Stop Recording" under "Logging and Recording ›" in the tab menu or in the command palette, or turn on "Record sessions automatically" under Terminal in a host's settings.
   - A recording keeps the screen changes with their timing (colors, full-screen programs like vim and terminal resizes included) in the asciicast v2 format (`.cast`, playable with asciinema).
   - It starts with a copy of the current screen, and recording tabs show a red dot and the elapsed time.
   - Input is not recorded by default (it may contain passwords); turn on "Also record input in session recordings" under Settings → Terminal to include it.
@@ -663,7 +667,7 @@ Default shortcuts:
 
 - Each line you run with Enter is recorded (also when completed with Tab or recalled with the arrow keys), encrypted on this computer, keeping the latest 1000 per host.
 - Use it from the snippet picker (Shift+Delete deletes, Ctrl+S saves as a snippet).
-- "Command History…" in a host's context menu or a terminal's tab menu opens that host's history to search, type into the terminal (click), run (double-click), save as snippet, delete or clear.
+- "Command History…" in a host's context menu or under "Host ›" in a terminal's tab menu opens that host's history to search, type into the terminal (click), run (double-click), save as snippet, delete or clear.
 - Input in full-screen programs, hidden password input and commands starting with a space are not recorded.
 - The command-line tool and AI cannot see the history.
 - It can be turned off or cleared under Settings → Terminal.
@@ -690,7 +694,7 @@ Default shortcuts:
 - Middle-click a tab to close it (the same as its ×, asking first where that would).
 - When the tabs don't fit, scroll the mouse wheel over the tab bar to move along them.
 - **Moving tabs to another window**:
-  - Use "Move to New Window" and "Move to Window ›" in the tab menu, "Move tab to new window" in the command palette (no shortcut by default; you can assign one in Settings), or drag a tab out of the window and release it.
+  - Use "Move to New Window" and the windows listed under "Splits and Windows ›" in a terminal's tab menu ("Move to New Window" and "Move to Window ›" in other tab menus), "Move tab to new window" in the command palette (no shortcut by default; you can assign one in Settings), or drag a tab out of the window and release it.
   - Released on another Termlet window, it moves there; anywhere else, a new window opens where you release it.
   - While you drag outside, the window shows what releasing will do. A window's only tab can only go to another window.
   - Moving disconnects nothing:
@@ -702,8 +706,8 @@ Default shortcuts:
   - Terminals and SFTP can't move while they are connecting (you'll be told why).
   - A password you typed in the old window but didn't save is asked again the next time the moved tab reconnects.
   - A window whose last tab moves away stays open and shows the start page.
-- **Split panes**: the tab menu splits a tab right or down (the new pane shares the terminal's connection, no new login); to put SFTP next to a terminal, drag the SFTP tab onto one side of the terminal's content; drag the divider to resize.
-- **Workspaces**: "Save as Workspace…" remembers the layout and each pane's host; double-click it under "Workspaces" at the top of the sidebar to open all its sessions at once.
+- **Split panes**: "Splits and Windows ›" in the tab menu splits a tab right or down (the new pane shares the terminal's connection, no new login); to put SFTP next to a terminal, drag the SFTP tab onto one side of the terminal's content; drag the divider to resize.
+- **Workspaces**: "Save as Workspace…" ("Splits and Windows ›" in the tab menu, or the command palette) remembers the layout and each pane's host; double-click it under "Workspaces" at the top of the sidebar to open all its sessions at once.
 - **Duplicate session**: opens another tab for the current host over the same connection, with no password or verification code.
 
 ### Vertical tabs
@@ -736,7 +740,7 @@ Default shortcuts:
 ### Sync input
 
 - Like MobaXterm's MultiExec.
-- Start it with Ctrl+Shift+I, the grid button in the title bar, the tab menu or the command palette (it needs at least two connected terminals).
+- Start it with Ctrl+Shift+I, the grid button in the title bar, "Splits and Windows ›" in the tab menu or the command palette (it needs at least two connected terminals).
 - The terminals in the window are tiled in a grid for the time being.
 - Whatever you type in a synced terminal goes to every synced terminal, key by key: arrow keys, Tab completion and Ctrl+C all work, and you can see each terminal's completion result.
 - Controls:
@@ -903,7 +907,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Opening as root
 
-- "Open SFTP as root" in a host's context menu or the SFTP tab menu starts the server's sftp-server through sudo (its location is read from sshd_config, then common locations are tried), so you can edit files only root may write, such as those under `/etc`.
+- "Open SFTP as root" in a host's context menu or the SFTP tab menu ("Open With ›") starts the server's sftp-server through sudo (its location is read from sshd_config, then common locations are tried), so you can edit files only root may write, such as those under `/etc`.
 - Passwordless sudo (including a rule that only allows sftp-server) opens directly.
 - Otherwise you are asked for the password, and a saved login password can be used in one click. The password only goes to sudo and never into the file transfer.
 - The tab and toolbar show a red root badge.
@@ -1063,7 +1067,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Opening in VS Code / Zed
 
-- "Open in VS Code" and "Open in Zed" are in the remote pane's context menu (opening the selected folder, or the current folder when nothing is selected) and the SFTP tab menu.
+- "Open in VS Code" and "Open in Zed" are in the remote pane's context menu (opening the selected folder, or the current folder when nothing is selected) and the SFTP tab menu ("Open With ›").
 - They appear only when the editor is installed on this computer (Settings → General can keep just one or hide both, for this computer).
 - The editor connects with its own ssh (VS Code needs the Remote - SSH extension).
 - If `~/.ssh/config` has a Host for this server (address, user and port), it's opened with that Host.
@@ -1153,7 +1157,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Adding forwards while connected
 
-- "Add a Port Forward for This Host…" in a terminal's tab menu can start it at once over the terminal's connection.
+- "Add a Port Forward for This Host…" under "Host ›" in a terminal's tab menu can start it at once over the terminal's connection.
 - For local forwards, "Detect Server Ports" lists the ports listening on the server.
 
 ### Stopping and starting automatically
@@ -1163,7 +1167,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
 
 ### Lending your local proxy to the server
 
-- When the server can't reach the internet to install packages or pull images, choose "Lend Local Proxy to the Server…" in the terminal tab menu to lend your local HTTP proxy to the server (SSH remote forwarding; the server listens only on `127.0.0.1`).
+- When the server can't reach the internet to install packages or pull images, choose "Lend Local Proxy to the Server…" under "Host ›" in the terminal tab menu to lend your local HTTP proxy to the server (SSH remote forwarding; the server listens only on `127.0.0.1`).
 - The local proxy defaults to the system proxy settings (Internet Options on Windows, network settings on macOS, otherwise variables such as `https_proxy`). If none is found, enter it yourself (e.g. Clash's `127.0.0.1:7890`; HTTP proxies only).
 - The port on the server is picked by the server unless you enter a fixed one (if that one is taken, the server picks another and says so).
 - Both are kept on this computer only, not synced, and can also be changed under Settings → Connection.
@@ -1437,7 +1441,7 @@ The compose bar, sync input and snippets only *send* text, and you read the resu
   - legacy algorithms used by old bastion hosts are accepted (secure ones still come first);
   - without a password, keys in ssh-agent are tried first.
 - It uses a single channel (many bastion hosts close the session when a second channel opens on the same connection), so there is no resource monitor, host tools, duplicate session, split pane, SFTP opened from the terminal or command history.
-- "Save to Host List…" in the tab menu keeps it as a host (with the address, port, user and password filled in).
+- "Save to Host List…" under "Host ›" in the tab menu keeps it as a host (with the address, port, user and password filled in).
 - For a bastion host saved in the host list, check "Use a single channel (bastion host)" on the host's Connection page for the same protection (duplicating a session opens a new connection instead).
 - When a server refuses extra channels, Termlet also remembers it and stops trying (except when the connection merely reached the server's session limit, MaxSessions; then it retries later).
 - JumpServer's connection tokens are single-use, so after a disconnect go back to the web page and click "Connect" again.

@@ -177,18 +177,29 @@ pub(crate) fn menu_items(
     store: &Store,
     cx: &App,
 ) -> PopupMenu {
-    let mut menu = menu;
-    for editor in editors_for(target, store, cx) {
-        let (target, path) = (target.clone(), path.clone());
-        menu = menu.item(
+    items(target, path, store, cx)
+        .into_iter()
+        .fold(menu, |menu, item| menu.item(item))
+}
+
+/// “在 VS Code 中打开”等项（打开 `path`）；没有可用的编辑器时为空。
+pub(crate) fn items(
+    target: &SftpTarget,
+    path: String,
+    store: &Store,
+    cx: &App,
+) -> Vec<PopupMenuItem> {
+    editors_for(target, store, cx)
+        .into_iter()
+        .map(|editor| {
+            let (target, path) = (target.clone(), path.clone());
             PopupMenuItem::new(t!("sftp.editor.open", editor = editor.name())).on_click(
                 move |_: &ClickEvent, window: &mut Window, cx: &mut App| {
                     open(editor, &target, &path, window, cx)
                 },
-            ),
-        );
-    }
-    menu
+            )
+        })
+        .collect()
 }
 
 /// 编辑器要连的地方：从连接计划中取出地址、用户、端口与登录方式。

@@ -189,17 +189,36 @@ fn context_menus_stay_short(cx: &mut TestAppContext) {
     cx.run_until_parked();
     let panel = cx.update(|cx| PanelId::from(workspace.read(cx).live_terminals()[0].entity_id()));
 
-    // 终端 Tab 菜单：现在 20 项（目标 12，硬上限 16）、5 组
+    // 终端 Tab 菜单：现在 11 项、4 组（分屏与窗口、主机、日志与录制收进子菜单）
     let tab: ElementId = ("tab-title", panel.as_u64() as usize).into();
     let (items, groups) = right_click_menu(cx, handle, tab);
-    const TAB_MENU_ITEMS: usize = 20;
     assert!(
-        items <= TAB_MENU_ITEMS,
-        "终端 Tab 菜单 {items} 项，上限 {TAB_MENU_ITEMS}（目标 {MENU_ITEMS_TARGET}）"
+        items <= MENU_ITEMS_TARGET,
+        "终端 Tab 菜单 {items} 项，上限 {MENU_ITEMS_TARGET}"
     );
     assert!(
         groups <= MENU_GROUPS_TARGET,
         "终端 Tab 菜单 {groups} 组，上限 {MENU_GROUPS_TARGET}"
+    );
+
+    // 同一台主机的 SFTP Tab 菜单：现在 10 项、3 组（以 root 身份打开与各编辑器凑满 3 项时收进“打开方式 ›”）
+    let sftp = cx
+        .update_window(handle, |_, window, cx| {
+            let terminal = workspace.read(cx).live_terminals()[0].clone();
+            workspace.update(cx, |w, cx| w.open_sftp_for_terminal(terminal, window, cx))
+        })
+        .unwrap()
+        .expect("SFTP 的 Tab");
+    cx.run_until_parked();
+    let tab: ElementId = ("sftp-tab-title", sftp.entity_id().as_u64() as usize).into();
+    let (items, groups) = right_click_menu(cx, handle, tab);
+    assert!(
+        items <= MENU_ITEMS_TARGET,
+        "SFTP Tab 菜单 {items} 项，上限 {MENU_ITEMS_TARGET}"
+    );
+    assert!(
+        groups <= MENU_GROUPS_TARGET,
+        "SFTP Tab 菜单 {groups} 组，上限 {MENU_GROUPS_TARGET}"
     );
 
     // 侧边栏的主机：现在 10 项、3 组

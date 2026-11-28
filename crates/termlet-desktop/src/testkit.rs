@@ -1,12 +1,13 @@
-//! 单元测试共用的辅助：打开主窗口、展开主机树、轮询等待后台的操作、真实 sshd 的测试容器、检查导航的分页名放不放得下。
+//! 单元测试共用的辅助：打开主窗口、展开主机树、轮询等待后台的操作、真实 sshd 的测试容器、检查导航的分页名放不放得下、
+//! 右键菜单（含一层子菜单）中按名称找项、点项。
 //!
 //! 集成测试（`tests/ui.rs`）用不了只在 `cfg(test)` 中编译的库代码，那里另有自己的一份 `wait_until`、`test_server`。
 
 use std::time::{Duration, Instant};
 
-use gpui_kit::test::TestWindowExt as _;
+use gpui_kit::test::{ScopedWindow, TestWindowExt as _};
 use gpui_kit::{
-    AnyWindowHandle, App, AppContext as _, Bounds, SharedString, TestAppContext, Window,
+    AnyWindowHandle, App, AppContext as _, Bounds, ElementId, SharedString, TestAppContext, Window,
     WindowBounds, WindowOptions, px, rems, size,
 };
 
@@ -155,4 +156,112 @@ pub(crate) fn test_server() -> Option<(String, u16)> {
     let value = std::env::var("TERMLET_TEST_SSH").ok()?;
     let (host, port) = value.rsplit_once(':')?;
     Some((host.to_string(), port.parse().ok()?))
+}
+
+/// 弹出着的菜单（`nested` 时是其中打开着的子菜单）里的操作。子菜单画在菜单项之下（gpui-kit 的 `submenu`），两层的
+/// 项都以序号为 ID：打开子菜单后在 `submenu` 之内找。
+fn in_menu<R>(window: &mut Window, nested: bool, f: impl FnOnce(&mut ScopedWindow<'_>) -> R) -> R {
+    if nested {
+        f(&mut window.within("submenu"))
+    } else {
+        f(&mut window.within("popup-menu"))
+    }
+}
+
+/// 菜单中名称为 `label` 的项的序号（分隔线也占一个序号）。
+fn menu_index(menu: &ScopedWindow<'_>, label: &str) -> usize {
+    (0..100usize)
+        .find(|ix| {
+            menu.try_find(*ix)
+                .is_some_and(|item| item.label() == Some(label))
+        })
+        .unwrap_or_else(|| panic!("菜单中没有“{label}”"))
+}
+
+/// 右键 `target` 打开菜单；有 `submenu` 时再悬停它打开子菜单。
+fn open_menu(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    target: ElementId,
+    submenu: Option<&str>,
+) {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.right_click(target, cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    if let Some(submenu) = submenu {
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            in_menu(window, false, |menu| {
+                let ix = menu_index(menu, submenu);
+                menu.hover(ix, cx);
+            });
+        })
+        .unwrap();
+        cx.run_until_parked();
+    }
+}
+
+/// 关掉还开着的菜单（子菜单与菜单各按一次 Esc），返回之前是否开着。
+fn close_menus(cx: &mut TestAppContext, handle: AnyWindowHandle) -> bool {
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        let open = !window.find_all("popup-menu").is_empty();
+        for _ in 0..2 {
+            if window.find_all("popup-menu").is_empty() {
+                break;
+            }
+            window.press("escape", cx);
+            window.render_frame(cx);
+        }
+        open
+    })
+    .unwrap()
+}
+
+/// 右键 `target`，返回菜单（有 `submenu` 时是这个子菜单）中各项的名称（分隔线不算），再关掉菜单。
+pub(crate) fn menu_labels_in(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    target: impl Into<ElementId>,
+    submenu: Option<&str>,
+) -> Vec<String> {
+    open_menu(cx, handle, target.into(), submenu);
+    let labels = cx
+        .update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            in_menu(window, submenu.is_some(), |menu| {
+                (0..100usize)
+                    .filter_map(|ix| menu.try_find(ix))
+                    .filter_map(|item| item.label().map(str::to_string))
+                    .collect()
+            })
+        })
+        .unwrap();
+    close_menus(cx, handle);
+    labels
+}
+
+/// 右键 `target`，点菜单（有 `submenu` 时是这个子菜单）中的 `label`；返回这一项是否可用（不可用的点了没有反应，
+/// 再按 Esc 关掉菜单）。
+pub(crate) fn click_menu_in(
+    cx: &mut TestAppContext,
+    handle: AnyWindowHandle,
+    target: impl Into<ElementId>,
+    submenu: Option<&str>,
+    label: &str,
+) -> bool {
+    open_menu(cx, handle, target.into(), submenu);
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        in_menu(window, submenu.is_some(), |menu| {
+            let ix = menu_index(menu, label);
+            menu.click(ix, cx);
+        });
+    })
+    .unwrap();
+    cx.run_until_parked();
+    !close_menus(cx, handle)
 }

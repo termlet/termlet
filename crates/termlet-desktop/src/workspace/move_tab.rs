@@ -831,32 +831,22 @@ pub(crate) fn move_tab_items(
     window: &mut Window,
     cx: &mut App,
 ) -> PopupMenu {
-    let alone = workspace.read(cx).tab_count(cx) < 2;
-    let move_to = |target: MoveTarget| {
-        let workspace = workspace.downgrade();
-        move |_: &ClickEvent, window: &mut Window, cx: &mut App| {
-            let _ = workspace.update(cx, |w, cx| w.move_tab(panel, target, window, cx));
-        }
-    };
-    let menu = menu.separator().item(
-        PopupMenuItem::new(t!("tab_window.move_to_new"))
-            .disabled(alone)
-            .on_click(move_to(MoveTarget::NewWindow { at: None })),
-    );
-    let others: Vec<(AnyWindowHandle, SharedString)> = other_windows(window.window_handle(), cx)
-        .into_iter()
-        .filter(|(_, w)| w.read(cx).accepts_tabs())
-        .map(|(handle, w)| (handle, w.read(cx).window_label(cx)))
-        .collect();
-    if others.is_empty() {
-        return menu;
-    }
-    let items: Vec<PopupMenuItem> = others
+    let menu = menu
+        .separator()
+        .item(move_to_new_item(workspace, panel, cx));
+    let items: Vec<PopupMenuItem> = target_windows(window, cx)
         .into_iter()
         .map(|(handle, label)| {
-            PopupMenuItem::new(label).on_click(move_to(MoveTarget::Window(handle)))
+            PopupMenuItem::new(label).on_click(move_to(
+                workspace,
+                panel,
+                MoveTarget::Window(handle),
+            ))
         })
         .collect();
+    if items.is_empty() {
+        return menu;
+    }
     let submenu = PopupMenu::build(window, cx, move |menu, _, _| {
         items.into_iter().fold(menu, |menu, item| menu.item(item))
     });
@@ -864,4 +854,59 @@ pub(crate) fn move_tab_items(
         t!("tab_window.move_to_window"),
         submenu,
     ))
+}
+
+/// 终端 Tab 菜单“分屏与窗口 ›”中移到窗口的项：“移到新窗口”，有别的窗口时每个窗口一项“移到“窗口名””（子菜单只有
+/// 一层，不再套“移到窗口 ›”）。不在工作区的窗口中时没有。
+pub(crate) fn move_tab_entries(
+    panel: PanelId,
+    window: &mut Window,
+    cx: &mut App,
+) -> Vec<PopupMenuItem> {
+    let Some(workspace) = Workspace::in_window(window, cx) else {
+        return Vec::new();
+    };
+    std::iter::once(move_to_new_item(&workspace, panel, cx))
+        .chain(
+            target_windows(window, cx)
+                .into_iter()
+                .map(|(handle, label)| {
+                    PopupMenuItem::new(t!("tab_window.move_to_named", window = label))
+                        .on_click(move_to(&workspace, panel, MoveTarget::Window(handle)))
+                }),
+        )
+        .collect()
+}
+
+/// “移到新窗口”：窗口里只有这一个 Tab 时不可用。
+fn move_to_new_item(workspace: &Entity<Workspace>, panel: PanelId, cx: &App) -> PopupMenuItem {
+    let alone = workspace.read(cx).tab_count(cx) < 2;
+    PopupMenuItem::new(t!("tab_window.move_to_new"))
+        .disabled(alone)
+        .on_click(move_to(
+            workspace,
+            panel,
+            MoveTarget::NewWindow { at: None },
+        ))
+}
+
+/// 可以把 Tab 移过去的别的窗口与它们的名称。
+fn target_windows(window: &Window, cx: &App) -> Vec<(AnyWindowHandle, SharedString)> {
+    other_windows(window.window_handle(), cx)
+        .into_iter()
+        .filter(|(_, w)| w.read(cx).accepts_tabs())
+        .map(|(handle, w)| (handle, w.read(cx).window_label(cx)))
+        .collect()
+}
+
+/// 点了把 `panel` 移到 `target`。
+fn move_to(
+    workspace: &Entity<Workspace>,
+    panel: PanelId,
+    target: MoveTarget,
+) -> impl Fn(&ClickEvent, &mut Window, &mut App) + 'static {
+    let workspace = workspace.downgrade();
+    move |_, window, cx| {
+        let _ = workspace.update(cx, |w, cx| w.move_tab(panel, target, window, cx));
+    }
 }

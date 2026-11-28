@@ -11,6 +11,12 @@ tab_window.move_to_window:
   zh-TW: 移到視窗
   ja: ウィンドウに移動
   ko: 창으로 이동
+tab_window.move_to_named:
+  zh-CN: 移到“%{window}”
+  en: Move to "%{window}"
+  zh-TW: 移到「%{window}」
+  ja: 「%{window}」に移動
+  ko: "'%{window}' 창으로 이동"
 tab_window.window_many:
   zh-CN: "%{name} 等 %{count} 个 Tab"
   en: "%{name} and others (%{count} tabs)"

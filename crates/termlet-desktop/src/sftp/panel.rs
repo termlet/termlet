@@ -1611,22 +1611,38 @@ impl Panel for SftpPanel {
                     .disabled(!self.can_reconnect())
                     .on_click(act(|this, window, cx| this.reconnect(window, cx))),
             );
-        // 以 root 身份另开一个 Tab（堡垒机“只用一个通道”、已经是 root 的没有）
-        let menu = match self.target.as_root(&self.store) {
-            Some(target) => menu.item(
+        // 打开方式：以 root 身份另开一个 Tab（堡垒机“只用一个通道”、已经是 root 的没有），在 VS Code、Zed 中打开当前
+        // 目录（装了的、设置允许的；还不知道目录时没有）。凑满 3 项时收进子菜单，否则直接列出
+        let mut open_with: Vec<PopupMenuItem> = Vec::new();
+        if let Some(target) = self.target.as_root(&self.store) {
+            open_with.push(
                 PopupMenuItem::new(match target {
                     SftpTarget::Wsl { .. } => t!("hosts.local.sftp_root"),
                     _ => t!("sftp.open_root"),
                 })
                 .on_click(act(|_, _, cx| cx.emit(SftpPanelEvent::OpenAsRoot))),
-            ),
-            None => menu,
-        };
-        // 在 VS Code、Zed 中打开当前目录（装了的、设置允许的；还不知道目录时没有）
-        let menu = if self.dir.is_empty() {
-            menu
+            );
+        }
+        if !self.dir.is_empty() {
+            open_with.extend(super::open_in_editor::items(
+                &self.target,
+                self.dir.clone(),
+                &self.store,
+                cx,
+            ));
+        }
+        let menu = if open_with.len() >= 3 {
+            let submenu =
+                gpui_kit::component::menu::PopupMenu::build(window, cx, move |menu, _, _| {
+                    open_with
+                        .into_iter()
+                        .fold(menu, |menu, item| menu.item(item))
+                });
+            menu.item(PopupMenuItem::submenu(t!("sftp.menu.open_with"), submenu))
         } else {
-            super::open_in_editor::menu_items(menu, &self.target, self.dir.clone(), &self.store, cx)
+            open_with
+                .into_iter()
+                .fold(menu, |menu, item| menu.item(item))
         };
         let menu = match self.target.address(&self.store) {
             Some(address) => menu.item(crate::copy_address_item(address)),

@@ -113,65 +113,27 @@ fn groups(cx: &mut TestAppContext, workspace: &Entity<Workspace>) -> Vec<Vec<Pan
     })
 }
 
-/// 右键 Tab 标题弹出的菜单中的全部文案。
+/// 终端的 Tab 菜单中“分屏与窗口 ›”里的全部文案（移到窗口的几项在这里）。
 fn menu_labels(cx: &mut TestAppContext, handle: AnyWindowHandle, title: ElementId) -> Vec<String> {
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        window.right_click(title, cx);
-    })
-    .unwrap();
-    cx.run_until_parked();
-    let labels = cx
-        .update_window(handle, |_, window, cx| {
-            window.render_frame(cx);
-            let menu = window.within("popup-menu");
-            (0..60usize)
-                .filter_map(|ix| menu.try_find(ix))
-                .filter_map(|item| item.label().map(str::to_string))
-                .collect()
-        })
-        .unwrap();
-    cx.update_window(handle, |_, window, cx| window.press("escape", cx))
-        .unwrap();
-    cx.run_until_parked();
-    labels
+    let layout = t!("panel.menu.layout");
+    crate::testkit::menu_labels_in(cx, handle, title, Some(&layout))
 }
 
-/// 右键 Tab 标题，点菜单中的 `label`；返回这一项是否可用（不可用的点了没有反应，再按 Esc 关掉菜单）。
+/// 右键 Tab 标题，点“分屏与窗口 ›”中的 `label`；返回这一项是否可用（不可用的点了没有反应，再按 Esc 关掉菜单）。
 fn click_menu(
     cx: &mut TestAppContext,
     handle: AnyWindowHandle,
     title: ElementId,
     label: &str,
 ) -> bool {
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        window.right_click(title, cx);
-    })
-    .unwrap();
-    cx.run_until_parked();
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        let mut menu = window.within("popup-menu");
-        let ix = (0..60usize)
-            .find(|i| {
-                menu.try_find(*i)
-                    .is_some_and(|item| item.label() == Some(label))
-            })
-            .unwrap_or_else(|| panic!("Tab 菜单中没有“{label}”"));
-        menu.click(ix, cx);
-    })
-    .unwrap();
-    cx.run_until_parked();
-    cx.update_window(handle, |_, window, cx| {
-        window.render_frame(cx);
-        let open = window.try_find("popup-menu").is_some();
-        if open {
-            window.press("escape", cx);
-        }
-        !open
-    })
-    .unwrap()
+    let layout = t!("panel.menu.layout");
+    crate::testkit::click_menu_in(cx, handle, title, Some(&layout), label)
+}
+
+/// “移到“窗口名””一项的开头（各窗口一项，后面是窗口名）。
+fn move_to_named_prefix() -> String {
+    let label = t!("tab_window.move_to_named", window = "\u{1}").to_string();
+    label.split('\u{1}').next().unwrap_or_default().to_string()
 }
 
 /// 除 `except` 以外唯一的另一个主窗口。
@@ -218,8 +180,10 @@ fn terminal_moved_to_a_new_window_keeps_its_session(cx: &mut TestAppContext) {
     let labels = menu_labels(cx, a, title(&first));
     assert!(labels.contains(&t!("tab_window.move_to_new").to_string()));
     assert!(
-        !labels.contains(&t!("tab_window.move_to_window").to_string()),
-        "没有别的窗口时没有“移到窗口”：{labels:?}"
+        !labels
+            .iter()
+            .any(|l| l.starts_with(&move_to_named_prefix())),
+        "没有别的窗口时没有移到别的窗口的项：{labels:?}"
     );
     assert!(click_menu(
         cx,
@@ -273,7 +237,7 @@ fn terminal_moved_to_a_new_window_keeps_its_session(cx: &mut TestAppContext) {
     });
 }
 
-// 移到已经打开的窗口（“移到窗口 ›”列出它）：移走最后一个 Tab 的窗口留着、显示开始页；放进去的窗口切到它
+// 移到已经打开的窗口（“分屏与窗口 ›”列出它）：移走最后一个 Tab 的窗口留着、显示开始页；放进去的窗口切到它
 #[gpui_kit::test]
 fn moving_the_last_tab_to_another_window_leaves_the_start_page(cx: &mut TestAppContext) {
     setup(cx);
@@ -282,9 +246,10 @@ fn moving_the_last_tab_to_another_window_leaves_the_start_page(cx: &mut TestAppC
     let first = open_local(cx, a, &ws_a);
     let other = open_local(cx, b, &ws_b);
     let labels = menu_labels(cx, a, title(&first));
+    let window_b = cx.update(|cx| ws_b.read(cx).window_label(cx));
     assert!(
-        labels.contains(&t!("tab_window.move_to_window").to_string()),
-        "有别的窗口时有“移到窗口”：{labels:?}"
+        labels.contains(&t!("tab_window.move_to_named", window = window_b).to_string()),
+        "有别的窗口时列出它：{labels:?}"
     );
     // 窗口里只有这一个 Tab：“移到新窗口”不可用
     assert!(!click_menu(

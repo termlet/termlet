@@ -3,7 +3,7 @@
 
 use gpui_kit::component::dock::{DockPlacement, PaneRef, PanelId};
 use gpui_kit::component::menu::{PopupMenu, PopupMenuItem};
-use gpui_kit::{App, ClickEvent, Context, EntityId, Window};
+use gpui_kit::{App, ClickEvent, Context, Entity, EntityId, Window};
 
 use super::Workspace;
 use crate::t;
@@ -165,8 +165,9 @@ impl Workspace {
 }
 
 /// Tab 菜单中“关闭”后面的“关闭其他 Tab”“关闭右侧 Tab”（Tab 竖排时为“关闭下方 Tab”）“关闭所有 Tab”（[`Workspace::close_tabs`]），以及“移到新窗口”
-/// “移到窗口 ›”（[`super::move_tab::move_tab_items`]），终端、文件管理、编辑器、日志查看器、回放共用；窗格中只有这一个
-/// Tab 时“关闭其他 Tab”不可用，它是最右边一个时“关闭右侧 Tab”不可用。
+/// “移到窗口 ›”（[`super::move_tab::move_tab_items`]），文件管理、编辑器、日志查看器、回放等共用；窗格中只有这一个
+/// Tab 时“关闭其他 Tab”不可用，它是最右边一个时“关闭右侧 Tab”不可用。终端的 Tab 菜单把移到窗口收在“分屏与窗口 ›”中，
+/// 用 [`close_tab_items_without_move`]。
 pub(crate) fn close_tab_items(
     menu: PopupMenu,
     panel: EntityId,
@@ -177,6 +178,30 @@ pub(crate) fn close_tab_items(
         return menu;
     };
     let panel = PanelId::from(panel);
+    let menu = close_some_items(menu, &workspace, panel, cx);
+    super::move_tab::move_tab_items(menu, &workspace, panel, window, cx)
+}
+
+/// 同 [`close_tab_items`]，只有关闭的三项，不带移到窗口。
+pub(crate) fn close_tab_items_without_move(
+    menu: PopupMenu,
+    panel: EntityId,
+    window: &mut Window,
+    cx: &mut App,
+) -> PopupMenu {
+    match Workspace::in_window(window, cx) {
+        Some(workspace) => close_some_items(menu, &workspace, PanelId::from(panel), cx),
+        None => menu,
+    }
+}
+
+/// “关闭其他 Tab”“关闭右侧 Tab”“关闭所有 Tab”。
+fn close_some_items(
+    menu: PopupMenu,
+    workspace: &Entity<Workspace>,
+    panel: PanelId,
+    cx: &mut App,
+) -> PopupMenu {
     let group = workspace.read(cx).tab_group_of(panel, cx);
     let is_last = group.last() == Some(&panel);
     let close = |which: CloseTabs| {
@@ -187,24 +212,22 @@ pub(crate) fn close_tab_items(
             });
         }
     };
-    let menu = menu
-        .item(
-            PopupMenuItem::new(t!("panel.close_others"))
-                .disabled(group.len() < 2)
-                .on_click(close(CloseTabs::Others)),
-        )
-        .item(
-            // Tab 竖排在左侧时，排在后面的 Tab 在下方
-            PopupMenuItem::new(if Workspace::tabs_on_left(cx) {
-                t!("panel.close_below")
-            } else {
-                t!("panel.close_right")
-            })
-            .disabled(is_last)
-            .on_click(close(CloseTabs::ToTheRight)),
-        )
-        .item(PopupMenuItem::new(t!("panel.close_all")).on_click(close(CloseTabs::All)));
-    super::move_tab::move_tab_items(menu, &workspace, panel, window, cx)
+    menu.item(
+        PopupMenuItem::new(t!("panel.close_others"))
+            .disabled(group.len() < 2)
+            .on_click(close(CloseTabs::Others)),
+    )
+    .item(
+        // Tab 竖排在左侧时，排在后面的 Tab 在下方
+        PopupMenuItem::new(if Workspace::tabs_on_left(cx) {
+            t!("panel.close_below")
+        } else {
+            t!("panel.close_right")
+        })
+        .disabled(is_last)
+        .on_click(close(CloseTabs::ToTheRight)),
+    )
+    .item(PopupMenuItem::new(t!("panel.close_all")).on_click(close(CloseTabs::All)))
 }
 
 #[cfg(test)]

@@ -3438,27 +3438,144 @@ impl Panel for TerminalPanel {
         false
     }
 
-    /// Tab 菜单（右键 Tab 打开）中的项：派发与快捷键相同的动作（在这个终端里处理）。
+    /// Tab 菜单（右键 Tab 打开）：常用的复制会话、重新连接在最前；分屏与窗口、主机相关的、日志与录制各收进一个子菜单
+    /// （主机相关的不足 3 项时直接列出）；配色与编码；最后是关闭几个 Tab。派发与快捷键相同的动作（在这个终端里处理）。
     fn dropdown_menu(
         &mut self,
         menu: gpui_kit::component::menu::PopupMenu,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> gpui_kit::component::menu::PopupMenu {
-        use crate::workspace::{SaveAsWorkspace, SplitDown, SplitRight};
-        let menu = menu.action_context(self.focus_handle(cx));
+        use gpui_kit::component::menu::PopupMenuItem;
+        let focus = self.focus_handle(cx);
+        let menu = menu.action_context(focus.clone());
         let menu = if self.is_ssh() && self.can_duplicate() {
             menu.menu(t!("panel.menu.duplicate"), Box::new(DuplicateSession))
         } else {
             menu
         };
-        let menu = if self.can_duplicate() {
-            menu.menu(t!("panel.menu.split_right"), Box::new(SplitRight))
-                .menu(t!("panel.menu.split_down"), Box::new(SplitDown))
+        let menu = menu
+            .menu(t!("panel.menu.reconnect"), Box::new(Reconnect))
+            .separator();
+        let layout = submenu(self.layout_menu_items(window, cx), &focus, window, cx);
+        let menu = menu.item(PopupMenuItem::submenu(t!("panel.menu.layout"), layout));
+        let host = self.host_menu_items(cx);
+        let menu = if host.iter().map(Vec::len).sum::<usize>() >= 3 {
+            let host = submenu(host, &focus, window, cx);
+            menu.item(PopupMenuItem::submenu(t!("panel.menu.host"), host))
         } else {
-            menu
+            host.into_iter()
+                .flatten()
+                .fold(menu, |menu, item| menu.item(item))
         };
-        // 临时连接：保存到主机列表（被调起的预填名称、地址、端口、用户名、密码；快速连接预填地址、端口、用户名）
+        let record = submenu(self.record_menu_items(cx), &focus, window, cx);
+        let mut menu = menu.item(PopupMenuItem::submenu(t!("panel.menu.log_record"), record));
+        let this = cx.entity().downgrade();
+        // 配色：打开选择器（可以只用于这个 Tab）；用着临时配色时可以清除
+        {
+            let this = this.clone();
+            menu = menu
+                .separator()
+                .item(PopupMenuItem::new(t!("panel.menu.scheme")).on_click(
+                    move |_, window, cx| {
+                        crate::schemes::picker::open(Some(this.clone()), window, cx)
+                    },
+                ));
+        }
+        if !self.tab_scheme.is_empty() {
+            let this = this.clone();
+            menu = menu.item(PopupMenuItem::new(t!("panel.menu.clear_scheme")).on_click(
+                move |_, _, cx| {
+                    let _ = this.update(cx, |this, cx| this.set_tab_scheme(String::new(), cx));
+                },
+            ));
+        }
+        // 远端的编码：与终端内的右键菜单一样收在子菜单里
+        if self.is_ssh() {
+            let current = self.current_encoding();
+            let items: Vec<PopupMenuItem> = ENCODINGS
+                .iter()
+                .map(|(value, _, label)| {
+                    let this = this.clone();
+                    let value = *value;
+                    PopupMenuItem::new(*label)
+                        .checked(value == current)
+                        .on_click(move |_, _, cx| {
+                            let _ = this.update(cx, |this, cx| this.set_encoding(value, cx));
+                        })
+                })
+                .collect();
+            let encoding = submenu(vec![items], &focus, window, cx);
+            menu = menu.item(PopupMenuItem::submenu(t!("terminal.encoding"), encoding));
+        }
+        let menu = menu.separator().menu(t!("panel.close"), Box::new(CloseTab));
+        crate::workspace::close_tab_items_without_move(menu, cx.entity_id(), window, cx).separator()
+    }
+}
+
+/// Tab 菜单中的子菜单：各组之间画分隔线。另建的菜单不继承 Tab 菜单派发动作的目标，同样设成这个终端。
+fn submenu(
+    groups: Vec<Vec<gpui_kit::component::menu::PopupMenuItem>>,
+    focus: &gpui_kit::FocusHandle,
+    window: &mut Window,
+    cx: &mut App,
+) -> Entity<gpui_kit::component::menu::PopupMenu> {
+    let focus = focus.clone();
+    gpui_kit::component::menu::PopupMenu::build(window, cx, move |menu, _, _| {
+        let mut menu = menu.action_context(focus);
+        for (ix, group) in groups.into_iter().filter(|g| !g.is_empty()).enumerate() {
+            if ix > 0 {
+                menu = menu.separator();
+            }
+            menu = group.into_iter().fold(menu, |menu, item| menu.item(item));
+        }
+        menu
+    })
+}
+
+impl TerminalPanel {
+    /// Tab 菜单的“分屏与窗口 ›”：向右、向下分屏（能复制会话时）与同步输入；移到新窗口、别的窗口；保存为工作区。
+    fn layout_menu_items(
+        &self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Vec<Vec<gpui_kit::component::menu::PopupMenuItem>> {
+        use crate::workspace::{SaveAsWorkspace, SplitDown, SplitRight, ToggleMultiExec};
+        use gpui_kit::component::menu::PopupMenuItem;
+        let mut arrange = Vec::new();
+        if self.can_duplicate() {
+            arrange.push(
+                PopupMenuItem::new(t!("panel.menu.split_right")).action(Box::new(SplitRight)),
+            );
+            arrange
+                .push(PopupMenuItem::new(t!("panel.menu.split_down")).action(Box::new(SplitDown)));
+        }
+        arrange.push(
+            PopupMenuItem::new(t!("multi_exec.title"))
+                .checked(self.sync_member)
+                .action(Box::new(ToggleMultiExec)),
+        );
+        let panel = gpui_kit::component::dock::PanelId::from(cx.entity_id());
+        let windows = crate::workspace::move_tab_entries(panel, window, cx);
+        let workspace = vec![
+            PopupMenuItem::new(t!("panel.menu.save_workspace")).action(Box::new(SaveAsWorkspace)),
+        ];
+        vec![arrange, windows, workspace]
+    }
+
+    /// Tab 菜单的“主机 ›”：复制地址，在侧边栏中显示主机（临时连接时为保存到主机列表）；命令历史、为此主机添加端口
+    /// 转发（保存的 SSH 主机），把本机代理借给服务器（SSH）。本地终端一项也没有。
+    fn host_menu_items(
+        &self,
+        cx: &mut Context<Self>,
+    ) -> Vec<Vec<gpui_kit::component::menu::PopupMenuItem>> {
+        use gpui_kit::component::menu::PopupMenuItem;
+        let mut host = Vec::new();
+        if let Some(address) = self.address(cx) {
+            host.push(crate::copy_address_item(address));
+        }
+        // 保存的主机（SSH、Telnet、串口）：在侧边栏中显示它。临时连接：保存到主机列表（被调起的预填名称、地址、端口、
+        // 用户名、密码；快速连接预填地址、端口、用户名）
         let draft = match &self.session {
             Session::Launch { target } => {
                 Some((crate::launch::host_draft(target), target.password.clone()))
@@ -3466,131 +3583,42 @@ impl Panel for TerminalPanel {
             Session::Quick { target } => Some((crate::launch::quick_host_draft(target), None)),
             _ => None,
         };
-        let menu = match draft {
-            Some((host, password)) => menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(t!("launch.save_as_host")).on_click(
-                    move |_, window, cx| {
-                        crate::host_dialog::open_prefilled(
-                            host.clone(),
-                            password.clone(),
-                            window,
-                            cx,
-                        )
-                    },
-                ),
-            ),
-            None => menu,
-        };
-        let menu = match self.address(cx) {
-            Some(address) => menu.item(crate::copy_address_item(address)),
-            None => menu,
-        };
-        // 保存的主机（SSH、Telnet、串口）：在侧边栏中显示它；本地终端、临时连接没有
-        let menu = match self.host() {
-            Some(host) => menu.item(crate::workspace::reveal_host_item(host.clone())),
-            None => menu,
-        };
-        let menu = menu
-            .menu(t!("panel.menu.save_workspace"), Box::new(SaveAsWorkspace))
-            .menu_with_check(
-                t!("multi_exec.title"),
-                self.sync_member,
-                Box::new(crate::workspace::ToggleMultiExec),
-            )
-            .separator()
-            .menu(t!("panel.menu.reconnect"), Box::new(Reconnect));
+        if let Some(saved) = self.host() {
+            host.push(crate::workspace::reveal_host_item(saved.clone()));
+        } else if let Some((draft, password)) = draft {
+            host.push(PopupMenuItem::new(t!("launch.save_as_host")).on_click(
+                move |_, window, cx| {
+                    crate::host_dialog::open_prefilled(draft.clone(), password.clone(), window, cx)
+                },
+            ));
+        }
         let this = cx.entity().downgrade();
-        let logging = self.is_logging();
-        let toggle_log = {
-            let this = this.clone();
-            move |_: &gpui_kit::ClickEvent, window: &mut Window, cx: &mut App| {
-                let _ = this.update(cx, |this, cx| {
-                    if this.is_logging() {
-                        this.stop_session_log(cx)
-                    } else {
-                        this.start_session_log(window, cx)
-                    }
-                });
-            }
-        };
-        let mut menu = menu.item(
-            gpui_kit::component::menu::PopupMenuItem::new(if logging {
-                t!("panel.menu.stop_log")
-            } else {
-                t!("panel.menu.start_log")
-            })
-            .on_click(toggle_log),
-        );
-        // 会话录制：录制中可以停止（文件还在建时同样算录制中）
-        {
-            let this = this.clone();
-            menu = menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(if self.is_recording() {
-                    t!("panel.menu.stop_record")
-                } else {
-                    t!("panel.menu.start_record")
-                })
-                .disabled(!self.can_record())
-                .on_click(move |_, window, cx| {
-                    let _ = this.update(cx, |this, cx| this.toggle_recording(window, cx));
-                }),
-            );
-        }
-        if let Some(path) = self.recording_path() {
-            menu = menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(t!("panel.menu.reveal_record"))
-                    .on_click(move |_, _, cx| cx.reveal_path(&path)),
-            );
-        }
-        if logging {
-            let this = this.clone();
-            menu = menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(t!("panel.menu.reveal_log"))
-                    .on_click(move |_, _, cx| {
-                        let path = this
-                            .upgrade()
-                            .and_then(|panel| panel.read(cx).tap.log())
-                            .map(|log| log.path().to_path_buf());
-                        if let Some(path) = path {
-                            cx.reveal_path(&path);
-                        }
-                    }),
-            );
-        }
+        let mut tools = Vec::new();
         if let Session::Host { host } = &self.session
             && self.is_ssh()
         {
-            let (this, host) = (this.clone(), host.clone());
+            let (history, host) = (this.clone(), host.clone());
             let forward = this.clone();
             let connected = self.share_group().is_some();
-            menu = menu
-                .item(
-                    gpui_kit::component::menu::PopupMenuItem::new(t!("history.open")).on_click(
-                        move |_, window, cx| {
-                            crate::snippets::history::open(
-                                host.clone(),
-                                Some(this.clone()),
-                                window,
-                                cx,
-                            )
-                        },
-                    ),
-                )
-                .item(
-                    gpui_kit::component::menu::PopupMenuItem::new(t!("forward.add_for_host"))
-                        .disabled(!connected)
-                        .on_click(move |_, _, cx| {
-                            let _ =
-                                forward.update(cx, |_, cx| cx.emit(TerminalPanelEvent::AddForward));
-                        }),
-                );
+            tools.push(
+                PopupMenuItem::new(t!("history.open")).on_click(move |_, window, cx| {
+                    crate::snippets::history::open(host.clone(), Some(history.clone()), window, cx)
+                }),
+            );
+            tools.push(
+                PopupMenuItem::new(t!("forward.add_for_host"))
+                    .disabled(!connected)
+                    .on_click(move |_, _, cx| {
+                        let _ = forward.update(cx, |_, cx| cx.emit(TerminalPanelEvent::AddForward));
+                    }),
+            );
         }
         // 把本机代理借给服务器：连接着的 SSH 终端（“只用一个通道”的主机不行）；开启着时打开它的命令片段与“停止”
         if self.is_ssh() {
             let running = self.proxy.is_some();
             let terminal = this.clone();
-            menu = menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(if running {
+            tools.push(
+                PopupMenuItem::new(if running {
                     t!("terminal.proxy.menu_running")
                 } else {
                     t!("terminal.proxy.menu")
@@ -3603,52 +3631,77 @@ impl Panel for TerminalPanel {
                 }),
             );
         }
-        // 配色：打开选择器（可以只用于这个 Tab）；用着临时配色时可以清除
-        {
+        vec![host, tools]
+    }
+
+    /// Tab 菜单的“日志与录制 ›”：开始 / 停止记录会话日志与日志所在的文件夹（记录中）；开始 / 停止录制与录制文件
+    /// （录制中）；打开录制文件回放（与命令面板的同一项）。
+    fn record_menu_items(
+        &self,
+        cx: &mut Context<Self>,
+    ) -> Vec<Vec<gpui_kit::component::menu::PopupMenuItem>> {
+        use gpui_kit::component::menu::PopupMenuItem;
+        let this = cx.entity().downgrade();
+        let logging = self.is_logging();
+        let mut log = vec![
+            PopupMenuItem::new(if logging {
+                t!("panel.menu.stop_log")
+            } else {
+                t!("panel.menu.start_log")
+            })
+            .on_click({
+                let this = this.clone();
+                move |_, window, cx| {
+                    let _ = this.update(cx, |this, cx| {
+                        if this.is_logging() {
+                            this.stop_session_log(cx)
+                        } else {
+                            this.start_session_log(window, cx)
+                        }
+                    });
+                }
+            }),
+        ];
+        if logging {
             let this = this.clone();
-            menu = menu.separator().item(
-                gpui_kit::component::menu::PopupMenuItem::new(t!("panel.menu.scheme")).on_click(
-                    move |_, window, cx| {
-                        crate::schemes::picker::open(Some(this.clone()), window, cx)
-                    },
-                ),
+            log.push(
+                PopupMenuItem::new(t!("panel.menu.reveal_log")).on_click(move |_, _, cx| {
+                    let path = this
+                        .upgrade()
+                        .and_then(|panel| panel.read(cx).tap.log())
+                        .map(|log| log.path().to_path_buf());
+                    if let Some(path) = path {
+                        cx.reveal_path(&path);
+                    }
+                }),
             );
         }
-        if !self.tab_scheme.is_empty() {
-            let this = this.clone();
-            menu = menu.item(
-                gpui_kit::component::menu::PopupMenuItem::new(t!("panel.menu.clear_scheme"))
-                    .on_click(move |_, _, cx| {
-                        let _ = this.update(cx, |this, cx| this.set_tab_scheme(String::new(), cx));
-                    }),
+        // 会话录制：录制中可以停止（文件还在建时同样算录制中）
+        let mut record = vec![
+            PopupMenuItem::new(if self.is_recording() {
+                t!("panel.menu.stop_record")
+            } else {
+                t!("panel.menu.start_record")
+            })
+            .disabled(!self.can_record())
+            .on_click(move |_, window, cx| {
+                let _ = this.update(cx, |this, cx| this.toggle_recording(window, cx));
+            }),
+        ];
+        if let Some(path) = self.recording_path() {
+            record.push(
+                PopupMenuItem::new(t!("panel.menu.reveal_record"))
+                    .on_click(move |_, _, cx| cx.reveal_path(&path)),
             );
         }
-        // 远端的编码：与终端内的右键菜单一样收在子菜单里
-        if self.is_ssh() {
-            let current = self.current_encoding();
-            let items: Vec<gpui_kit::component::menu::PopupMenuItem> = ENCODINGS
-                .iter()
-                .map(|(value, _, label)| {
-                    let this = this.clone();
-                    let value = *value;
-                    gpui_kit::component::menu::PopupMenuItem::new(*label)
-                        .checked(value == current)
-                        .on_click(move |_, _, cx| {
-                            let _ = this.update(cx, |this, cx| this.set_encoding(value, cx));
-                        })
-                })
-                .collect();
-            let submenu =
-                gpui_kit::component::menu::PopupMenu::build(window, cx, move |menu, _, _| {
-                    items.into_iter().fold(menu, |menu, item| menu.item(item))
-                });
-            menu = menu.item(gpui_kit::component::menu::PopupMenuItem::submenu(
-                t!("terminal.encoding"),
-                submenu,
-            ));
-        }
-        let menu = menu.separator().menu(t!("panel.close"), Box::new(CloseTab));
-        crate::workspace::close_tab_items(menu, cx.entity_id(), window, cx).separator()
+        let replay = vec![
+            PopupMenuItem::new(t!("palette.op.open_recording")).on_click(|_, window, cx| {
+                if let Some(workspace) = crate::workspace::Workspace::in_window(window, cx) {
+                    workspace.update(cx, |w, cx| w.pick_recording(window, cx));
+                }
+            }),
+        ];
+        vec![log, record, replay]
     }
 }
 

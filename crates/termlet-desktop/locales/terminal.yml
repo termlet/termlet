@@ -293,6 +293,24 @@ panel.menu.reveal_host:
   zh-TW: 在側邊欄中顯示主機
   ja: サイドバーでホストを表示
   ko: 사이드바에서 호스트 표시
+panel.menu.layout:
+  zh-CN: 分屏与窗口
+  en: Splits and Windows
+  zh-TW: 分割畫面與視窗
+  ja: 分割とウィンドウ
+  ko: 분할 및 창
+panel.menu.host:
+  zh-CN: 主机
+  en: Host
+  zh-TW: 主機
+  ja: ホスト
+  ko: 호스트
+panel.menu.log_record:
+  zh-CN: 日志与录制
+  en: Logging and Recording
+  zh-TW: 記錄與錄製
+  ja: ログと録画
+  ko: 로그 및 녹화
 panel.menu.split_right:
   zh-CN: 向右分屏
   en: Split right

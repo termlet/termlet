@@ -1085,6 +1085,12 @@ sftp.open_root:
   zh-TW: 以 root 身分開啟 SFTP
   ja: root として SFTP を開く
   ko: root로 SFTP 열기
+sftp.menu.open_with:
+  zh-CN: 打开方式
+  en: Open With
+  zh-TW: 開啟方式
+  ja: 開く方法
+  ko: 열기 방식
 sftp.root_badge:
   zh-CN: root
   en: root

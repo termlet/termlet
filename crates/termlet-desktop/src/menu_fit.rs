@@ -13,8 +13,8 @@ use gpui_kit::{Context, Pixels, Window, px, rems};
 /// 菜单与窗口上下边之间留出的距离（rem）：gpui-kit 让弹出菜单离窗口边各 8px，加上菜单的边框。
 const WINDOW_EDGE: f32 = 1.25;
 
-/// 最长的菜单有几项（终端 Tab 的菜单，连分隔线约 24 行）。
-const TALLEST_ROWS: f32 = 24.;
+/// 最长的菜单有几行（终端 Tab、SFTP 文件的菜单，连分隔线约 15 行；右键菜单最多 16 项）。
+const TALLEST_ROWS: f32 = 16.;
 
 /// 菜单最高为窗口的高度（减去上下边距），窗口放不下最长的菜单时在菜单里滚动。
 pub fn fit(menu: PopupMenu, window: &Window) -> PopupMenu {

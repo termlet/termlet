@@ -139,8 +139,9 @@ mod title_bar;
 #[cfg(test)]
 mod tools_follow_tests;
 
-pub(crate) use close_tabs::close_tab_items;
+pub(crate) use close_tabs::{close_tab_items, close_tab_items_without_move};
 pub(crate) use move_tab::SoleTabDrag;
+pub(crate) use move_tab::move_tab_entries;
 pub(crate) use tab_list::{
     RAIL_ICON, TabFace, TabStatus, host_group_key, key_bindings as tab_list_key_bindings,
     tooltip_lines,

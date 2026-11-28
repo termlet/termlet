@@ -2604,23 +2604,15 @@ mod tests {
         cx.run_until_parked();
         let panel = cx.update(|cx| workspace.read(cx).live_terminals()[0].entity_id());
         let title: gpui_kit::ElementId = ("tab-title", panel.as_u64() as usize).into();
-        cx.update_window(handle, |_, window, cx| {
-            window.render_frame(cx);
-            window.right_click(title, cx);
-        })
-        .unwrap();
-        cx.run_until_parked();
-        let label = t!("panel.menu.reveal_host").to_string();
-        let labels = menu_labels(cx, handle);
-        let ix = labels
-            .iter()
-            .position(|l| l.as_deref() == Some(label.as_str()))
-            .unwrap_or_else(|| panic!("Tab 菜单中没有“{label}”：{labels:?}"));
-        cx.update_window(handle, |_, window, cx| {
-            window.within("popup-menu").click(ix, cx);
-        })
-        .unwrap();
-        cx.run_until_parked();
+        // 在 Tab 菜单的“主机 ›”中
+        let (host_menu, label) = (t!("panel.menu.host"), t!("panel.menu.reveal_host"));
+        assert!(crate::testkit::click_menu_in(
+            cx,
+            handle,
+            title,
+            Some(&host_menu),
+            &label
+        ));
         let check = |cx: &mut TestAppContext| {
             assert!(!cx.update(|cx| AppState::ui(cx).read(cx).state().sidebar_hidden));
             assert!(expanded(cx).contains(HOSTS_SECTION) && expanded(cx).contains(prod.as_str()));
