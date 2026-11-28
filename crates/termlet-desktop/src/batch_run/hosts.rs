@@ -27,6 +27,7 @@ use crate::app_state::AppState;
 use crate::prose::prose;
 use crate::sidebar::rows::{TreeRow, group_members, tree_rows};
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 主机树中一行的高度（rem）。
 const ROW_HEIGHT: f32 = 1.75;
@@ -55,7 +56,7 @@ pub(super) fn open(selected: Vec<HostId>, on_done: OnDone, window: &mut Window, 
             }
         };
         dialog
-            .title(t!("batch.pick_title"))
+            .titled(t!("batch.pick_title"))
             .w(width)
             .child(picker.clone())
             .on_ok(ok)

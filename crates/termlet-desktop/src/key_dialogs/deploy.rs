@@ -23,6 +23,7 @@ use termlet_core::store::Record;
 use super::errors;
 use crate::app_state::AppState;
 use crate::prose::{ProseLabel as _, prose};
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{ssh_errors, t};
 
 pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
@@ -39,7 +40,7 @@ pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
             form.read(cx).filter.focus_handle(cx).focus(window, cx);
         }
         dialog
-            .title(title.clone())
+            .titled(title.clone())
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

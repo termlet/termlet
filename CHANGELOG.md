@@ -28,6 +28,8 @@
 ### 修复
 
 - WSL 终端的主机工具中，Docker Desktop 启动过又退出后，Docker 页不再显示“读取容器失败：…/usr/bin/docker: Input/output error”，与 Docker Desktop 没有启动时一样说明 Docker 没有运行。WSL 中的 docker 来自 Docker Desktop 时（没有启动、启动过又退出，或没有为这个发行版打开 WSL 集成），下一步写的是在 Windows 上启动 Docker Desktop 并为这个发行版打开 WSL 集成，不再给出用不上的 `sudo systemctl start docker`。
+- 对话框的标题很长时（如代理命令确认框中名称很长的主机），折行后不再钻到右上角的关闭按钮下面。
+- 连接中的询问、关闭窗口的确认等对话框弹出时，之前已经显示的悬停提示（Tab、主机、截断的文字等）随之收起，不再浮在对话框上面；对话框里的提示照常显示。
 
 ## 0.3.5（2026-11-26）
 

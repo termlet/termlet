@@ -31,6 +31,7 @@ use termlet_core::schemes::{
 use super::{SampleHighlights, SchemeSample, ansi_name};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 超过这个大小的文件不读。
 const MAX_FILE: u64 = 8 << 20;
@@ -68,7 +69,7 @@ pub fn open(options: ImportOptions, window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(t!("schemes.import.title"))
+            .titled(t!("schemes.import.title"))
             .w(width)
             .overlay_closable(false)
             .child(view.clone())

@@ -31,6 +31,7 @@ use crate::dialog_token::{DialogToken, close_own};
 use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
 use crate::terminal_panel::TerminalPanel;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{store_errors, t};
 
 /// 打开 `host` 的命令历史；`target` 是当前终端（连的是这台主机时才能写入）。
@@ -55,7 +56,7 @@ pub fn open(
         }
         // 搜索框中按 Enter 不关闭
         dialog
-            .title(dialog_title.clone())
+            .titled(dialog_title.clone())
             .w(width)
             .child(view.clone())
             .on_ok(|_, _, _| false)

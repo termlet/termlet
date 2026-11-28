@@ -33,6 +33,7 @@ use super::panel::SftpTarget;
 use crate::app_state::AppState;
 use crate::notify::{Notice, NoticeLine};
 use crate::prose::prose;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::workspace::Workspace;
 use crate::{ssh_errors, t};
 
@@ -352,7 +353,7 @@ fn confirm(
                     .child(DialogAction::new().child(direct_button.primary().w_full()))
             };
         dialog
-            .title(t!("sftp.editor.confirm_title", editor = editor.name()))
+            .titled(t!("sftp.editor.confirm_title", editor = editor.name()))
             .w(width)
             .child(view.clone())
             .footer(footer)

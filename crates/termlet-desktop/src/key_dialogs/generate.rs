@@ -19,6 +19,7 @@ use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::dialog_token::{DialogToken, close_own};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 pub fn open(window: &mut Window, cx: &mut App) {
     let form = cx.new(|cx| GenerateForm::new(window, cx));
@@ -37,7 +38,7 @@ pub fn open(window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(t!("keys.generate"))
+            .titled(t!("keys.generate"))
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

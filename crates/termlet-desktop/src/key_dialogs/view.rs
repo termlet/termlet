@@ -18,6 +18,7 @@ use crate::app_state::AppState;
 use crate::notify::NoticeLine;
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
     let Some(record) = AppState::store(cx).get::<KeyEntry>(&id) else {
@@ -29,7 +30,7 @@ pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
     let width = rems(36.).to_pixels(window.rem_size());
     let notice = view.read(cx).notice.clone();
     window.open_dialog(cx, move |dialog, _, _| {
-        dialog.title(title.clone()).w(width).child(view.clone())
+        dialog.titled(title.clone()).w(width).child(view.clone())
     });
     crate::notify::attach(&notice, window, cx);
 }

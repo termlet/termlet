@@ -18,6 +18,7 @@ use termlet_core::crash::{CrashLog, CrashRecord, MAX_RECORDS, Upload};
 use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 崩溃提示的通知（按类型去重）。
 struct CrashNotice;
@@ -71,7 +72,7 @@ pub(crate) fn open_crash_log(window: &mut Window, cx: &mut App) {
     let width = rems(44.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, _| {
         dialog
-            .title(t!("lock_ui.crash.title"))
+            .titled(t!("lock_ui.crash.title"))
             .w(width)
             .child(view.clone())
     });

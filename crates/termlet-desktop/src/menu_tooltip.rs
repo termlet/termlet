@@ -1,4 +1,4 @@
-//! 弹出菜单开着时不显示悬停提示。
+//! 弹出菜单开着时不显示悬停提示；提示出现之后又打开了对话框时也不显示。
 //!
 //! 指针停在列表的一行上、提示出现（或正等着出现）时右键，菜单打开后提示仍会出现并浮在菜单之上，盖住菜单的第一项：
 //! - GPUI 的提示（元素的 `.tooltip(...)`）按下鼠标时只收起已经出现的，等待中的照样到时出现；出现后按元素的范围
@@ -10,9 +10,14 @@
 //! - GPUI 的提示用 [`quiet`] 包一层：每次画提示时看一遍，菜单开着时什么也不画，关上后照常；
 //! - gpui-kit 组件的提示用 `.when(!menu_open, …)`：菜单打开时焦点移到菜单里、窗口随之重绘，gpui-kit 在这一帧收起
 //!   已有的提示，菜单关闭后照常显示。
+//!
+//! 对话框同理：GPUI 按指针在不在元素的范围内决定提示还要不要显示，对话框（连接中的询问、确认框等不经鼠标打开的）
+//! 盖住元素后，指针不动时提示一直浮在对话框上。[`quiet`] 记下提示建起来时窗口中开没开着对话框：没开着（提示属于
+//! 对话框下面的元素）而现在开着时什么也不画，对话框关上后照常；对话框里的元素的提示照常显示。
 
 use std::rc::Rc;
 
+use gpui_kit::component::WindowExt as _;
 use gpui_kit::component::menu::PopupMenu;
 use gpui_kit::{
     AnyView, App, AppContext as _, Context, DismissEvent, Focusable as _, Global, IntoElement,
@@ -57,16 +62,23 @@ pub fn menu_open(window: &Window, cx: &App) -> bool {
 
 type Build = Rc<dyn Fn(&mut Window, &mut App) -> AnyView>;
 
-/// 包一层 GPUI 悬停提示的构建（`.tooltip(quiet(...))`）：窗口中开着弹出菜单时提示什么也不画，菜单关上后画 `build`
-/// 建的提示。提示随窗口每帧重画、每次都看一遍：右键时正等着出现的提示在菜单开着时出现，是空的；菜单关上后指针
-/// 仍停在元素上时随即显示，不用移出再移入。
+/// 包一层 GPUI 悬停提示的构建（`.tooltip(quiet(...))`）：窗口中开着弹出菜单、或提示出现之后打开了对话框时提示什么
+/// 也不画，关上后画 `build` 建的提示。提示随窗口每帧重画、每次都看一遍：右键时正等着出现的提示在菜单开着时出现，
+/// 是空的；菜单关上后指针仍停在元素上时随即显示，不用移出再移入。
 pub fn quiet(
     build: impl Fn(&mut Window, &mut App) -> AnyView + 'static,
 ) -> impl Fn(&mut Window, &mut App) -> AnyView + 'static {
     let build: Build = Rc::new(build);
-    move |_, cx| {
+    move |window, cx| {
         let build = build.clone();
-        cx.new(|_| Quiet { build, shown: None }).into()
+        // 这时已经开着对话框：提示属于对话框里的元素（对话框下面的元素拿不到悬停）
+        let in_dialog = window.has_active_dialog(cx);
+        cx.new(|_| Quiet {
+            build,
+            shown: None,
+            in_dialog,
+        })
+        .into()
     }
 }
 
@@ -81,11 +93,13 @@ struct Quiet {
     build: Build,
     /// 建好的提示（第一次在菜单关着时画时建）
     shown: Option<AnyView>,
+    /// 建起来时窗口中开着对话框
+    in_dialog: bool,
 }
 
 impl Render for Quiet {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if menu_open(window, cx) {
+        if menu_open(window, cx) || (!self.in_dialog && window.has_active_dialog(cx)) {
             return div().into_any_element();
         }
         let build = self.build.clone();
@@ -207,6 +221,81 @@ mod tests {
             window.render_frame(cx);
             assert!(!menu_open(window, cx), "菜单关上了");
             assert!(window.try_find("tip").is_some(), "提示随即显示");
+        })
+        .unwrap();
+    }
+
+    // 提示出现之后打开对话框（连接中的询问等，不经鼠标与键盘）：指针没动，提示不再浮在对话框上；对话框关上后照常
+    #[gpui_kit::test]
+    fn quiet_tooltip_hides_under_a_later_dialog(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(init);
+        let handle = open(cx);
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.hover("row", cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.executor().advance_clock(Duration::from_secs(1));
+        cx.run_until_parked();
+        let shown = |cx: &mut TestAppContext| {
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                window.try_find("tip").is_some()
+            })
+            .unwrap()
+        };
+        assert!(shown(cx), "悬停后显示提示");
+        cx.update_window(handle, |_, window, cx| {
+            window.open_dialog(cx, |dialog, _, _| dialog.child("对话框"))
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert!(!shown(cx), "对话框开着时提示是空的");
+        cx.update_window(handle, |_, window, cx| window.close_dialog(cx))
+            .unwrap();
+        cx.run_until_parked();
+        cx.executor().advance_clock(Duration::from_secs(1));
+        cx.run_until_parked();
+        assert!(shown(cx), "对话框关上后照常显示");
+    }
+
+    // 对话框里的元素：提示照常显示
+    #[gpui_kit::test]
+    fn quiet_tooltip_inside_a_dialog_shows(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        cx.update(init);
+        let handle = open(cx);
+        cx.update_window(handle, |_, window, cx| {
+            window.open_dialog(cx, |dialog, _, _| {
+                dialog.child(
+                    div()
+                        .id("dialog-row")
+                        .test_support()
+                        .w(px(200.))
+                        .h(px(30.))
+                        .child("row")
+                        .tooltip(quiet(|_, cx| cx.new(|_| Tip).into())),
+                )
+            })
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.hover("dialog-row", cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.executor().advance_clock(Duration::from_secs(1));
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            assert!(
+                window.try_find("tip").is_some(),
+                "对话框里的元素照常显示提示"
+            );
         })
         .unwrap();
     }

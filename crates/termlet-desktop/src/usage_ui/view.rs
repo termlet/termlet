@@ -19,6 +19,7 @@ use termlet_core::usage::{Destination, Preview, UsageReporter};
 use crate::app_state::AppState;
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 打开对话框，返回其中的视图（测试用它核对显示的正文）。
 pub(crate) fn open_view(window: &mut Window, cx: &mut App) -> Option<Entity<UsageView>> {
@@ -29,7 +30,7 @@ pub(crate) fn open_view(window: &mut Window, cx: &mut App) -> Option<Entity<Usag
         let view = view.clone();
         move |dialog, _, _| {
             dialog
-                .title(t!("usage.view.title"))
+                .titled(t!("usage.view.title"))
                 .w(width)
                 .child(view.clone())
         }

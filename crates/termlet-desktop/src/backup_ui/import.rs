@@ -59,6 +59,7 @@ use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::t;
 use crate::truncated::truncated;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 预览中一行的高度（rem）：上下留白、第一行（名称、地址等）、之后每一行说明。说明都只占一行（过长时截断，
 /// 悬停显示全文），行高因此可以事先算出，列表按可见的范围渲染。
@@ -211,7 +212,7 @@ fn show_dialog(
             t!("backup_ui.import.title")
         };
         dialog
-            .title(title)
+            .titled(title)
             .w(width)
             .overlay_closable(false)
             .close_button(!importing)

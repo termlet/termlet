@@ -28,6 +28,8 @@ This file lists the changes you will notice in each version, newest first. Versi
 ### Fixed
 
 - In the host tools of a WSL terminal, the Docker page no longer shows "Failed to read containers: …/usr/bin/docker: Input/output error" after Docker Desktop has been started and quit; it says Docker is not running, as when Docker Desktop was never started. When docker in WSL comes from Docker Desktop (not started, started and quit, or WSL integration not turned on for the distribution), the next step is to start Docker Desktop on Windows and turn on WSL integration for the distribution, instead of `sudo systemctl start docker`, which doesn't apply.
+- Long dialog titles (such as the proxy command confirmation for a host with a long name) no longer wrap under the close button in the top right.
+- When a dialog pops up on its own (such as a question while connecting, or the confirmation when closing the window), a tooltip that was already showing (for a tab, a host, truncated text and so on) goes away instead of staying on top of the dialog; tooltips inside the dialog work as usual.
 
 ## 0.3.5 (2026-11-26)
 

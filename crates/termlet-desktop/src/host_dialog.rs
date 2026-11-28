@@ -58,6 +58,7 @@ use crate::notify::{self, NoticeLine};
 use crate::prompt_dialog::{self, PromptRequest};
 use crate::prose::prose;
 use crate::scrolling::{ScrollGutter as _, TrackedScroll as _};
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{raw_errors, ssh_errors, store_errors, t};
 
 /// 新建主机（放进 `group`）。
@@ -107,7 +108,7 @@ fn open(
             }
         };
         dialog
-            .title(if editing {
+            .titled(if editing {
                 t!("host.edit.title")
             } else {
                 t!("host.new.title")

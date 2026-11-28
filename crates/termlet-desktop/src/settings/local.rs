@@ -35,6 +35,7 @@ use crate::folder_menu::FolderMenuSection;
 use crate::local_shell::{LocalTarget, shell_key};
 use crate::prose::prose;
 use crate::truncated::truncated;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{local_shell, t};
 
 pub(super) struct LocalPage {
@@ -252,7 +253,7 @@ impl LocalPage {
                 }
             };
             dialog
-                .title(title)
+                .titled(title)
                 .w(width)
                 .overlay_closable(false)
                 .child(editor.clone())

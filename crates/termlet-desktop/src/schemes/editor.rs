@@ -27,6 +27,7 @@ use super::{SampleHighlights, SchemeSample, ansi_name, hex_of, hsla, unreadable_
 use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 打开编辑器要给的东西。
 pub struct EditorOptions {
@@ -53,7 +54,7 @@ pub fn open(options: EditorOptions, window: &mut Window, cx: &mut App) {
         }
         let submit = editor.clone();
         dialog
-            .title(if is_new {
+            .titled(if is_new {
                 t!("schemes.editor.copy_title")
             } else {
                 t!("schemes.editor.edit_title")

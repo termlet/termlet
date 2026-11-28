@@ -23,6 +23,7 @@ use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 pub fn open(window: &mut Window, cx: &mut App) {
     let form = cx.new(|cx| ImportForm::new(window, cx));
@@ -41,7 +42,7 @@ pub fn open(window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(t!("keys.import"))
+            .titled(t!("keys.import"))
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

@@ -259,6 +259,7 @@ mod tests {
     use gpui_kit::test::TestWindowExt as _;
 
     use super::*;
+    use crate::ui_scale::DialogTitleExt as _;
 
     struct Empty;
 
@@ -307,7 +308,7 @@ mod tests {
             window.render_frame(cx);
             assert!(window.try_find("dialog-notice").is_some(), "提示行画出来了");
 
-            window.open_dialog(cx, |dialog, _, _| dialog.title("plain"));
+            window.open_dialog(cx, |dialog, _, _| dialog.titled("plain"));
             window.render_frame(cx);
             show(Notice::error("c"), window, cx);
             assert_eq!(first.read(cx).notice.as_ref(), Some(&Notice::error("c")));
@@ -404,7 +405,7 @@ mod tests {
             .unwrap();
         cx.update_window(two, |_, window, cx| {
             window.render_frame(cx);
-            window.open_dialog(cx, |dialog, _, _| dialog.title("plain"));
+            window.open_dialog(cx, |dialog, _, _| dialog.titled("plain"));
             window.render_frame(cx);
             show(Notice::success("x"), window, cx);
             assert_eq!(window.notifications(cx).len(), 1);

@@ -20,6 +20,7 @@ use super::{cloud, describe, model, on_core};
 use crate::dialog_token::{DialogToken, close_own};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 首次同步的三种方式（单选的顺序）。
 const FIRST_SYNC_CHOICES: [Answer; 3] = [Answer::Merge, Answer::UseRemote, Answer::UseLocal];
@@ -51,7 +52,7 @@ fn open(pending: Pending, window: &mut Window, cx: &mut App) {
                 false
             }
         };
-        d.title(state.title())
+        d.titled(state.title())
             .w(width)
             .overlay_closable(false)
             .close_button(!busy)

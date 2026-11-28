@@ -25,6 +25,7 @@ use crate::app_state::AppState;
 use crate::notify::{self, Notice};
 use crate::prose::{ProseLabel as _, prose};
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
     let Some(record) = AppState::store(cx).get::<KeyEntry>(&id) else {
@@ -35,7 +36,7 @@ pub fn open(id: KeyId, window: &mut Window, cx: &mut App) {
     let width = rems(30.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, _| {
         dialog
-            .title(title.clone())
+            .titled(title.clone())
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

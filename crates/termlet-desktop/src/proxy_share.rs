@@ -30,6 +30,7 @@ use crate::prose::prose;
 use crate::snippets::CommandInput;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 打开“把本机代理借给服务器”：还没开启时是开启的表单，开启着时是命令片段与“停止”。
 pub fn open(terminal: Entity<TerminalPanel>, window: &mut Window, cx: &mut App) {
@@ -84,7 +85,7 @@ pub fn open(terminal: Entity<TerminalPanel>, window: &mut Window, cx: &mut App) 
         // 关闭后焦点回到终端
         let terminal = terminal.clone();
         dialog
-            .title(t!("terminal.proxy.title"))
+            .titled(t!("terminal.proxy.title"))
             .w(width)
             .overlay_closable(false)
             .child(view.clone())

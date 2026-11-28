@@ -26,6 +26,7 @@ use super::errors;
 use crate::app_state::AppState;
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 pub(super) fn open(window: &mut Window, cx: &mut App) -> Entity<SnippetExportDialog> {
     let view = cx.new(SnippetExportDialog::new);
@@ -45,7 +46,7 @@ pub(super) fn open(window: &mut Window, cx: &mut App) -> Entity<SnippetExportDia
             }
         };
         dialog
-            .title(t!("backup_ui.snippet_export.title"))
+            .titled(t!("backup_ui.snippet_export.title"))
             .w(width)
             .overlay_closable(false)
             .close_button(!busy)

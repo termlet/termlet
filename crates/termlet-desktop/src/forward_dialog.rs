@@ -29,6 +29,7 @@ use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::prose::{ProseLabel as _, prose};
 use crate::terminal_panel::TerminalPanel;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{forwards, store_errors, t};
 
 const KINDS: [ForwardKind; 3] = [
@@ -99,7 +100,7 @@ fn open(
             }
         };
         dialog
-            .title(if editing {
+            .titled(if editing {
                 t!("forward.edit")
             } else {
                 t!("forward.new")

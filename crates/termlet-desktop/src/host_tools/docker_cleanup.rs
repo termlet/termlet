@@ -37,6 +37,7 @@ use crate::notify::{Notice, NoticeLine};
 use crate::prose::prose;
 use crate::sftp::list_model::{format_size, visible_name};
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 展开时最多列出的名称数。
 const MAX_NAMES: usize = 12;
@@ -62,7 +63,7 @@ pub(super) fn open(
         // 执行中不能关闭（关掉后不知道清理到了哪一步）
         let busy = dialog_view.read(cx).running;
         dialog
-            .title(t!("tools.cleanup.title"))
+            .titled(t!("tools.cleanup.title"))
             .w(width)
             .overlay_closable(false)
             .close_button(!busy)

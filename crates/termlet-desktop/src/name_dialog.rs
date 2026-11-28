@@ -17,6 +17,7 @@ use gpui_kit::{
 use crate::dialog_token::{DialogToken, close_own};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 提交名称：返回的任务完成时 `Ok` 关闭对话框，`Err` 显示原因。
 pub type Submit = Box<dyn Fn(String, &mut Window, &mut App) -> Task<Result<(), SharedString>>>;
@@ -83,7 +84,7 @@ pub fn open(dialog: NameDialog, submit: Submit, window: &mut Window, cx: &mut Ap
             }
         };
         dialog
-            .title(title.clone())
+            .titled(title.clone())
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

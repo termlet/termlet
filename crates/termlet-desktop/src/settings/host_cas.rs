@@ -26,6 +26,7 @@ use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
 use crate::notify::{self, Notice};
 use crate::prose::prose;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{store_errors, t};
 
 pub(super) struct HostCasSection {
@@ -254,7 +255,7 @@ fn open_add(section: WeakEntity<HostCasSection>, window: &mut Window, cx: &mut A
             }
         };
         dialog
-            .title(t!("known_hosts.ca_add_title"))
+            .titled(t!("known_hosts.ca_add_title"))
             .w(width)
             .child(form.clone())
             .on_ok(ok)

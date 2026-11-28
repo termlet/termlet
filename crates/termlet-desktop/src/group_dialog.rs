@@ -23,6 +23,7 @@ use termlet_core::store::{Position, Store};
 use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::prose::prose;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{store_errors, t};
 
 enum Mode {
@@ -68,7 +69,7 @@ fn open(mode: Mode, window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(if editing {
+            .titled(if editing {
                 t!("group.edit.title")
             } else {
                 t!("group.new.title")

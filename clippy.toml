@@ -1,10 +1,12 @@
 # gpui-kit 的警示对话框（确认框、提示框）默认宽度写死像素，界面放大后显得窄：桌面端经 ui_scale::open_alert 打开
 # GPUI 自己的滚动区只能滚、不画滚动条，看不出还有内容，在对话框里还会滚不动：用 gpui-kit 的滚动区（见 scrolling.rs）
 # gpui-kit 的下拉弹出层固定 20rem 高，窗口矮、界面放大时会伸出窗口：经 choice::select 按窗口收高度
+# gpui-kit 对话框的标题右边只留 16px，长标题折行后钻到右上角的 × 下面：经 ui_scale::DialogTitleExt::titled
 disallowed-methods = [
     { path = "gpui_component::WindowExt::open_alert_dialog", reason = "用 crate::ui_scale::open_alert 打开，宽度随界面大小" },
     { path = "gpui::StatefulInteractiveElement::overflow_y_scroll", reason = "没有滚动条：用 overflow_y_scrollbar()，要程序滚动时用 crate::scrolling::tracked_y" },
     { path = "gpui::StatefulInteractiveElement::overflow_x_scroll", reason = "没有滚动条：用 overflow_x_scrollbar()，一行按钮横滚时用 crate::scrolling::tracked_x" },
     { path = "gpui::StatefulInteractiveElement::overflow_scroll", reason = "没有滚动条：用 overflow_scrollbar()" },
     { path = "gpui_component::select::Select::new", reason = "用 crate::choice::select：弹出层按窗口收高度" },
+    { path = "gpui_component::dialog::Dialog::title", reason = "用 crate::ui_scale::DialogTitleExt::titled：标题给右上角的 × 让出位置" },
 ]

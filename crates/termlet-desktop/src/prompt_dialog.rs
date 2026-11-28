@@ -19,6 +19,7 @@ use termlet_core::ssh::{Answer, Prompt, Prompter};
 
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 一个等待回答的问题。
 pub struct PromptRequest {
@@ -176,7 +177,7 @@ pub fn open(request: PromptRequest, window: &mut Window, cx: &mut App) -> onesho
         };
 
         dialog
-            .title(title)
+            .titled(title)
             .w(width)
             .overlay_closable(false)
             .child(body)

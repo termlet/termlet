@@ -39,6 +39,7 @@ use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::format_size;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 每页的条数。
 pub(super) const PAGE: usize = 200;
@@ -102,7 +103,7 @@ pub(super) fn open_audit_with(log: Arc<AuditLog>, window: &mut Window, cx: &mut 
             view.read(cx).search.focus_handle(cx).focus(window, cx);
         }
         dialog
-            .title(t!("cli_ui.audit.title"))
+            .titled(t!("cli_ui.audit.title"))
             .w(width)
             // 搜索框中按 Enter 只是立即搜索，不关闭对话框
             .on_ok(|_, _, _| false)

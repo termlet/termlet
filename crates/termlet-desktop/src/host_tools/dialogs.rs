@@ -21,6 +21,7 @@ use crate::notify::NoticeLine;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 操作需要 root、又没有免密码 sudo：说明原因，可以改在终端中执行。
 pub(super) struct RootRequest {
@@ -56,7 +57,7 @@ pub(super) fn open_root_info(
     window.open_dialog(cx, move |dialog, _, cx| {
         let muted = cx.theme().muted_foreground;
         dialog
-            .title(t!("tools.root.title"))
+            .titled(t!("tools.root.title"))
             .w(width)
             .child(
                 v_flex()
@@ -140,7 +141,7 @@ pub(super) fn open_root(
             }
         };
         dialog
-            .title(t!("tools.root.title"))
+            .titled(t!("tools.root.title"))
             .w(width)
             .child(
                 v_flex()

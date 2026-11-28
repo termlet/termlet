@@ -21,6 +21,7 @@ use crate::i18n;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 确认框关闭后的回调：确认时为（可能改过的）内容，取消、关闭时为 `None`。
 pub type OnPasteDone = Box<dyn FnOnce(Option<String>, &mut Window, &mut App)>;
@@ -78,7 +79,7 @@ pub fn confirm_with(
         }
         let done = done.clone();
         dialog
-            .title(t!("paste.title"))
+            .titled(t!("paste.title"))
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

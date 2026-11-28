@@ -26,6 +26,7 @@ use termlet_core::vault::{KeyStore as _, MemoryKeyStore, Remember};
 use super::{AboutExtras, Endpoint, LockScreen, SecurityPage, Setup};
 use crate::app_state::AppState;
 use crate::testkit::wait_until;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 假的系统功能：Windows Hello 是否可用、验证的结果可以在测试中改。
 struct FakePlatform {
@@ -264,7 +265,7 @@ fn lock_screen_covers_open_dialogs_and_keeps_them(cx: &mut TestAppContext) {
         let clicked = clicked.clone();
         window.open_dialog(cx, move |dialog, _, _| {
             let clicked = clicked.clone();
-            dialog.title("dialog").child(
+            dialog.titled("dialog").child(
                 Button::new("dialog-button")
                     .label("press")
                     .on_click(move |_, _, _| clicked.set(true)),

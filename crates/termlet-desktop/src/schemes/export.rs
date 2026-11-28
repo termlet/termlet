@@ -18,6 +18,7 @@ use termlet_core::schemes::{to_iterm_colors, to_windows_terminal_json};
 use super::{SchemeEntry, SchemeSwatch, mode_label};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 打开导出对话框：`entries` 是可以导出的配色（内置与自定义），打开时勾选 `initial` 中的。
 pub fn open(entries: Vec<SchemeEntry>, initial: Vec<String>, window: &mut Window, cx: &mut App) {
@@ -40,7 +41,7 @@ pub fn open(entries: Vec<SchemeEntry>, initial: Vec<String>, window: &mut Window
             }
         };
         dialog
-            .title(t!("schemes.export.title"))
+            .titled(t!("schemes.export.title"))
             .w(width)
             .child(view.clone())
             .on_ok(on_ok)

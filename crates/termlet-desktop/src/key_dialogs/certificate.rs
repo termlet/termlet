@@ -28,6 +28,7 @@ use crate::app_state::AppState;
 use crate::dialog_token::{DialogToken, close_own};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 证书的生效、失效时间：完整到秒。
 fn full_time(secs: i64) -> String {
@@ -218,7 +219,7 @@ pub fn open_attach(id: KeyId, window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(t!("keys.certificate_attach"))
+            .titled(t!("keys.certificate_attach"))
             .w(width)
             .overlay_closable(false)
             .child(form.clone())

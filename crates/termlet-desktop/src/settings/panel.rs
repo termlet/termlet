@@ -25,6 +25,7 @@ use gpui_kit::{
 
 use super::{SettingsForm, Target};
 use crate::prose::prose;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{notify, t};
 
 /// 面板在持久化布局中的名称，发布后不能改。
@@ -205,7 +206,7 @@ impl SettingsPanel {
         let width = rems(26.).to_pixels(window.rem_size());
         window.open_dialog(cx, move |dialog, _, _| {
             dialog
-                .title(t!("settings.close_title"))
+                .titled(t!("settings.close_title"))
                 .w(width)
                 .child(view.clone())
         });

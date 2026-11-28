@@ -17,6 +17,7 @@ use termlet_core::store::Position;
 
 use crate::app_state::AppState;
 use crate::prose::{ProseLabel as _, prose};
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{store_errors, t};
 
 /// 新建快捷命令，预先填好分组与内容（例如把历史命令存为快捷命令）。
@@ -58,7 +59,7 @@ fn open(id: Option<SnippetId>, initial: Snippet, window: &mut Window, cx: &mut A
             }
         };
         dialog
-            .title(if editing {
+            .titled(if editing {
                 t!("snippets.edit_title")
             } else {
                 t!("snippets.new_title")

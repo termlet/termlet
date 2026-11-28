@@ -19,6 +19,7 @@ use termlet_core::sftp::{SudoAsker, SudoPrompt};
 
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 一个等待回答的询问。
 pub struct SudoRequest {
@@ -142,7 +143,7 @@ pub fn open(
             move |_: &gpui_kit::ClickEvent, _: &mut Window, _: &mut App| respond(None, false)
         };
         dialog
-            .title(t!("sftp.sudo.title"))
+            .titled(t!("sftp.sudo.title"))
             .w(width)
             .overlay_closable(false)
             .child(body)

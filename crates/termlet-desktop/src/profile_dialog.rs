@@ -25,6 +25,7 @@ use crate::dialog_token::{DialogToken, close_own};
 use crate::key_fields::{self, KeyFields};
 use crate::notify::{self, NoticeLine};
 use crate::prose::prose;
+use crate::ui_scale::DialogTitleExt as _;
 use crate::{store_errors, t};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -80,7 +81,7 @@ fn open(id: Option<ProfileId>, window: &mut Window, cx: &mut App) {
             }
         };
         dialog
-            .title(if editing {
+            .titled(if editing {
                 t!("profile.edit.title")
             } else {
                 t!("profile.new.title")

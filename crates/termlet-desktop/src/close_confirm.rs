@@ -15,6 +15,7 @@ use gpui_kit::{
 use crate::app_state::AppState;
 use crate::prose::{ProseLabel as _, prose};
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 type OnConfirm = Rc<dyn Fn(&mut Window, &mut App)>;
 
@@ -211,7 +212,7 @@ fn open(
     });
     let width = rems(26.).to_pixels(window.rem_size());
     window.open_dialog(cx, move |dialog, _, _| {
-        dialog.title(title.clone()).w(width).child(form.clone())
+        dialog.titled(title.clone()).w(width).child(form.clone())
     });
 }
 

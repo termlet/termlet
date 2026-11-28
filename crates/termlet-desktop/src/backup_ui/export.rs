@@ -34,6 +34,7 @@ use crate::app_state::AppState;
 use crate::prose::{ProseLabel as _, prose};
 use crate::sidebar::rows::{TreeRow, group_members, tree_rows};
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 主机树中一行的高度（rem）。
 const ROW_HEIGHT: f32 = 1.75;
@@ -56,7 +57,7 @@ pub(super) fn open(hosts: Vec<HostId>, window: &mut Window, cx: &mut App) -> Ent
             }
         };
         dialog
-            .title(t!("backup_ui.export.title"))
+            .titled(t!("backup_ui.export.title"))
             .w(width)
             .overlay_closable(false)
             .close_button(!busy)

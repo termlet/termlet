@@ -9,14 +9,18 @@
 //! gpui-kit 有几处按 100% 时的像素写死，这里随界面大小改掉：标题栏的高度（[`title_bar`]）；通知、Sheet 让开标题栏的
 //! 距离与通知的宽度（主题中的设置，[`apply`] 一并改）；警示对话框（确认框、提示框）的宽度（[`open_alert`]）。
 
-use gpui_kit::component::dialog::AlertDialog;
+use gpui_kit::component::dialog::{AlertDialog, Dialog};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, Edges, Theme, TitleBar, WindowExt as _};
-use gpui_kit::{App, Global, OperatingSystem, Styled as _, Window, actions, px, rems};
+use gpui_kit::{
+    App, Global, InteractiveElement as _, OperatingSystem, ParentElement as _, SharedString,
+    Styled as _, TestSupportExt as _, Window, actions, div, px, rems,
+};
 use termlet_core::ui_scale;
 
 use crate::app_state::AppState;
 use crate::choice::Choice;
+use crate::prose::prose;
 use crate::{store_errors, t};
 
 actions!(
@@ -101,6 +105,31 @@ const NOTIFICATION_GAP: f32 = 1.;
 const NOTIFICATION_WIDTH: f32 = 23.875;
 /// 警示对话框（确认框、提示框）的宽度（rem）：100% 时是 gpui-kit 默认的 448 像素。
 const ALERT_WIDTH: f32 = 28.;
+
+/// 对话框标题右边多留的宽度（rem）：gpui-kit 把右上角的关闭按钮（×，1.5rem 见方的小号按钮）放在离右边 8px 处，
+/// 标题右边只留了 16px，长标题（带主机名、文件名的）折行后钻到 × 下面。
+const CLOSE_BUTTON_ROOM: f32 = 1.5;
+
+/// 对话框的标题。
+pub trait DialogTitleExt {
+    /// 设置标题，给右上角的 × 让出位置，放不下时折行（避头尾）：代替 gpui-kit 的 `Dialog::title`（`clippy.toml`
+    /// 不许直接用）。警示对话框（确认框、提示框）没有 ×，标题照常用 `AlertDialog::title`。
+    fn titled(self, title: impl Into<SharedString>) -> Self;
+}
+
+impl DialogTitleExt for Dialog {
+    #[allow(clippy::disallowed_methods)]
+    fn titled(self, title: impl Into<SharedString>) -> Self {
+        self.title(
+            div().pr(rems(CLOSE_BUTTON_ROOM)).child(
+                div()
+                    .id("dialog-title-text")
+                    .test_support()
+                    .child(prose(title.into())),
+            ),
+        )
+    }
+}
 
 /// 打开警示对话框（确认框、提示框）：宽度随界面大小（[`ALERT_WIDTH`]），`build` 中另设了宽度时以它为准。
 /// gpui-kit 的 `open_alert_dialog` 默认宽度写死像素，界面放大后显得窄，Termlet 的警示对话框都经这里打开
@@ -410,5 +439,40 @@ mod tests {
             step(cx, Box::new(ZoomOutUi));
         }
         assert_eq!(setting(cx), ui_scale::MIN);
+    }
+
+    // 长标题（带主机名的代理命令确认等）折行，不钻到右上角的 × 下面；界面 150% 时也是
+    #[gpui_kit::test]
+    fn long_dialog_titles_clear_the_close_button(cx: &mut TestAppContext) {
+        let handle = open_workspace(cx);
+        for percent in [100, 150] {
+            set_scale(cx, percent);
+            cx.update_window(handle, |_, window, cx| {
+                window.open_dialog(cx, |dialog, window, _| {
+                    let width = rems(28.75).to_pixels(window.rem_size());
+                    dialog.w(width).titled(
+                        "在这台电脑上执行“华东生产环境-订单服务-数据库主节点-只读副本-01-通过堡垒机”的代理命令？",
+                    )
+                })
+            })
+            .unwrap();
+            cx.run_until_parked();
+            cx.update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                let title = window.find("dialog-title-text").bounds();
+                let close = window.within("dialog-close").find("close").bounds();
+                assert!(
+                    title.size.height > close.size.height,
+                    "{percent}%：标题折了行"
+                );
+                assert!(
+                    title.right() <= close.left(),
+                    "{percent}%：标题 {title:?} 在 × {close:?} 左边"
+                );
+                window.close_dialog(cx);
+            })
+            .unwrap();
+            cx.run_until_parked();
+        }
     }
 }

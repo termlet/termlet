@@ -92,6 +92,7 @@ mod tests {
     use gpui_kit::{AppContext as _, Context, IntoElement, Render, TestAppContext, div};
 
     use super::*;
+    use crate::ui_scale::DialogTitleExt as _;
 
     struct Empty;
 
@@ -110,14 +111,14 @@ mod tests {
         let first = cx
             .update_window(handle, |_, window, cx| {
                 window.render_frame(cx);
-                window.open_dialog(cx, |dialog, _, _| dialog.title("first"));
+                window.open_dialog(cx, |dialog, _, _| dialog.titled("first"));
                 DialogToken::take(window, cx).unwrap()
             })
             .unwrap();
         cx.update_window(handle, |_, window, cx| {
             window.render_frame(cx);
             assert!(first.is_top(window, cx));
-            window.open_dialog(cx, |dialog, _, _| dialog.title("second"));
+            window.open_dialog(cx, |dialog, _, _| dialog.titled("second"));
             window.render_frame(cx);
             assert!(!first.close(window, cx), "上面叠了别的对话框时不关");
             assert!(window.has_active_dialog(cx));
@@ -140,10 +141,10 @@ mod tests {
         });
         cx.update_window(handle, |_, window, cx| {
             window.render_frame(cx);
-            window.open_dialog(cx, |dialog, _, _| dialog.title("first"));
+            window.open_dialog(cx, |dialog, _, _| dialog.titled("first"));
             let first = DialogToken::take(window, cx).unwrap();
             window.render_frame(cx);
-            window.open_dialog(cx, |dialog, _, _| dialog.title("second"));
+            window.open_dialog(cx, |dialog, _, _| dialog.titled("second"));
             window.render_frame(cx);
             // 后台任务完成：上面还有一个，先不关
             first.close_when_top(window, cx);

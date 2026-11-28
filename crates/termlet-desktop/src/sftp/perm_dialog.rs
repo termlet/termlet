@@ -20,6 +20,7 @@ use gpui_kit::{
 use super::perm::{self, BitState, PermChange};
 use crate::prose::prose;
 use crate::t;
+use crate::ui_scale::DialogTitleExt as _;
 
 /// 要修改的一项。
 #[derive(Clone, Debug)]
@@ -59,7 +60,7 @@ pub fn open(items: Vec<PermItem>, submit: Submit, window: &mut Window, cx: &mut 
             }
         };
         dialog
-            .title(t!("sftp.perm.title"))
+            .titled(t!("sftp.perm.title"))
             .w(width)
             .overlay_closable(false)
             .child(form.clone())
