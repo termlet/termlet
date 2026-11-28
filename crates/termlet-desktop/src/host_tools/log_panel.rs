@@ -47,6 +47,7 @@ use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
+use crate::truncated::Clip;
 
 /// 面板在持久化布局中的名称，发布后不能改。
 const PANEL_NAME: &str = "LogPanel";
@@ -1172,7 +1173,11 @@ impl Panel for LogPanel {
                             .xsmall()
                             .text_color(cx.theme().info),
                     )
-                    .child(self.title_text()),
+                    // 名称太长时截断；提示里有完整的来源，不用另补
+                    .child(crate::dock_skin::tab_name(
+                        &Clip::default(),
+                        self.title_text(),
+                    )),
             )
             .when(self.follow && self.active, |this| {
                 this.child(div().size_1p5().rounded_full().bg(cx.theme().success))

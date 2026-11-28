@@ -23,6 +23,7 @@ use crate::forwards::{self, RowState};
 use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::format_size;
+use crate::truncated::truncated;
 use crate::{forward_dialog, store_errors, t};
 
 /// 监听所有网卡的规则：谁能经由它访问目标（侧边栏的警示标记）。
@@ -155,7 +156,12 @@ impl ForwardList {
                                 Tooltip::new(state_text.clone()).build(window, cx)
                             }),
                     )
-                    .child(div().flex_1().min_w_0().truncate().text_sm().child(name))
+                    // 名称、路线放不下时截断，悬停看全文
+                    .child(
+                        truncated(SharedString::from(format!("forward-name-{id}")), name)
+                            .flex_1()
+                            .text_sm(),
+                    )
                     .when_some(exposed, |this, exposed| {
                         this.child(
                             div()
@@ -234,12 +240,11 @@ impl ForwardList {
                     ),
             )
             .child(
-                div()
-                    .pl_4()
-                    .truncate()
-                    .text_xs()
-                    .text_color(muted)
-                    .child(prose(detail)),
+                div().pl_4().child(
+                    truncated(SharedString::from(format!("forward-detail-{id}")), detail)
+                        .text_xs()
+                        .text_color(muted),
+                ),
             )
             .when(active, |this| {
                 this.child(div().pl_4().text_xs().text_color(muted).child(prose(t!(
@@ -271,12 +276,14 @@ impl ForwardList {
                     .filter(|_| status.state == RowState::Running),
                 |this, message| {
                     this.child(
-                        div()
-                            .pl_4()
-                            .truncate()
+                        div().pl_4().child(
+                            truncated(
+                                SharedString::from(format!("forward-target-failed-{id}")),
+                                t!("forward.target_failed", message = message),
+                            )
                             .text_xs()
-                            .text_color(warning)
-                            .child(prose(t!("forward.target_failed", message = message))),
+                            .text_color(warning),
+                        ),
                     )
                 },
             )

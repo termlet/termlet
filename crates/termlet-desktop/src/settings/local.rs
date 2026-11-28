@@ -34,6 +34,7 @@ use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::folder_menu::FolderMenuSection;
 use crate::local_shell::{LocalTarget, shell_key};
 use crate::prose::prose;
+use crate::truncated::truncated;
 use crate::{local_shell, t};
 
 pub(super) struct LocalPage {
@@ -381,23 +382,19 @@ impl Render for LocalPage {
                                 }
                             })),
                     )
+                    // 名称与命令行放不下时截断，悬停看全文
                     .child(
-                        div()
+                        truncated(id("settings-shell-name"), target.title())
                             .w(rems(10.))
                             .flex_none()
-                            .truncate()
-                            .when(hidden, |this| this.text_color(muted))
-                            .child(target.title()),
+                            .when(hidden, |this| this.text_color(muted)),
                     )
                     .child(
-                        div()
+                        truncated(id("settings-shell-command"), command)
                             .flex_1()
-                            .min_w_0()
-                            .truncate()
                             .text_xs()
                             .text_color(muted)
-                            .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
-                            .child(command),
+                            .font_family(termlet_terminal::fonts::DEFAULT_FAMILY),
                     )
                     .when_some(status, |this, status| {
                         this.child(

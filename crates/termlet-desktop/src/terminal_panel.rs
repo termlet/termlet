@@ -78,6 +78,7 @@ use crate::brand_icons::{self, Brand};
 use crate::prose::prose;
 use crate::terminal_colors::{self, SchemeLevels};
 use crate::terminal_search::{OpenSearch, SearchBar, SearchBarEvent};
+use crate::truncated::Clip;
 use crate::{local_shell, ssh_errors, t};
 
 /// 面板在持久化布局中的名称，发布后不能改。
@@ -3372,6 +3373,8 @@ impl Panel for TerminalPanel {
         // Tab 上写创建时的名称（主机名、本地 shell 等，与 SFTP 的 Tab 一致），不随远端程序设置的标题变化；
         // 程序设置的标题与连接目标在悬停提示中（也是无障碍的描述）
         let tooltip = self.tab_tooltip(cx);
+        // 名称太长时截断，提示的第一行补上全名
+        let (clip, name) = (Clip::default(), self.name.clone());
         // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
         // 自己的关闭按钮（Dock 自带的不显示）：有连接时按设置先确认
@@ -3386,13 +3389,17 @@ impl Panel for TerminalPanel {
                 gpui_kit::MouseButton::Left,
                 cx.listener(|this, _, window, cx| this.focus_handle(cx).focus(window, cx)),
             )
-            .when_some(tooltip, |this, tooltip| {
-                this.aria_description(tooltip.clone())
-                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
-                        gpui_kit::component::tooltip::Tooltip::new(tooltip.clone())
-                            .build(window, cx)
-                    }))
+            .when_some(tooltip.clone(), |this, tooltip| {
+                this.aria_description(tooltip)
             })
+            .tooltip(crate::menu_tooltip::quiet({
+                let (clip, name) = (clip.clone(), name.clone());
+                move |window, cx| {
+                    let text =
+                        crate::workspace::tooltip_lines([clip.full(&name), tooltip.as_ref()]);
+                    crate::truncated::tooltip(text, window, cx)
+                }
+            }))
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
                 let this = cx.entity().downgrade();
@@ -3409,7 +3416,7 @@ impl Panel for TerminalPanel {
             })
             // 与 SFTP 的 Tab 一样，标题前有图标（同一台主机的终端与 SFTP 的 Tab 同名）
             .child(self.tab_icon_element(cx))
-            .child(self.name.clone())
+            .child(crate::dock_skin::tab_name(&clip, name))
             .children(self.tab_badges(cx))
             .child(
                 gpui_kit::component::button::Button::new(close_id)

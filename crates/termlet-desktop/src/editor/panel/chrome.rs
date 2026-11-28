@@ -17,6 +17,7 @@ use crate::editor::text::Eol;
 use crate::prose::prose;
 use crate::sftp::list_model::{format_size, visible_name};
 use crate::t;
+use crate::truncated::Clip;
 
 /// 提示条：浅色底、同色文字；文字太长时换行。
 fn bar(background: Hsla, foreground: Hsla) -> Div {
@@ -107,7 +108,8 @@ impl EditorPanel {
                     .id(("editor-tab-title", id))
                     .gap_1()
                     .child(Icon::new(IconName::FileText).xsmall().text_color(warning))
-                    .child(label)
+                    // 文件名太长时截断；提示是完整的路径，不用另补
+                    .child(crate::dock_skin::tab_name(&Clip::default(), label))
                     .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
                         Tooltip::new(path.clone()).build(window, cx)
                     })),

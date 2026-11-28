@@ -8,9 +8,11 @@ use gpui_kit::component::searchable_list::{
 use gpui_kit::component::select::{Select, SelectState};
 use gpui_kit::component::{Sizable, Size};
 use gpui_kit::{
-    App, AppContext as _, Context, ElementId, Entity, IntoElement, Pixels, RenderOnce,
+    AnyElement, App, AppContext as _, Context, ElementId, Entity, IntoElement, Pixels, RenderOnce,
     SharedString, StyleRefinement, Styled, Window, rems,
 };
+
+use crate::truncated::truncated;
 
 /// 下拉弹出层最高多少（rem），与 gpui-kit 的默认值相同。
 const MENU_MAX_HEIGHT: f32 = 20.;
@@ -39,6 +41,16 @@ impl<V: Clone + PartialEq + 'static> SearchableListItem for Choice<V> {
 
     fn title(&self) -> SharedString {
         self.title.clone()
+    }
+
+    // 下拉框与弹出层中的选项放不下时截断，悬停看全文（如导入来源“MobaXterm 书签（MobaXterm.ini 或…”）；ID 只需在
+    // 一行之内不重复
+    fn display_title(&self) -> Option<AnyElement> {
+        Some(truncated("choice-title", self.title.clone()).into_any_element())
+    }
+
+    fn render(&self, _: &mut Window, _: &mut App) -> impl IntoElement {
+        truncated("choice-title", self.title.clone())
     }
 
     fn value(&self) -> &V {

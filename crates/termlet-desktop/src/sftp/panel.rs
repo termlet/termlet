@@ -45,6 +45,7 @@ use super::transfers::{TransferList, TransferListEvent};
 use crate::app_state::AppState;
 use crate::brand_icons::{self, Brand};
 use crate::terminal_panel::TerminalPanel;
+use crate::truncated::Clip;
 use crate::{ssh_errors, t};
 
 /// 面板在持久化布局中的名称，发布后不能改。
@@ -1533,17 +1534,22 @@ impl Panel for SftpPanel {
         let close_id = ("sftp-tab-close", cx.entity_id().as_u64() as usize);
         // 右键菜单开着时关闭按钮不挂悬停提示（会浮在菜单上，见 crate::menu_tooltip）
         let menu_open = crate::menu_tooltip::menu_open(window, cx);
+        // 名称太长时截断，提示的第一行补上全名
+        let (clip, name) = (Clip::default(), self.name.clone());
+        let target = self.tab_target();
         h_flex()
             .id(("sftp-tab-title", cx.entity_id().as_u64() as usize))
             .test_support()
             .gap_1()
             // 悬停提示是连接目标（也是无障碍的描述）
-            .when_some(self.tab_target(), |this, target| {
-                this.aria_description(target.clone())
-                    .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
-                        gpui_kit::component::tooltip::Tooltip::new(target.clone()).build(window, cx)
-                    }))
-            })
+            .when_some(target.clone(), |this, target| this.aria_description(target))
+            .tooltip(crate::menu_tooltip::quiet({
+                let (clip, name) = (clip.clone(), name.clone());
+                move |window, cx| {
+                    let text = crate::workspace::tooltip_lines([clip.full(&name), target.as_ref()]);
+                    crate::truncated::tooltip(text, window, cx)
+                }
+            }))
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
                 let this = cx.entity().downgrade();
@@ -1559,7 +1565,7 @@ impl Panel for SftpPanel {
             })
             // 文件夹图标说明这是文件管理（同一台主机的终端与 SFTP 的 Tab 同名），后面是系统的标志（有的话）
             .children(self.tab_icons(cx))
-            .child(self.name.clone())
+            .child(crate::dock_skin::tab_name(&clip, name))
             .children(self.tab_badges(cx))
             .child(
                 Button::new(close_id)

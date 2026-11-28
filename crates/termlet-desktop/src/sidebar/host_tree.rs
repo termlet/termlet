@@ -53,6 +53,7 @@ use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::settings::{self, Page as SettingsPage};
 use crate::terminal_panel::SessionStatus;
+use crate::truncated::truncated;
 use crate::ui_state::UiStateModel;
 use crate::{group_dialog, host_dialog, local_shell, store_errors, t, workspaces};
 
@@ -1399,12 +1400,10 @@ impl HostTree {
                         )
                         .small(),
                     )
+                    // 本地终端的名称放不下时截断，悬停看全名
                     .child(
-                        div()
-                            .min_w_0()
-                            .truncate()
-                            .text_size(rems(NAME_TEXT))
-                            .child(name),
+                        truncated(SharedString::from(format!("local-shell-name-{key}")), name)
+                            .text_size(rems(NAME_TEXT)),
                     )
                     .when(wsl, |el| {
                         el.child(
@@ -1494,14 +1493,12 @@ impl HostTree {
                     .small()
                     .text_color(theme.muted_foreground),
                 )
+                // 分组名放不下时截断，悬停看全名（主机行的提示另有地址等）
                 .child(
-                    div()
+                    truncated(SharedString::from(format!("group-name-{id}")), name)
                         .flex_1()
-                        .min_w_0()
-                        .truncate()
                         .font_medium()
-                        .text_size(rems(NAME_TEXT))
-                        .child(name),
+                        .text_size(rems(NAME_TEXT)),
                 )
                 .child(
                     div()

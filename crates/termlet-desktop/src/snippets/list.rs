@@ -9,7 +9,6 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     AppContext as _, ClickEvent, Context, ElementId, Entity, EventEmitter, InteractiveElement as _,
@@ -27,6 +26,7 @@ use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::t;
+use crate::truncated::{Clip, truncated};
 
 /// 快捷命令页发给工作区的请求。
 pub enum SnippetListEvent {
@@ -135,6 +135,9 @@ impl SnippetList {
         let element =
             |name: &str| ElementId::from(SharedString::from(format!("{name}-{}", snippet.id)));
         let content: SharedString = snippet.doc.content.trim_end().to_string().into();
+        // 名称放不下时截断，行的悬停提示（内容）前面补上全名
+        let name: SharedString = snippet.doc.name.clone().into();
+        let clip = Clip::default();
         let menu_id = id.clone();
         h_flex()
             .id(element("snippet-row"))
@@ -155,14 +158,7 @@ impl SnippetList {
                     .xsmall()
                     .text_color(theme.muted_foreground),
             )
-            .child(
-                div()
-                    .flex_1()
-                    .min_w_0()
-                    .truncate()
-                    .text_sm()
-                    .child(snippet.doc.name.clone()),
-            )
+            .child(clip.text(name.clone()).flex_1().text_sm())
             .child(
                 h_flex()
                     .invisible()
@@ -197,7 +193,8 @@ impl SnippetList {
                     ),
             )
             .tooltip(crate::menu_tooltip::quiet(move |window, cx| {
-                Tooltip::new(content.clone()).build(window, cx)
+                let text = crate::workspace::tooltip_lines([clip.full(&name), Some(&content)]);
+                crate::truncated::tooltip(text, window, cx)
             }))
             .on_click(cx.listener({
                 let id = id.clone();
@@ -309,17 +306,17 @@ impl Render for SnippetList {
                             .text_color(muted),
                         )
                         .child(
-                            div()
-                                .flex_1()
-                                .min_w_0()
-                                .truncate()
-                                .text_sm()
-                                .font_weight(gpui_kit::FontWeight::MEDIUM)
-                                .child(prose(if group.is_empty() {
+                            truncated(
+                                SharedString::from(format!("snippet-group-name-{group}")),
+                                if group.is_empty() {
                                     t!("snippets.ungrouped")
                                 } else {
                                     group.clone().into()
-                                })),
+                                },
+                            )
+                            .flex_1()
+                            .text_sm()
+                            .font_weight(gpui_kit::FontWeight::MEDIUM),
                         )
                         .child(
                             div()

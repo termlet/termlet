@@ -58,6 +58,7 @@ use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::prose::prose;
 use crate::scrolling::ScrollGutter as _;
 use crate::t;
+use crate::truncated::truncated;
 
 /// 预览中一行的高度（rem）：上下留白、第一行（名称、地址等）、之后每一行说明。说明都只占一行（过长时截断，
 /// 悬停显示全文），行高因此可以事先算出，列表按可见的范围渲染。
@@ -1394,15 +1395,21 @@ impl ImportDialog {
                 this.click_row(&click_key, window.modifiers().shift, cx)
             }))
             .child(
+                // 名称、地址、分组放不下时截断，悬停看全文
                 v_flex()
                     .w_full()
                     .child(Self::columns(
-                        div().child(item.name.clone()).into_any_element(),
-                        div()
-                            .text_color(muted)
-                            .child(address_text(item))
+                        truncated(super::element_id("import-name", &key), item.name.clone())
                             .into_any_element(),
-                        div().text_color(muted).child(group).into_any_element(),
+                        truncated(
+                            super::element_id("import-address", &key),
+                            address_text(item),
+                        )
+                        .text_color(muted)
+                        .into_any_element(),
+                        truncated(super::element_id("import-group", &key), group)
+                            .text_color(muted)
+                            .into_any_element(),
                         status.into_any_element(),
                     ))
                     .children(detail_rows),

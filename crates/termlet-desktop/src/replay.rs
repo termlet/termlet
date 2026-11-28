@@ -48,6 +48,7 @@ use crate::t;
 use crate::terminal_colors::{self, SchemeLevels};
 use crate::terminal_panel::clock_text;
 use crate::terminal_search::{OpenSearch, SearchBar, SearchBarEvent};
+use crate::truncated::Clip;
 
 mod keyframes;
 
@@ -899,7 +900,11 @@ impl Panel for ReplayPanel {
                             .xsmall()
                             .text_color(cx.theme().info),
                     )
-                    .child(self.title_text()),
+                    // 名称太长时截断；提示是完整的路径，不用另补
+                    .child(crate::dock_skin::tab_name(
+                        &Clip::default(),
+                        self.title_text(),
+                    )),
             )
             .child(
                 // 自己的关闭按钮（Dock 自带的不显示）
