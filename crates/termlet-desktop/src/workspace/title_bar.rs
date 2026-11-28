@@ -258,7 +258,9 @@ impl Workspace {
                             .small()
                             .icon(IconName::ChevronDown)
                             .tooltip(t!("title_bar.local_terminals"))
-                            .dropdown_menu(move |menu, _, cx| {
+                            .dropdown_menu(move |menu, window, cx| {
+                                // 本地终端多（WSL 发行版、VS 的开发者终端）时窗口矮也点得到
+                                let menu = crate::menu_fit::fit(menu, window);
                                 let settings = AppState::store(cx).local_settings();
                                 let default =
                                     local_shell::default_target(&settings, cx).map(|t| t.key());
@@ -433,22 +435,25 @@ impl Workspace {
                     .small()
                     .icon(IconName::Ellipsis)
                     .when(!state.menu_open, |b| b.tooltip(t!("toolbar.more")))
-                    .dropdown_menu(move |menu, _, _| {
+                    .dropdown_menu(move |menu, window, _| {
                         items
                             .iter()
-                            .fold(menu, |menu, (item, title, checked)| {
-                                let (item, this) = (*item, this.clone());
-                                menu.item(
-                                    PopupMenuItem::new(title.clone())
-                                        .icon(item.icon())
-                                        .checked(*checked)
-                                        .on_click(move |_, window, cx| {
-                                            let _ = this.update(cx, |w, cx| {
-                                                w.run_toolbar_item(item, window, cx)
-                                            });
-                                        }),
-                                )
-                            })
+                            .fold(
+                                crate::menu_fit::fit(menu, window),
+                                |menu, (item, title, checked)| {
+                                    let (item, this) = (*item, this.clone());
+                                    menu.item(
+                                        PopupMenuItem::new(title.clone())
+                                            .icon(item.icon())
+                                            .checked(*checked)
+                                            .on_click(move |_, window, cx| {
+                                                let _ = this.update(cx, |w, cx| {
+                                                    w.run_toolbar_item(item, window, cx)
+                                                });
+                                            }),
+                                    )
+                                },
+                            )
                             .separator()
                             .item(customize_item())
                     }),

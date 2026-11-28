@@ -48,6 +48,7 @@ use termlet_core::model::TabPosition;
 
 use super::{CONTENT_MIN, KEY_CONTEXT, NewLocalTerminal, SoleTabDrag, Workspace};
 use crate::app_state::AppState;
+use crate::scrolling::{ScrollGutter as _, TrackedScroll as _};
 use crate::sftp::panel::SftpTarget;
 use crate::t;
 
@@ -1106,13 +1107,13 @@ impl Workspace {
         self.show_listed_tab(panel, window, cx);
         let this = cx.entity().downgrade();
         window.defer(cx, move |window, cx| {
-            let menu =
-                PopupMenu::build(window, cx, move |menu, window, cx| {
-                    match PanelHandle::of(&view) {
-                        Some(handle) => handle.dropdown_menu(menu, window, cx),
-                        None => menu,
-                    }
-                });
+            let menu = PopupMenu::build(window, cx, move |menu, window, cx| {
+                let menu = crate::menu_fit::fit(menu, window);
+                match PanelHandle::of(&view) {
+                    Some(handle) => handle.dropdown_menu(menu, window, cx),
+                    None => menu,
+                }
+            });
             let focus = menu.focus_handle(cx);
             focus.focus(window, cx);
             let _ = this.update(cx, |this, cx| {
@@ -1348,9 +1349,10 @@ impl Workspace {
                                 this.leave_tab_list(window, cx)
                             }))
                             .size_full()
-                            .track_scroll(&scroll)
-                            .overflow_y_scroll()
+                            .tracked_y(&scroll)
                             .px_1()
+                            // 悬停时行尾的关闭按钮让出滚动条
+                            .scrollbar_gutter()
                             .pb_1()
                             .children(rows),
                     )
@@ -1734,6 +1736,8 @@ impl Workspace {
                     let _ = cx.update(|window, cx| focus.focus(window, cx));
                 })
                 .detach();
+            // 项多：窗口矮时在菜单里滚动，不伸出窗口
+            let menu = crate::menu_fit::fit(menu, window);
             match view.as_ref().and_then(PanelHandle::of) {
                 Some(handle) => handle.dropdown_menu(menu, window, cx),
                 None => menu,
@@ -1848,16 +1852,30 @@ impl Workspace {
                     }),
             )
             .child(
-                div().relative().flex_1().min_h_0().w_full().child(
-                    v_flex()
-                        .id("vtab-rail-list")
-                        .size_full()
-                        .track_scroll(&scroll)
-                        .overflow_y_scroll()
-                        .items_center()
-                        .gap_0p5()
-                        .children(items),
-                ),
+                div()
+                    .relative()
+                    .flex_1()
+                    .min_h_0()
+                    .w_full()
+                    .child(
+                        v_flex()
+                            .id("vtab-rail-list")
+                            .size_full()
+                            .tracked_y(&scroll)
+                            .items_center()
+                            .gap_0p5()
+                            .children(items),
+                    )
+                    .child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .child(crate::scrolling::thin_scrollbar(
+                                "vtab-rail-scrollbar",
+                                &scroll,
+                                cx,
+                            )),
+                    ),
             )
             .child(
                 div().flex_none().py_1().child(

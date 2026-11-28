@@ -6,7 +6,6 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::form::{field, v_form};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, InteractiveElement as _, IntoElement,
@@ -345,7 +344,7 @@ impl SecurityPage {
                     .child(
                         div()
                             .w(rems(12.))
-                            .child(Select::new(&self.idle).id("security-idle")),
+                            .child(crate::choice::select(&self.idle).id("security-idle")),
                     ),
             )
             .child(

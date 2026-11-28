@@ -15,8 +15,8 @@ use gpui_kit::component::kbd::Kbd;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, WindowExt as _, h_flex};
 use gpui_kit::{
     Action, App, AppContext as _, Context, Entity, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, SharedString, Styled as _, TestSupportExt as _, WeakEntity, Window,
-    div, prelude::FluentBuilder as _, rems,
+    ParentElement as _, Pixels, Render, SharedString, Styled as _, TestSupportExt as _, WeakEntity,
+    Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::{HostId, WorkspaceId};
 use termlet_core::model::{Host, Workspace as SavedWorkspace};
@@ -41,6 +41,16 @@ use crate::{group_dialog, host_dialog, schemes, settings, t};
 
 /// 最多列出这么多项。
 const MAX_RESULTS: usize = 50;
+
+/// 命令面板、配色选择器的列表最高 24rem，窗口矮时缩短，整个对话框留在窗口内（搜索框、底下的说明与对话框离窗口
+/// 上下边的距离约 9rem）：放不下时对话框自己滚动，它没有内边距，滚动条会压在各行的右端。
+pub(crate) fn list_max_height(window: &Window) -> Pixels {
+    let rem = window.rem_size();
+    rems(24.)
+        .to_pixels(rem)
+        .min(window.viewport_size().height - rems(9.).to_pixels(rem))
+        .max(rems(4.).to_pixels(rem))
+}
 
 /// 一个可以执行的条目。
 #[derive(Clone)]
@@ -641,7 +651,7 @@ impl CommandPalette {
 }
 
 impl Render for CommandPalette {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // 列出的全是操作时（如不输入、或以 > 开头）不逐行显示同一个图标与“操作”，混着主机、Tab 时才用来区分
         let only_ops = self.shown.iter().all(|e| e.category == Category::Op);
         let items = self.shown.iter().map(|entry| {
@@ -711,7 +721,7 @@ impl Render for CommandPalette {
             .placeholder(t!("palette.placeholder"))
             .filterable(false)
             .bordered(false)
-            .max_h(rems(24.))
+            .max_h(list_max_height(window))
             .items(items)
             .empty(|_, _, cx| {
                 div()
@@ -846,6 +856,32 @@ mod tests {
         let entries = vec![batch, entry("群发通知", ""), entry("other", "")];
         assert_eq!(rank(&entries, &["群发".into()]), [1, 0]);
         assert_eq!(rank(&entries, &["run".into(), "hosts".into()]), [0]);
+    }
+
+    // 窗口矮时列表缩短，整个面板留在窗口内（放不下时对话框自己滚动，它的滚动条会压在各行右端）
+    #[gpui_kit::test]
+    fn palette_fits_a_short_window(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt as _;
+        let handle = crate::testkit::open_workspace_sized(
+            cx,
+            gpui_kit::size(gpui_kit::px(720.), gpui_kit::px(360.)),
+        );
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            window.dispatch_action(Box::new(crate::workspace::OpenCommandPalette), cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            let palette = window.find("command-palette").bounds();
+            let height = window.viewport_size().height;
+            assert!(
+                palette.bottom() <= height,
+                "面板 {palette:?} 在窗口（高 {height:?}）内"
+            );
+        })
+        .unwrap();
     }
 
     /// 打开命令面板，搜 `query`，按 Enter 执行第一项。

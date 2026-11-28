@@ -88,7 +88,7 @@ const STATE_COLUMN_FROM: f32 = 27.;
 const TAG_TEXT_FROM: f32 = 29.;
 /// 列表宽度够时另有命令行一列（rem；服务页、Docker 页的“宽面板”也按它）。
 pub(super) const WIDE_FROM: f32 = 35.5;
-/// CPU 一列的宽度（rem）：放得下“100.0%”。
+/// CPU 一列的宽度（rem）：放得下“100.0%”。列表最右的一列，数字右边留 0.5rem，进程多、滚动条一直显示时不被滑块盖住。
 const CPU_WIDTH: f32 = 3.5;
 /// 树形中每一层缩进的宽度（rem；列表窄、不显示用户一列时用小的），最多缩进这么多层（再深的与它对齐，名称不被挤掉）。
 const TREE_STEP: f32 = 0.625;
@@ -1499,11 +1499,16 @@ impl ProcessPage {
                 t!("tools.process.col_mem"),
                 cx,
             )))
-            .child(h_flex().flex_none().w(rems(CPU_WIDTH)).justify_end().child(
-                cell(ProcSort::Cpu, "CPU".into(), cx).tooltip(|window, cx| {
-                    Tooltip::new(t!("tools.process.cpu_hint")).build(window, cx)
-                }),
-            ))
+            .child(
+                h_flex()
+                    .flex_none()
+                    .w(rems(CPU_WIDTH))
+                    .pr_2()
+                    .justify_end()
+                    .child(cell(ProcSort::Cpu, "CPU".into(), cx).tooltip(|window, cx| {
+                        Tooltip::new(t!("tools.process.cpu_hint")).build(window, cx)
+                    })),
+            )
     }
 
     /// 树形中行首的一格：有子进程时是 ▸（收起着）或 ▾，点了收起、展开（不改变选中）；没有子进程时空着，名称照样对齐。
@@ -1798,11 +1803,12 @@ impl ProcessPage {
                 div()
                     .flex_none()
                     .w(rems(CPU_WIDTH))
+                    .pr_2()
                     .text_right()
                     .child(format_cpu(process.cpu)),
             )
             .children(actions)
-            .context_menu(menu)
+            .context_menu(crate::menu_fit::fitted(menu))
             .into_any_element()
     }
 
@@ -1913,6 +1919,7 @@ impl ProcessPage {
                 div()
                     .flex_none()
                     .w(rems(CPU_WIDTH))
+                    .pr_2()
                     .text_right()
                     .child(format_cpu(cpu)),
             )

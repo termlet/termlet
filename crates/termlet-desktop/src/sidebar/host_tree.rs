@@ -50,6 +50,7 @@ use crate::brand_icons;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::local_shell::LocalTarget;
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::settings::{self, Page as SettingsPage};
 use crate::terminal_panel::SessionStatus;
 use crate::ui_state::UiStateModel;
@@ -1526,7 +1527,7 @@ impl HostTree {
                         }
                     })
                 })
-                .context_menu(Self::group_menu(id))
+                .context_menu(crate::menu_fit::fitted(Self::group_menu(id)))
                 .into_any_element()
             }
             RowKind::Host {
@@ -1654,7 +1655,13 @@ impl HostTree {
                         }
                     })
                 })
-                .context_menu(Self::host_menu(this, id, favorite, ssh, single_channel))
+                .context_menu(crate::menu_fit::fitted(Self::host_menu(
+                    this,
+                    id,
+                    favorite,
+                    ssh,
+                    single_channel,
+                )))
                 .into_any_element()
             }
         }
@@ -1896,7 +1903,8 @@ impl Render for HostTree {
                 |this, range, _, cx| range.map(|ix| this.render_row(ix, cx)).collect::<Vec<_>>(),
             )
             .track_scroll(&self.scroll)
-            .px_1();
+            .pl_1()
+            .scrollbar_gutter();
             if no_hosts {
                 v_flex()
                     .size_full()

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenuItem};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
     AnyElement, Context, InteractiveElement as _, IntoElement, ParentElement as _, Render,
@@ -17,6 +18,7 @@ use termlet_core::store::{Record, Store, StoreEvent};
 
 use crate::app_state::AppState;
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::{key_dialogs, t};
 
 pub struct KeyList {
@@ -302,11 +304,12 @@ impl Render for KeyList {
             .when(!rows.is_empty(), |this| {
                 this.child(
                     v_flex()
-                        .id("key-list")
                         .flex_1()
                         .min_h_0()
-                        .px_1()
-                        .overflow_y_scroll()
+                        .pl_1()
+                        .scrollbar_gutter()
+                        .overflow_y_scrollbar()
+                        .id("key-list")
                         .children(rows),
                 )
             })

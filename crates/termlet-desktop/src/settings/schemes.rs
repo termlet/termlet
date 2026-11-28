@@ -15,7 +15,7 @@ use gpui_kit::component::form::field;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::tag::Tag;
 use gpui_kit::component::tooltip::Tooltip;
@@ -718,16 +718,22 @@ impl Render for SchemesPage {
                             h_flex()
                                 .gap_3()
                                 .items_start()
-                                .child(div().flex_1().child(
-                                    field().label(t!("schemes.slot_light")).child(
-                                        Select::new(&self.light_select).id("settings-scheme-light"),
+                                .child(
+                                    div().flex_1().child(
+                                        field().label(t!("schemes.slot_light")).child(
+                                            crate::choice::select(&self.light_select)
+                                                .id("settings-scheme-light"),
+                                        ),
                                     ),
-                                ))
-                                .child(div().flex_1().child(
-                                    field().label(t!("schemes.slot_dark")).child(
-                                        Select::new(&self.dark_select).id("settings-scheme-dark"),
+                                )
+                                .child(
+                                    div().flex_1().child(
+                                        field().label(t!("schemes.slot_dark")).child(
+                                            crate::choice::select(&self.dark_select)
+                                                .id("settings-scheme-dark"),
+                                        ),
                                     ),
-                                )),
+                                ),
                         )
                         .child(
                             div()

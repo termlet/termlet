@@ -13,7 +13,6 @@ use gpui_kit::component::dialog::{DialogAction, DialogClose, DialogFooter};
 use gpui_kit::component::form::{field, v_form};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
@@ -563,7 +562,7 @@ impl Render for ForwardForm {
         let host_field = match &self.host {
             Some(select) => v_flex()
                 .gap_1()
-                .child(Select::new(select).id("forward-host"))
+                .child(crate::choice::select(select).id("forward-host"))
                 .when(host_unavailable, |this| {
                     this.child(
                         div()
@@ -601,11 +600,9 @@ impl Render for ForwardForm {
                             .child(
                                 h_flex()
                                     .gap_2()
-                                    .child(
-                                        div()
-                                            .flex_1()
-                                            .child(Select::new(&self.bind).id("forward-bind")),
-                                    )
+                                    .child(div().flex_1().child(
+                                        crate::choice::select(&self.bind).id("forward-bind"),
+                                    ))
                                     .child(div().w(rems(6.)).child(
                                         Input::new(&self.bind_port).id("forward-bind-port"),
                                     )),

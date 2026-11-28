@@ -3,10 +3,14 @@
 //! 有焦点时整列画焦点框。整列的宽度随最长的分页名放宽（[`column`]）。
 
 use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::scroll::Scrollbar;
 use gpui_kit::{
-    App, Div, FocusHandle, InteractiveElement as _, KeyDownEvent, Stateful,
-    StatefulInteractiveElement as _, Styled as _, Window, div, prelude::FluentBuilder as _, rems,
+    App, Div, FocusHandle, InteractiveElement as _, IntoElement, KeyDownEvent, ParentElement as _,
+    ScrollHandle, SharedString, Stateful, Styled as _, Window, div, prelude::FluentBuilder as _,
+    rems,
 };
+
+use crate::scrolling::TrackedScroll as _;
 
 /// 导航这一列（右边一条分隔线）：至少 10rem，分页名更长时（英文的比中文长）按最长的分页名放宽，不裁掉文字；
 /// 右侧的内容让出这部分宽度。
@@ -36,20 +40,70 @@ pub fn step(event: &KeyDownEvent, current: usize, len: usize) -> Option<usize> {
 }
 
 /// 包住导航的一列：跟踪焦点，有焦点时画焦点框（没有焦点时边框透明，切换时不挪动内容）。按键由调用方用
-/// `on_key_down` 加上，在其中调用 [`step`]。比对话框矮的窗口里（界面放大后也是）分页放不下时可以上下滚动，不压到
-/// 对话框底部的按钮上。
-pub fn frame(id: &'static str, focus: &FocusHandle, window: &Window, cx: &App) -> Stateful<Div> {
+/// `on_key_down` 加上，在其中调用 [`step`]；分页经返回的 [`Pages`] 放进来（`frame.child(pages.list(…))`）。
+pub fn frame(
+    id: &'static str,
+    focus: &FocusHandle,
+    window: &mut Window,
+    cx: &mut App,
+) -> (Stateful<Div>, Pages) {
     let focused = focus.is_focused(window);
+    let scroll = window
+        .use_keyed_state(SharedString::from(format!("{id}-scroll")), cx, |_, _| {
+            ScrollHandle::new()
+        })
+        .read(cx)
+        .clone();
+    let scrollbar = crate::scrolling::thin_scrollbar(
+        SharedString::from(format!("{id}-scrollbar")),
+        &scroll,
+        cx,
+    );
     let theme = cx.theme();
-    div()
+    let frame = div()
         .id(id)
         .max_h_full()
-        .overflow_y_scroll()
+        .flex()
+        .flex_col()
         .track_focus(focus)
         .rounded(theme.radius)
         .border_1()
         .border_color(gpui_kit::transparent_black())
-        .when(focused, |this| this.border_color(theme.ring))
+        .when(focused, |this| this.border_color(theme.ring));
+    let pages = Pages {
+        id,
+        scroll,
+        scrollbar,
+    };
+    (frame, pages)
+}
+
+/// [`frame`] 中的分页列表：比对话框矮的窗口里（界面放大后也是）放不下时上下滚动，右边有细的滚动条（不盖住分页、
+/// 不接住点击），不压到对话框底部的按钮上；焦点框留在外面，不随分页滚走。
+pub struct Pages {
+    id: &'static str,
+    scroll: ScrollHandle,
+    scrollbar: Scrollbar,
+}
+
+impl Pages {
+    pub fn list(self, content: impl IntoElement) -> Div {
+        div()
+            .relative()
+            .flex()
+            .flex_col()
+            .flex_shrink(1.)
+            .min_h_0()
+            .child(
+                div()
+                    .id(SharedString::from(format!("{}-pages", self.id)))
+                    .flex_shrink(1.)
+                    .min_h_0()
+                    .tracked_y(&self.scroll)
+                    .child(content),
+            )
+            .child(div().absolute().inset_0().child(self.scrollbar))
+    }
 }
 
 #[cfg(test)]

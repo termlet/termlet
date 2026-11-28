@@ -3,13 +3,14 @@
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     AnyElement, Context, Div, ElementId, Hsla, InteractiveElement as _, IntoElement,
-    ParentElement as _, SharedString, StatefulInteractiveElement as _, Styled as _,
-    TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
+    ParentElement as _, SharedString, Styled as _, TestSupportExt as _, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
 use termlet_core::proto::BatchStatus;
 
@@ -212,11 +213,11 @@ fn render_group(results: &Results, ix: usize, cx: &mut Context<BatchPanel>) -> A
         )
         .child(
             div()
-                .id(element_id("batch-output", &slug))
                 .max_h(rems(16.))
-                .overflow_y_scroll()
                 .text_xs()
                 .font_family(termlet_terminal::fonts::DEFAULT_FAMILY)
+                .overflow_y_scrollbar()
+                .id(element_id("batch-output", &slug))
                 .child(body),
         )
         .when(too_long, |el| {

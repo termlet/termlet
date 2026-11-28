@@ -16,7 +16,7 @@ use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::form::{Field, field, v_form};
 use gpui_kit::component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _, h_flex, v_flex,
 };
@@ -322,7 +322,10 @@ impl Render for LocalPage {
                     field()
                         .label(t!("local_shell.default_label"))
                         .description(default_hint(cx))
-                        .child(Select::new(&self.default_select).id("settings-default-shell")),
+                        .child(
+                            crate::choice::select(&self.default_select)
+                                .id("settings-default-shell"),
+                        ),
                     "settings-default-shell",
                     cx,
                 ),

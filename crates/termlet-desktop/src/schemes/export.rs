@@ -7,11 +7,11 @@ use std::path::PathBuf;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::radio::{Radio, RadioGroup};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, StatefulInteractiveElement as _, Styled as _, Task, Window, div,
-    prelude::FluentBuilder as _, rems,
+    ParentElement as _, Render, Styled as _, Task, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::schemes::{to_iterm_colors, to_windows_terminal_json};
 
@@ -145,7 +145,7 @@ impl SchemeExport {
 }
 
 impl Render for SchemeExport {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let count = self.chosen().len();
@@ -153,6 +153,12 @@ impl Render for SchemeExport {
             Format::WindowsTerminal => t!("schemes.export.hint_windows_terminal"),
             Format::Iterm2 => t!("schemes.export.hint_iterm2"),
         };
+        // 列表最高 20rem，窗口矮时缩短，整个对话框留在窗口内（其余部分与对话框离窗口上下边的距离约 17rem）
+        let rem = window.rem_size();
+        let list_max = rems(20.)
+            .to_pixels(rem)
+            .min(window.viewport_size().height - rems(17.).to_pixels(rem))
+            .max(rems(4.).to_pixels(rem));
         let rows = self.entries.iter().enumerate().map(|(ix, entry)| {
             let id = entry.id.clone();
             let checked = self.selected.contains(&id);
@@ -219,13 +225,17 @@ impl Render for SchemeExport {
             )
             .child(
                 v_flex()
-                    .id("scheme-export-list")
-                    .max_h(rems(20.))
-                    .overflow_y_scroll()
                     .rounded(theme.radius_lg)
                     .border_1()
                     .border_color(theme.border)
-                    .children(rows),
+                    .overflow_hidden()
+                    .child(
+                        v_flex()
+                            .max_h(list_max)
+                            .overflow_y_scrollbar()
+                            .id("scheme-export-list")
+                            .children(rows),
+                    ),
             )
             .child(
                 h_flex()
@@ -280,7 +290,50 @@ fn safe_name(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use gpui_kit::test::TestWindowExt as _;
+    use gpui_kit::{ScrollDelta, TestAppContext, point, px, size};
+
     use super::*;
+    use crate::testkit::open_workspace_sized;
+
+    // 窗口最矮时对话框留在窗口内，列表在框里滚动（gpui-kit 的滚动区：对话框里也滚得动），最后一套滚得到
+    #[gpui_kit::test]
+    fn list_fits_and_scrolls_in_a_short_window(cx: &mut TestAppContext) {
+        let handle = open_workspace_sized(cx, size(px(720.), px(480.)));
+        let entries = super::super::builtin_entries();
+        let first = ElementId::Name(format!("scheme-export-{}", entries[0].id).into());
+        let last = ElementId::Name(format!("scheme-export-{}", entries.last().unwrap().id).into());
+        cx.update_window(handle, |_, window, cx| {
+            open(entries, Vec::new(), window, cx)
+        })
+        .unwrap();
+        cx.run_until_parked();
+        let before = cx
+            .update_window(handle, |_, window, cx| {
+                window.render_frame(cx);
+                let viewport = window.viewport_size();
+                let save = window.find("scheme-export-save").bounds();
+                assert!(save.bottom() <= viewport.height, "对话框在窗口内：{save:?}");
+                window.find(last.clone()).bounds()
+            })
+            .unwrap();
+        cx.update_window(handle, |_, window, cx| {
+            window.scroll(first.clone(), ScrollDelta::Lines(point(0., -200.)), cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        cx.update_window(handle, |_, window, cx| {
+            window.render_frame(cx);
+            let after = window.find(last.clone()).bounds();
+            let save = window.find("scheme-export-save").bounds();
+            assert!(after.top() < before.top(), "列表滚动了");
+            assert!(
+                after.bottom() <= save.top(),
+                "最后一套滚进列表的可见部分：{after:?}"
+            );
+        })
+        .unwrap();
+    }
 
     #[test]
     fn file_names_are_made_safe() {

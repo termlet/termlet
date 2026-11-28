@@ -11,19 +11,21 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::color_picker::{ColorPicker, ColorPickerEvent, ColorPickerState};
 use gpui_kit::component::form::{field, v_form};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, Hsla, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Subscription, Window, div, prelude::FluentBuilder as _, rems,
+    IntoElement, ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
 use termlet_core::model::ColorScheme;
 use termlet_core::schemes::{self, MAX_SCHEME_NAME, is_valid_scheme, unique_name};
 
 use super::{SampleHighlights, SchemeSample, ansi_name, hex_of, hsla, unreadable_names};
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 
 /// 打开编辑器要给的东西。
@@ -454,14 +456,15 @@ impl Render for SchemeEditor {
                     .items_start()
                     .gap_4()
                     .child(
+                        // 右边留出滚动条的宽度，不压在输入框上
                         v_flex()
-                            .id("scheme-editor-fields")
                             .flex_1()
                             .min_w_0()
                             .h_full()
-                            .overflow_y_scroll()
-                            .pr_1()
+                            .scrollbar_gutter()
                             .gap_3()
+                            .overflow_y_scrollbar()
+                            .id("scheme-editor-fields")
                             .child(
                                 v_form().child(
                                     field()

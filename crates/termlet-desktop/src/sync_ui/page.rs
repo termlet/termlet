@@ -20,7 +20,7 @@ use gpui_kit::component::form::{Field, Form, field, v_form};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::radio::RadioGroup;
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::spinner::Spinner;
 use gpui_kit::component::switch::Switch;
 use gpui_kit::component::{
@@ -1560,7 +1560,7 @@ impl SyncPage {
                     )
                     .child(
                         div().w(rems(10.)).child(
-                            Select::new(&self.interval)
+                            crate::choice::select(&self.interval)
                                 .id("sync-interval")
                                 .small()
                                 .disabled(!auto || busy),

@@ -17,7 +17,7 @@ use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::input::{Input, InputEvent, InputState, Textarea, TextareaState};
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, VirtualListScrollHandle,
     WindowExt as _, h_flex, v_flex, v_virtual_list,
@@ -36,6 +36,7 @@ use termlet_core::proto::ErrorCode;
 use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::format_size;
 use crate::t;
 
@@ -779,16 +780,18 @@ impl AuditView {
                 ),
             )
             .child(
-                div()
-                    .w(rems(8.))
-                    .flex_none()
-                    .child(Select::new(&self.source).small().id("audit-source")),
+                div().w(rems(8.)).flex_none().child(
+                    crate::choice::select(&self.source)
+                        .small()
+                        .id("audit-source"),
+                ),
             )
             .child(
-                div()
-                    .w(rems(8.))
-                    .flex_none()
-                    .child(Select::new(&self.status).small().id("audit-status")),
+                div().w(rems(8.)).flex_none().child(
+                    crate::choice::select(&self.status)
+                        .small()
+                        .id("audit-status"),
+                ),
             )
             .when(!self.filter.batch.is_empty(), |this| {
                 this.child(
@@ -854,10 +857,12 @@ impl AuditView {
                 .truncate()
                 .child(prose(text))
         };
+        // 右边与行一样让出滚动条，列对得齐
         h_flex()
             .flex_none()
             .h(rems(1.75))
             .px_2()
+            .scrollbar_gutter()
             .gap_2()
             .text_xs()
             .text_color(theme.muted_foreground)
@@ -904,6 +909,8 @@ impl AuditView {
             .test_support()
             .size_full()
             .px_2()
+            // 退出码右对齐，不让滑块盖住
+            .scrollbar_gutter()
             .gap_2()
             .text_xs()
             .cursor_default()

@@ -1,9 +1,9 @@
 //! 竖排的 Tab 列表（[`super::tab_list`]）的测试：切换位置后的布局（横排的 Tab 栏换成列表与窗格顶上的细标题，切回顶部后
 //! 照旧），命令面板与设置切换位置；单个窗格不分组、几个窗格按窗格分组并用 ◀ 标出各窗格显示着的 Tab，焦点所在的高亮；
-//! 按主机分组的折叠（按主机记在界面状态中，新窗口照旧）；点击切换并获得焦点、中键关闭、右键菜单、悬停时的关闭按钮；
-//! 拖动排序、拖到另一窗格；窄栏（大一号的图标与图标角上的状态）与悬停浮出（在窄栏右边、不改终端的宽度，右键菜单开着时
-//! 不收起）；键盘操作（逐行移动、切换、关闭、折叠、键盘打开的菜单、回到终端，窄栏上浮出）；宽度与收起状态记在界面
-//! 状态中；窄窗口自动用窄栏；150% 界面大小下不溢出。
+//! 按主机分组的折叠（按主机记在界面状态中，新窗口照旧）；点击切换并获得焦点、中键关闭、右键菜单、悬停时的关闭按钮
+//! （列表要滚动时不压在滚动条下）；拖动排序、拖到另一窗格；窄栏（大一号的图标与图标角上的状态）与悬停浮出（在窄栏右边、
+//! 不改终端的宽度，右键菜单开着时不收起）；键盘操作（逐行移动、切换、关闭、折叠、键盘打开的菜单、回到终端，窄栏上浮出）；
+//! 宽度与收起状态记在界面状态中；窄窗口自动用窄栏；150% 界面大小下不溢出。
 
 use gpui_kit::component::Placement;
 use gpui_kit::component::dock::{DockPlacement, InsertTarget, PanelId};
@@ -588,6 +588,31 @@ fn rows_open_the_tab_menu_and_close_tabs(cx: &mut TestAppContext) {
     .unwrap();
     cx.run_until_parked();
     assert_eq!(groups(cx, &workspace), [vec![ids[1]]]);
+}
+
+// Tab 多到列表要滚动时，悬停出现的关闭按钮不在滚动条下（滚动条占着列表右边一条，压在下面的按钮点不到）
+#[gpui_kit::test]
+fn close_buttons_clear_the_scrollbar(cx: &mut TestAppContext) {
+    let (handle, workspace) = open(cx, 1024., 320.);
+    set_position(cx, TabPosition::Left);
+    let ids = open_terminals(cx, handle, &workspace, 12);
+    settle(cx, handle);
+    // 最后打开的显示着，列表滚到了它那里
+    let last = *ids.last().unwrap();
+    let list = bounds(cx, handle, "vtab-list".into()).expect("列表");
+    let first = bounds(cx, handle, row(ids[0])).expect("第一行");
+    assert!(first.top() < list.top(), "列表放不下、滚动过");
+    cx.update_window(handle, |_, window, cx| {
+        window.render_frame(cx);
+        window.hover(row(last), cx);
+    })
+    .unwrap();
+    settle(cx, handle);
+    let close = bounds(cx, handle, ("vtab-close", last.as_u64() as usize).into()).unwrap();
+    assert!(
+        close.right() <= list.right() - crate::scrolling::GUTTER,
+        "关闭按钮 {close:?} 在滚动条（列表 {list:?} 的右边一条）左边"
+    );
 }
 
 /// 从 `from` 拖到 `to` 所在行的上半（`upper`）或下半。

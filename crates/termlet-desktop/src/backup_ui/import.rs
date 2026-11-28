@@ -28,7 +28,7 @@ use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::radio::RadioGroup;
 use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{
@@ -56,6 +56,7 @@ use super::errors;
 use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state};
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 
 /// 预览中一行的高度（rem）：上下留白、第一行（名称、地址等）、之后每一行说明。说明都只占一行（过长时截断，
@@ -1000,7 +1001,7 @@ impl ImportDialog {
                     .gap_2()
                     .child(
                         div().w(rems(19.)).flex_none().child(
-                            Select::new(&self.source_select)
+                            crate::choice::select(&self.source_select)
                                 .id("import-source")
                                 .disabled(self.busy.is_some()),
                         ),
@@ -1714,6 +1715,8 @@ impl ImportDialog {
                             )
                             .h(rems(SNIPPET_ROW))
                             .px_2()
+                            // 靠右的“已存在”不让滑块盖住
+                            .scrollbar_gutter()
                             .border_b_1()
                             .border_color(border)
                             .into_any_element()
@@ -1960,18 +1963,24 @@ impl ImportDialog {
                 ))))
                 .child(
                     v_flex()
-                        .id("import-failures")
                         .flex_1()
                         .min_h_0()
-                        .overflow_y_scroll()
-                        .gap_1()
-                        .p_2()
                         .border_1()
                         .border_color(theme.border)
                         .rounded(theme.radius)
-                        .text_xs()
-                        .text_color(theme.danger)
-                        .children(failures.into_iter().map(|f| div().child(f))),
+                        .overflow_hidden()
+                        .child(
+                            v_flex()
+                                .flex_1()
+                                .min_h_0()
+                                .gap_1()
+                                .p_2()
+                                .text_xs()
+                                .text_color(theme.danger)
+                                .overflow_y_scrollbar()
+                                .id("import-failures")
+                                .children(failures.into_iter().map(|f| div().child(f))),
+                        ),
                 )
             })
             .when(!has_failures, |this| this.child(div().flex_1()))

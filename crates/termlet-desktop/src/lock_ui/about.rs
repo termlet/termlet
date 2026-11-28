@@ -13,7 +13,6 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::progress::Progress;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Sizable as _, StyledExt as _, h_flex, v_flex,
@@ -748,9 +747,11 @@ impl AboutExtras {
                     .gap_2()
                     .child(div().text_sm().child(t!("lock_ui.diag.log_level.label")))
                     .child(
-                        div()
-                            .w(gpui_kit::rems(16.))
-                            .child(Select::new(&self.log_level).id("diag-log-level").small()),
+                        div().w(gpui_kit::rems(16.)).child(
+                            crate::choice::select(&self.log_level)
+                                .id("diag-log-level")
+                                .small(),
+                        ),
                     ),
             )
             .child(

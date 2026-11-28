@@ -10,7 +10,6 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::radio::RadioGroup;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::spinner::Spinner;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, h_flex, v_flex,
@@ -508,7 +507,7 @@ impl BackupPage {
                     .when(view.weekly, |row| {
                         row.child(
                             div().w(rems(8.)).child(
-                                Select::new(&view.weekday)
+                                crate::choice::select(&view.weekday)
                                     .id("schedule-weekday")
                                     .small()
                                     .disabled(busy),

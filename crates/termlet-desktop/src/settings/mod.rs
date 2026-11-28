@@ -35,7 +35,6 @@ use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::radio::RadioGroup;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::sidebar::{SidebarItem as _, SidebarMenuItem};
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{
@@ -44,8 +43,8 @@ use gpui_kit::component::{
 use gpui_kit::{
     AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, InteractiveElement as _,
     IntoElement, MouseButton, ParentElement as _, PathPromptOptions, Render, ScrollHandle,
-    SharedString, StatefulInteractiveElement as _, Styled as _, Subscription, Task,
-    TestSupportExt as _, Window, canvas, div, point, prelude::FluentBuilder as _, px, rems,
+    SharedString, Styled as _, Subscription, Task, TestSupportExt as _, Window, canvas, div, point,
+    prelude::FluentBuilder as _, px, rems,
 };
 use termlet_core::history;
 use termlet_core::model::{
@@ -59,6 +58,7 @@ use crate::app_state::AppState;
 use crate::choice::{Choice, ChoiceState, choice_state, chosen};
 use crate::notify::{self, Notice, NoticeLine};
 use crate::prose::prose;
+use crate::scrolling::TrackedScroll as _;
 use crate::{store_errors, t};
 
 use highlight::HighlightPage;
@@ -1581,7 +1581,8 @@ impl SettingsForm {
         } else {
             crate::page_nav::column(cx)
         };
-        let nav = crate::page_nav::frame("settings-nav", &self.nav_focus, window, cx)
+        let (nav, list) = crate::page_nav::frame("settings-nav", &self.nav_focus, window, cx);
+        let nav = nav
             .on_key_down(
                 cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
                     if let Some(ix) = crate::page_nav::step(event, current, visible.len()) {
@@ -1590,7 +1591,7 @@ impl SettingsForm {
                     }
                 }),
             )
-            .child(v_flex().gap_1().children(items));
+            .child(list.list(v_flex().gap_1().children(items)));
         column.child(
             v_flex()
                 .h_full()
@@ -1669,23 +1670,19 @@ impl SettingsForm {
                 field().child(
                     h_flex()
                         .gap_3()
-                        .child(
-                            div().flex_1().child(
-                                self.hits.mark(
-                                    field()
-                                        .label(t!("settings.language"))
-                                        .child(Select::new(&self.language).id("settings-language")),
-                                    "settings-language",
-                                    cx,
-                                ),
+                        .child(div().flex_1().child(self.hits.mark(
+                            field().label(t!("settings.language")).child(
+                                crate::choice::select(&self.language).id("settings-language"),
                             ),
-                        )
+                            "settings-language",
+                            cx,
+                        )))
                         .child(
                             div().flex_1().child(
                                 self.hits.mark(
-                                    field()
-                                        .label(t!("settings.app_theme"))
-                                        .child(Select::new(&self.theme).id("settings-theme")),
+                                    field().label(t!("settings.app_theme")).child(
+                                        crate::choice::select(&self.theme).id("settings-theme"),
+                                    ),
                                     "settings-theme",
                                     cx,
                                 ),
@@ -1694,9 +1691,9 @@ impl SettingsForm {
                         .child(
                             div().flex_1().child(
                                 self.hits.mark(
-                                    field()
-                                        .label(t!("settings.icons"))
-                                        .child(Select::new(&self.icons).id("settings-icons")),
+                                    field().label(t!("settings.icons")).child(
+                                        crate::choice::select(&self.icons).id("settings-icons"),
+                                    ),
                                     "settings-icons",
                                     cx,
                                 ),
@@ -1709,7 +1706,7 @@ impl SettingsForm {
                     field()
                         .label(t!("settings.ui_scale"))
                         .description(prose(scale_hint))
-                        .child(Select::new(&self.ui_scale).id("settings-ui-scale")),
+                        .child(crate::choice::select(&self.ui_scale).id("settings-ui-scale")),
                     "settings-ui-scale",
                     cx,
                 ),
@@ -1776,7 +1773,9 @@ impl SettingsForm {
                                 .child(prose(t!("settings.remote_editor_hint")))
                                 .child(prose(editors_found.clone()))
                         })
-                        .child(Select::new(&self.remote_editor).id("settings-remote-editor")),
+                        .child(
+                            crate::choice::select(&self.remote_editor).id("settings-remote-editor"),
+                        ),
                     "settings-remote-editor",
                     cx,
                 ),
@@ -1893,7 +1892,7 @@ impl SettingsForm {
                     field()
                         .label(t!("settings.font.label"))
                         .description(prose(font_hint))
-                        .child(Select::new(&self.font_family).id("settings-font-family")),
+                        .child(crate::choice::select(&self.font_family).id("settings-font-family")),
                     "settings-font-family",
                     cx,
                 ),
@@ -1971,7 +1970,7 @@ impl SettingsForm {
                 self.hits.mark(
                     field()
                         .label(t!("settings.right_click.label"))
-                        .child(Select::new(&self.right_click).id("settings-right-click")),
+                        .child(crate::choice::select(&self.right_click).id("settings-right-click")),
                     "settings-right-click",
                     cx,
                 ),
@@ -2778,8 +2777,7 @@ impl Render for SettingsForm {
                                             .id("settings-page")
                                             .test_support()
                                             .size_full()
-                                            .overflow_y_scroll()
-                                            .track_scroll(&self.page_scroll)
+                                            .tracked_y(&self.page_scroll)
                                             .gap_3()
                                             .px_5()
                                             .pt_3()

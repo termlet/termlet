@@ -12,8 +12,8 @@ use gpui_kit::component::scroll::ScrollableMask;
 use gpui_kit::component::{ActiveTheme as _, InteractiveElementExt as _, Sizable as _, h_flex};
 use gpui_kit::{
     App, Context, EventEmitter, InteractiveElement as _, IntoElement, ParentElement as _, Render,
-    ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
-    TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
+    ScrollHandle, SharedString, Styled as _, Subscription, TestSupportExt as _, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::SnippetId;
 use termlet_core::model::{Kind, Snippet};
@@ -21,6 +21,7 @@ use termlet_core::store::{Record, StoreEvent};
 
 use crate::app_state::AppState;
 use crate::prose::prose;
+use crate::scrolling::TrackedScroll as _;
 use crate::t;
 
 /// 快捷命令栏发给工作区的请求。
@@ -193,12 +194,11 @@ impl Render for SnippetBar {
                     .child(
                         h_flex()
                             .id("snippet-bar-items")
-                            .overflow_x_scroll()
+                            .tracked_x(&self.scroll)
                             .lock_scroll_axis()
                             .test_support()
                             .size_full()
                             .gap_1()
-                            .track_scroll(&self.scroll)
                             .when(empty, |this| {
                                 this.child(
                                     div()

@@ -4,17 +4,19 @@
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::notification::Notification;
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{
     ActiveTheme as _, Sizable as _, StyledExt as _, WindowExt as _, h_flex, v_flex,
 };
 use gpui_kit::{
     App, AppContext as _, ClipboardItem, Context, ElementId, Entity, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Task, TestSupportExt as _, Window, div, prelude::FluentBuilder as _, rems,
+    IntoElement, ParentElement as _, Render, SharedString, Styled as _, Task, TestSupportExt as _,
+    Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::crash::{CrashLog, CrashRecord, MAX_RECORDS, Upload};
 
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 
 /// 崩溃提示的通知（按类型去重）。
@@ -283,16 +285,16 @@ impl CrashLogView {
             .when_some(report.stack.clone(), |this, stack| {
                 this.child(div().text_color(muted).child(t!("lock_ui.crash.stack")))
                     .child(
-                        div()
-                            .id(element_id("crash-stack"))
-                            .max_h(rems(12.))
-                            .overflow_y_scroll()
-                            .px_2()
-                            .py_1()
-                            .rounded(radius)
-                            .bg(code_bg)
-                            .font_family(mono)
-                            .children(stack.lines().map(|l| div().child(l.to_string()))),
+                        div().rounded(radius).bg(code_bg).overflow_hidden().child(
+                            div()
+                                .max_h(rems(12.))
+                                .px_2()
+                                .py_1()
+                                .font_family(mono)
+                                .overflow_y_scrollbar()
+                                .id(element_id("crash-stack"))
+                                .children(stack.lines().map(|l| div().child(l.to_string()))),
+                        ),
                     )
             })
     }
@@ -338,9 +340,11 @@ impl Render for CrashLogView {
             )
             .child(
                 div()
-                    .id("crash-list")
                     .max_h(max_height)
-                    .overflow_y_scroll()
+                    // 各条右上角的复制、删除让出滚动条
+                    .scrollbar_gutter()
+                    .overflow_y_scrollbar()
+                    .id("crash-list")
                     .child(body),
             )
             .child(

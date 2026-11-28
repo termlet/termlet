@@ -1547,11 +1547,14 @@ impl Panel for SftpPanel {
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
                 let this = cx.entity().downgrade();
-                move |menu, window, cx| match this.upgrade() {
-                    Some(panel) => {
-                        panel.update(cx, |panel, cx| panel.dropdown_menu(menu, window, cx))
+                move |menu, window, cx| {
+                    let menu = crate::menu_fit::fit(menu, window);
+                    match this.upgrade() {
+                        Some(panel) => {
+                            panel.update(cx, |panel, cx| panel.dropdown_menu(menu, window, cx))
+                        }
+                        None => menu,
                     }
-                    None => menu,
                 }
             })
             // 文件夹图标说明这是文件管理（同一台主机的终端与 SFTP 的 Tab 同名），后面是系统的标志（有的话）

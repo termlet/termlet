@@ -23,7 +23,7 @@ use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::radio::RadioGroup;
 use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::sidebar::{SidebarItem as _, SidebarMenu, SidebarMenuItem};
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
@@ -32,8 +32,8 @@ use gpui_kit::component::{
 use gpui_kit::{
     AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, Focusable as _,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
-    StatefulInteractiveElement as _, Styled as _, Subscription, Task, TestSupportExt as _, Window,
-    div, prelude::FluentBuilder as _, rems,
+    Styled as _, Subscription, Task, TestSupportExt as _, Window, div, prelude::FluentBuilder as _,
+    rems,
 };
 use termlet_core::id::{GroupId, HostId, ProfileId};
 use termlet_core::inherit::{self, Inherited};
@@ -57,6 +57,7 @@ use crate::key_fields::{self, KeyFields};
 use crate::notify::{self, NoticeLine};
 use crate::prompt_dialog::{self, PromptRequest};
 use crate::prose::prose;
+use crate::scrolling::{ScrollGutter as _, TrackedScroll as _};
 use crate::{raw_errors, ssh_errors, store_errors, t};
 
 /// 新建主机（放进 `group`）。
@@ -1616,6 +1617,7 @@ impl HostForm {
     }
 
     fn render_nav(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let (frame, list) = crate::page_nav::frame("host-nav", &self.nav_focus, window, cx);
         let items = Page::for_protocol(self.protocol).iter().map(|&page| {
             let dot = self.page_has_settings(page, cx);
             let this = cx.entity().downgrade();
@@ -1636,22 +1638,22 @@ impl HostForm {
         });
         let pages = Page::for_protocol(self.protocol);
         let current = pages.iter().position(|p| *p == self.page).unwrap_or(0);
-        let frame = crate::page_nav::frame("host-nav", &self.nav_focus, window, cx).on_key_down(
-            cx.listener(move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
+        let frame = frame.on_key_down(cx.listener(
+            move |this, event: &gpui_kit::KeyDownEvent, _, cx| {
                 if let Some(ix) = crate::page_nav::step(event, current, pages.len()) {
                     this.set_page(pages[ix]);
                     cx.notify();
                     cx.stop_propagation();
                 }
-            }),
-        );
+            },
+        ));
         let column = crate::page_nav::column(cx);
         // 菜单的元素借用着 window 与 cx，最后再渲染
         let menu = SidebarMenu::new()
             .gap_1()
             .children(items)
             .render("host-pages", window, cx);
-        column.child(frame.child(menu))
+        column.child(frame.child(list.list(menu)))
     }
 
     fn render_general(&mut self, cx: &mut Context<Self>) -> AnyElement {
@@ -1687,7 +1689,7 @@ impl HostForm {
         form.child(
             field()
                 .label(t!("host.field.group"))
-                .child(Select::new(&self.group)),
+                .child(crate::choice::select(&self.group)),
         )
         .into_any_element()
     }
@@ -1843,15 +1845,15 @@ impl HostForm {
                     ))
                     .child(column(
                         t!("host.serial.data_bits"),
-                        Select::new(&self.data_bits).into_any_element(),
+                        crate::choice::select(&self.data_bits).into_any_element(),
                     ))
                     .child(column(
                         t!("host.serial.parity"),
-                        Select::new(&self.parity).into_any_element(),
+                        crate::choice::select(&self.parity).into_any_element(),
                     ))
                     .child(column(
                         t!("host.serial.stop_bits"),
-                        Select::new(&self.stop_bits).into_any_element(),
+                        crate::choice::select(&self.stop_bits).into_any_element(),
                     )),
             ),
         )
@@ -1859,7 +1861,7 @@ impl HostForm {
             field()
                 .label(t!("host.serial.flow_control"))
                 .description(t!("host.serial.flow_control_hint"))
-                .child(Select::new(&self.flow_control)),
+                .child(crate::choice::select(&self.flow_control)),
         )
     }
 
@@ -1920,7 +1922,7 @@ impl HostForm {
                 } else {
                     field()
                         .label(t!("host.field.profile"))
-                        .child(Select::new(&self.profile))
+                        .child(crate::choice::select(&self.profile))
                         .into_any_element()
                 }
             }
@@ -2069,12 +2071,12 @@ impl HostForm {
                 field()
                     .label(t!("host.field.jump"))
                     .description(prose(t!("host.jump.hint")))
-                    .child(Select::new(&self.jump)),
+                    .child(crate::choice::select(&self.jump)),
             )
             .child(
                 field()
                     .label(t!("host.field.proxy"))
-                    .child(Select::new(&self.proxy_kind).id("host-proxy-kind")),
+                    .child(crate::choice::select(&self.proxy_kind).id("host-proxy-kind")),
             )
             .when_some(proxy_fields, |this, fields| {
                 this.child(field().child(fields))
@@ -2237,13 +2239,13 @@ impl HostForm {
                 field()
                     .label(t!("host.terminal.scheme"))
                     .description(prose(t!("host.terminal.scheme_hint")))
-                    .child(Select::new(&self.scheme)),
+                    .child(crate::choice::select(&self.scheme)),
             )
             .child(
                 field()
                     .label(t!("host.terminal.encoding"))
                     .description(prose(t!("host.terminal.encoding_hint")))
-                    .child(Select::new(&self.encoding)),
+                    .child(crate::choice::select(&self.encoding)),
             )
             .child(self.checkbox(
                 "host-record",
@@ -2260,7 +2262,7 @@ impl HostForm {
             field()
                 .label(t!("host.sftp.encoding"))
                 .description(prose(t!("host.sftp.encoding_hint")))
-                .child(Select::new(&self.sftp_encoding).id("host-sftp-encoding")),
+                .child(crate::choice::select(&self.sftp_encoding).id("host-sftp-encoding")),
         )
         .child(
             field()
@@ -2618,21 +2620,32 @@ impl Render for HostForm {
                     .items_stretch()
                     .gap_4()
                     .child(self.render_nav(window, cx))
+                    // 分页放不下时右边有滚动条（留出它的宽度，不压在输入框上）
                     .child(
                         div()
-                            .id("host-page")
-                            .test_support()
+                            .relative()
                             .flex_1()
                             .min_w_0()
-                            .overflow_y_scroll()
-                            .track_scroll(&self.page_scroll)
-                            .pr_1()
                             .child(
-                                v_flex()
-                                    .gap_3()
-                                    .child(div().text_base().font_medium().child(self.page.title()))
-                                    .child(body),
-                            ),
+                                div()
+                                    .id("host-page")
+                                    .test_support()
+                                    .tracked_y(&self.page_scroll)
+                                    .size_full()
+                                    .scrollbar_gutter()
+                                    .child(
+                                        v_flex()
+                                            .gap_3()
+                                            .child(
+                                                div()
+                                                    .text_base()
+                                                    .font_medium()
+                                                    .child(self.page.title()),
+                                            )
+                                            .child(body),
+                                    ),
+                            )
+                            .vertical_scrollbar(&self.page_scroll),
                     ),
             )
             .child(self.render_footer(cx))

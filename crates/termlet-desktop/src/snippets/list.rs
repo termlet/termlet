@@ -8,6 +8,7 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{ActiveTheme as _, Icon, Selectable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
@@ -24,6 +25,7 @@ use super::{confirm_delete, editor};
 use crate::app_state::AppState;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 
 /// 快捷命令页发给工作区的请求。
@@ -427,11 +429,12 @@ impl Render for SnippetList {
             )
             .child(
                 div()
-                    .id("snippet-list")
                     .flex_1()
                     .min_h_0()
-                    .overflow_y_scroll()
-                    .px_1()
+                    .pl_1()
+                    .scrollbar_gutter()
+                    .overflow_y_scrollbar()
+                    .id("snippet-list")
                     .child(list),
             )
     }

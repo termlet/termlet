@@ -7,11 +7,12 @@ use std::collections::{BTreeSet, HashMap};
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _,
-    Subscription, Task, Window, div, prelude::FluentBuilder as _, rems,
+    ParentElement as _, Render, SharedString, Styled as _, Subscription, Task, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
 use termlet_core::id::{HostId, KeyId};
 use termlet_core::keyvault::{self, DeployOutcome, DeployReport, DeployRequest, KeyVaultError};
@@ -228,12 +229,18 @@ impl DeployForm {
 }
 
 impl Render for DeployForm {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let visible = self.visible(cx);
         let muted = cx.theme().muted_foreground;
         let border = cx.theme().border;
         let radius = cx.theme().radius;
         let running = self.running;
+        // 主机列表最高 16rem，窗口矮时缩短，整个对话框留在窗口内（其余部分与对话框离窗口上下边的距离约 18rem）
+        let rem = window.rem_size();
+        let list_max = rems(16.)
+            .to_pixels(rem)
+            .min(window.viewport_size().height - rems(18.).to_pixels(rem))
+            .max(rems(4.).to_pixels(rem));
         let mut rows = Vec::with_capacity(visible.len());
         for host in visible {
             let id = host.id.clone();
@@ -286,22 +293,26 @@ impl Render for DeployForm {
             .child(Input::new(&self.filter).id("deploy-filter"))
             .child(
                 v_flex()
-                    .id("deploy-hosts")
-                    .max_h(rems(16.))
-                    .overflow_y_scroll()
                     .border_1()
                     .border_color(border)
                     .rounded(radius)
-                    .when(rows.is_empty(), |this| {
-                        this.child(
-                            div()
-                                .p_2()
-                                .text_sm()
-                                .text_color(muted)
-                                .child(t!("keys.deploy_no_hosts")),
-                        )
-                    })
-                    .children(rows),
+                    .overflow_hidden()
+                    .child(
+                        v_flex()
+                            .max_h(list_max)
+                            .overflow_y_scrollbar()
+                            .id("deploy-hosts")
+                            .when(rows.is_empty(), |this| {
+                                this.child(
+                                    div()
+                                        .p_2()
+                                        .text_sm()
+                                        .text_color(muted)
+                                        .child(t!("keys.deploy_no_hosts")),
+                                )
+                            })
+                            .children(rows),
+                    ),
             )
             .child(
                 Checkbox::new("deploy-use-key")

@@ -21,6 +21,7 @@ use gpui_kit::component::dialog::{DialogClose, DialogFooter};
 use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenu, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::spinner::Spinner;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::tooltip::Tooltip;
@@ -52,6 +53,7 @@ use super::target::HostLabel;
 use crate::dialog_token::DialogToken;
 use crate::i18n::LocalizedPlaceholder as _;
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
 
@@ -632,7 +634,11 @@ impl KeyMenu {
         let view = cx.entity().downgrade();
         window.defer(cx, move |window, cx| {
             let menu = PopupMenu::build(window, cx, move |menu, window, cx| {
-                build(menu.action_context(focus), window, cx)
+                build(
+                    crate::menu_fit::fit(menu, window).action_context(focus),
+                    window,
+                    cx,
+                )
             });
             menu.focus_handle(cx).focus(window, cx);
             let _ = view.update(cx, |view, cx| {
@@ -1599,17 +1605,19 @@ pub(super) fn detail_pane(
         )
         .child(header)
         .child(
-            v_flex()
-                .id(id)
-                .test_support()
-                .flex_1()
-                .min_h_0()
-                .overflow_y_scroll()
-                .px_1()
-                .py_1p5()
-                .gap_0p5()
-                .text_xs()
-                .children(body),
+            v_flex().id(id).test_support().flex_1().min_h_0().child(
+                v_flex()
+                    .flex_1()
+                    .min_h_0()
+                    .pl_1()
+                    .scrollbar_gutter()
+                    .py_1p5()
+                    .gap_0p5()
+                    .text_xs()
+                    .overflow_y_scrollbar()
+                    .id(SharedString::from(format!("{id}-body")))
+                    .children(body),
+            ),
         )
         .child(handle)
         .into_any_element()
@@ -2060,15 +2068,20 @@ pub(super) fn failure_banner<V: 'static, K: Eq + Hash + Clone + 'static>(
         div()
             .id("tools-failure-detail")
             .test_support()
-            .max_h(rems(10.))
-            .overflow_y_scroll()
-            .px_1p5()
-            .py_1()
             .rounded(theme.radius)
             .bg(theme.muted.opacity(0.5))
-            .text_color(theme.foreground)
-            .font_family(theme.mono_font_family.clone())
-            .child(full)
+            .overflow_hidden()
+            .child(
+                div()
+                    .max_h(rems(10.))
+                    .px_1p5()
+                    .py_1()
+                    .text_color(theme.foreground)
+                    .font_family(theme.mono_font_family.clone())
+                    .overflow_y_scrollbar()
+                    .id("tools-failure-text")
+                    .child(full),
+            )
             .into_any_element()
     } else {
         div()
@@ -2117,7 +2130,7 @@ pub(super) fn row_actions(
         .bottom_0()
         .right_0()
         .pl_1()
-        .pr_1()
+        .scrollbar_gutter()
         .gap_0p5()
         .bg(cx.theme().background.blend(row_bg))
         .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())

@@ -243,7 +243,7 @@ impl Render for SchemePicker {
         let command = Command::new(&self.state)
             .placeholder(t!("schemes.picker.placeholder"))
             .bordered(false)
-            .max_h(rems(24.))
+            .max_h(crate::command_palette::list_max_height(window))
             .items(items)
             .empty(|_, _, cx| {
                 div()

@@ -13,6 +13,7 @@ use std::rc::Rc;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, Entity, FocusHandle, Focusable as _,
@@ -30,6 +31,7 @@ use super::{CommandInput, command_input, editor};
 use crate::app_state::AppState;
 use crate::keymap::{key_os, pressed};
 use crate::prose::prose;
+use crate::scrolling::TrackedScroll as _;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
 
@@ -680,7 +682,7 @@ impl CommandPicker {
 }
 
 impl Render for CommandPicker {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         if let Some(filling) = &self.filling {
             return v_flex()
                 .id("command-picker")
@@ -694,12 +696,17 @@ impl Render for CommandPicker {
             .items
             .iter()
             .position(|i| matches!(i, Item::History(_)));
+        // 列表最高 20rem，窗口矮时缩短，整个对话框留在窗口内（其余部分与对话框离窗口上下边的距离约 12rem）；位置由 scroll 记着，键盘上下时跟着
+        let rem = window.rem_size();
+        let list_max = rems(20.)
+            .to_pixels(rem)
+            .min(window.viewport_size().height - rems(12.).to_pixels(rem))
+            .max(rems(4.).to_pixels(rem));
         let mut list = div()
             .id("picker-list")
-            .max_h(rems(20.))
-            .p_1()
-            .overflow_y_scroll()
-            .track_scroll(&self.scroll);
+            .tracked_y(&self.scroll)
+            .max_h(list_max)
+            .p_1();
         if self.items.is_empty() {
             list = list.child(
                 div()
@@ -759,7 +766,12 @@ impl Render for CommandPicker {
                     .border_color(theme.border)
                     .child(Input::new(&self.query).id("picker-input").appearance(false)),
             )
-            .child(list)
+            .child(
+                div()
+                    .relative()
+                    .child(list)
+                    .vertical_scrollbar(&self.scroll),
+            )
             .when_some(self.error.clone(), |this, error| {
                 this.child(
                     div()

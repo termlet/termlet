@@ -3396,11 +3396,15 @@ impl Panel for TerminalPanel {
             // 右键 Tab 打开这个 Tab 的菜单（Tab 栏上没有“…”，见 dock_skin）
             .context_menu({
                 let this = cx.entity().downgrade();
-                move |menu, window, cx| match this.upgrade() {
-                    Some(panel) => {
-                        panel.update(cx, |panel, cx| panel.dropdown_menu(menu, window, cx))
+                move |menu, window, cx| {
+                    // 项多：窗口矮时在菜单里滚动，不伸出窗口
+                    let menu = crate::menu_fit::fit(menu, window);
+                    match this.upgrade() {
+                        Some(panel) => {
+                            panel.update(cx, |panel, cx| panel.dropdown_menu(menu, window, cx))
+                        }
+                        None => menu,
                     }
-                    None => menu,
                 }
             })
             // 与 SFTP 的 Tab 一样，标题前有图标（同一台主机的终端与 SFTP 的 Tab 同名）
@@ -3754,7 +3758,7 @@ impl Render for TerminalPanel {
             let ssh = self.is_ssh();
             let current = self.current_encoding();
             area.context_menu(move |menu, window, cx| {
-                let menu = menu
+                let menu = crate::menu_fit::fit(menu, window)
                     .action_context(focus.clone())
                     .menu(
                         t!("terminal.menu.copy"),

@@ -14,7 +14,7 @@ use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::dialog::AlertDialog;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
@@ -615,7 +615,7 @@ impl HttpPanel {
         let picker = match &self.lan_select {
             Some(select) => div()
                 .w(rems(22.))
-                .child(Select::new(select).small().id("cli-http-lan-ip"))
+                .child(crate::choice::select(select).small().id("cli-http-lan-ip"))
                 .into_any_element(),
             None => div()
                 .id("cli-http-lan-ip")

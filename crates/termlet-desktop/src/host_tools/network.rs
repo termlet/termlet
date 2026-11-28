@@ -50,6 +50,7 @@ use super::shared::{
     self, Feed, KeyMenu, Memo, PageContext, RootScope, Tone, ToolPage, error_line, hint_line,
     info_line, loading_text, notice, toolbar,
 };
+use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::visible_name;
 use crate::t;
 
@@ -531,7 +532,8 @@ impl NetworkPage {
     // ------------------------------------------------------------ 渲染
 
     fn render_header(&self, peer: bool, cx: &mut Context<Self>) -> impl IntoElement {
-        let header = shared::list_header(cx).px_1().gap_2();
+        // 右边与行一样让出滚动条，列对得齐
+        let header = shared::list_header(cx).px_1().scrollbar_gutter().gap_2();
         if self.listening_view() {
             return header
                 .child(
@@ -737,6 +739,8 @@ impl NetworkPage {
             .test_support()
             .size_full()
             .px_1()
+            // 末列“进程 / 容器”是按钮：让出滚动条
+            .scrollbar_gutter()
             .gap_2()
             .text_xs()
             .cursor_default()
@@ -839,7 +843,7 @@ impl NetworkPage {
                     .min_w_0()
                     .child(owner_cell),
             )
-            .context_menu(menu)
+            .context_menu(crate::menu_fit::fitted(menu))
             .into_any_element()
     }
 
@@ -910,6 +914,7 @@ impl NetworkPage {
             .test_support()
             .size_full()
             .px_1()
+            .scrollbar_gutter()
             .gap_2()
             .text_xs()
             .cursor_default()
@@ -962,7 +967,7 @@ impl NetworkPage {
                     .min_w_0()
                     .child(owner_cell),
             )
-            .context_menu(menu)
+            .context_menu(crate::menu_fit::fitted(menu))
             .into_any_element()
     }
 

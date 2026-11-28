@@ -10,7 +10,6 @@ use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::dialog::{AlertDialog, DialogAction, DialogClose, DialogFooter};
 use gpui_kit::component::form::{field, v_form};
 use gpui_kit::component::input::{Input, InputState};
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, IntoElement, ParentElement as _, Render,
@@ -215,12 +214,12 @@ impl Render for GroupForm {
                 field()
                     .label(t!("group.field.profile"))
                     .description(prose(t!("group.field.profile_hint")))
-                    .child(Select::new(&self.profile)),
+                    .child(crate::choice::select(&self.profile)),
             )
             .child(
                 field()
                     .label(t!("group.field.jump"))
-                    .child(Select::new(&self.jump)),
+                    .child(crate::choice::select(&self.jump)),
             )
             .child(
                 field()
@@ -231,7 +230,7 @@ impl Render for GroupForm {
             .child(
                 field()
                     .label(t!("group.field.scheme"))
-                    .child(Select::new(&self.scheme)),
+                    .child(crate::choice::select(&self.scheme)),
             )
         } else {
             form

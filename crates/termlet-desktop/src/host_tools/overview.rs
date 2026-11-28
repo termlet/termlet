@@ -52,6 +52,7 @@ use crate::monitor_model::{
     format_uptime, percent, rate_ceiling, segments, shown_ifaces, whole_percent,
 };
 use crate::prose::prose;
+use crate::scrolling::TrackedScroll as _;
 use crate::sftp::list_model::visible_name;
 use crate::t;
 use crate::terminal_panel::TerminalPanel;
@@ -1070,8 +1071,7 @@ impl OverviewPage {
                     .id("tools-overview")
                     .test_support()
                     .size_full()
-                    .track_scroll(&self.scroll)
-                    .overflow_y_scroll()
+                    .tracked_y(&self.scroll)
                     .text_xs(),
             )
             .vertical_scrollbar(&self.scroll)

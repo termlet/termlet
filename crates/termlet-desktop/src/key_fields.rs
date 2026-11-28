@@ -7,7 +7,6 @@ use gpui_kit::component::button::Button;
 use gpui_kit::component::form::field;
 use gpui_kit::component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_kit::component::radio::RadioGroup;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use gpui_kit::{
     AnyElement, App, AppContext as _, Context, Entity, IntoElement, ParentElement as _,
@@ -288,7 +287,7 @@ impl KeyFields {
                 .child(
                     v_flex()
                         .gap_1()
-                        .child(Select::new(&self.library))
+                        .child(crate::choice::select(&self.library))
                         .when_some(self.library_certificate_note(store, cx), |this, note| {
                             this.child(div().text_xs().text_color(muted).child(prose(note)))
                         }),

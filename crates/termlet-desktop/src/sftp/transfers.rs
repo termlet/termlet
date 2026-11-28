@@ -24,6 +24,7 @@ use termlet_core::sftp::{
 use super::{errors, list_model};
 use crate::app_state::AppState;
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::t;
 
 /// 列表变化（面板据此刷新完成上传、下载的目录）。
@@ -363,6 +364,8 @@ impl TransferList {
         v_flex()
             .id(SharedString::from(format!("transfer-{id}")))
             .px_3()
+            // 行尾的取消、重试等按钮让出滚动条
+            .scrollbar_gutter()
             .py_1()
             .gap_0p5()
             .text_xs()

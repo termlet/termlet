@@ -6,7 +6,6 @@ use std::rc::Rc;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::radio::RadioGroup;
-use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, IntoElement, ParentElement as _, Render,
@@ -158,9 +157,9 @@ impl Render for GenerateForm {
                     .when(self.rsa, |this| {
                         this.child(div().text_sm().child(t!("keys.rsa_bits")))
                             .child(
-                                div()
-                                    .w(rems(7.))
-                                    .child(Select::new(&self.bits).id("key-generate-bits")),
+                                div().w(rems(7.)).child(
+                                    crate::choice::select(&self.bits).id("key-generate-bits"),
+                                ),
                             )
                     }),
             )

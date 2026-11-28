@@ -887,9 +887,10 @@ impl Panel for ReplayPanel {
                     .context_menu({
                         let this = cx.entity().downgrade();
                         move |menu, window, cx| match this.upgrade() {
-                            Some(panel) => {
-                                panel.update(cx, |panel, cx| panel.dropdown_menu(menu, window, cx))
-                            }
+                            Some(panel) => panel.update(cx, |panel, cx| {
+                                let menu = crate::menu_fit::fit(menu, window);
+                                panel.dropdown_menu(menu, window, cx)
+                            }),
                             None => menu,
                         }
                     })

@@ -1180,7 +1180,8 @@ impl ServicePage {
             )
             .child(h_flex().pl_3().gap_1p5().child(description).children(boot))
         };
-        row.context_menu(menu).into_any_element()
+        row.context_menu(crate::menu_fit::fitted(menu))
+            .into_any_element()
     }
 
     /// 定时器的一行。够宽时一行：● 名称 · 下次与上次 · 触发的服务 · 状态；否则两行：● 名称 … 状态 / 下次与上次 …
@@ -1351,7 +1352,8 @@ impl ServicePage {
             )
             .child(h_flex().pl_3().gap_1p5().child(schedule).children(triggers))
         };
-        row.context_menu(menu).into_any_element()
+        row.context_menu(crate::menu_fit::fitted(menu))
+            .into_any_element()
     }
 
     /// 定时器的详情：头部一行（名称 ● 状态 · 启动 / 停止 · ⋯），下面是说明、开机启用、触发的服务（可以点过去，失败着时

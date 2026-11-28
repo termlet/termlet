@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
 use gpui_kit::component::searchable_list::SearchableVec;
-use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
@@ -403,9 +403,11 @@ impl Render for McpSection {
             .child(row(
                 t!("cli_ui.mcp.tool"),
                 muted,
-                div()
-                    .w(rems(16.))
-                    .child(Select::new(&self.tools).small().id("cli-mcp-tool")),
+                div().w(rems(16.)).child(
+                    crate::choice::select(&self.tools)
+                        .small()
+                        .id("cli-mcp-tool"),
+                ),
             ))
             .when(access == Access::Http && lan_scope, |this| {
                 this.child(row(

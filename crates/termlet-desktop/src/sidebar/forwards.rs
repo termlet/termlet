@@ -6,6 +6,7 @@ use std::sync::Arc;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::dialog::AlertDialog;
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::tooltip::Tooltip;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use gpui_kit::{
@@ -20,6 +21,7 @@ use termlet_core::store::{Record, Store, StoreEvent};
 use crate::app_state::AppState;
 use crate::forwards::{self, RowState};
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::format_size;
 use crate::{forward_dialog, store_errors, t};
 
@@ -339,11 +341,12 @@ impl Render for ForwardList {
             .when(!rows.is_empty(), |this| {
                 this.child(
                     v_flex()
-                        .id("forward-list")
                         .flex_1()
                         .min_h_0()
-                        .px_1()
-                        .overflow_y_scroll()
+                        .pl_1()
+                        .scrollbar_gutter()
+                        .overflow_y_scrollbar()
+                        .id("forward-list")
                         .children(rows),
                 )
             })

@@ -72,6 +72,7 @@ use super::shared::{
 use crate::monitor_bar::level_color;
 use crate::monitor_model::{Level, PERCENT, format_uptime};
 use crate::prose::prose;
+use crate::scrolling::ScrollGutter as _;
 use crate::sftp::list_model::{format_size, visible_name};
 use crate::t;
 
@@ -1241,6 +1242,8 @@ impl DockerPage {
             .test_support()
             .size_full()
             .px_1()
+            // 行尾的启停按钮让出滚动条
+            .scrollbar_gutter()
             .gap_1()
             .text_xs()
             .bg(theme.muted.opacity(0.4))
@@ -1700,7 +1703,8 @@ impl DockerPage {
                     .children(stats.map(|s| self.render_usage(&c.id, s, cx))),
             )
         };
-        row.context_menu(menu).into_any_element()
+        row.context_menu(crate::menu_fit::fitted(menu))
+            .into_any_element()
     }
 
     /// 列表够宽时容器表格的表头（与 [`Self::render_container`] 一行的各列对齐）。
@@ -2414,7 +2418,9 @@ impl DockerPage {
                     .child(item.detail.clone()),
             )
             .children(actions)
-            .context_menu(self.item_menu_builder(engine, item, cx))
+            .context_menu(crate::menu_fit::fitted(
+                self.item_menu_builder(engine, item, cx),
+            ))
             .into_any_element()
     }
 

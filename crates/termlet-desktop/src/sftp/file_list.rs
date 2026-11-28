@@ -1206,7 +1206,11 @@ impl FileList {
         // 菜单的内容要读取这个列表（所选的项），在这次更新结束后再建（与 gpui-kit 的右键菜单相同）
         window.defer(cx, move |window, cx| {
             let menu = PopupMenu::build(window, cx, move |menu, window, cx| {
-                builder(menu.action_context(focus), window, cx)
+                builder(
+                    crate::menu_fit::fit(menu, window).action_context(focus),
+                    window,
+                    cx,
+                )
             });
             menu.focus_handle(cx).focus(window, cx);
             let _ = this.update(cx, |this, cx| {
@@ -1858,8 +1862,10 @@ impl Render for FileList {
         let body = match (&self.menu, self.disabled) {
             (Some(menu), false) => {
                 let menu = menu.clone();
-                body.context_menu(move |m, window, cx| menu(m, window, cx))
-                    .into_any_element()
+                body.context_menu(move |m, window, cx| {
+                    menu(crate::menu_fit::fit(m, window), window, cx)
+                })
+                .into_any_element()
             }
             _ => body.into_any_element(),
         };

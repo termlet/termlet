@@ -11,6 +11,7 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{InputEvent, Textarea, TextareaState};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, Icon, Sizable as _, StyledExt as _, WindowExt as _, h_flex,
@@ -18,9 +19,8 @@ use gpui_kit::component::{
 };
 use gpui_kit::{
     App, AppContext as _, Context, ElementId, Entity, ExternalPaths, InteractiveElement as _,
-    IntoElement, ParentElement as _, PathPromptOptions, Render, SharedString,
-    StatefulInteractiveElement as _, Styled as _, Subscription, Task, Window, div,
-    prelude::FluentBuilder as _, rems,
+    IntoElement, ParentElement as _, PathPromptOptions, Render, SharedString, Styled as _,
+    Subscription, Task, Window, div, prelude::FluentBuilder as _, rems,
 };
 use termlet_core::model::ColorScheme;
 use termlet_core::schemes::{
@@ -711,10 +711,10 @@ impl Render for SchemeImport {
             })
             .child(
                 div()
-                    .id("scheme-import-found")
                     .flex_1()
                     .min_h_0()
-                    .overflow_y_scroll()
+                    .overflow_y_scrollbar()
+                    .id("scheme-import-found")
                     .when(self.found.is_some(), |this| {
                         this.child(self.render_found(cx))
                     }),
