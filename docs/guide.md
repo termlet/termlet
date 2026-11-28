@@ -41,7 +41,7 @@
 
 - 在官网的[下载页](https://termlet.dev/download/)下载（备用：GitHub 上的 [Releases](https://github.com/termlet/termlet/releases/latest)）。
 - 想自己从源码打包时，见贡献指南的[发布（维护者）](../CONTRIBUTING.md#发布维护者)。
-- macOS、Linux 版还没有在真机上测试过，遇到问题请在 [Issues](https://github.com/termlet/termlet/issues) 中反馈。
+- 遇到问题请在 [Issues](https://github.com/termlet/termlet/issues) 中反馈。
 - arm64 的 Windows、Linux 版是实验版：
   - 没有 arm64 的真机，只在 GitHub Actions 的 arm64 运行器上编译、跑核心测试。
   - 包与 x64 的相同（只是程序换成 arm64 的），文件名中的 `x64` 换成 `arm64`，下文 x64 的说明同样适用。
@@ -2005,7 +2005,6 @@ termlet exec <主机> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev
 
 - **代码签名**：安装包没有代码签名。Windows 上 SmartScreen 可能提示；macOS 包只做了 ad-hoc 签名、没有公证，第一次打开要在"系统设置 → 隐私与安全性"中允许。
 - **macOS 与 Linux**：
-  - 还没有在真机上测试过。
   - 不自动安装更新（只提示新版本、打开下载页）。
   - Termlet 不会把命令行工具加入 PATH。
   - 没有 Windows Hello 解锁与 WSL。

@@ -41,7 +41,7 @@
 
 - Download from the [download page](https://termlet.dev/en/download/) of the website (mirror: [Releases](https://github.com/termlet/termlet/releases/latest) on GitHub).
 - To build the packages from source yourself, see [Releasing (maintainers)](../CONTRIBUTING.en.md#releasing-maintainers).
-- The macOS and Linux versions haven't been tested on real hardware yet; please report problems in [Issues](https://github.com/termlet/termlet/issues).
+- Please report problems in [Issues](https://github.com/termlet/termlet/issues).
 - The arm64 versions for Windows and Linux are experimental:
   - There is no arm64 hardware to test on, so they are only built and run through the core tests on GitHub Actions' arm64 runners.
   - The packages are the same as the x64 ones (just with arm64 programs), with `arm64` instead of `x64` in the file names, and the x64 instructions below apply to them too.
@@ -2005,7 +2005,6 @@ termlet exec <host> --input ./nginx.conf "sudo tee /etc/nginx/nginx.conf >/dev/n
 
 - **Code signing**: the packages are not code-signed. SmartScreen may warn on Windows; the macOS package is only ad-hoc signed and not notarized, so it has to be allowed under System Settings → Privacy & Security the first time.
 - **macOS and Linux**:
-  - These versions haven't been tested on real hardware yet.
   - Updates are not installed automatically (Termlet announces the new version and opens the download page).
   - Termlet doesn't put the command-line tool on PATH.
   - There is no Windows Hello unlock or WSL.
